@@ -1,7 +1,7 @@
 import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import { computeYAxisRange } from "@/lib/utils.ts";
+import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useDate } from "../date-picker/use-date.ts";
 import { useUser } from "../user/user-context.tsx";
@@ -34,13 +34,7 @@ export function VibrationTrendLineChartCard({ userId }: Props) {
 
 	const data = granularity === "week" ? toWeeklyMax(response?.data ?? []) : response?.data;
 
-	const maxValue = data ? Math.max(...data.map((d) => d.value)) : 0;
-
-	const minY = 0;
-	let maxY = 450;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? []).maxY;
-	}
+	const { minY, maxY } = getExposureYAxisRange(exposure, data ?? []);
 
 	return (
 		<BaseTrendLineChartCard>

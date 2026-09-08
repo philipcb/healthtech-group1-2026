@@ -1,7 +1,7 @@
 import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import { computeYAxisRange } from "@/lib/utils.ts";
+import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useDate } from "../date-picker/use-date.ts";
 import { useUser } from "../user/user-context.tsx";
@@ -40,15 +40,7 @@ export function NoiseTrendLineChartCard({ usePeakAggregation, userId }: Props) {
 
 	const data = granularity === "week" ? toWeeklyMax(normalizedData) : normalizedData;
 
-	const maxValue = data ? Math.max(...data.map((d) => d.value)) : 0;
-
-	const minY = 0;
-	let maxY = 150;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? [], {
-			step: usePeakAggregation ? 130 : undefined,
-		}).maxY;
-	}
+	const { minY, maxY } = getExposureYAxisRange(exposure, data, { usePeakAggregation });
 
 	return (
 		<BaseTrendLineChartCard>

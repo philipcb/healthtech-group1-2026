@@ -2,8 +2,8 @@ import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-lin
 import { exposureQueryOptions } from "@/lib/api.ts";
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
-import { computeYAxisRange, DUST_Y_AXIS_STEP } from "@/lib/utils.ts";
 import { useQueries } from "@tanstack/react-query";
 import { useDate } from "../date-picker/use-date.ts";
 import { useUser } from "../user/user-context.tsx";
@@ -57,15 +57,7 @@ export function DustTrendLineChartCard({ unit, userId }: Props) {
 
 	const allData = [...pm1Data, ...pm4Data, ...pm25Data, ...pm10Data];
 
-	const maxValue = Math.max(...allData.map((d) => d.value));
-
-	// TODO: we should compute maxY from exposure in a utils that also has the default maxY for every exposure
-	const minY = 0;
-	const baseMaxY = 45;
-	const maxY =
-		maxValue > baseMaxY
-			? computeYAxisRange(allData, { step: DUST_Y_AXIS_STEP, topPadding: DUST_Y_AXIS_STEP }).maxY
-			: baseMaxY;
+	const { minY, maxY } = getExposureYAxisRange(exposure, allData);
 
 	return (
 		<BaseTrendLineChartCard>

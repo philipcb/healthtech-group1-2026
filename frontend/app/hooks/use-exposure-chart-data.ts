@@ -5,30 +5,13 @@ import { useView } from "@/features/views/use-view.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import type { ExposureDto } from "@/lib/dto/exposure.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { computeYAxisRange, DUST_Y_AXIS_STEP, getHourDomain } from "@/lib/utils.ts";
+import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
-
-const EXPOSURE_BASE_MAX_Y: Record<Exposure, number> = {
-	dust: 45,
-	noise: 150,
-	vibration: 450,
-};
-
-function getYAxisOptions(exposure: Exposure, usePeakAggregation: boolean) {
-	if (exposure === "dust") {
-		return { step: DUST_Y_AXIS_STEP, topPadding: DUST_Y_AXIS_STEP };
-	}
-
-	if (exposure === "noise" && usePeakAggregation) {
-		return { step: 130 };
-	}
-
-	return {};
-}
 
 export function getDisplayedExposureValue(point: ExposureDto, usePeakAggregation: boolean): number {
 	return usePeakAggregation && point.peakValue != null ? point.peakValue : point.value;
@@ -79,12 +62,7 @@ export function useExposureChartData(
 	const averageValue =
 		data && data.length > 0 ? data.reduce((sum, point) => sum + getValue(point), 0) / data.length : null;
 
-	const maxValue = maxPoint ? getValue(maxPoint) : 0;
-	const baseMaxY = EXPOSURE_BASE_MAX_Y[exposure];
-	const maxY =
-		maxValue > baseMaxY
-			? computeYAxisRange(data ?? [], getYAxisOptions(exposure, usePeakAggregation)).maxY
-			: baseMaxY;
+	const { minY, maxY } = getExposureYAxisRange(exposure, data ?? [], { usePeakAggregation });
 
 	const { minHour, maxHour } = getHourDomain(
 		hourDomain,
@@ -109,7 +87,7 @@ export function useExposureChartData(
 		latestPoint,
 		maxPoint,
 		averageValue,
-		minY: 0,
+		minY,
 		maxY,
 		minHour,
 		maxHour,

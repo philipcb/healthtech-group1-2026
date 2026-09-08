@@ -1,17 +1,13 @@
 import { ExportButton } from "@/components/export-button.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
-import { useDate } from "@/features/date-picker/use-date.ts";
 import {
 	BaseExposureLineChartCard,
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { getMaxPointByValue } from "@/features/statistic-card-utils.ts";
 import { useUser } from "@/features/user/user-context.tsx";
-import { useView } from "@/features/views/use-view.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import {
 	type DustField,
 	defaultDustField,
@@ -20,10 +16,7 @@ import {
 	parseAsDustField,
 	parseAsExposureUnit,
 } from "@/lib/exposures.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
-import { computeYAxisRange, DUST_Y_AXIS_STEP, downsampleExposureData, getHourDomain } from "@/lib/utils.ts";
-import { useQuery } from "@tanstack/react-query";
-import { setHours } from "date-fns";
+import { downsampleExposureData } from "@/lib/utils.ts";
 import { useQueryState } from "nuqs";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,8 +27,6 @@ interface Props {
 }
 
 export function DustExposureLineChartCard({ userId }: Props) {
-	const { view } = useView();
-	const { date } = useDate();
 	const { t, i18n } = useTranslation();
 	const locale = i18n.language;
 	const { user } = useUser();
@@ -47,40 +38,10 @@ export function DustExposureLineChartCard({ userId }: Props) {
 
 	const exposure: Exposure = "dust";
 
-	const query = buildExposureQuery(exposure, view, date, {
-		field: dustField,
+	const { date, query, data, isLoading, threshold, minY, maxY, minTime, maxTime } = useExposureChartData(exposure, {
+		userId,
+		dustField,
 	});
-
-	const dustThreshold = getThreshold(exposure, query.field);
-
-	const { data: response, isLoading } = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId: userId ?? user.id,
-		}),
-	);
-
-	const data = response?.data;
-	const hourDomain = response?.hourDomain;
-
-	const maxPoint = data && data.length > 0 ? getMaxPointByValue(data, (point) => point.value) : null;
-	const maxValue = maxPoint?.value ?? 0;
-
-	const minY = 0;
-	const baseMaxY = 45;
-	const maxY =
-		maxValue > baseMaxY
-			? computeYAxisRange(data ?? [], {
-					step: DUST_Y_AXIS_STEP,
-					topPadding: DUST_Y_AXIS_STEP,
-				}).maxY
-			: baseMaxY;
-
-	const { minHour, maxHour } = getHourDomain(hourDomain, data?.map((d) => d.time) ?? [], view);
-
-	const minTime = setHours(date, minHour);
-	const maxTime = setHours(date, maxHour);
 
 	if (isLoading) {
 		return <ExposureLineChartCardSkeleton />;
@@ -126,8 +87,8 @@ export function DustExposureLineChartCard({ userId }: Props) {
 				</div>
 			}
 		>
-			<ThresholdLine y={dustThreshold.danger} dangerLevel="danger" />
-			<ThresholdLine y={dustThreshold.warning} dangerLevel="warning" />
+			<ThresholdLine y={threshold.danger} dangerLevel="danger" />
+			<ThresholdLine y={threshold.warning} dangerLevel="warning" />
 		</BaseExposureLineChartCard>
 	);
 }

@@ -30,7 +30,6 @@ function getYAxisOptions(exposure: Exposure, usePeakAggregation: boolean) {
 	return {};
 }
 
-
 export function getDisplayedExposureValue(point: ExposureDto, usePeakAggregation: boolean): number {
 	return usePeakAggregation && point.peakValue != null ? point.peakValue : point.value;
 }

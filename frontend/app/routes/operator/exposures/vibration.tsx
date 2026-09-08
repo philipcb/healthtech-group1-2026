@@ -1,9 +1,7 @@
-import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
-import { ExposureLineChartCardSkeleton } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
+import { ExposureChartView } from "@/features/exposure-line-chart-card/exposure-chart-view.tsx";
 import VibrationExposureLineChartCard from "@/features/exposure-line-chart-card/vibration-exposure-line-chart-card.tsx";
-import { ExposureGraphEmptyState, ExposureStatisticsSection } from "@/features/statistic-card.tsx";
+import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
 import { VibrationTrendLineChartCard } from "@/features/trend-line-chart-card/vibration-trend-line-chart-card.tsx";
-import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { Exposure } from "@/lib/exposures.ts";
@@ -25,19 +23,19 @@ export default function Vibration() {
 		<div className="flex flex-col gap-8">
 			<div className="flex h-full w-full flex-col-reverse gap-4 md:flex-row">
 				<div className="flex flex-1 flex-col gap-4">
-					{isLoading ? (
-						<ExposureLineChartCardSkeleton />
-					) : isError ? (
-						<ExposureGraphEmptyState date={date} locale={i18n.language} />
-					) : view === "month" ? (
-						<CalendarWidget selectedDay={date} data={calendarData} />
-					) : view === "week" ? (
-						<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={calendarData} />
-					) : !data || data.length === 0 ? (
-						<ExposureGraphEmptyState date={date} locale={i18n.language} />
-					) : (
+					<ExposureChartView
+						isLoading={isLoading}
+						isError={isError}
+						view={view}
+						date={date}
+						data={data}
+						calendarData={calendarData}
+						minHour={minHour}
+						maxHour={maxHour}
+						locale={i18n.language}
+					>
 						<VibrationExposureLineChartCard />
-					)}
+					</ExposureChartView>
 
 					{showVibrationStatistics && (
 						<ExposureStatisticsSection

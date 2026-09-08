@@ -1,10 +1,8 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
-import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
-import { ExposureLineChartCardSkeleton } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
+import { ExposureChartView } from "@/features/exposure-line-chart-card/exposure-chart-view.tsx";
 import NoiseExposureLineChartCard from "@/features/exposure-line-chart-card/noise-exposure-line-chart-card.tsx";
-import { ExposureGraphEmptyState, ExposureStatisticsSection } from "@/features/statistic-card.tsx";
+import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
 import { NoiseTrendLineChartCard } from "@/features/trend-line-chart-card/noise-trend-line-chart-card.tsx";
-import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { getDisplayedExposureValue, useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
@@ -53,19 +51,19 @@ export default function Noise() {
 					</TabsList>
 				</Tabs>
 
-				{isLoading ? (
-					<ExposureLineChartCardSkeleton />
-				) : isError ? (
-					<ExposureGraphEmptyState date={date} locale={i18n.language} />
-				) : view === "month" ? (
-					<CalendarWidget selectedDay={date} data={calendarData} />
-				) : view === "week" ? (
-					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={calendarData} />
-				) : !data || data.length === 0 ? (
-					<ExposureGraphEmptyState date={date} locale={i18n.language} />
-				) : (
+				<ExposureChartView
+					isLoading={isLoading}
+					isError={isError}
+					view={view}
+					date={date}
+					data={data}
+					calendarData={calendarData}
+					minHour={minHour}
+					maxHour={maxHour}
+					locale={i18n.language}
+				>
 					<NoiseExposureLineChartCard />
-				)}
+				</ExposureChartView>
 
 				{showNoiseStatistics && (
 					<ExposureStatisticsSection

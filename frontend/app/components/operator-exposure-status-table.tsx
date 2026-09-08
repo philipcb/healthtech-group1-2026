@@ -2,7 +2,7 @@ import { ExposureBadge } from "@/components/exposure-badge.tsx";
 import { DataTable } from "@/components/ui/data-table.tsx";
 import { type DangerLevel, mapDangerLevelToLabel } from "@/lib/danger-levels.ts";
 import type { UserWithStatusDto } from "@/lib/dto/user.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { type Exposure, exposures } from "@/lib/exposures.ts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { t } from "i18next";
 import { Link, useSearchParams } from "react-router";
@@ -41,51 +41,21 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 				</Link>
 			),
 		},
-		{
-			id: "dust",
-			header: t(($) => $.exposures.dust),
+		...exposures.map<ColumnDef<UserWithStatusDto>>((exposure) => ({
+			id: exposure,
+			header: t(($) => $.exposures[exposure]),
 			cell: ({ row }) => {
-				const status = row.original.status.dust?.dangerLevel ?? "safe";
+				const status = row.original.status[exposure]?.dangerLevel ?? "safe";
 
 				return (
 					<OperatorExposureStatusExposureCell
 						status={status}
-						exposure="dust"
-						search={buildSearchParams(row.original.id, "dust")}
+						exposure={exposure}
+						search={buildSearchParams(row.original.id, exposure)}
 					/>
 				);
 			},
-		},
-		{
-			id: "noise",
-			header: t(($) => $.exposures.noise),
-			cell: ({ row }) => {
-				const status = row.original.status.noise?.dangerLevel ?? "safe";
-
-				return (
-					<OperatorExposureStatusExposureCell
-						status={status}
-						exposure="noise"
-						search={buildSearchParams(row.original.id, "noise")}
-					/>
-				);
-			},
-		},
-		{
-			id: "vibration",
-			header: t(($) => $.exposures.vibration),
-			cell: ({ row }) => {
-				const status = row.original.status.vibration?.dangerLevel ?? "safe";
-
-				return (
-					<OperatorExposureStatusExposureCell
-						status={status}
-						exposure="vibration"
-						search={buildSearchParams(row.original.id, "vibration")}
-					/>
-				);
-			},
-		},
+		})),
 	];
 
 	return <DataTable columns={columns} data={data ?? []} getRowId={(teamMember) => teamMember.id} />;

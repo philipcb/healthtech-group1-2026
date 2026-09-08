@@ -20,7 +20,6 @@ function getYAxisOptions(exposure: Exposure, usePeakAggregation: boolean) {
 	return {};
 }
 
-
 export function getExposureYAxisRange(
 	exposure: Exposure,
 	data: Array<ExposureDto>,

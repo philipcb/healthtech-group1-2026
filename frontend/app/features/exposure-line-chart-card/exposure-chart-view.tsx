@@ -16,7 +16,6 @@ interface Props
 	children: ReactNode;
 }
 
-
 export function ExposureChartView({
 	isLoading,
 	isError,

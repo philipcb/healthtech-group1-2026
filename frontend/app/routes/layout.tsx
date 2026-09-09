@@ -12,11 +12,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar.tsx";
-import { useTheme } from "@/features/dark-mode/use-theme.ts";
 import { HomeLink } from "@/features/layout/home-link.tsx";
 import { getLinks } from "@/features/layout/nav-links.ts";
 import { NavTabs } from "@/features/layout/nav-tabs.tsx";
 import { NotificationBell } from "@/features/layout/notification-bell.tsx";
+import { ThemeSwitcher } from "@/features/layout/theme-switcher.tsx";
 import { PrivacySettingsPopup } from "@/features/popups/privacy-settings-popup.tsx";
 import { ProfilePopup } from "@/features/popups/profile-popup.tsx";
 import { usePopup } from "@/features/popups/use-popup.ts";
@@ -29,7 +29,7 @@ import type { User } from "@/lib/dto/user.ts";
 import { cn, shorthandName, userRoleToString } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import "leaflet/dist/leaflet.css";
-import { HatGlassesIcon, Languages, Monitor, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
+import { HatGlassesIcon, Languages, User as UserIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
@@ -129,7 +129,6 @@ function UserDropdown({
 	setUser: (user: User) => void;
 }) {
 	const { t } = useTranslation();
-	const { theme, setTheme } = useTheme();
 	const { language, setLanguage } = useLanguagePreference();
 
 	const { visible: profilePopupVisible, openPopup: openProfilePopup, closePopup: closeProfilePopup } = usePopup();
@@ -172,48 +171,7 @@ function UserDropdown({
 
 					<DropdownMenuSeparator />
 
-					<div className="flex items-center gap-4 pl-2 text-sm">
-						<div className="flex gap-2">
-							<Palette className="size-4 text-muted-foreground" />
-							<span>{t(($) => $.layout.theme)}</span>
-						</div>
-
-						<div className="inline-flex rounded-full p-1">
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setTheme("light")}
-								className={cn(
-									"inline-flex cursor-pointer items-center justify-center rounded-full p-2 transition-colors",
-									theme === "light" && "bg-accent",
-								)}
-							>
-								<Sun className="size-4" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setTheme("dark")}
-								className={cn(
-									"inline-flex cursor-pointer items-center justify-center rounded-full p-2 transition-colors",
-									theme === "dark" && "bg-accent",
-								)}
-							>
-								<Moon className="size-4" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => setTheme("system")}
-								className={cn(
-									"inline-flex cursor-pointer items-center justify-center rounded-full p-2 transition-colors",
-									theme === "system" && "bg-accent",
-								)}
-							>
-								<Monitor className="size-4" />
-							</Button>
-						</div>
-					</div>
+					<ThemeSwitcher />
 
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>

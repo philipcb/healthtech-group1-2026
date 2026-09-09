@@ -23,6 +23,7 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { KARI_NORDMANN_ID, OLA_NORDMANN_ID } from "@/features/user/user-utils.ts";
 import { useView } from "@/features/views/use-view.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
+import { type Language, useLanguagePreference } from "@/hooks/use-language-preference.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { usersQueryOptions } from "@/lib/api.ts";
 import { type User, UserRoleSchema } from "@/lib/dto/user.ts";
@@ -114,7 +115,7 @@ function getLinks(t: TranslateFn, role: User["role"] | null): Array<{ to: To; la
 }
 
 export default function Layout() {
-	const { t, i18n } = useTranslation();
+	const { t } = useTranslation();
 	const {
 		visible: notificationPopupVisible,
 		openPopup: openNotificationPopup,
@@ -202,7 +203,7 @@ export default function Layout() {
 								</div>
 							</Button>
 
-							<UserDropdown user={user} users={sortedUsers} setUser={setUser} i18n={i18n} />
+							<UserDropdown user={user} users={sortedUsers} setUser={setUser} />
 						</div>
 					</header>
 
@@ -225,15 +226,14 @@ function UserDropdown({
 	user,
 	users,
 	setUser,
-	i18n,
 }: {
 	user: User | null;
 	users: Array<User>;
 	setUser: (user: User) => void;
-	i18n: ReturnType<typeof useTranslation>["i18n"];
 }) {
 	const { t } = useTranslation();
 	const { theme, setTheme } = useTheme();
+	const { language, setLanguage } = useLanguagePreference();
 
 	const { visible: profilePopupVisible, openPopup: openProfilePopup, closePopup: closeProfilePopup } = usePopup();
 
@@ -244,8 +244,6 @@ function UserDropdown({
 	} = usePopup();
 
 	if (!user) return null;
-
-	const currentLanguage = i18n.language || "en";
 
 	return (
 		<>
@@ -327,11 +325,8 @@ function UserDropdown({
 						</DropdownMenuSubTrigger>
 						<DropdownMenuSubContent>
 							<DropdownMenuRadioGroup
-								value={currentLanguage}
-								onValueChange={(value) => {
-									i18n.changeLanguage(value);
-									localStorage.setItem("i18nextLng", value);
-								}}
+								value={language}
+								onValueChange={(value) => setLanguage(value as Language)}
 							>
 								<DropdownMenuRadioItem value="en">{t(($) => $.language.english)}</DropdownMenuRadioItem>
 								<DropdownMenuRadioItem value="no">

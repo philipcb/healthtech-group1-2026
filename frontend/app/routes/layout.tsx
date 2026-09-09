@@ -14,6 +14,7 @@ import {
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar.tsx";
 import { useTheme } from "@/features/dark-mode/use-theme.ts";
 import { useDate } from "@/features/date-picker/use-date.ts";
+import { HomeLink } from "@/features/layout/home-link.tsx";
 import { BellPopup } from "@/features/popups/bell-popup.tsx";
 import { PrivacySettingsPopup } from "@/features/popups/privacy-settings-popup.tsx";
 import { ProfilePopup } from "@/features/popups/profile-popup.tsx";
@@ -44,33 +45,6 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { href, Link, NavLink, Outlet, type To, useLocation, useNavigate } from "react-router";
-
-const Logo = () => (
-	<svg width="44" height="40" viewBox="0 0 44 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-		<title>{"HealthTech Logo"}</title>
-		<path
-			d="M42.8334 20H34.5001L28.2501 38.75L15.7501 1.25L9.50008 20H1.16675"
-			stroke="#A4D4DB"
-			strokeWidth="2"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-		/>
-	</svg>
-);
-
-function HomeLink() {
-	return (
-		<NavLink
-			to={href("/")}
-			className="flex cursor-pointer items-center space-x-2 text-foreground transition-colors hover:text-primary/90"
-		>
-			<div className="text-2xl">
-				<Logo />
-			</div>
-			<span className="hidden text-xl sm:inline-block">{"HealthTech"}</span>
-		</NavLink>
-	);
-}
 
 function getLinks(t: TranslateFn, role: User["role"] | null): Array<{ to: To; label: string; icon?: LucideIcon }> {
 	switch (role) {

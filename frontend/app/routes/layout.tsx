@@ -16,7 +16,7 @@ import { useTheme } from "@/features/dark-mode/use-theme.ts";
 import { HomeLink } from "@/features/layout/home-link.tsx";
 import { getLinks } from "@/features/layout/nav-links.ts";
 import { NavTabs } from "@/features/layout/nav-tabs.tsx";
-import { BellPopup } from "@/features/popups/bell-popup.tsx";
+import { NotificationBell } from "@/features/layout/notification-bell.tsx";
 import { PrivacySettingsPopup } from "@/features/popups/privacy-settings-popup.tsx";
 import { ProfilePopup } from "@/features/popups/profile-popup.tsx";
 import { usePopup } from "@/features/popups/use-popup.ts";
@@ -29,18 +29,13 @@ import type { User } from "@/lib/dto/user.ts";
 import { cn, shorthandName, userRoleToString } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import "leaflet/dist/leaflet.css";
-import { Bell, HatGlassesIcon, Languages, Monitor, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
+import { HatGlassesIcon, Languages, Monitor, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 
 export default function Layout() {
 	const { t } = useTranslation();
-	const {
-		visible: notificationPopupVisible,
-		openPopup: openNotificationPopup,
-		closePopup: closeNotificationPopup,
-	} = usePopup();
 
 	const { user, setUser, isLoading: isUserLoading } = useUser();
 	const { data: users } = useQuery(usersQueryOptions());
@@ -109,29 +104,11 @@ export default function Layout() {
 						{desktopHeader}
 
 						<div className="flex flex-row items-center gap-4">
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={openNotificationPopup}
-								className="cursor-pointer rounded-full"
-							>
-								<div className="relative">
-									<Bell className="size-5" />
-									<span className="absolute -top-2 -right-2 flex size-4.75 items-center justify-center rounded-full border-2 border-background bg-red-600 text-[0.625rem] text-white">
-										{"4"}
-									</span>
-								</div>
-							</Button>
+							<NotificationBell />
 
 							<UserDropdown user={user} users={sortedUsers} setUser={setUser} />
 						</div>
 					</header>
-
-					<BellPopup
-						open={notificationPopupVisible}
-						onClose={closeNotificationPopup}
-						title={t(($) => $.common.notifications)}
-					/>
 
 					<main className="m-5 items-center justify-center">
 						<Outlet />

@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar.tsx";
 import { useTheme } from "@/features/dark-mode/use-theme.ts";
-import { useDate } from "@/features/date-picker/use-date.ts";
 import { HomeLink } from "@/features/layout/home-link.tsx";
+import { getLinks } from "@/features/layout/nav-links.ts";
+import { NavTabs } from "@/features/layout/nav-tabs.tsx";
 import { BellPopup } from "@/features/popups/bell-popup.tsx";
 import { PrivacySettingsPopup } from "@/features/popups/privacy-settings-popup.tsx";
 import { ProfilePopup } from "@/features/popups/profile-popup.tsx";
@@ -22,71 +23,16 @@ import { usePopup } from "@/features/popups/use-popup.ts";
 import { DemoRoleSwitcher } from "@/features/user/demo-role-switcher.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { KARI_NORDMANN_ID, OLA_NORDMANN_ID } from "@/features/user/user-utils.ts";
-import { useView } from "@/features/views/use-view.ts";
-import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { type Language, useLanguagePreference } from "@/hooks/use-language-preference.ts";
-import type { TranslateFn } from "@/i18n/config.ts";
 import { usersQueryOptions } from "@/lib/api.ts";
 import type { User } from "@/lib/dto/user.ts";
 import { cn, shorthandName, userRoleToString } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import "leaflet/dist/leaflet.css";
-import {
-	Bell,
-	HatGlassesIcon,
-	Languages,
-	type LucideIcon,
-	Monitor,
-	Moon,
-	Palette,
-	Sun,
-	User as UserIcon,
-} from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Bell, HatGlassesIcon, Languages, Monitor, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { href, Link, NavLink, Outlet, type To, useLocation, useNavigate } from "react-router";
-
-function getLinks(t: TranslateFn, role: User["role"] | null): Array<{ to: To; label: string; icon?: LucideIcon }> {
-	switch (role) {
-		case null: {
-			return [];
-		}
-
-		case "operator": {
-			return [
-				{ to: href("/operator/live"), label: t(($) => $.layout.live) },
-				{ to: href("/operator"), label: t(($) => $.layout.overview) },
-				{ to: href("/operator/dust"), label: t(($) => $.exposures.dust) },
-				{ to: href("/operator/noise"), label: t(($) => $.exposures.noise) },
-				{
-					to: href("/operator/vibration"),
-					label: t(($) => $.exposures.vibration),
-				},
-			];
-		}
-
-		case "foreman": {
-			return [
-				{
-					to: href("/foreman"),
-					label: t(($) => $.layout.home),
-				},
-				{
-					to: href("/foreman/map"),
-					label: t(($) => $.layout.map),
-				},
-				{
-					to: href("/foreman/team"),
-					label: t(($) => $.layout.team),
-				},
-			];
-		}
-
-		default: {
-			return [];
-		}
-	}
-}
+import { Link, Outlet, useLocation, useNavigate } from "react-router";
 
 export default function Layout() {
 	const { t } = useTranslation();
@@ -342,78 +288,5 @@ function UserDropdown({
 
 			<PrivacySettingsPopup open={privacySettingsPopupVisible} onClose={closePrivacySettingsPopup} />
 		</>
-	);
-}
-
-function NavTabs({ routes }: { routes: Array<{ label: string; to: To; icon?: LucideIcon }> }) {
-	const { view } = useView();
-	const { date } = useDate();
-	const location = useLocation();
-	const pathname = location.pathname;
-	const formatDate = useFormatDate();
-
-	const navLinkRefs = useRef<Array<HTMLElement>>([]);
-	const [pillWidth, setPillWidth] = useState<number>();
-	const [pillLeft, setPillLeft] = useState<number>();
-
-	function normalizePathname(path: string) {
-		if (path === "/") return path;
-		return path.replace(/\/+$/, "");
-	}
-
-	const activeNavIndex = routes.findIndex(
-		(route) => normalizePathname(route.to.toString()) === normalizePathname(pathname),
-	);
-
-	// update pill whenever the active route changes,
-	useLayoutEffect(() => {
-		const el = navLinkRefs.current[activeNavIndex];
-		if (!el) return;
-
-		const observer = new ResizeObserver(() => {
-			setPillWidth(el.offsetWidth);
-			setPillLeft(el.offsetLeft);
-		});
-		observer.observe(el);
-		return () => observer.disconnect();
-	}, [activeNavIndex]);
-
-	return (
-		<div className="relative mx-auto flex h-11 flex-row rounded-full bg-accent px-2 dark:bg-card">
-			<div
-				className="absolute top-0 bottom-0 z-10 flex overflow-hidden rounded-full py-1 transition-all duration-300"
-				style={{ left: pillLeft, width: pillWidth }}
-			>
-				<span className="h-full w-full rounded-full bg-background shadow-sm" />
-			</div>
-
-			{routes.map((route, i) => {
-				const className = ({ isActive }: { isActive: boolean }) =>
-					cn(
-						"z-20 flex cursor-pointer select-none items-center rounded-full px-5 py-2",
-						"text-center font-medium text-muted-foreground text-sm hover:text-foreground",
-						isActive && "text-foreground",
-					);
-
-				return (
-					<NavLink
-						end={true}
-						to={{
-							pathname: route.to.toString(),
-							search: `?view=${view}&date=${formatDate(date, "yyyy-MM-dd")}`,
-						}}
-						key={route.to.toString()}
-						ref={(el) => {
-							if (!el) return;
-							navLinkRefs.current[i] = el;
-						}}
-						className={className}
-						prefetch="intent"
-					>
-						<span className="inline-flex items-center gap-2.5">{route.label}</span>
-					</NavLink>
-				);
-			})}
-		</div>
 	);
 }

@@ -1,16 +1,22 @@
 import { useDate } from "@/features/date-picker/use-date.ts";
-import type { NavLinkItem } from "@/features/layout/nav-links.ts";
+import { getLinks } from "@/features/layout/nav-links.ts";
 import { useTabPill } from "@/features/layout/use-tab-pill.ts";
+import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { cn } from "@/lib/utils.ts";
+import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router";
 
-export function NavTabs({ routes }: { routes: Array<NavLinkItem> }) {
+export function NavTabs() {
+	const { t } = useTranslation();
+	const { user } = useUser();
 	const { view } = useView();
 	const { date } = useDate();
 	const location = useLocation();
 	const formatDate = useFormatDate();
+
+	const routes = getLinks(t, user?.role ?? null);
 
 	const { setNavLinkRef, pillWidth, pillLeft } = useTabPill(routes, location.pathname);
 

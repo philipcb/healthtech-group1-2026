@@ -12,13 +12,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu.tsx";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useTheme } from "@/features/dark-mode/use-theme.ts";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { BellPopup } from "@/features/popups/bell-popup.tsx";
 import { PrivacySettingsPopup } from "@/features/popups/privacy-settings-popup.tsx";
 import { ProfilePopup } from "@/features/popups/profile-popup.tsx";
 import { usePopup } from "@/features/popups/use-popup.ts";
+import { DemoRoleSwitcher } from "@/features/user/demo-role-switcher.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { KARI_NORDMANN_ID, OLA_NORDMANN_ID } from "@/features/user/user-utils.ts";
 import { useView } from "@/features/views/use-view.ts";
@@ -26,7 +26,7 @@ import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { type Language, useLanguagePreference } from "@/hooks/use-language-preference.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { usersQueryOptions } from "@/lib/api.ts";
-import { type User, UserRoleSchema } from "@/lib/dto/user.ts";
+import type { User } from "@/lib/dto/user.ts";
 import { cn, shorthandName, userRoleToString } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import "leaflet/dist/leaflet.css";
@@ -336,40 +336,7 @@ function UserDropdown({
 						</DropdownMenuSubContent>
 					</DropdownMenuSub>
 
-					<div className="m-1 mt-4 rounded-lg bg-yellow-100 p-2 dark:bg-amber-950">
-						<h3 className="font-semibold text-sm text-zinc-600 dark:text-zinc-300">{"DEMO"}</h3>
-
-						<div className="mt-2 flex gap-2.5">
-							{users.length > 0 ? (
-								Object.keys(UserRoleSchema.enum).map((role) => {
-									const roleValue = role as User["role"];
-									const isActive = user.role === roleValue;
-
-									return (
-										<Button
-											key={role}
-											type="button"
-											className={cn(
-												"flex-1 text-sm text-zinc-600 dark:text-zinc-300",
-												"bg-amber-200 hover:bg-amber-300 dark:bg-amber-900/75 dark:hover:bg-amber-800",
-												isActive && "bg-amber-300 dark:bg-amber-800",
-											)}
-											onClick={() => {
-												const userWithRole = users.find((u) => u.role === roleValue);
-												if (userWithRole) {
-													setUser(userWithRole);
-												}
-											}}
-										>
-											{userRoleToString(roleValue, t)}
-										</Button>
-									);
-								})
-							) : (
-								<Skeleton className="h-6 w-36 bg-amber-200 dark:bg-amber-900/75" />
-							)}
-						</div>
-
+					<DemoRoleSwitcher users={users} activeRole={user.role} onSelect={setUser} className="m-1 mt-4">
 						{user.role && (
 							<p className="my-2 text-sm text-zinc-600 dark:text-zinc-300">
 								{t(($) => $.demo.currentRole)}{" "}
@@ -387,7 +354,7 @@ function UserDropdown({
 						>
 							<Link to="/register">{t(($) => $.demo.navigate.toRegister)}</Link>
 						</Button>
-					</div>
+					</DemoRoleSwitcher>
 				</DropdownMenuContent>
 			</DropdownMenu>
 

@@ -10,8 +10,6 @@ interface ProfilePopupProps {
 	avatarSrc?: string;
 	open: boolean;
 	onClose: () => void;
-	users?: Array<User>;
-	setUser?: (user: User) => void;
 	children?: React.ReactNode;
 }
 

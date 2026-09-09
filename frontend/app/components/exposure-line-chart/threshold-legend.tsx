@@ -1,12 +1,11 @@
 import type { DangerLevel } from "@/lib/danger-levels.ts";
+import { getThresholdStrokeDasharray } from "@/lib/thresholds.ts";
 import { useTranslation } from "react-i18next";
 
 export type ThresholdLegendItem = {
 	dangerLevel: DangerLevel;
 	color: string;
 };
-
-const getThresholdStrokeDasharray = (dangerLevel: DangerLevel) => (dangerLevel === "danger" ? "8 4" : "4 4");
 
 export function ThresholdLegend({ items }: { items: Array<ThresholdLegendItem> }) {
 	const { t } = useTranslation();

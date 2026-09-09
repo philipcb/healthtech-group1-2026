@@ -1,4 +1,5 @@
 import type { Exposure } from "@/features/exposure-picker/exposures.ts";
+import type { DangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
 
 export type Threshold = {
@@ -74,4 +75,8 @@ export function getThreshold(exposure: Exposure, dustField?: ExposureTypeField |
 	}
 
 	return thresholds[exposure];
+}
+
+export function getThresholdStrokeDasharray(dangerLevel: DangerLevel): string {
+	return dangerLevel === "danger" ? "8 4" : "4 4";
 }

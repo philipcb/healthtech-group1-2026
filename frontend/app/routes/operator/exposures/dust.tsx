@@ -1,17 +1,10 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
-import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
-import { useDate } from "@/features/date-picker/use-date.ts";
-import { ExposureLineChartCardSkeleton } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { DustExposureLineChartCard } from "@/features/exposure-line-chart-card/dust-exposure-line-chart-card.tsx";
-import { ExposureGraphEmptyState, ExposureStatisticsSection } from "@/features/statistic-card.tsx";
-import { getMaxPointByValue } from "@/features/statistic-card-utils.ts";
+import { ExposureChartView } from "@/features/exposure-line-chart-card/exposure-chart-view.tsx";
+import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
 import { DustTrendLineChartCard } from "@/features/trend-line-chart-card/dust-trend-line-chart-card.tsx";
-import { useUser } from "@/features/user/user-context.tsx";
-import { useView } from "@/features/views/use-view.ts";
-import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
+import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
 import {
 	type DustField,
 	defaultDustField,
@@ -20,20 +13,13 @@ import {
 	parseAsDustField,
 	parseAsExposureUnit,
 } from "@/lib/exposures.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
-import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain } from "@/lib/utils.ts";
-import { useQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
 export default function Dust() {
-	const { view } = useView();
-	const { date } = useDate();
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const locale = i18n.language;
-	const { user } = useUser();
 
 	const [dustField, setDustField] = useQueryState<DustField>(
 		"dustField",
@@ -43,34 +29,20 @@ export default function Dust() {
 
 	const exposure: Exposure = "dust";
 
-	const query = buildExposureQuery(exposure, view, date, {
-		field: dustField,
-	});
-
-	const dustThreshold = getThreshold(exposure, query.field);
-
 	const {
-		data: response,
+		view,
+		date,
+		data,
 		isLoading,
 		isError,
-	} = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId: user.id,
-		}),
-	);
-
-	const data = response?.data;
-	const hourDomain = response?.hourDomain;
-
-	const latestPoint = data?.at(-1) ?? null;
-	const maxPoint = data && data.length > 0 ? getMaxPointByValue(data, (point) => point.value) : null;
-	const averageValue =
-		data && data.length > 0 ? data.reduce((sum, point) => sum + point.value, 0) / data.length : null;
-
-	const calendarData = mapExposureDataToTimeBucketStatuses(data ?? [], exposure, false);
-	const { minHour, maxHour } = getHourDomain(hourDomain, data?.map((d) => d.time) ?? [], view);
+		threshold,
+		averageValue,
+		maxPoint,
+		latestPoint,
+		calendarData,
+		minHour,
+		maxHour,
+	} = useExposureChartData(exposure, { dustField });
 
 	const showTrendLineChart = view === "month" || view === "week";
 	const showDustStatistics = view === "day";
@@ -88,19 +60,19 @@ export default function Dust() {
 					</TabsList>
 				</Tabs>
 
-				{isLoading ? (
-					<ExposureLineChartCardSkeleton />
-				) : isError ? (
-					<ExposureGraphEmptyState date={date} locale={locale} />
-				) : view === "month" ? (
-					<CalendarWidget selectedDay={date} data={calendarData} />
-				) : view === "week" ? (
-					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={calendarData} />
-				) : !data || data.length === 0 ? (
-					<ExposureGraphEmptyState date={date} locale={locale} />
-				) : (
+				<ExposureChartView
+					isLoading={isLoading}
+					isError={isError}
+					view={view}
+					date={date}
+					data={data}
+					calendarData={calendarData}
+					minHour={minHour}
+					maxHour={maxHour}
+					locale={locale}
+				>
 					<DustExposureLineChartCard />
-				)}
+				</ExposureChartView>
 
 				{showDustStatistics && (
 					<ExposureStatisticsSection
@@ -110,8 +82,8 @@ export default function Dust() {
 						maxValue={maxPoint?.value ?? null}
 						maxTime={maxPoint?.time ?? null}
 						latestValue={latestPoint?.value ?? null}
-						warningThreshold={dustThreshold.warning}
-						dangerThreshold={dustThreshold.danger}
+						warningThreshold={threshold.warning}
+						dangerThreshold={threshold.danger}
 						unit={dustUnit}
 						formatTime={(time) => formatDate(time, "HH:mm")}
 					/>

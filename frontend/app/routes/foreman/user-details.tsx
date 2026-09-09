@@ -8,12 +8,12 @@ import { DustExposureLineChartCard } from "@/features/exposure-line-chart-card/d
 import NoiseExposureLineChartCard from "@/features/exposure-line-chart-card/noise-exposure-line-chart-card.tsx";
 import VibrationExposureLineChartCard from "@/features/exposure-line-chart-card/vibration-exposure-line-chart-card.tsx";
 import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
-import { getMaxPointByValue } from "@/features/statistic-card-utils.ts";
 import { DustTrendLineChartCard } from "@/features/trend-line-chart-card/dust-trend-line-chart-card.tsx";
 import { NoiseTrendLineChartCard } from "@/features/trend-line-chart-card/noise-trend-line-chart-card.tsx";
 import { VibrationTrendLineChartCard } from "@/features/trend-line-chart-card/vibration-trend-line-chart-card.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
+import { getDisplayedExposureValue, useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
@@ -36,7 +36,7 @@ import {
 } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { computeYAxisRange, DUST_Y_AXIS_STEP, getHourDomain } from "@/lib/utils.ts";
+import { getHourDomain } from "@/lib/utils.ts";
 import type { TZDate } from "@date-fns/tz";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -133,9 +133,8 @@ function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 
 	const { date } = useDate();
 
-	const query = buildExposureQuery(exposure, view, date, {
-		field: dustField,
-	});
+	const { data, isLoading, isError, threshold, latestPoint, maxPoint, averageValue, minHour, maxHour } =
+		useExposureChartData(exposure, { userId: selectedUser.id, dustField });
 
 	const { data: overviewResponse } = useQuery(
 		exposureOverviewQueryOptions({
@@ -143,19 +142,14 @@ function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 			userId: selectedUser.id,
 		}),
 	);
-	const dustThreshold = getThreshold(exposure, query.field);
+
 	const dustPm1TwaThreshold = getThreshold(exposure, "pm1_twa");
 	const dustPm25TwaThreshold = getThreshold(exposure, "pm25_twa");
 	const dustPm4TwaThreshold = getThreshold(exposure, "pm4_twa");
 	const dustPm10TwaThreshold = getThreshold(exposure, "pm10_twa");
 
-	const [dataResult, dustTwa1Result, dustTwa25Result, dustTwa4Result, dustTwa10Result] = useQueries({
+	const [dustTwa1Result, dustTwa25Result, dustTwa4Result, dustTwa10Result] = useQueries({
 		queries: [
-			exposureQueryOptions({
-				exposure,
-				query,
-				userId: selectedUser.id,
-			}),
 			exposureQueryOptions({
 				exposure,
 				query: buildExposureQuery(exposure, view, date, {
@@ -195,36 +189,10 @@ function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 		],
 	});
 
-	const data = dataResult?.data?.data;
-	const hourDomain = dataResult?.data?.hourDomain;
-	const latestPoint = data?.at(-1) ?? null;
-	const maxPoint = data && data.length > 0 ? getMaxPointByValue(data, (point) => point.value) : null;
-	const averageValue =
-		data && data.length > 0 ? data.reduce((sum, point) => sum + point.value, 0) / data.length : null;
-
-	const avgDustTwa1Data = dustTwa1Result.data?.data ?? [];
-	const avgDustTwa25Data = dustTwa25Result.data?.data ?? [];
-	const avgDustTwa4Data = dustTwa4Result.data?.data ?? [];
-	const avgDustTwa10Data = dustTwa10Result.data?.data ?? [];
-
-	const avgPm1Twa = getAvgValue(avgDustTwa1Data);
-	const avgPm4Twa = getAvgValue(avgDustTwa4Data);
-	const avgPm25Twa = getAvgValue(avgDustTwa25Data);
-	const avgPm10Twa = getAvgValue(avgDustTwa10Data);
-
-	const maxValue = maxPoint?.value ?? 0;
-	let maxY = 45;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? [], {
-			step: DUST_Y_AXIS_STEP,
-			topPadding: DUST_Y_AXIS_STEP,
-		}).maxY;
-	}
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		data?.map((d) => d.time),
-		view,
-	);
+	const avgPm1Twa = getAvgValue(dustTwa1Result.data?.data ?? []);
+	const avgPm25Twa = getAvgValue(dustTwa25Result.data?.data ?? []);
+	const avgPm4Twa = getAvgValue(dustTwa4Result.data?.data ?? []);
+	const avgPm10Twa = getAvgValue(dustTwa10Result.data?.data ?? []);
 
 	const showTrendLineChart = view === "month" || view === "week";
 	const showDustStatistics = view === "day";
@@ -242,8 +210,8 @@ function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 			</Tabs>
 
 			<ExposureChartCard
-				isLoading={dataResult.isLoading}
-				isError={dataResult.isError}
+				isLoading={isLoading}
+				isError={isError}
 				data={data}
 				selectedDate={date}
 				isExposure={true}
@@ -261,14 +229,14 @@ function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 
 			{showDustStatistics && (
 				<ExposureStatisticsSection
-					isLoading={dataResult.isLoading}
-					isEmpty={dataResult.isError || !data?.length}
+					isLoading={isLoading}
+					isEmpty={isError || !data?.length}
 					averageValue={averageValue}
 					maxValue={maxPoint?.value ?? null}
 					maxTime={maxPoint?.time ?? null}
 					latestValue={latestPoint?.value ?? null}
-					warningThreshold={dustThreshold.warning}
-					dangerThreshold={dustThreshold.danger}
+					warningThreshold={threshold.warning}
+					dangerThreshold={threshold.danger}
 					unit={dustUnit}
 					formatTime={(time) => formatDate(time, "HH:mm")}
 				/>
@@ -336,42 +304,16 @@ function VibrationUserChart({ selectedUser }: { selectedUser: UserWithStatusDto 
 	const { date } = useDate();
 	const formatDate = useFormatDate();
 	const exposure: Exposure = "vibration";
-	const vibrationThreshold = getThreshold(exposure);
 
-	const query = buildExposureQuery(exposure, view, date);
+	const { data, isLoading, isError, threshold, maxPoint, minHour, maxHour } = useExposureChartData(exposure, {
+		userId: selectedUser.id,
+	});
 
 	const { data: overviewResponse } = useQuery(
 		exposureOverviewQueryOptions({
 			query: buildExposureOverviewQuery([exposure], view, date),
 			userId: selectedUser.id,
 		}),
-	);
-
-	const {
-		data: response,
-		isLoading,
-		isError,
-	} = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId: selectedUser.id,
-		}),
-	);
-
-	const data = response?.data;
-	const hourDomain = response?.hourDomain;
-	const maxPoint = data && data.length > 0 ? getMaxPointByValue(data, (point) => point.value) : null;
-
-	const maxValue = maxPoint?.value ?? 0;
-	let maxY = 450;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? []).maxY;
-	}
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		data?.map((d) => d.time),
-		view,
 	);
 
 	const showTrendLineChart = view === "month" || view === "week";
@@ -405,8 +347,8 @@ function VibrationUserChart({ selectedUser }: { selectedUser: UserWithStatusDto 
 					maxValue={maxPoint?.value ?? null}
 					maxTime={null}
 					latestValue={null}
-					warningThreshold={vibrationThreshold.warning}
-					dangerThreshold={vibrationThreshold.danger}
+					warningThreshold={threshold.warning}
+					dangerThreshold={threshold.danger}
 					unit="points"
 					formatTime={(time) => formatDate(time, "HH:mm")}
 				/>
@@ -429,57 +371,25 @@ function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 		parseAsAggregation.withDefault("average"),
 	);
 	const usePeakAggregation = aggregation === "peak";
-	const noiseThreshold = getThreshold(exposure);
-	const noiseDangerThreshold = usePeakAggregation
-		? (noiseThreshold.peakDanger ?? noiseThreshold.danger)
-		: noiseThreshold.danger;
 
-	const query = buildExposureQuery(exposure, view, date, {
-		usePeakAggregation,
-	});
+	const {
+		data,
+		isLoading,
+		isError,
+		threshold,
+		dangerThreshold,
+		latestPoint,
+		maxPoint,
+		averageValue,
+		minHour,
+		maxHour,
+	} = useExposureChartData(exposure, { userId: selectedUser.id, usePeakAggregation });
 
 	const { data: overviewResponse } = useQuery(
 		exposureOverviewQueryOptions({
 			query: buildExposureOverviewQuery([exposure], view, date),
 			userId: selectedUser.id,
 		}),
-	);
-
-	const {
-		data: response,
-		isLoading,
-		isError,
-	} = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId: selectedUser.id,
-		}),
-	);
-
-	const data = response?.data;
-	const hourDomain = response?.hourDomain;
-	const latestPoint = data?.at(-1) ?? null;
-	const maxPoint =
-		data && data.length > 0
-			? getMaxPointByValue(data, (point) => getDisplayedNoiseValue(point, usePeakAggregation))
-			: null;
-	const averageValue =
-		data && data.length > 0
-			? data.reduce((sum, point) => sum + getDisplayedNoiseValue(point, usePeakAggregation), 0) / data.length
-			: null;
-
-	const maxValue = maxPoint ? getDisplayedNoiseValue(maxPoint, usePeakAggregation) : 0;
-	let maxY = 150;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? [], {
-			step: usePeakAggregation ? 130 : undefined,
-		}).maxY;
-	}
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		data?.map((d) => d.time),
-		view,
 	);
 
 	const showTrendLineChart = view === "month" || view === "week";
@@ -517,11 +427,11 @@ function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 					isLoading={isLoading}
 					isEmpty={isError || !data?.length}
 					averageValue={averageValue}
-					maxValue={maxPoint ? getDisplayedNoiseValue(maxPoint, usePeakAggregation) : null}
+					maxValue={maxPoint ? getDisplayedExposureValue(maxPoint, usePeakAggregation) : null}
 					maxTime={maxPoint?.time ?? null}
-					latestValue={latestPoint ? getDisplayedNoiseValue(latestPoint, usePeakAggregation) : null}
-					warningThreshold={noiseThreshold.warning}
-					dangerThreshold={noiseDangerThreshold}
+					latestValue={latestPoint ? getDisplayedExposureValue(latestPoint, usePeakAggregation) : null}
+					warningThreshold={threshold.warning}
+					dangerThreshold={dangerThreshold}
 					unit="db"
 					formatTime={(time) => formatDate(time, "HH:mm")}
 				/>
@@ -530,10 +440,6 @@ function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 			{showTrendLineChart && <NoiseTrendLineChartCard userId={selectedUser.id} />}
 		</div>
 	);
-}
-
-function getDisplayedNoiseValue(point: ExposureDto, usePeakAggregation: boolean) {
-	return usePeakAggregation && point.peakValue != null ? point.peakValue : point.value;
 }
 
 function ExposureChartCard({

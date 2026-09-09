@@ -1,21 +1,14 @@
 import { ExportButton } from "@/components/export-button.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { useDate } from "@/features/date-picker/use-date.ts";
 import {
 	BaseExposureLineChartCard,
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
-import { parseAsView } from "@/features/views/utils.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import type { Exposure } from "@/lib/exposures.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
-import { computeYAxisRange, downsampleExposureData, getHourDomain } from "@/lib/utils.ts";
-import { useQuery } from "@tanstack/react-query";
-import { setHours } from "date-fns";
-import { useQueryState } from "nuqs";
+import { downsampleExposureData } from "@/lib/utils.ts";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { ExposureGraphEmptyState } from "../statistic-card.tsx";
@@ -25,46 +18,17 @@ interface Props {
 }
 
 export default function VibrationExposureLineChartCard({ userId }: Props) {
-	const [view] = useQueryState("view", parseAsView.withDefault("day"));
 	const { t, i18n } = useTranslation();
 
-	const { date } = useDate();
 	const { user } = useUser();
 	const { exportToPDF } = useExportPDF();
 	const chartContainerId = useId();
 
 	const exposure: Exposure = "vibration";
-	const vibrationThreshold = getThreshold(exposure);
 
-	const query = buildExposureQuery(exposure, view, date);
-
-	const { data: response, isLoading } = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId: userId ?? user.id,
-		}),
-	);
-
-	const data = response?.data;
-	const hourDomain = response?.hourDomain;
-
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		data?.map((d) => d.time),
-		view,
-	);
-
-	const maxValue = data ? Math.max(...data.map((d) => d.value)) : 0;
-
-	const minY = 0;
-	let maxY = 450;
-	if (maxValue > maxY) {
-		maxY = computeYAxisRange(data ?? []).maxY;
-	}
-
-	const minTime = setHours(date, minHour);
-	const maxTime = setHours(date, maxHour);
+	const { date, data, isLoading, threshold, minY, maxY, minTime, maxTime } = useExposureChartData(exposure, {
+		userId,
+	});
 
 	if (isLoading) {
 		return <ExposureLineChartCardSkeleton />;
@@ -102,8 +66,8 @@ export default function VibrationExposureLineChartCard({ userId }: Props) {
 				/>
 			}
 		>
-			<ThresholdLine y={vibrationThreshold.danger} dangerLevel="danger" />
-			<ThresholdLine y={vibrationThreshold.warning} dangerLevel="warning" />
+			<ThresholdLine y={threshold.danger} dangerLevel="danger" />
+			<ThresholdLine y={threshold.warning} dangerLevel="warning" />
 		</BaseExposureLineChartCard>
 	);
 }

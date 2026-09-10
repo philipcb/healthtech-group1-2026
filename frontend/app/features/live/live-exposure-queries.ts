@@ -33,7 +33,6 @@ export interface LiveExposureWindow {
 	windowMinutes: number;
 }
 
-
 export function getLiveExposureWindow(userId: string, timeRange: TimeRangeOption): LiveExposureWindow {
 	const windowMinutes = TIME_RANGE_MINUTES[timeRange];
 	const end = startOfMinute(now());
@@ -41,7 +40,6 @@ export function getLiveExposureWindow(userId: string, timeRange: TimeRangeOption
 
 	return { userId, start, end, windowMinutes };
 }
-
 
 export function buildLiveExposureQueries({ userId, start, end, windowMinutes }: LiveExposureWindow) {
 	const windowed = { userId, queryKind: "windowed", windowMinutes } as const;

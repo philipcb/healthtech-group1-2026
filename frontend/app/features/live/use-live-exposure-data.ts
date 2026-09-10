@@ -7,7 +7,6 @@ import { useQueries } from "@tanstack/react-query";
 import { isWithinInterval } from "date-fns";
 import { useMemo } from "react";
 
-
 export function useLiveExposureData(userId: string, timeRange: TimeRangeOption) {
 	const liveWindow = getLiveExposureWindow(userId, timeRange);
 	const { start, end } = liveWindow;

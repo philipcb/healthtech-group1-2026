@@ -2,7 +2,6 @@ import { NotesCard } from "@/components/notes-card.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { LiveExposureCard } from "@/features/live-exposure-card/live-exposure-card.tsx";
 import {
 	buildLiveExposureQueries,
 	getLiveExposureWindow,
@@ -11,6 +10,7 @@ import {
 	type TimeRangeOption,
 } from "@/features/live/live-exposure-queries.ts";
 import { useLiveExposureData } from "@/features/live/use-live-exposure-data.ts";
+import { LiveExposureCard } from "@/features/live-exposure-card/live-exposure-card.tsx";
 import { SecurityRegulationsCard } from "@/features/security-regulations-card/security-regulations-card.tsx";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { useUser } from "@/features/user/user-context.tsx";

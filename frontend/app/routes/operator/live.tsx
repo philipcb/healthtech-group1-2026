@@ -29,8 +29,8 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 	const userId = searchParams.get("userId") ?? getStoredUser().id;
 	const liveWindow = getLiveExposureWindow(userId, resolveTimeRange(searchParams.get("timeRange")));
 	const queries = buildLiveExposureQueries(liveWindow);
-	await Promise.allSettled(queries.map((options) => queryClient.query(options)));
 
+	await Promise.allSettled(queries.map((options) => queryClient.ensureQueryData(options)));
 	return null;
 }
 

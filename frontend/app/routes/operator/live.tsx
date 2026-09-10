@@ -1,39 +1,38 @@
-import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { ExposureSlider } from "@/components/exposure-slider.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
+import { LiveExposureCard } from "@/features/live-exposure-card/live-exposure-card.tsx";
+import {
+	buildLiveExposureQueries,
+	getLiveExposureWindow,
+	parseTimeRange,
+	resolveTimeRange,
+	type TimeRangeOption,
+} from "@/features/live/live-exposure-queries.ts";
+import { useLiveExposureData } from "@/features/live/use-live-exposure-data.ts";
 import { SecurityRegulationsCard } from "@/features/security-regulations-card/security-regulations-card.tsx";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
+import { getStoredUser } from "@/features/user/user-utils.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { today as getToday, now, toTZDate } from "@/lib/date.ts";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import type { ExposureUnit } from "@/lib/exposures.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
-import { computeYAxisRange, DUST_Y_AXIS_STEP } from "@/lib/utils.ts";
-import type { TZDate } from "@date-fns/tz";
-import { useQueries } from "@tanstack/react-query";
-import { addMinutes, isWithinInterval, startOfDay, startOfMinute } from "date-fns";
+import { today as getToday } from "@/lib/date.ts";
+import { queryClient } from "@/lib/query-client.ts";
 import { Clock } from "lucide-react";
-import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useMemo } from "react";
+import { parseAsString, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
-import type { CurveType } from "recharts/types/shape/Curve";
+import type { Route } from "./+types/live";
 
-type TimeRangeOption = "30" | "60" | "180" | "480";
-const parseTimeRange = parseAsStringLiteral(["30", "60", "180", "480"]);
+// biome-ignore lint/style/useComponentExportOnlyModules: Route files must export framework-specific functions like clientLoader
+export async function clientLoader({ request }: Route.ClientLoaderArgs) {
+	const { searchParams } = new URL(request.url);
+	const userId = searchParams.get("userId") ?? getStoredUser().id;
+	const liveWindow = getLiveExposureWindow(userId, resolveTimeRange(searchParams.get("timeRange")));
+	const queries = buildLiveExposureQueries(liveWindow);
+	await Promise.allSettled(queries.map((options) => queryClient.query(options)));
 
-const TIME_RANGE_MINUTES: Record<TimeRangeOption, number> = {
-	"30": 30,
-	"60": 60,
-	"180": 180,
-	"480": 480,
-};
+	return null;
+}
 
 export default function OperatorLiveView() {
 	const { user } = useUser();
@@ -47,92 +46,10 @@ export default function OperatorLiveView() {
 
 	const targetUserId = selectedUserId ?? user.id;
 
-	const timeRangeInMinutes = TIME_RANGE_MINUTES[timeRange];
-
-	const startOfCurrentMinute = startOfMinute(now());
-	const end = startOfCurrentMinute;
-	const start = addMinutes(startOfCurrentMinute, -timeRangeInMinutes);
-
-	const [dustTwa1Result, dustTwa25Result, dustTwa10Result, noiseResult, vibrationResult] = useQueries({
-		queries: [
-			exposureQueryOptions({
-				exposure: "dust",
-				query: buildExposureQuery("dust", "day", end, {
-					granularity: "minute",
-					aggregationFunction: "avg",
-					field: "pm1_twa",
-					startTime: start,
-					endTime: end,
-				}),
-				userId: targetUserId,
-				queryKind: "windowed",
-				windowMinutes: timeRangeInMinutes,
-			}),
-			exposureQueryOptions({
-				exposure: "dust",
-				query: buildExposureQuery("dust", "day", end, {
-					granularity: "minute",
-					aggregationFunction: "avg",
-					field: "pm25_twa",
-					startTime: start,
-					endTime: end,
-				}),
-				userId: targetUserId,
-				queryKind: "windowed",
-				windowMinutes: timeRangeInMinutes,
-			}),
-			exposureQueryOptions({
-				exposure: "dust",
-				query: buildExposureQuery("dust", "day", end, {
-					granularity: "minute",
-					aggregationFunction: "avg",
-					field: "pm10_twa",
-					startTime: start,
-					endTime: end,
-				}),
-				userId: targetUserId,
-				queryKind: "windowed",
-				windowMinutes: timeRangeInMinutes,
-			}),
-			exposureQueryOptions({
-				exposure: "noise",
-				query: buildExposureQuery("noise", "day", end, {
-					granularity: "minute",
-					startTime: start,
-					endTime: end,
-				}),
-				userId: targetUserId,
-				queryKind: "windowed",
-				windowMinutes: timeRangeInMinutes,
-			}),
-			exposureQueryOptions({
-				exposure: "vibration",
-				query: buildExposureQuery("vibration", "day", end, {
-					granularity: "minute",
-					startTime: toTZDate(startOfDay(start)),
-					endTime: end,
-				}),
-				userId: targetUserId,
-				queryKind: "windowed",
-				windowMinutes: timeRangeInMinutes,
-			}),
-		],
-	});
-
-	const dustTwa1Data = dustTwa1Result.data?.data ?? [];
-	const dustTwa25Data = dustTwa25Result.data?.data ?? [];
-	const dustTwa10Data = dustTwa10Result.data?.data ?? [];
-	const noiseData = noiseResult.data?.data ?? [];
-	const rawVibrationData = vibrationResult.data?.data ?? [];
-
-	// Since vibration is cumulative over the day we have to fetch data from the start of the day and then filter it to the selected time range
-	const vibrationData = useMemo(() => {
-		if (!rawVibrationData) {
-			return [];
-		}
-
-		return rawVibrationData.filter((d) => isWithinInterval(d.time, { start, end }));
-	}, [rawVibrationData, start, end]);
+	const { start, end, dustTwa1Data, dustTwa25Data, dustTwa10Data, noiseData, vibrationData } = useLiveExposureData(
+		targetUserId,
+		timeRange,
+	);
 
 	const formattedDate = formatDate(today, i18n.language === "en" ? "MMM d, yyyy" : "d. MMM yyyy");
 
@@ -286,86 +203,3 @@ export default function OperatorLiveView() {
 		</div>
 	);
 }
-
-interface LiveExposureCardProps {
-	exposure: "dust" | "noise" | "vibration";
-	exposureLabel: string;
-	exposureField?: ExposureTypeField;
-	exposureUnitLabel: string;
-	chartUnit: ExposureUnit;
-	data: Array<ExposureDto>;
-	minTime: TZDate;
-	maxTime: TZDate;
-	chartClassName?: string;
-	showLegend?: boolean;
-	lineType?: CurveType;
-}
-
-const LiveExposureCard = ({
-	exposure,
-	exposureLabel,
-	exposureField,
-	exposureUnitLabel,
-	chartUnit,
-	minTime,
-	data,
-	maxTime,
-	chartClassName,
-	showLegend = false,
-	lineType,
-}: LiveExposureCardProps) => {
-	const maxValue = Math.max(...data.map((d) => d.value));
-
-	const minY = 0;
-	let maxY = exposure === "vibration" ? 450 : exposure === "noise" ? 150 : 45;
-	if (maxValue > maxY) {
-		maxY =
-			exposure === "dust"
-				? computeYAxisRange(data ?? [], {
-						step: DUST_Y_AXIS_STEP,
-						topPadding: DUST_Y_AXIS_STEP,
-					}).maxY
-				: computeYAxisRange(data ?? []).maxY;
-	}
-
-	const threshold = getThreshold(exposure, exposureField);
-	const latestData = data.at(-1);
-	const latestValue = latestData?.value;
-	const latestDangerLevel = latestData?.dangerLevel;
-
-	return (
-		<div className="flex w-full gap-4">
-			<ExposureSlider
-				label={exposureLabel}
-				exposure={exposure}
-				field={exposureField}
-				value={latestValue}
-				dangerLevel={latestDangerLevel}
-				unitLabel={exposureUnitLabel}
-				className="w-48"
-			/>
-			<div className="w-128 flex-1 self-stretch">
-				<BaseExposureLineChartCard
-					minTime={minTime}
-					maxTime={maxTime}
-					chartData={data}
-					unit={chartUnit}
-					maxY={maxY}
-					minY={minY}
-					lineType={lineType}
-					exposure={exposure}
-					variant="compact"
-					className={chartClassName}
-					contentClassName="p-0"
-					chartContainerClassName="!aspect-auto"
-					showLegend={showLegend}
-					xAxisMode="windowed"
-					dustField={exposureField}
-				>
-					<ThresholdLine y={threshold.danger} dangerLevel="danger" />
-					<ThresholdLine y={threshold.warning} dangerLevel="warning" />
-				</BaseExposureLineChartCard>
-			</div>
-		</div>
-	);
-};

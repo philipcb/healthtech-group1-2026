@@ -14,6 +14,7 @@ import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { TeamSummary } from "@/features/sidebar/team-summary.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { UserSelect } from "@/features/user/user-select.tsx";
+import { UserDetails } from "@/features/user-details/user-details.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { ViewPicker } from "@/features/views/view-picker.tsx";
 import type { TranslateFn } from "@/i18n/config.ts";
@@ -27,7 +28,6 @@ import { subDays } from "date-fns";
 import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
-import { UserDetails } from "./user-details.tsx";
 
 export default function ForemanOverview() {
 	const { t } = useTranslation();

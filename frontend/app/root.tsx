@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/features/dark-mode/theme-provider.tsx";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client.ts";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { setDefaultOptions } from "date-fns";
 import { NuqsAdapter } from "nuqs/adapters/react-router/v7";
@@ -61,8 +62,6 @@ export function Layout({ children }: { children: ReactNode }) {
 		</html>
 	);
 }
-
-const queryClient = new QueryClient();
 
 export default function App() {
 	return (

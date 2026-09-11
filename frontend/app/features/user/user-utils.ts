@@ -24,3 +24,17 @@ export const DEFAULT_USER: User = {
 		building: "Bygg 1",
 	},
 };
+
+export function getStoredUser(): User {
+	try {
+		const stored = localStorage.getItem(USER_STORAGE_KEY);
+
+		if (stored) {
+			return JSON.parse(stored) as User;
+		}
+	} catch (error) {
+		console.error("Failed to parse user from local storage", error);
+	}
+
+	return DEFAULT_USER;
+}

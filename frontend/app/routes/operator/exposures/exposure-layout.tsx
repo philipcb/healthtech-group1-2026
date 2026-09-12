@@ -2,7 +2,9 @@ import { DatePicker } from "@/components/date-picker.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
+import { PdfExportDialog } from "@/features/pdf-export/pdf-export-dialog.tsx";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
 import { useView } from "@/features/views/use-view.ts";
@@ -15,6 +17,8 @@ import type { View } from "@/lib/views.ts";
 import { Card } from "@/ui/card.tsx";
 import type { TZDate } from "@date-fns/tz";
 import { getISOWeek } from "date-fns";
+import { FileText } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router";
 
@@ -24,6 +28,7 @@ export default function ExposureLayout() {
 	const { view } = useView();
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
+	const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
 
 	// pathname is "/operator" or "/operator/<exposure>"
 	const exposure = toExposure(pathname.split("/").at(-1) ?? "");
@@ -77,6 +82,16 @@ export default function ExposureLayout() {
 			<aside className="col-start-1 row-start-2 flex flex-col gap-4">
 				<NotesCard />
 				<LimitExplanation />
+				<Card muted={true} className="p-4">
+					<Button
+						variant="outline"
+						className="w-full"
+						onClick={() => setPdfDialogOpen(true)}
+					>
+						<FileText className="size-4" />
+						{t(($) => $.layout.exportPdf)}
+					</Button>
+				</Card>
 			</aside>
 
 			<article className="col-start-2 row-start-2 flex flex-col gap-4">
@@ -93,6 +108,12 @@ export default function ExposureLayout() {
 					<DatePicker mode={view} showWeekNumber={true} date={date} onDateChange={setDate} />
 				</Card>
 			</aside>
+
+			<PdfExportDialog
+				open={pdfDialogOpen}
+				onOpenChange={setPdfDialogOpen}
+				exposureType={exposure ?? "all"}
+			/>
 		</div>
 	);
 }

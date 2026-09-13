@@ -83,12 +83,7 @@ export default function ExposureLayout() {
 				<NotesCard />
 				<LimitExplanation />
 				<Card muted={true} className="p-4">
-					<Button
-						
-						variant="outline"
-						className="w-full"
-						onClick={() => setPdfDialogOpen(true)}
-					>
+					<Button variant="outline" className="w-full" onClick={() => setPdfDialogOpen(true)}>
 						<FileText className="size-4" />
 						{t(($) => $.layout.exportPdf)}
 					</Button>
@@ -110,11 +105,7 @@ export default function ExposureLayout() {
 				</Card>
 			</aside>
 
-			<PdfExportDialog
-				open={pdfDialogOpen}
-				onOpenChange={setPdfDialogOpen}
-				exposureType={exposure ?? "all"}
-			/>
+			<PdfExportDialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen} exposureType={exposure ?? "all"} />
 		</div>
 	);
 }

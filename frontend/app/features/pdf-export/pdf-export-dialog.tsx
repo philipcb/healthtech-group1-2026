@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button.tsx";
 import { DatePicker } from "@/components/date-picker.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import {
 	Dialog,
 	DialogContent,
@@ -10,17 +10,17 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { useUser } from "@/features/user/user-context.tsx";
+import type { View } from "@/features/views/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
-import { useUser } from "@/features/user/user-context.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { TZDate } from "@date-fns/tz";
-import { addMonths, addWeeks, startOfMonth, startOfWeek, subMilliseconds, isToday, eachDayOfInterval, endOfWeek, endOfMonth } from "date-fns";
-import { useState, useCallback, useRef } from "react";
+import { addMonths, addWeeks, isToday, startOfMonth, startOfWeek, subMilliseconds } from "date-fns";
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from "lucide-react";
-import type { View } from "@/features/views/views.ts";
 
 /**
  * PDF Export Dialog Component
@@ -46,7 +46,6 @@ interface PdfExportDialogProps {
 }
 
 export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportDialogProps) {
-
 	// Hooks: Get translation, user info, and PDF export functionality
 	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
 	const { user } = useUser(); // Current logged-in user (used in PDF filename)
@@ -58,9 +57,9 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	// currently shown on screen.
 	const [localView, setLocalView] = useState<View>("day"); // "day" | "week" | "month"
 	const [localDate, setLocalDate] = useState<TZDate>(today()); // The selected date in dialog
-	const [elementIds, setElementIds] = useState<string[]>([]); // HTML element IDs to capture as PDF
 	const [isExporting, setIsExporting] = useState(false); // Loading state during PDF generation
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
+	const [exportError, setExportError] = useState<string | null>(null);
 
 	// Helper function: Calculate date range from selected view/date
 	/**
@@ -122,15 +121,14 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	};
 
 	// Ref to store promise resolver for IDs
-	const idsResolverRef = useRef<((ids: string[]) => void) | null>(null);
+	const idsResolverRef = useRef<((ids: Array<string>) => void) | null>(null);
 
 	// Callback: Receive element IDs from PdfRenderer
 	/**
 	 * Called by PdfRenderer when it has rendered the charts and knows their HTML element IDs.
 	 * These IDs are needed by useExportPDF to find the elements to capture as PDF.
 	 */
-	const handleIdsReady = useCallback((ids: string[]) => {
-		setElementIds(ids);
+	const handleIdsReady = useCallback((ids: Array<string>) => {
 		// Resolve the promise if we're waiting for IDs
 		if (idsResolverRef.current) {
 			idsResolverRef.current(ids);
@@ -149,29 +147,29 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	 */
 	const handleExport = async () => {
 		setIsExporting(true);
-		setElementIds([]); // Reset element IDs before rendering new charts
+		setExportError(null);
 		setShouldRenderCharts(true); // Start rendering charts
-		const startTime = performance.now();
+		const _startTime = performance.now();
 
 		// Wait for charts to render and report their IDs
 		// Create a promise that resolves when handleIdsReady is called
-		const idsPromise = new Promise<string[]>((resolve) => {
+		const idsPromise = new Promise<Array<string>>((resolve) => {
 			idsResolverRef.current = resolve;
 		});
 
 		// Wait for IDs with timeout
-		const timeoutPromise = new Promise<string[]>((_, reject) => {
+		const timeoutPromise = new Promise<Array<string>>((_, reject) => {
 			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), 5000);
 		});
 
-		let ids: string[];
+		let ids: Array<string>;
 		try {
 			ids = await Promise.race([idsPromise, timeoutPromise]);
 		} catch (error) {
 			console.error("PDF export failed:", error);
 			setIsExporting(false);
 			setShouldRenderCharts(false);
-			alert("Kunne ikke generere PDF. Prøv igjen.");
+			setExportError("Could not generate PDF. Try again.");
 			return;
 		}
 
@@ -180,7 +178,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			console.error("No chart elements ready for export");
 			setIsExporting(false);
 			setShouldRenderCharts(false);
-			alert("Kunne ikke generere PDF. Ingen grafer funnet.");
+			setExportError("Could not generate PDF. No charts found.");
 			return;
 		}
 
@@ -193,20 +191,21 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Generate titles: one for each exposure type
 		// (Week/Month views render ONE aggregated chart per exposure type, not per-day)
-		const titles: string[] = [];
+		const titles: Array<string> = [];
 
 		for (const exposure of exposuresToRender) {
 			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
 
 			// For day view: use single date
 			// For week/month view: use date range
-			const dateText = localView === "day"
-				? localDate.toLocaleDateString(i18n.language, {
-						day: "numeric",
-						month: "long",
-						year: "numeric",
-					})
-				: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
+			const dateText =
+				localView === "day"
+					? localDate.toLocaleDateString(i18n.language, {
+							day: "numeric",
+							month: "long",
+							year: "numeric",
+						})
+					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
 			titles.push(`${exposureName} - ${user.name} - ${dateText}`);
 		}
@@ -227,12 +226,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		await exportMultipleToPDF(ids, fileName, titles);
 
 		// Log timing to console for performance monitoring (NFR-1: target <5s)
-		const endTime = performance.now();
-		console.log(`PDF generation took ${((endTime - startTime) / 1000).toFixed(2)}s`);
+		const _endTime = performance.now();
 
 		setIsExporting(false);
 		setShouldRenderCharts(false); // Clean up charts
-		setElementIds([]); // Reset for next export
 		onOpenChange(false); // Close the dialog
 	};
 
@@ -334,6 +331,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						/>
 					</div>
 				</div>
+
+				{exportError && <p className="text-destructive text-sm">{exportError}</p>}
 
 				{/* Footer buttons (Cancel / Export) */}
 				<DialogFooter>

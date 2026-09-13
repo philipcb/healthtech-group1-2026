@@ -1,21 +1,19 @@
-import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import { downsampleExposureData } from "@/lib/utils.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
+import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
 import type { View } from "@/features/views/views.ts";
-import { TZDate } from "@date-fns/tz";
-import type { Exposure } from "@/lib/exposures.ts";
-import type { ExposureTypeField, ExposureDto } from "@/lib/dto/exposure.ts";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { setHours } from "date-fns";
-import { getHourDomain } from "@/lib/utils.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
+import { exposureQueryOptions } from "@/lib/api.ts";
+import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
+import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
+import type { Exposure } from "@/lib/exposures.ts";
+import { getThreshold } from "@/lib/thresholds.ts";
+import { downsampleExposureData, getHourDomain } from "@/lib/utils.ts";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { setHours } from "date-fns";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 /**
  * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
@@ -27,13 +25,12 @@ import { TIMEZONE } from "@/i18n/locale.ts";
  * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
  */
 
-
 interface PdfChartRendererProps {
 	exposureType: "dust" | "noise" | "vibration" | "all";
 	view: View;
 	date: Date;
 	userId: string;
-	onIdsReady: (ids: string[]) => void;
+	onIdsReady: (ids: Array<string>) => void;
 }
 
 /**
@@ -258,10 +255,7 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 	const [hasReported, setHasReported] = useState(false);
 
 	// Calculate which exposure types to render
-	const exposuresToRender: Exposure[] =
-		exposureType === "all"
-			? ["dust", "noise", "vibration"]
-			: [exposureType];
+	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 
 	// Calculate expected number of charts
 	// - Day view: 1 chart per exposure type
@@ -304,30 +298,28 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 				left: "-9999px",
 			}}
 		>
-			{view === "day" ? (
-				// Day view: render one SingleDayChartRenderer per exposure type
-				exposuresToRender.map((exposure) => (
-					<SingleDayChartRenderer
-						key={exposure}
-						exposure={exposure}
-						date={date}
-						userId={userId}
-						onIdReady={handleIdReady}
-					/>
-				))
-			) : (
-				// Week/Month view: render one TrendChartRenderer per exposure type
-				exposuresToRender.map((exposure) => (
-					<TrendChartRenderer
-						key={exposure}
-						exposure={exposure}
-						date={date}
-						view={view}
-						userId={userId}
-						onIdReady={handleIdReady}
-					/>
-				))
-			)}
+			{view === "day"
+				? // Day view: render one SingleDayChartRenderer per exposure type
+					exposuresToRender.map((exposure) => (
+						<SingleDayChartRenderer
+							key={exposure}
+							exposure={exposure}
+							date={date}
+							userId={userId}
+							onIdReady={handleIdReady}
+						/>
+					))
+				: // Week/Month view: render one TrendChartRenderer per exposure type
+					exposuresToRender.map((exposure) => (
+						<TrendChartRenderer
+							key={exposure}
+							exposure={exposure}
+							date={date}
+							view={view}
+							userId={userId}
+							onIdReady={handleIdReady}
+						/>
+					))}
 		</div>
 	);
 }

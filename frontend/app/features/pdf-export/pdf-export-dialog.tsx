@@ -26,19 +26,9 @@ import type { View } from "@/features/views/views.ts";
  * PDF Export Dialog Component
  *
  * This file provides a dialog UI for selecting a date range before exporting exposure data to PDF.
- * It's a popup that appears when the user clicks the "Eksporter PDF" button in the left sidebar.
- *
- * Key responsibilities:
- * 1. Let user select view type (Day/Week/Month) and date using a calendar
- * 2. Render exposure charts off-screen with the selected date/view using PdfRenderer
- * 3. Trigger PDF generation via the useExportPDF hook
+ * It's a popup that appears when the user clicks the "Eksport PDF" button in the left sidebar.
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
- * Dependencies:
- *   - PdfRenderer: Renders charts invisibly with custom date/view
- *   - useExportPDF: Hook that converts HTML elements to PDF using jsPDF
- *   - DatePicker: Calendar component reused from the right sidebar
- *   - Dialog: Radix UI modal component
  */
 
 /**
@@ -195,43 +185,33 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		}
 
 		// Generate a title for each chart page in the PDF
-		// Calculate which days we're rendering
-		const daysToRender = (() => {
-			if (localView === "day") {
-				return [localDate];
-			}
-
-			if (localView === "week") {
-				const start = startOfWeek(localDate, { weekStartsOn: 1, in: TIMEZONE });
-				const end = endOfWeek(localDate, { weekStartsOn: 1, in: TIMEZONE });
-				return eachDayOfInterval({ start, end });
-			}
-
-			// month
-			const start = startOfMonth(localDate, { in: TIMEZONE });
-			const end = endOfMonth(localDate, { in: TIMEZONE });
-			return eachDayOfInterval({ start, end });
-		})();
-
 		// Calculate exposure types
 		const exposuresToRender = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 
-		// Generate titles: one for each exposure + day combination
+		// Get date range for titles and filename
+		const { start, end } = getRangeFromSelection();
+
+		// Generate titles: one for each exposure type
+		// (Week/Month views render ONE aggregated chart per exposure type, not per-day)
 		const titles: string[] = [];
+
 		for (const exposure of exposuresToRender) {
-			for (const dayDate of daysToRender) {
-				const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
-				const dateText = dayDate.toLocaleDateString(i18n.language, {
-					day: "numeric",
-					month: "long",
-					year: "numeric",
-				});
-				titles.push(`${exposureName} - ${user.name} - ${dateText}`);
-			}
+			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
+
+			// For day view: use single date
+			// For week/month view: use date range
+			const dateText = localView === "day"
+				? localDate.toLocaleDateString(i18n.language, {
+						day: "numeric",
+						month: "long",
+						year: "numeric",
+					})
+				: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
+
+			titles.push(`${exposureName} - ${user.name} - ${dateText}`);
 		}
 
 		// Generate filename with date range
-		const { start, end } = getRangeFromSelection();
 		const fileNameDate =
 			localView === "day"
 				? localDate.toLocaleDateString(i18n.language, {

@@ -1,32 +1,28 @@
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
+import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
+import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
 import type { View } from "@/features/views/views.ts";
 import { TZDate } from "@date-fns/tz";
 import type { Exposure } from "@/lib/exposures.ts";
-import { useQuery } from "@tanstack/react-query";
+import type { ExposureTypeField, ExposureDto } from "@/lib/dto/exposure.ts";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { setHours, addDays, eachDayOfInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { setHours } from "date-fns";
 import { getHourDomain } from "@/lib/utils.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 
 /**
- * PDF Chart Renderer - Simplified Off-Screen Chart Rendering
+ * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
  *
- * This component renders exposure charts off-screen for PDF export WITHOUT using React Context override.
- * Instead of the complex Context Provider pattern, we simply:
- * 1. Fetch data for the selected date range using a direct API call
- * 2. Render chart components with that data as props
- * 3. Report element IDs back to parent for PDF capture
- *
- * This is MUCH simpler than pdf-renderer.tsx because:
- * - No Context override needed
- * - Direct data fetching instead of hook-based
- * - Props-based rendering instead of global state
+ * This component renders exposure charts off-screen for PDF export:
+ * - Day view: renders one SingleDayChart per exposure type (hour-based, single day)
+ * - Week/Month view: renders one aggregated TrendLineChart per exposure type (same as live page)
  *
  * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
  */
@@ -41,9 +37,9 @@ interface PdfChartRendererProps {
 }
 
 /**
- * Single chart renderer - handles one exposure type for ONE day
+ * Single day chart renderer - handles one exposure type for ONE day (hour-based X-axis)
  */
-function SingleDayChart({
+function SingleDayChartRenderer({
 	exposure,
 	date,
 	userId,
@@ -65,7 +61,7 @@ function SingleDayChart({
 		usePeakAggregation: false,
 	});
 
-	// Fetch data directly (no hooks, no context)
+	// Fetch data directly
 	const { data: response, isLoading } = useQuery(
 		exposureQueryOptions({
 			exposure,
@@ -139,34 +135,127 @@ function SingleDayChart({
 }
 
 /**
+ * Aggregated trend chart renderer - handles one exposure type for week/month view
+ * Uses the same TrendLineChart component as the live page (reuses useExposureTrendData logic inline)
+ */
+function TrendChartRenderer({
+	exposure,
+	date,
+	view,
+	userId,
+	onIdReady,
+}: {
+	exposure: Exposure;
+	date: Date;
+	view: "week" | "month";
+	userId: string;
+	onIdReady: (id: string) => void;
+}) {
+	const chartId = useId();
+	const tzDate = TIMEZONE(date);
+
+	// Determine which fields to query based on exposure type
+	// (matches DustTrendLineChartCard, NoiseTrendLineChartCard, VibrationTrendLineChartCard)
+	const fields: Array<ExposureTypeField | undefined> = (() => {
+		if (exposure === "dust") {
+			return ["pm1_twa", "pm25_twa", "pm4_twa", "pm10_twa"];
+		}
+		return [undefined]; // noise and vibration have no fields
+	})();
+
+	const granularity: "day" | "week" = view === "week" ? "day" : "week";
+
+	// Fetch data for all fields (replicating useExposureTrendData logic)
+	const queryResults = useQueries({
+		queries: fields.map((field) =>
+			exposureQueryOptions({
+				exposure,
+				query: buildExposureQuery(exposure, view, tzDate, {
+					field,
+					usePeakAggregation: false,
+					aggregationFunction: exposure === "dust" ? "max" : undefined,
+					granularity: "day", // Always use "day" granularity for fetching (matches DustTrendLineChartCard)
+				}),
+				userId,
+			}),
+		),
+	});
+
+	const isLoading = queryResults.some((q) => q.isLoading);
+
+	// Build series data (matching useExposureTrendData)
+	const series = fields.map((field, index) => {
+		const rawData = queryResults[index]?.data?.data ?? [];
+		// Apply weekly max aggregation if granularity is "week" (matches useExposureTrendData)
+		const data = granularity === "week" ? toWeeklyMax(rawData) : rawData;
+
+		return {
+			field,
+			data,
+			exposure,
+			exposureField: field,
+		};
+	});
+
+	// Calculate Y-axis range (matching useExposureTrendData)
+	const { minY, maxY } = getExposureYAxisRange(
+		exposure,
+		series.flatMap((s) => s.data),
+		{ usePeakAggregation: false },
+	);
+
+	// Report ID when chart is ready
+	useEffect(() => {
+		if (!isLoading) {
+			const timer = setTimeout(() => {
+				onIdReady(chartId);
+			}, 200);
+			return () => clearTimeout(timer);
+		}
+	}, [isLoading, chartId, onIdReady]);
+
+	if (isLoading) {
+		return null;
+	}
+
+	// Determine unit based on exposure type
+	const unit = exposure === "dust" ? "ug" : exposure === "noise" ? "db" : "points";
+
+	return (
+		<div
+			id={chartId}
+			style={{
+				width: "1200px",
+				height: "500px",
+				background: "white",
+				padding: "20px",
+				boxSizing: "border-box",
+			}}
+		>
+			<div style={{ width: "1160px", height: "460px" }}>
+				<TrendLineChart
+					selectedDate={tzDate}
+					granularity={granularity}
+					unit={unit}
+					minY={minY}
+					maxY={maxY}
+					series={series}
+				/>
+			</div>
+		</div>
+	);
+}
+
+/**
  * Main renderer - coordinates all charts and reports IDs
  *
- * For "day" view: renders 1 chart per exposure type
- * For "week" view: renders 7 charts (one per day) per exposure type
- * For "month" view: renders up to 31 charts (one per day) per exposure type
+ * For "day" view: renders 1 SingleDayChartRenderer per exposure type
+ * For "week"/"month" view: renders 1 TrendChartRenderer per exposure type (aggregated, not per-day)
  */
 export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady }: PdfChartRendererProps) {
 	// Use ref to persist IDs across renders without causing re-renders
 	const collectedIdsRef = useRef<Set<string>>(new Set());
 	const [hasReported, setHasReported] = useState(false);
-
-	// Calculate which days to render charts for
-	const daysToRender = (() => {
-		if (view === "day") {
-			return [date];
-		}
-
-		if (view === "week") {
-			const start = startOfWeek(date, { weekStartsOn: 1, in: TIMEZONE });
-			const end = endOfWeek(date, { weekStartsOn: 1, in: TIMEZONE });
-			return eachDayOfInterval({ start, end });
-		}
-
-		// month
-		const start = startOfMonth(date, { in: TIMEZONE });
-		const end = endOfMonth(date, { in: TIMEZONE });
-		return eachDayOfInterval({ start, end });
-	})();
 
 	// Calculate which exposure types to render
 	const exposuresToRender: Exposure[] =
@@ -175,7 +264,9 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 			: [exposureType];
 
 	// Calculate expected number of charts
-	const expectedCount = daysToRender.length * exposuresToRender.length;
+	// - Day view: 1 chart per exposure type
+	// - Week/Month view: 1 chart per exposure type
+	const expectedCount = exposuresToRender.length;
 
 	const handleIdReady = useCallback(
 		(id: string) => {
@@ -213,13 +304,25 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 				left: "-9999px",
 			}}
 		>
-			{/* Render one chart for each combination of exposure type and day */}
-			{exposuresToRender.map((exposure) =>
-				daysToRender.map((dayDate, index) => (
-					<SingleDayChart
-						key={`${exposure}-${dayDate.getTime()}`}
+			{view === "day" ? (
+				// Day view: render one SingleDayChartRenderer per exposure type
+				exposuresToRender.map((exposure) => (
+					<SingleDayChartRenderer
+						key={exposure}
 						exposure={exposure}
-						date={dayDate}
+						date={date}
+						userId={userId}
+						onIdReady={handleIdReady}
+					/>
+				))
+			) : (
+				// Week/Month view: render one TrendChartRenderer per exposure type
+				exposuresToRender.map((exposure) => (
+					<TrendChartRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						view={view}
 						userId={userId}
 						onIdReady={handleIdReady}
 					/>

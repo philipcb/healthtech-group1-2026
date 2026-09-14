@@ -1,5 +1,3 @@
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
-import type { View } from "@/features/views/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { endOfDay, endOfMonth, endOfWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
 import type {
@@ -9,6 +7,8 @@ import type {
 	ExposureTypeField,
 	GranularityKey,
 } from "./dto/exposure.ts";
+import type { Exposure } from "./exposures.ts";
+import type { View } from "./views.ts";
 
 function getGranularityFromView(view: View, isOverview?: boolean): GranularityKey {
 	switch (view) {

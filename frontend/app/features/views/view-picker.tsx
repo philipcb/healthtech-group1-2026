@@ -3,13 +3,13 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { cn } from "@/lib/utils.ts";
+import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { isAfter, isBefore, isEqual, isToday } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDate } from "../date-picker/use-date.ts";
 import { useView } from "./use-view.ts";
-import type { View } from "./utils.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "./views.ts";
 
 interface ViewPickerProps {

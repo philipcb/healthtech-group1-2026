@@ -1,5 +1,5 @@
+import type { View } from "@/lib/views.ts";
 import { createContext, useContext } from "react";
-import type { View } from "./views.ts";
 
 export const ViewContext = createContext<{
 	view: View;

@@ -1,4 +1,4 @@
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { z } from "zod";
 
 export const ExposureThresholdSummarySchema = z.object({

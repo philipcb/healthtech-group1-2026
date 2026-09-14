@@ -3,12 +3,12 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 export function useRoleRedirect() {
-	const { user, isLoading: isUserLoading } = useUser();
+	const { user } = useUser();
 	const location = useLocation();
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (!user?.role || isUserLoading) {
+		if (!user?.role) {
 			return;
 		}
 
@@ -24,5 +24,5 @@ export function useRoleRedirect() {
 		if (user.role === "foreman" && isOperatorRoute) {
 			navigate("/foreman", { replace: true });
 		}
-	}, [user?.role, location.pathname, navigate, isUserLoading]);
+	}, [user?.role, location.pathname, navigate]);
 }

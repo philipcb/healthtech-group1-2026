@@ -1,5 +1,6 @@
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { type FormatOptions, formatDate, type Locale } from "date-fns";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 export const getFormatOptions = (i18nLanguage: string | Locale | null | undefined) => {
@@ -29,12 +30,15 @@ export const getFormatOptions = (i18nLanguage: string | Locale | null | undefine
 export const useFormatDate = () => {
 	const { i18n } = useTranslation();
 
-	return (...args: Parameters<typeof formatDate>) => {
-		const [date, formatStr, options] = args;
+	return useCallback(
+		(...args: Parameters<typeof formatDate>) => {
+			const [date, formatStr, options] = args;
 
-		return formatDate(date, formatStr, {
-			...getFormatOptions(i18n.language),
-			...options,
-		});
-	};
+			return formatDate(date, formatStr, {
+				...getFormatOptions(i18n.language),
+				...options,
+			});
+		},
+		[i18n.language],
+	);
 };

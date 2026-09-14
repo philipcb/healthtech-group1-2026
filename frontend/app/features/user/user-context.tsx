@@ -3,7 +3,6 @@ import { createContext, useContext } from "react";
 
 type UserContextType = {
 	user: User;
-	isLoading: boolean;
 	setUser: (user: User) => void;
 };
 

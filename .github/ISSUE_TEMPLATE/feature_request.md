@@ -32,10 +32,14 @@ List the concrete functionality the system must provide.
 
 ---
 
+## Acceptance Criterias
+
+<!-- Define how the functional requirement can be verified. Acceptance criteria should be specific, measurable, and testable. -->
+
+- [ ] 
+- [ ] 
+- [ ] 
+
+---
+
 ## Additional Context
-
-<!--
-Add relevant information, screenshots, designs, links, or technical considerations.
--->
-
-<!-- Screenshots / mockups: -->

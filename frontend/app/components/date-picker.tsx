@@ -30,7 +30,6 @@ export function DatePicker({
 	const formatDate = useFormatDate();
 	const { t, i18n } = useTranslation();
 
-	const [selectedDate, setSelectedDate] = useState<TZDate>(date);
 	const [month, setMonth] = useState<Date>(date);
 
 	useEffect(() => {
@@ -38,7 +37,6 @@ export function DatePicker({
 			return;
 		}
 
-		setSelectedDate((prev) => (prev.getTime() === date.getTime() ? prev : date));
 		setMonth(date);
 	}, [date]);
 
@@ -48,11 +46,11 @@ export function DatePicker({
 		}
 
 		if (mode === "week") {
-			return startOfWeek(selectedDate, { weekStartsOn: 1, in: TIMEZONE });
+			return startOfWeek(date, { weekStartsOn: 1, in: TIMEZONE });
 		}
 
-		return startOfMonth(selectedDate, { in: TIMEZONE });
-	}, [mode, selectedDate]);
+		return startOfMonth(date, { in: TIMEZONE });
+	}, [mode, date]);
 
 	const rangeEnd = useMemo(() => {
 		if (mode === "day" || !rangeStart) {
@@ -68,7 +66,6 @@ export function DatePicker({
 		(clickedDate: Date) => {
 			const tzDate = new TZDate(clickedDate, TIMEZONE_NAME);
 
-			setSelectedDate(tzDate);
 			onDateChange(tzDate);
 		},
 		[onDateChange],
@@ -76,7 +73,7 @@ export function DatePicker({
 
 	const calendarProps = {
 		locale: locale || { code: i18n.language },
-		defaultMonth: selectedDate,
+		defaultMonth: date,
 		timeZone: TIMEZONE_NAME,
 		weekStartsOn: 1,
 		...props,
@@ -101,7 +98,7 @@ export function DatePicker({
 				};
 
 	const selectionDetail = formatSelection(
-		rangeStart && rangeEnd ? [rangeStart, rangeEnd] : selectedDate,
+		rangeStart && rangeEnd ? [rangeStart, rangeEnd] : date,
 		i18n.language,
 		formatDate,
 	);
@@ -120,7 +117,7 @@ export function DatePicker({
 			required={true}
 			month={month}
 			onMonthChange={(monthDate) => setMonth(monthDate)}
-			selected={selectedDate}
+			selected={date}
 			onSelect={handleDayClick}
 			modifiers={modifiers}
 			captionLayout="dropdown"

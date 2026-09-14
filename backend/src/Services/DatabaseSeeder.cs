@@ -1,4 +1,5 @@
 using Backend.Models;
+using Backend.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
@@ -194,6 +195,200 @@ public class DatabaseSeeder
 
 		dbContext.Set<Location>().AddRange(locationsToAdd);
 		dbContext.Set<User>().AddRange(usersToAdd);
+		await dbContext.SaveChangesAsync(ct);
+
+		HashSet<Guid> managerIds = seedUserManagers
+			.Select(seedUserManager => seedUserManager.ManagerId)
+			.ToHashSet();
+
+		Dictionary<Guid, User> managers = await dbContext
+			.Set<User>()
+			.Where(user => managerIds.Contains(user.Id))
+			.Include(user => user.Subordinates)
+			.ToDictionaryAsync(user => user.Id, ct);
+
+		HashSet<Guid> subordinateIds = seedUserManagers
+			.Select(seedUserManager => seedUserManager.SubordinateId)
+			.ToHashSet();
+
+		Dictionary<Guid, User> subordinates = await dbContext
+			.Set<User>()
+			.Where(user => subordinateIds.Contains(user.Id))
+			.ToDictionaryAsync(user => user.Id, ct);
+
+		bool addedManagerLinks = false;
+
+		foreach ((Guid managerId, Guid subordinateId) in seedUserManagers)
+		{
+			if (!managers.TryGetValue(managerId, out User? manager))
+			{
+				continue;
+			}
+
+			if (!subordinates.TryGetValue(subordinateId, out User? subordinate))
+			{
+				continue;
+			}
+
+			if (manager.Subordinates.Any(existing => existing.Id == subordinateId))
+			{
+				continue;
+			}
+
+			manager.Subordinates.Add(subordinate);
+			addedManagerLinks = true;
+		}
+
+		if (!addedManagerLinks)
+		{
+			return;
+		}
+
+		await dbContext.SaveChangesAsync(ct);
+	}
+
+	public async Task SeedAnonymousDataAsync(DbContext dbContext, CancellationToken ct)
+	{
+		DateTime now = DateTime.UtcNow;
+
+		List<Location> seedLocations =
+		[
+			new Location
+			{
+				Id = SeedIds.VerdalLocationId,
+				Site = "Aker Solutions Verdal",
+				Building = "M-hallen",
+				Country = "Norway",
+				Region = "Trøndelag",
+				Latitude = 63.78788207165566f,
+				Longitude = 11.440749156413084f,
+				City = "Verdal",
+				Users = [],
+			},
+			new Location
+			{
+				Id = SeedIds.SandsliLocationId,
+				Site = "Aker Solutions Sandsli",
+				Building = "Bygg 1",
+				Country = "Norway",
+				Region = "Bergen",
+				Latitude = 60.29278334510331f,
+				Longitude = 5.279473042646057f,
+				City = "Bergen",
+				Users = [],
+			},
+		];
+
+		List<AnonymousUser> seedUsers =
+		[
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(SeedIds.OlaId),
+				JobDescription = "Formann for bygg 1",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Foreman,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(SeedIds.KariId),
+				JobDescription = "Sveiser",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(SeedIds.PerId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(TrondId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(GjertrudId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(KlaraId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(BirgirId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(TorleifId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new AnonymousUser
+			{
+				HashedId = HashUtils.HashGuid(BjornulfId),
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+		];
+
+		List<(Guid ManagerId, Guid SubordinateId)> seedUserManagers =
+		[
+			(SeedIds.OlaId, SeedIds.KariId),
+			(SeedIds.OlaId, SeedIds.PerId),
+			(SeedIds.OlaId, TrondId),
+			(SeedIds.OlaId, GjertrudId),
+			(SeedIds.OlaId, KlaraId),
+			(SeedIds.OlaId, BirgirId),
+			(SeedIds.OlaId, TorleifId),
+			(SeedIds.OlaId, BjornulfId),
+		];
+
+		HashSet<Guid> existingLocationIds = await dbContext
+			.Set<Location>()
+			.Select(location => location.Id)
+			.ToHashSetAsync(ct);
+
+		HashSet<String> existingUserIds = await dbContext
+			.Set<AnonymousUser>()
+			.Select(user => user.HashedId)
+			.ToHashSetAsync(ct);
+
+		List<Location> locationsToAdd = [];
+		List<AnonymousUser> usersToAdd = [];
+
+		foreach (Location location in seedLocations)
+		{
+			if (!existingLocationIds.Contains(location.Id))
+			{
+				locationsToAdd.Add(location);
+			}
+		}
+
+		foreach (AnonymousUser user in seedUsers)
+		{
+			if (!existingUserIds.Contains(user.HashedId))
+			{
+				usersToAdd.Add(user);
+			}
+		}
+
+		dbContext.Set<Location>().AddRange(locationsToAdd);
+		dbContext.Set<AnonymousUser>().AddRange(usersToAdd);
 		await dbContext.SaveChangesAsync(ct);
 
 		HashSet<Guid> managerIds = seedUserManagers

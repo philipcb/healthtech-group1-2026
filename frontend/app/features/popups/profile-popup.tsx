@@ -19,7 +19,7 @@ export function ProfilePopup({ user, open, onClose, avatarSrc, children }: Profi
 	const regulations = getSecurityRegulations(t);
 
 	return (
-		<BasePopup title={title} open={open} relevantDate={null} onClose={onClose}>
+		<BasePopup title={title} open={open} onClose={onClose}>
 			{children}
 
 			<div className="flex flex-col gap-6 pt-2 text-sm">

@@ -81,7 +81,7 @@ export function PrivacySettingsPopup({ open, onClose, children }: PrivacySetting
 	};
 
 	return (
-		<BasePopup title={title} open={open} relevantDate={null} onClose={onClose}>
+		<BasePopup title={title} open={open} onClose={onClose}>
 			{children}
 
 			<div className="mx-auto flex flex-col gap-4 pt-6 text-sm">

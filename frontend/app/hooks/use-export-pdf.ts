@@ -5,26 +5,25 @@ import { useCallback } from "react";
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
 		let quietTimer: ReturnType<typeof setTimeout>;
- 
+
 		const finish = () => {
 			observer.disconnect();
 			clearTimeout(quietTimer);
 			clearTimeout(maxTimer);
 			resolve();
 		};
- 
+
 		const scheduleQuiet = () => {
 			clearTimeout(quietTimer);
 			quietTimer = setTimeout(finish, quietMs);
 		};
- 
+
 		const observer = new MutationObserver(scheduleQuiet);
 		observer.observe(element, { childList: true, subtree: true, characterData: true, attributes: true });
- 
+
 		const maxTimer = setTimeout(finish, timeoutMs);
 		scheduleQuiet(); // in case nothing changes at all after this point
 	});
-
 
 const elementToCanvas = async (elementId: string) => {
 	const container = document.getElementById(elementId);
@@ -32,7 +31,9 @@ const elementToCanvas = async (elementId: string) => {
 
 	await waitForStableDom(container);
 
-	const wrapper = container.classList.contains("pdf-export-container") ? container : (container.querySelector<HTMLElement>(".recharts-wrapper") ?? container);
+	const wrapper = container.classList.contains("pdf-export-container")
+		? container
+		: (container.querySelector<HTMLElement>(".recharts-wrapper") ?? container);
 
 	if (!wrapper) return null;
 

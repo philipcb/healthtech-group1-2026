@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer";
+import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { View } from "@/features/views/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";

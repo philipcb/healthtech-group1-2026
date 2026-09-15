@@ -10,11 +10,11 @@ import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-q
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
+import type { TZDate } from "@date-fns/tz";
 import { useQueries } from "@tanstack/react-query";
 import { formatDuration, hoursToMinutes, type Locale, minutesToHours } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
-import type { TZDate } from "@date-fns/tz";
 
 type ExposureType = Exposure | "all";
 

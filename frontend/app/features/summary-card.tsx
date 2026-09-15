@@ -2,6 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
+import type { View } from "@/lib/views.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
@@ -9,6 +10,7 @@ import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-q
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
+import type { TZDate } from "@date-fns/tz";
 import { useQueries } from "@tanstack/react-query";
 import { formatDuration, hoursToMinutes, type Locale, minutesToHours } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -18,12 +20,16 @@ type ExposureType = Exposure | "all";
 
 interface ExposureSummaryProps {
 	exposureType: ExposureType;
+	selectedDate?: TZDate;
+	selectedView?: View;
 }
 
-export function ExposureSummary({ exposureType }: ExposureSummaryProps) {
+export function ExposureSummary({ exposureType, selectedDate, selectedView }: ExposureSummaryProps) {
 	const { t, i18n } = useTranslation();
-	const { view } = useView();
-	const currentDate = useDate().date;
+	const { view: contextView } = useView();
+	const { date: contextDate } = useDate();
+	const view = selectedView ?? contextView;
+	const currentDate = selectedDate ?? contextDate;
 	const { user } = useUser();
 	const locale = getLocale(i18n.language);
 

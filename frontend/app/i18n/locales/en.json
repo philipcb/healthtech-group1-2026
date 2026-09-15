@@ -14,7 +14,9 @@
     "notifications": "Notifications",
     "exportAsPdf": "Export as PDF",
     "weekNumber": "Week {{week}}",
-    "noDataLive": "No data as of now."
+    "noDataLive": "No data as of now.",
+    "cancel": "Cancel",
+    "export": "Export"
   },
   "exposures": {
     "dust": "Dust",
@@ -79,6 +81,8 @@
     "team": "Team",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
+    "exportPdf": "Export PDF",
+    "exportPdfDescription": "Select time period for PDF export",
     "theme": "Theme",
     "language": "Language",
     "map": "Map"

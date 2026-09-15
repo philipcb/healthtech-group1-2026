@@ -20,7 +20,7 @@ public class AnonymousDbContext : DbContext
 		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.UserConfiguration());
 
 		modelBuilder
-			.Entity<User>()
+			.Entity<AnonymousUser>()
 			.HasMany(user => user.Managers)
 			.WithMany(user => user.Subordinates)
 			.UsingEntity(typeBuilder => typeBuilder.ToTable("UserManagers"));

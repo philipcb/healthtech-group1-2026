@@ -18,7 +18,7 @@ public class AnonymousDbContextFactory : IDesignTimeDbContextFactory<AnonymousDb
 		var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
 
 		builder
-			.UseNpgsql(configuration.GetValue<string>("DATABASE_URL"))
+			.UseNpgsql(configuration.GetValue<string>("DATABASE_URL_ANONYMOUS"))
 			.UseSeeding(
 				(context, _) =>
 				{

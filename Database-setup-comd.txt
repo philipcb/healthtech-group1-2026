@@ -1,0 +1,18 @@
+#compose database container
+docker compose --env-file ./backend/.env up -d db
+
+#could also have done docker compose --env-file ./backend/.env up -d to compose every service
+
+#create database 2
+docker exec -it healthtech-dev-db-1 psql -U postgres -c "CREATE USER postgresAnonymous WITH PASSWORD 'my_secure_password_anonymous';"
+docker exec -it healthtech-dev-db-1 psql -U postgres -c "CREATE DATABASE healthtechanonymous OWNER postgresanonymous";
+
+
+# Navigate to the backend directory
+cd backend
+
+
+
+# Run migrations for database one
+dotnet ef database update --project src
+# Run migration for database two

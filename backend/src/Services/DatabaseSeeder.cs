@@ -395,8 +395,8 @@ public class DatabaseSeeder
 			.Select(seedUserManager => seedUserManager.ManagerId)
 			.ToHashSet();
 
-		Dictionary<Guid, User> managers = await dbContext
-			.Set<User>()
+		Dictionary<Guid, AnonymousUser> managers = await dbContext
+			.Set<AnonymousUser>()
 			.Where(user => managerIds.Contains(user.Id))
 			.Include(user => user.Subordinates)
 			.ToDictionaryAsync(user => user.Id, ct);
@@ -405,8 +405,8 @@ public class DatabaseSeeder
 			.Select(seedUserManager => seedUserManager.SubordinateId)
 			.ToHashSet();
 
-		Dictionary<Guid, User> subordinates = await dbContext
-			.Set<User>()
+		Dictionary<Guid, AnonymousUser> subordinates = await dbContext
+			.Set<AnonymousUser>()
 			.Where(user => subordinateIds.Contains(user.Id))
 			.ToDictionaryAsync(user => user.Id, ct);
 
@@ -414,12 +414,12 @@ public class DatabaseSeeder
 
 		foreach ((Guid managerId, Guid subordinateId) in seedUserManagers)
 		{
-			if (!managers.TryGetValue(managerId, out User? manager))
+			if (!managers.TryGetValue(managerId, out AnonymousUser? manager))
 			{
 				continue;
 			}
 
-			if (!subordinates.TryGetValue(subordinateId, out User? subordinate))
+			if (!subordinates.TryGetValue(subordinateId, out AnonymousUser? subordinate))
 			{
 				continue;
 			}

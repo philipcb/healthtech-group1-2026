@@ -14,8 +14,8 @@ public class AnonymousUser
 	/// inherit the location from their supervisor.
 	/// </summary>
 	public Location? Location { get; set; }
-	public ICollection<User> Managers { get; set; } = [];
-	public ICollection<User> Subordinates { get; set; } = [];
+	public ICollection<AnonymousUser> Managers { get; set; } = [];
+	public ICollection<AnonymousUser> Subordinates { get; set; } = [];
 	public ICollection<VibrationData> VibrationData { get; set; } = [];
 	public ICollection<DustData> DustData { get; set; } = [];
 	public ICollection<NoiseData> NoiseData { get; set; } = [];

@@ -12,14 +12,14 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 	public AppDbContext CreateDbContext(string[] args)
 	{
 		EnvUtils.LoadEnvFile();
-
+		//Init of the options used when creating DbContext
 		var builder = new DbContextOptionsBuilder<AppDbContext>();
-
+		//Get env files as a "map"
 		var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
 
 		builder
-			.UseNpgsql(configuration.GetValue<string>("DATABASE_URL"))
-			.UseSeeding(
+			.UseNpgsql(configuration.GetValue<string>("DATABASE_URL")) //config the database source with the databse Url
+			.UseSeeding( //Insert into the database the initial users and locations
 				(context, _) =>
 				{
 					DatabaseSeeder seeder = new();
@@ -33,7 +33,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 					return seeder.SeedDataAsync(context, ct);
 				}
 			);
-
+		//We successfully created an AppDbContext with those options, that will be used only for intialization and migration
 		return new AppDbContext(builder.Options);
 	}
 }

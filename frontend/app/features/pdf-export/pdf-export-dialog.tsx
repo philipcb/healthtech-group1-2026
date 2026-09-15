@@ -11,7 +11,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
-import type { View } from "@/features/views/views.ts";
+import type { View } from "@/lib/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";

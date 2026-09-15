@@ -5,7 +5,7 @@ import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
 import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
-import type { View } from "@/features/views/views.ts";
+import type { View } from "@/lib/views.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";

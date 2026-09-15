@@ -28,7 +28,7 @@ public class AnonymousDbContext : DbContext
 		// Store UserRole enum as string
 		modelBuilder.Entity<AnonymousUser>().Property(user => user.Role).HasConversion<string>();
 
-		modelBuilder.Entity<VibrationData>(entity =>
+		modelBuilder.Entity<AnonymousVibrationData>(entity =>
 		{
 			entity
 				.HasOne(v => v.User)
@@ -39,7 +39,7 @@ public class AnonymousDbContext : DbContext
 			entity.HasIndex(v => new { v.UserId, v.ConnectedOn });
 		});
 
-		modelBuilder.Entity<NoiseData>(entity =>
+		modelBuilder.Entity<AnonymousNoiseData>(entity =>
 		{
 			entity
 				.HasOne(n => n.User)
@@ -50,7 +50,7 @@ public class AnonymousDbContext : DbContext
 			entity.HasIndex(n => new { n.UserId, n.Time });
 		});
 
-		modelBuilder.Entity<DustData>(entity =>
+		modelBuilder.Entity<AnonymousDustData>(entity =>
 		{
 			entity
 				.HasOne(d => d.User)

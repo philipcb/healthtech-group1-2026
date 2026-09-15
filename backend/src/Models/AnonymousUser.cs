@@ -16,7 +16,7 @@ public class AnonymousUser
 	public Location? Location { get; set; }
 	public ICollection<AnonymousUser> Managers { get; set; } = [];
 	public ICollection<AnonymousUser> Subordinates { get; set; } = [];
-	public ICollection<VibrationData> VibrationData { get; set; } = [];
-	public ICollection<DustData> DustData { get; set; } = [];
-	public ICollection<NoiseData> NoiseData { get; set; } = [];
+	public ICollection<AnonymousVibrationData> VibrationData { get; set; } = [];
+	public ICollection<AnonymousDustData> DustData { get; set; } = [];
+	public ICollection<AnonymousNoiseData> NoiseData { get; set; } = [];
 }

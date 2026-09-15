@@ -1,8 +1,12 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
+import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
+import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
+import { ExposureSummary } from "@/features/summary-card.tsx";
 import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
 import type { View } from "@/features/views/views.ts";
+import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
@@ -10,20 +14,36 @@ import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
+import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData, getHourDomain } from "@/lib/utils.ts";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 /**
  * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
  *
- * This component renders exposure charts off-screen for PDF export:
- * - Day view: renders one SingleDayChart per exposure type (hour-based, single day)
- * - Week/Month view: renders one aggregated TrendLineChart per exposure type (same as live page)
+ * Renders TWO separate pages per exposure type, so each ends up on its own A4 sheet:
+ *  - a "summary" page: ExposureSummary + the grid widget (Day/Week/Calendar)
+ *  - a "chart" page: just the line chart, with extra headroom so the x-axis and
+ *    legend are never cropped when the page is captured as an image.
+ *
+ * The whole tree is wrapped in the "pdf-export-light" class (see app.css), which
+ * re-declares every theme CSS variable to its light-mode value. This makes the
+ * exported PDF always look the same regardless of the user's dark/light setting,
+ * without needing to touch the real page or flash anything on screen.
  *
  * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
  */
+
+type PdfPage = "summary" | "chart";
+
+interface CollectedPage {
+	id: string;
+	exposure: Exposure;
+	page: PdfPage;
+}
 
 interface PdfChartRendererProps {
 	exposureType: "dust" | "noise" | "vibration" | "all";
@@ -33,6 +53,22 @@ interface PdfChartRendererProps {
 	onIdsReady: (ids: Array<string>) => void;
 }
 
+// Extra headroom below the plotted area so the x-axis labels and legend always fit
+// inside the captured image (see the comment on CHART_AREA_HEIGHT usage below for why
+// this needs to be a real, generous number rather than exactly the plot's height).
+// If you still see cropping, or too much empty space, adjust this single constant.
+const CHART_AREA_HEIGHT = 600;
+
+const pdfPageStyle: CSSProperties = {
+	width: "1200px",
+	background: "white",
+	padding: "20px",
+	boxSizing: "border-box",
+	display: "flex",
+	flexDirection: "column",
+	gap: "24px",
+};
+
 /**
  * Single day chart renderer - handles one exposure type for ONE day (hour-based X-axis)
  */
@@ -40,13 +76,14 @@ function SingleDayChartRenderer({
 	exposure,
 	date,
 	userId,
-	onIdReady,
+	onPageReady,
 }: {
 	exposure: Exposure;
 	date: Date;
 	userId: string;
-	onIdReady: (id: string) => void;
+	onPageReady: (page: CollectedPage) => void;
 }) {
+	const summaryId = useId();
 	const chartId = useId();
 
 	// Convert to TZDate
@@ -85,69 +122,80 @@ function SingleDayChartRenderer({
 
 	// Get thresholds for warning/danger lines
 	const threshold = getThreshold(exposure, exposure === "dust" ? "pm10_twa" : undefined);
+	const dayGridData = [
+		{
+			exposure,
+			dangerLevelByHour: data.reduce<Record<number, (typeof data)[number]["dangerLevel"]>>((levels, point) => {
+				levels[point.time.getUTCHours()] = point.dangerLevel;
+				return levels;
+			}, {}),
+		},
+	];
 
-	// Report ID when chart is ready - with delay to ensure DOM is ready
+	// Report both pages once loaded.
 	useEffect(() => {
 		if (!isLoading) {
-			const timer = setTimeout(() => {
-				onIdReady(chartId);
-			}, 200);
-			return () => clearTimeout(timer);
+			onPageReady({ id: summaryId, exposure, page: "summary" });
+			onPageReady({ id: chartId, exposure, page: "chart" });
 		}
-	}, [isLoading, chartId, onIdReady]);
+	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
 
 	if (isLoading) {
 		return null;
 	}
 
 	return (
-		<div
-			id={chartId}
-			style={{
-				width: "1200px",
-				height: "500px",
-				background: "white",
-				padding: "20px",
-				boxSizing: "border-box",
-			}}
-		>
-			<div style={{ width: "1160px", height: "460px" }}>
-				<BaseExposureLineChartCard
-					minTime={minTime}
-					maxTime={maxTime}
-					chartData={downsampleExposureData(exposure, data)}
-					unit={exposure === "dust" ? "ug" : "db"}
-					id={`${chartId}-chart`}
-					maxY={maxY}
-					minY={minY}
-					exposure={exposure}
-					dustField={exposure === "dust" ? "pm10_twa" : undefined}
-				>
-					<ThresholdLine y={threshold.danger} dangerLevel="danger" />
-					<ThresholdLine y={threshold.warning} dangerLevel="warning" />
-				</BaseExposureLineChartCard>
+		<>
+			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
+				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView="day" />
+				<DayWidget
+					data={dayGridData}
+					startHour={minHour}
+					endHour={maxHour}
+					selectedDate={tzDate}
+					exposureTypes={[exposure]}
+				/>
 			</div>
-		</div>
+
+			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
+				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
+					<BaseExposureLineChartCard
+						minTime={minTime}
+						maxTime={maxTime}
+						chartData={downsampleExposureData(exposure, data)}
+						unit={exposure === "dust" ? "ug" : "db"}
+						id={`${chartId}-chart`}
+						maxY={maxY}
+						minY={minY}
+						exposure={exposure}
+						dustField={exposure === "dust" ? "pm10_twa" : undefined}
+					>
+						<ThresholdLine y={threshold.danger} dangerLevel="danger" />
+						<ThresholdLine y={threshold.warning} dangerLevel="warning" />
+					</BaseExposureLineChartCard>
+				</div>
+			</div>
+		</>
 	);
 }
 
 /**
  * Aggregated trend chart renderer - handles one exposure type for week/month view
- * Uses the same TrendLineChart component as the live page (reuses useExposureTrendData logic inline)
  */
 function TrendChartRenderer({
 	exposure,
 	date,
 	view,
 	userId,
-	onIdReady,
+	onPageReady,
 }: {
 	exposure: Exposure;
 	date: Date;
 	view: "week" | "month";
 	userId: string;
-	onIdReady: (id: string) => void;
+	onPageReady: (page: CollectedPage) => void;
 }) {
+	const summaryId = useId();
 	const chartId = useId();
 	const tzDate = TIMEZONE(date);
 
@@ -171,19 +219,34 @@ function TrendChartRenderer({
 					field,
 					usePeakAggregation: false,
 					aggregationFunction: exposure === "dust" ? "max" : undefined,
-					granularity: "day", // Always use "day" granularity for fetching (matches DustTrendLineChartCard)
+					granularity: "day",
 				}),
 				userId,
 			}),
 		),
 	});
+	const gridQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, view, tzDate, {
+				field: exposure === "dust" ? "pm1_twa" : undefined,
+				usePeakAggregation: false,
+			}),
+			userId,
+		}),
+	);
 
-	const isLoading = queryResults.some((q) => q.isLoading);
+	const isLoading = queryResults.some((q) => q.isLoading) || gridQuery.isLoading;
+	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
+	const hourDomain = gridQuery.data?.hourDomain;
+	const { minHour, maxHour } = getHourDomain(
+		hourDomain,
+		gridQuery.data?.data.map((point) => point.time),
+		view,
+	);
 
-	// Build series data (matching useExposureTrendData)
 	const series = fields.map((field, index) => {
 		const rawData = queryResults[index]?.data?.data ?? [];
-		// Apply weekly max aggregation if granularity is "week" (matches useExposureTrendData)
 		const data = granularity === "week" ? toWeeklyMax(rawData) : rawData;
 
 		return {
@@ -205,11 +268,12 @@ function TrendChartRenderer({
 	useEffect(() => {
 		if (!isLoading) {
 			const timer = setTimeout(() => {
-				onIdReady(chartId);
+				onPageReady({ id: summaryId, exposure, page: "summary" });
+				onPageReady({ id: chartId, exposure, page: "chart" });
 			}, 200);
 			return () => clearTimeout(timer);
 		}
-	}, [isLoading, chartId, onIdReady]);
+	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
 
 	if (isLoading) {
 		return null;
@@ -219,79 +283,84 @@ function TrendChartRenderer({
 	const unit = exposure === "dust" ? "ug" : exposure === "noise" ? "db" : "points";
 
 	return (
-		<div
-			id={chartId}
-			style={{
-				width: "1200px",
-				height: "500px",
-				background: "white",
-				padding: "20px",
-				boxSizing: "border-box",
-			}}
-		>
-			<div style={{ width: "1160px", height: "460px" }}>
-				<TrendLineChart
-					selectedDate={tzDate}
-					granularity={granularity}
-					unit={unit}
-					minY={minY}
-					maxY={maxY}
-					series={series}
-				/>
+		<>
+			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
+				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
+				{view === "week" ? (
+					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
+				) : (
+					<CalendarWidget selectedDay={tzDate} data={gridData} />
+				)}
 			</div>
-		</div>
+
+			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
+				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
+					<TrendLineChart
+						selectedDate={tzDate}
+						granularity={granularity}
+						unit={unit}
+						minY={minY}
+						maxY={maxY}
+						series={series}
+					/>
+				</div>
+			</div>
+		</>
 	);
 }
 
 /**
- * Main renderer - coordinates all charts and reports IDs
+ * Main renderer - coordinates all pages and reports their final IDs once everything
+ * has loaded.
  *
- * For "day" view: renders 1 SingleDayChartRenderer per exposure type
- * For "week"/"month" view: renders 1 TrendChartRenderer per exposure type (aggregated, not per-day)
+ * Each exposure type produces two pages: "summary" (ExposureSummary + grid) and
+ * "chart" (the line chart). Pages are reported to the parent in a FIXED order —
+ * dust, noise, vibration (or just the single selected type), summary before chart —
+ * regardless of which exposure's data happens to finish loading first. This matters
+ * because `titles` in pdf-export-dialog.tsx is built in that same fixed order; without
+ * this, a chart that loads faster than another could end up with the wrong title.
  */
 export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady }: PdfChartRendererProps) {
-	// Use ref to persist IDs across renders without causing re-renders
-	const collectedIdsRef = useRef<Set<string>>(new Set());
+	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
 
-	// Calculate which exposure types to render
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
+	const expectedCount = exposuresToRender.length * 2; // one summary + one chart page per exposure
 
-	// Calculate expected number of charts
-	// - Day view: 1 chart per exposure type
-	// - Week/Month view: 1 chart per exposure type
-	const expectedCount = exposuresToRender.length;
-
-	const handleIdReady = useCallback(
-		(id: string) => {
-			// Only collect if we haven't already reported
+	const handlePageReady = useCallback(
+		(pageInfo: CollectedPage) => {
 			if (hasReported) return;
 
-			collectedIdsRef.current.add(id);
+			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
 
-			// Report IDs once all expected charts are ready
-			if (collectedIdsRef.current.size === expectedCount) {
-				const allIds = Array.from(collectedIdsRef.current);
-				onIdsReady(allIds);
-				setHasReported(true); // Prevent further reports
+			if (collectedRef.current.size === expectedCount) {
+				const orderedIds = exposuresToRender.flatMap((exposure) => {
+					const summaryPage = collectedRef.current.get(`${exposure}-summary`);
+					const chartPage = collectedRef.current.get(`${exposure}-chart`);
+					return [summaryPage?.id, chartPage?.id].filter((id): id is string => id != null);
+				});
+
+				onIdsReady(orderedIds);
+				setHasReported(true);
 			}
 		},
-		[expectedCount, onIdsReady, hasReported],
+		[expectedCount, exposuresToRender, onIdsReady, hasReported],
 	);
 
 	// Reset when component mounts/unmounts
 	useEffect(() => {
-		collectedIdsRef.current.clear();
+		collectedRef.current.clear();
 		setHasReported(false);
 
 		return () => {
-			collectedIdsRef.current.clear();
+			collectedRef.current.clear();
 			setHasReported(false);
 		};
 	}, []);
 
 	return (
 		<div
+			className="pdf-export-light"
 			style={{
 				position: "fixed",
 				top: "-9999px",
@@ -299,25 +368,23 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 			}}
 		>
 			{view === "day"
-				? // Day view: render one SingleDayChartRenderer per exposure type
-					exposuresToRender.map((exposure) => (
+				? exposuresToRender.map((exposure) => (
 						<SingleDayChartRenderer
 							key={exposure}
 							exposure={exposure}
 							date={date}
 							userId={userId}
-							onIdReady={handleIdReady}
+							onPageReady={handlePageReady}
 						/>
 					))
-				: // Week/Month view: render one TrendChartRenderer per exposure type
-					exposuresToRender.map((exposure) => (
+				: exposuresToRender.map((exposure) => (
 						<TrendChartRenderer
 							key={exposure}
 							exposure={exposure}
 							date={date}
 							view={view}
 							userId={userId}
-							onIdReady={handleIdReady}
+							onPageReady={handlePageReady}
 						/>
 					))}
 		</div>

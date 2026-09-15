@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { View } from "@/features/views/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
@@ -26,7 +26,7 @@ import { useTranslation } from "react-i18next";
  * PDF Export Dialog Component
  *
  * This file provides a dialog UI for selecting a date range before exporting exposure data to PDF.
- * It's a popup that appears when the user clicks the "Eksport PDF" button in the left sidebar.
+ * It is a popup that appears when the user clicks the "Export PDF" button in the left sidebar.
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
  */
@@ -63,13 +63,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 	// Helper function: Calculate date range from selected view/date
 	/**
-	 * Converts the selected view and date into a start/end range.
-	 * This is used to determine what data to show in the exported PDF.
-	 *
-	 * Examples:
-	 * - Day view: start=end=selected date
-	 * - Week view: start=Monday of selected week, end=Sunday 23:59:59
-	 * - Month view: start=1st of month, end=last millisecond of month
+	 * Calculates the start/end timestamp from the selected view + date.
+	 * Used to build readable titles and filenames in the PDF.
 	 */
 	const getRangeFromSelection = () => {
 		if (localView === "day") {
@@ -95,10 +90,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	};
 
 	// Helper function: Calculate previous/next dates for navigation buttons
-	/**
-	 * Returns the previous and next date values for the navigation buttons.
-	 * Used by the "Previous" and "Next" buttons to navigate through dates.
-	 */
+	// Calculates the previous/next date, used by the calendar's navigation buttons.
 	const getNavigationValues = () => {
 		if (localView === "day") {
 			const previous = new TZDate(localDate.getTime() - 24 * 60 * 60 * 1000, "Europe/Oslo");
@@ -149,7 +141,6 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		setIsExporting(true);
 		setExportError(null);
 		setShouldRenderCharts(true); // Start rendering charts
-		const _startTime = performance.now();
 
 		// Wait for charts to render and report their IDs
 		// Create a promise that resolves when handleIdsReady is called
@@ -189,8 +180,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// Get date range for titles and filename
 		const { start, end } = getRangeFromSelection();
 
-		// Generate titles: one for each exposure type
-		// (Week/Month views render ONE aggregated chart per exposure type, not per-day)
+		// Builds two titles per exposure type: one for the summary/grid page, one
+		// for the chart page. PdfChartRenderer always reports the ids in exactly
+		// this order (see pdf-chart-renderer.tsx), so the titles here must follow
+		// the same pattern, or the wrong title ends up on the wrong page.
 		const titles: Array<string> = [];
 
 		for (const exposure of exposuresToRender) {
@@ -207,7 +200,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						})
 					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
-			titles.push(`${exposureName} - ${user.name} - ${dateText}`);
+			const title = `${exposureName} - ${user.name} - ${dateText}`;
+			titles.push(title, title); // page 1: summary+grid, page 2: graph
 		}
 
 		// Generate filename with date range
@@ -224,9 +218,6 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Call the PDF export hook to convert HTML elements to PDF
 		await exportMultipleToPDF(ids, fileName, titles);
-
-		// Log timing to console for performance monitoring (NFR-1: target <5s)
-		const _endTime = performance.now();
 
 		setIsExporting(false);
 		setShouldRenderCharts(false); // Clean up charts

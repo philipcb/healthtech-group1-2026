@@ -25,11 +25,22 @@ interface DayWidgetProps {
 	endHour?: number;
 	headerRight?: React.ReactNode;
 	buildLink?: (exposure: string, dateQueryParam: string) => To | null;
+	selectedDate?: Date;
+	exposureTypes?: ReadonlyArray<(typeof exposures)[number]>;
 }
 
-export function DayWidget({ data, startHour = 0, endHour = 23, headerRight, buildLink }: DayWidgetProps) {
+export function DayWidget({
+	data,
+	startHour = 0,
+	endHour = 23,
+	headerRight,
+	buildLink,
+	selectedDate,
+	exposureTypes = exposures,
+}: DayWidgetProps) {
 	const { t } = useTranslation();
-	const { date } = useDate();
+	const { date: contextDate } = useDate();
+	const date = selectedDate ?? contextDate;
 	const formatDate = useFormatDate();
 
 	const totalHours = endHour - startHour + 1;
@@ -74,7 +85,7 @@ export function DayWidget({ data, startHour = 0, endHour = 23, headerRight, buil
 
 			<div className="overflow-x-auto">
 				<div className="w-max min-w-full space-y-1">
-					{exposures.map((exposure) => {
+					{exposureTypes.map((exposure) => {
 						const rowData = dataByExposure[exposure];
 						const linkTarget = createLink(exposure, dateQueryParam);
 						const isLinkable = linkTarget !== null;

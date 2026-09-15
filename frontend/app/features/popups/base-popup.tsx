@@ -1,47 +1,13 @@
-import { Button } from "@/components/ui/button.tsx";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog.tsx";
-import { useFormatDate } from "@/hooks/use-format-date.ts";
-import type { TZDate } from "@date-fns/tz";
-import { t } from "i18next";
-import { NavLink } from "react-router";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog.tsx";
 
 type BasePopupProps = {
 	title: string;
 	open: boolean;
 	onClose: () => void;
-	relevantDate: TZDate | null;
-	selectedAggregation?: string;
-	navOverride?: string;
-	pathname?: string;
 	children: React.ReactNode;
 };
 
-export function BasePopup({
-	title,
-	open,
-	onClose,
-	relevantDate,
-	selectedAggregation,
-	navOverride,
-	pathname,
-	children,
-}: BasePopupProps) {
-	const formatDate = useFormatDate();
-	let search = navOverride;
-
-	if (!search && relevantDate) {
-		const params = new URLSearchParams(window.location.search);
-
-		params.set("view", "day");
-		params.set("date", formatDate(relevantDate, "yyyy-MM-dd"));
-
-		search = `?${params.toString()}`;
-
-		if (selectedAggregation) {
-			search += `&aggregation=${selectedAggregation}`;
-		}
-	}
-
+export function BasePopup({ title, open, onClose, children }: BasePopupProps) {
 	return (
 		<Dialog open={open} onOpenChange={onClose}>
 			<DialogContent className="w-full max-w-6xl">
@@ -50,22 +16,6 @@ export function BasePopup({
 				</DialogHeader>
 
 				{children}
-
-				{relevantDate && (
-					<DialogFooter>
-						<Button variant="default" className="cursor-pointer" onClick={onClose}>
-							<NavLink
-								to={{
-									pathname: pathname ?? "",
-									search,
-								}}
-								prefetch="intent"
-							>
-								{t(($) => $.popup.toDay)}
-							</NavLink>
-						</Button>
-					</DialogFooter>
-				)}
 			</DialogContent>
 		</Dialog>
 	);

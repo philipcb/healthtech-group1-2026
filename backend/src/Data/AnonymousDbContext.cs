@@ -7,9 +7,9 @@ public class AnonymousDbContext : DbContext
 	public AnonymousDbContext(DbContextOptions<AnonymousDbContext> options)
 		: base(options) { }
 
-	public DbSet<NoiseData> NoiseData { get; set; }
-	public DbSet<DustData> DustData { get; set; }
-	public DbSet<VibrationData> VibrationData { get; set; }
+	public DbSet<AnonymousNoiseData> NoiseData { get; set; }
+	public DbSet<AnonymousDustData> DustData { get; set; }
+	public DbSet<AnonymousVibrationData> VibrationData { get; set; }
 	
 	public DbSet<AnonymousUser> User { get; set; }
 	public DbSet<Location> Location { get; set; }
@@ -17,7 +17,7 @@ public class AnonymousDbContext : DbContext
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);
-		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.UserConfiguration());
+		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.AnonymousUserConfiguration());
 
 		modelBuilder
 			.Entity<AnonymousUser>()

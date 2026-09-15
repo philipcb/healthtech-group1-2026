@@ -3,6 +3,9 @@ import { Card } from "@/components/ui/card.tsx";
 import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { DayWidget } from "@/features/day-widget/day-widget.tsx";
+import { DustExposureChartSection } from "@/features/exposure-line-chart-card/dust-exposure-chart-section.tsx";
+import { NoiseExposureChartSection } from "@/features/exposure-line-chart-card/noise-exposure-chart-section.tsx";
+import { VibrationExposureChartSection } from "@/features/exposure-line-chart-card/vibration-exposure-chart-section.tsx";
 import { ExposureGraphEmptyState } from "@/features/statistic-card.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
@@ -16,9 +19,6 @@ import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import Dust from "./exposures/dust.tsx";
-import Noise from "./exposures/noise.tsx";
-import Vibration from "./exposures/vibration.tsx";
 
 export default function OperatorHome() {
 	const { t, i18n } = useTranslation();
@@ -121,15 +121,15 @@ export default function OperatorHome() {
 				}}
 			>
 				<div id={pdfDustChartContainerId}>
-					<Dust />
+					<DustExposureChartSection />
 				</div>
 
 				<div id={pdfVibrationChartContainerId}>
-					<Vibration />
+					<VibrationExposureChartSection />
 				</div>
 
 				<div id={pdfNoiseChartContainerId}>
-					<Noise />
+					<NoiseExposureChartSection />
 				</div>
 			</div>
 		</>

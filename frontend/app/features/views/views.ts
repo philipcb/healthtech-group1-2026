@@ -1,7 +1,5 @@
+import type { View } from "@/lib/views.ts";
 import { CalendarIcon, ColumnsIcon, Grid3X3Icon } from "lucide-react";
-
-export const views = ["day", "week", "month"] as const;
-export type View = (typeof views)[number];
 
 export const DayViewIcon = CalendarIcon;
 export const WeekViewIcon = ColumnsIcon;

@@ -1,5 +1,5 @@
-import { type Exposure, ExposureSchema } from "@/features/exposure-picker/exposures.ts";
 import { tzDateSchema } from "@/lib/date.ts";
+import { type Exposure, ExposureSchema } from "@/lib/exposures.ts";
 import type { TZDate } from "@date-fns/tz";
 import { z } from "zod";
 import { DangerLevelSchema } from "../danger-levels.ts";

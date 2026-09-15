@@ -1,7 +1,6 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card.tsx";
 import { UserStatusPieChart } from "@/components/users-status-pie-chart.tsx";
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
 import {
 	DANGER_LEVEL_SEVERITY,
 	type DangerLevel,
@@ -9,6 +8,7 @@ import {
 	dangerlevelStyles,
 	mapDangerLevelToColor,
 } from "@/lib/danger-levels.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
 import { ArrowRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";

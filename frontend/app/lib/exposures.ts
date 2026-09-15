@@ -1,8 +1,10 @@
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { parseAsStringLiteral } from "nuqs";
+import { z } from "zod";
 
 export const exposures = ["dust", "noise", "vibration"] as const;
 export type Exposure = (typeof exposures)[number];
+export const ExposureSchema = z.enum(exposures);
 export const parseAsExposure = parseAsStringLiteral(exposures);
 
 export const exposureUnits = ["mg", "ug", "points", "db"] as const;

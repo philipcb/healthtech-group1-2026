@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table.tsx";
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
 import { dangerlevelStyles } from "@/lib/danger-levels.ts";
 import type { UserWithStatusDto } from "@/lib/dto/user.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTranslation } from "react-i18next";
 import { ExposureIcon } from "./exposure-icon.tsx";

@@ -2,9 +2,9 @@
 
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
 import { type DangerLevel, DangerLevelSchema, DangerLevels } from "@/lib/danger-levels.ts";
 import type { UserWithStatusDto } from "@/lib/dto/user.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { cn } from "@/lib/utils.ts";
 import type { ComponentProps } from "react";

@@ -5,6 +5,7 @@ import { Calendar } from "@/components/ui/calendar.tsx";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { toTZDate } from "@/lib/date.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import type { TimeBucketStatus } from "@/lib/time-bucket-types.ts";
 import { cn } from "@/lib/utils.ts";
 import type { TZDate } from "@date-fns/tz";
@@ -12,7 +13,6 @@ import { isSameDay, startOfDay } from "date-fns";
 import type { CalendarDay, Modifiers } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { useDate } from "../date-picker/use-date.ts";
-import type { Exposure } from "../exposure-picker/exposures.ts";
 import { useView } from "../views/use-view.ts";
 
 type CalendarProps = {

@@ -1,7 +1,7 @@
 import { useDate } from "@/features/date-picker/use-date.ts";
-import { exposures } from "@/features/exposure-picker/exposures.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
+import { exposures } from "@/lib/exposures.ts";
 import type { OverviewChartRow } from "@/lib/time-bucket-types.ts";
 import { cn } from "@/lib/utils.ts";
 import { setHours, startOfDay } from "date-fns";

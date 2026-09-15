@@ -1,6 +1,6 @@
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 
 export type Threshold = {
 	warning: number;

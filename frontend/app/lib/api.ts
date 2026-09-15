@@ -1,4 +1,3 @@
-import type { Exposure } from "@/features/exposure-picker/exposures.ts";
 import type { TZDate } from "@date-fns/tz";
 import { keepPreviousData, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { minutesToMilliseconds } from "date-fns";
@@ -15,6 +14,7 @@ import { type Note, type NoteDataRequest, NoteSchema } from "./dto/note.ts";
 import { ThresholdSummarySchema } from "./dto/threshold.ts";
 import { UserSchema, UserWithStatusSchema } from "./dto/user.ts";
 import { getStartEnd } from "./exposure-query-utils.ts";
+import type { Exposure } from "./exposures.ts";
 import {
 	buildExposureOverviewQueryKey,
 	buildExposureQueryKey,

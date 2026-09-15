@@ -1,32 +1,30 @@
 import type { User } from "@/lib/dto/user.ts";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { UserContext } from "./user-context.tsx";
 import { DEFAULT_USER, USER_STORAGE_KEY } from "./user-utils.ts";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-	const [user, setUserState] = useState<User>(DEFAULT_USER);
-	const [isLoading, setIsLoading] = useState(true);
-
-	useEffect(() => {
+	const [user, setUserState] = useState<User>(() => {
 		try {
 			const stored = localStorage.getItem(USER_STORAGE_KEY);
 
 			if (stored) {
-				setUserState(JSON.parse(stored));
+				return JSON.parse(stored);
 			}
 		} catch (error) {
 			console.error("Failed to parse user from local storage", error);
 			localStorage.removeItem(USER_STORAGE_KEY);
-		} finally {
-			setIsLoading(false);
 		}
-	}, []);
 
-	const setUser = (newUser: User) => {
+		return DEFAULT_USER;
+	});
+
+	const setUser = useCallback((newUser: User) => {
 		setUserState(newUser);
 		localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
-	};
+	}, []);
 
-	// This assertion is cursed but it's fine
-	return <UserContext.Provider value={{ user, isLoading, setUser }}>{children}</UserContext.Provider>;
+	const value = useMemo(() => ({ user, setUser }), [user, setUser]);
+
+	return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

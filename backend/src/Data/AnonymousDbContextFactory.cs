@@ -23,14 +23,14 @@ public class AnonymousDbContextFactory : IDesignTimeDbContextFactory<AnonymousDb
 				(context, _) =>
 				{
 					DatabaseSeeder seeder = new();
-					seeder.SeedDataAsync(context, CancellationToken.None).GetAwaiter().GetResult();
+					seeder.SeedAnonymousDataAsync(context, CancellationToken.None).GetAwaiter().GetResult();
 				}
 			)
 			.UseAsyncSeeding(
 				(context, _, ct) =>
 				{
 					DatabaseSeeder seeder = new();
-					return seeder.SeedDataAsync(context, ct);
+					return seeder.SeedAnonymousDataAsync(context, ct);
 				}
 			);
 

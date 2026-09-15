@@ -4,7 +4,7 @@ namespace Backend.Models;
 
 public class AnonymousUser
 {
-	public required string HashedId { get; set; }
+	public required Guid HashedId { get; set; }
 	public string? JobDescription { get; set; }
 	public required UserRole Role { get; set; }
 	public required Guid LocationId { get; set; }

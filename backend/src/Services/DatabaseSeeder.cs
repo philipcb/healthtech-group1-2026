@@ -283,63 +283,63 @@ public class DatabaseSeeder
 		[
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(SeedIds.OlaId),
+				HashedId = HashUtils.HashGuidToGuid(SeedIds.OlaId),
 				JobDescription = "Formann for bygg 1",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Foreman,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(SeedIds.KariId),
+				HashedId = HashUtils.HashGuidToGuid(SeedIds.KariId),
 				JobDescription = "Sveiser",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(SeedIds.PerId),
+				HashedId = HashUtils.HashGuidToGuid(SeedIds.PerId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(TrondId),
+				HashedId = HashUtils.HashGuidToGuid(TrondId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(GjertrudId),
+				HashedId = HashUtils.HashGuidToGuid(GjertrudId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(KlaraId),
+				HashedId = HashUtils.HashGuidToGuid(KlaraId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(BirgirId),
+				HashedId = HashUtils.HashGuidToGuid(BirgirId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(TorleifId),
+				HashedId = HashUtils.HashGuidToGuid(TorleifId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new AnonymousUser
 			{
-				HashedId = HashUtils.HashGuid(BjornulfId),
+				HashedId = HashUtils.HashGuidToGuid(BjornulfId),
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -363,7 +363,7 @@ public class DatabaseSeeder
 			.Select(location => location.Id)
 			.ToHashSetAsync(ct);
 
-		HashSet<String> existingUserIds = await dbContext
+		HashSet<Guid> existingUserIds = await dbContext
 			.Set<AnonymousUser>()
 			.Select(user => user.HashedId)
 			.ToHashSetAsync(ct);

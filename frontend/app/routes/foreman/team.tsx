@@ -114,9 +114,7 @@ export default function TeamPage() {
 		return <div className="p-4 text-destructive">{t(($) => $.foremanDashboard.team.failedToLoadMembers)}</div>;
 	}
 
-	if (!subordinates || subordinates.length === 0) {
-		return <div className="p-4">{t(($) => $.foremanDashboard.team.noMembersFound)}</div>;
-	}
+	const subordinateList = subordinates ?? [];
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -143,14 +141,18 @@ export default function TeamPage() {
 						{t(($) => $.foremanDashboard.team.action.addSubordinate)}
 					</Button>
 				</div>
-				<DataTable
-					columns={columns}
-					data={subordinates}
-					selectionLabelT={t}
-					state={{ rowSelection }}
-					onRowSelectionChange={setRowSelection}
-					getRowId={(user) => user.id}
-				/>
+				{subordinateList.length === 0 ? (
+					<div className="p-4 text-muted-foreground">{t(($) => $.foremanDashboard.team.noMembersFound)}</div>
+				) : (
+					<DataTable
+						columns={columns}
+						data={subordinateList}
+						selectionLabelT={t}
+						state={{ rowSelection }}
+						onRowSelectionChange={setRowSelection}
+						getRowId={(user) => user.id}
+					/>
+				)}
 				<div>
 					<Button
 						onClick={handleRemoveSubordinates}

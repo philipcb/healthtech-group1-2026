@@ -251,9 +251,9 @@ public class DatabaseSeeder
 	{
 		DateTime now = DateTime.UtcNow;
 
-		List<Location> seedLocations =
+		List<AnonymousLocation> seedLocations =
 		[
-			new Location
+			new AnonymousLocation
 			{
 				Id = SeedIds.VerdalLocationId,
 				Site = "Aker Solutions Verdal",
@@ -265,7 +265,7 @@ public class DatabaseSeeder
 				City = "Verdal",
 				Users = [],
 			},
-			new Location
+			new AnonymousLocation
 			{
 				Id = SeedIds.SandsliLocationId,
 				Site = "Aker Solutions Sandsli",
@@ -359,7 +359,7 @@ public class DatabaseSeeder
 		];
 
 		HashSet<Guid> existingLocationIds = await dbContext
-			.Set<Location>()
+			.Set<AnonymousLocation>()
 			.Select(location => location.Id)
 			.ToHashSetAsync(ct);
 
@@ -368,10 +368,10 @@ public class DatabaseSeeder
 			.Select(user => user.Id)
 			.ToHashSetAsync(ct);
 
-		List<Location> locationsToAdd = [];
+		List<AnonymousLocation> locationsToAdd = [];
 		List<AnonymousUser> usersToAdd = [];
 
-		foreach (Location location in seedLocations)
+		foreach (AnonymousLocation location in seedLocations)
 		{
 			if (!existingLocationIds.Contains(location.Id))
 			{
@@ -387,7 +387,7 @@ public class DatabaseSeeder
 			}
 		}
 
-		dbContext.Set<Location>().AddRange(locationsToAdd);
+		dbContext.Set<AnonymousLocation>().AddRange(locationsToAdd);
 		dbContext.Set<AnonymousUser>().AddRange(usersToAdd);
 		await dbContext.SaveChangesAsync(ct);
 

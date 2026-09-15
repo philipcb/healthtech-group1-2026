@@ -13,7 +13,7 @@ public class AnonymousUser
 	/// The location associated with the user. If the user type is Worker, the user should not set a value and instead
 	/// inherit the location from their supervisor.
 	/// </summary>
-	public Location? Location { get; set; }
+	public AnonymousLocation? Location { get; set; }
 	public ICollection<AnonymousUser> Managers { get; set; } = [];
 	public ICollection<AnonymousUser> Subordinates { get; set; } = [];
 	public ICollection<AnonymousVibrationData> VibrationData { get; set; } = [];

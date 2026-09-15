@@ -12,7 +12,7 @@ public class AnonymousDbContext : DbContext
 	public DbSet<AnonymousVibrationData> VibrationData { get; set; }
 	
 	public DbSet<AnonymousUser> User { get; set; }
-	public DbSet<Location> Location { get; set; }
+	public DbSet<AnonymousLocation> Location { get; set; }
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{

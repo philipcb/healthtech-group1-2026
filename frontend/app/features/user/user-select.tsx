@@ -28,7 +28,9 @@ export function UserSelect({
 }: UserSelectProps) {
 	const { t } = useTranslation();
 
-	const [searchValue, setSearchValue] = useState<string>(value ? userSelectItemToStringLabel(value, users) : "");
+	const [searchValue, setSearchValue] = useState<string>(() =>
+		value ? userSelectItemToStringLabel(value, users) : "",
+	);
 
 	useEffect(() => {
 		const currentLabel = value ? userSelectItemToStringLabel(value, users) : "";

@@ -14,8 +14,9 @@ import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { exposureOverviewQueryOptions } from "@/lib/api.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
 import { exposures } from "@/lib/exposures.ts";
+import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain } from "@/lib/utils.ts";
+import { getHourDomain, userRoleToString } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -103,6 +104,18 @@ export default function OperatorHome() {
 											`${t(($) => $.pdf.noiseExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
 											`${t(($) => $.pdf.vibrationExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
 										],
+										{
+											name: user.name,
+											locationLabel: t(($) => $.profile.location),
+											location: user.location.site,
+											jobTitleLabel: t(($) => $.profile.jobTitle),
+											jobTitle: userRoleToString(user.role, t),
+											securityRegulationsHeading: t(($) => $.profile.currentSecurityRegulations),
+											securityRegulations: getSecurityRegulations(t).map(({ label }) => label),
+											jobDescriptionHeading: t(($) => $.profile.jobDescription),
+											jobDescription: user.jobDescription ?? "-",
+											locale: i18n.language,
+										},
 									)
 								}
 							/>

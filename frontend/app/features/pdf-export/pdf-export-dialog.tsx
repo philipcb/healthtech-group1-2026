@@ -11,6 +11,8 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
+import { getSecurityRegulations } from "@/lib/security-regulations.ts";
+import { userRoleToString } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
@@ -183,7 +185,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// Builds two titles per exposure type: one for the summary/grid page, one
 		// for the chart page. PdfChartRenderer always reports the ids in exactly
 		// this order (see pdf-chart-renderer.tsx), so the titles here must follow
-		// the same pattern, or the wrong title ends up on the wrong page.
+		// the same pattern after the cover page, or the wrong title ends up on the wrong page.
 		const titles: Array<string> = [];
 
 		for (const exposure of exposuresToRender) {
@@ -215,9 +217,21 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
 		const fileName = `${fileNameDate}-${user.name}-${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
+		const coverPageData = {
+			name: user.name,
+			locationLabel: t(($) => $.profile.location),
+			location: user.location.site,
+			jobTitleLabel: t(($) => $.profile.jobTitle),
+			jobTitle: userRoleToString(user.role, t),
+			securityRegulationsHeading: t(($) => $.profile.currentSecurityRegulations),
+			securityRegulations: getSecurityRegulations(t).map(({ label }) => label),
+			jobDescriptionHeading: t(($) => $.profile.jobDescription),
+			jobDescription: user.jobDescription ?? "-",
+			locale: i18n.language,
+		};
 
 		// Call the PDF export hook to convert HTML elements to PDF
-		await exportMultipleToPDF(ids, fileName, titles);
+		await exportMultipleToPDF(ids, fileName, titles, coverPageData);
 
 		setIsExporting(false);
 		setShouldRenderCharts(false); // Clean up charts

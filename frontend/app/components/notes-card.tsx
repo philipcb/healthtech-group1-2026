@@ -2,19 +2,15 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { TIMEZONE } from "@/i18n/locale.ts";
-import { createNote, deleteNote, notesQueryOptions, updateNote } from "@/lib/api.ts";
-import { buildNotesQueryKeyPrefix } from "@/lib/query-key-builder.ts";
 import { cn } from "@/lib/utils.ts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { isSameDay } from "date-fns";
 import { NotebookPenIcon } from "lucide-react";
-import { type PropsWithChildren, useEffect, useState } from "react";
+import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { Card, CardContent, CardLabelHeader } from "./ui/card.tsx";
 import { Skeleton } from "./ui/skeleton.tsx";
 import { Textarea } from "./ui/textarea.tsx";
+import { useNoteEditor } from "./use-note-editor.ts";
 
 function NotesShell({ title, children }: PropsWithChildren<{ title: string }>) {
 	return (
@@ -37,90 +33,12 @@ export const NotesCard = ({ forceInteractiveMode = false }: NotesCardProps) => {
 	const { view } = useView();
 	const { date } = useDate();
 	const { pathname, search } = useLocation();
-	const queryClient = useQueryClient();
 	const { user } = useUser();
 	const formatDate = useFormatDate();
 
 	const canLinkToDayView = pathname !== "/operator/live";
 
-	const { data, isLoading, isError, refetch } = useQuery(
-		notesQueryOptions({ view: view, selectedDay: date, userId: user.id }),
-	);
-
-	const { mutate: mutateCreateNote } = useMutation({
-		mutationFn: createNote,
-		onSettled: () => {
-			queryClient.invalidateQueries({
-				queryKey: buildNotesQueryKeyPrefix(user.id),
-			});
-			refetch();
-		},
-	});
-
-	const { mutate: mutateUpdateNote } = useMutation({
-		mutationFn: updateNote,
-		onSettled: () => {
-			queryClient.invalidateQueries({
-				queryKey: buildNotesQueryKeyPrefix(user.id),
-			});
-			refetch();
-		},
-	});
-
-	const { mutate: mutateDeleteNote } = useMutation({
-		mutationFn: deleteNote,
-		onSettled: () => {
-			queryClient.invalidateQueries({
-				queryKey: buildNotesQueryKeyPrefix(user.id),
-			});
-			refetch();
-		},
-	});
-
-	const noteForSelectedDate = data?.find((note) => isSameDay(note.time, date, { in: TIMEZONE })) ?? null;
-	const [noteValue, setNoteValue] = useState(noteForSelectedDate?.note ?? "");
-
-	const handleBlur = () => {
-		const trimmedNoteValue = noteValue.trim();
-
-		if (trimmedNoteValue === "") {
-			setNoteValue("");
-
-			if (noteForSelectedDate !== null) {
-				mutateDeleteNote({
-					time: noteForSelectedDate.time,
-					userId: user.id,
-				});
-			}
-
-			return;
-		}
-
-		if (noteForSelectedDate === null) {
-			mutateCreateNote({
-				note: {
-					time: date,
-					note: trimmedNoteValue,
-				},
-				userId: user.id,
-			});
-		} else if (trimmedNoteValue !== noteForSelectedDate.note) {
-			mutateUpdateNote({
-				note: {
-					time: noteForSelectedDate.time,
-					note: trimmedNoteValue,
-				},
-				userId: user.id,
-			});
-		}
-	};
-
-	useEffect(() => {
-		if (data) {
-			const foundNote = data.find((note) => isSameDay(note.time, date, { in: TIMEZONE })) ?? null;
-			setNoteValue(foundNote?.note ?? "");
-		}
-	}, [data, date]);
+	const { data, isLoading, isError, noteValue, setNoteValue, handleBlur } = useNoteEditor(view, date, user.id);
 
 	const isInteractiveMode = forceInteractiveMode || view === "day";
 	const title = t(($) => $.notes[isInteractiveMode ? "interactive" : "list"].title);

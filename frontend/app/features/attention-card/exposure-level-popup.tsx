@@ -84,7 +84,7 @@ export function AtRiskPopup({
 			: workers.map((worker) => <WorkerRow key={worker.id} worker={worker} status={status} />);
 
 	return (
-		<BasePopup title={exposureTitle} open={open} relevantDate={null} onClose={onClose}>
+		<BasePopup title={exposureTitle} open={open} onClose={onClose}>
 			<Table>
 				<TableBody>{tableBody}</TableBody>
 			</Table>

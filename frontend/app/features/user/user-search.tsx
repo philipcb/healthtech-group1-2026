@@ -9,6 +9,7 @@ import {
 	ComboboxList,
 	ComboboxValue,
 } from "@/components/ui/combobox.tsx";
+import { getUserComboboxLabel } from "@/features/user/user-combobox-label.ts";
 import type { User } from "@/lib/dto/user.ts";
 import type { ComboboxRootProps } from "@base-ui/react";
 
@@ -30,7 +31,7 @@ export const UserSearch = <Multiple extends boolean = false>({
 			items={users}
 			// God knows why I have to explicitly type this one but not the other
 			itemToStringValue={(user: User) => user.id}
-			itemToStringLabel={(user) => user.name}
+			itemToStringLabel={getUserComboboxLabel}
 		>
 			{props.multiple && props.value && Array.isArray(props.value) ? (
 				<div className="flex flex-col gap-2">

@@ -15,7 +15,9 @@
     "notifications": "Notifikasjoner",
     "exportAsPdf": "Eksporter som PDF",
     "weekNumber": "Uke {{week}}",
-    "noDataLive": "Ingen data per nå."
+    "noDataLive": "Ingen data per nå.",
+    "cancel": "Avbryt",
+    "export": "Eksporter"
   },
   "exposures": {
     "dust": "Støv",
@@ -76,6 +78,8 @@
     "team": "Team",
     "statistics": "Statistikk",
     "export": "Eksporter oversikt som PDF",
+    "exportPdf": "Eksporter PDF",
+    "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
     "theme": "Fargetema",
     "language": "Språk",
     "map": "Kart"

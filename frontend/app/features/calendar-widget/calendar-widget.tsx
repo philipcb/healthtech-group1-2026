@@ -40,7 +40,7 @@ export function CalendarWidget({ selectedDay, data }: CalendarProps) {
 	}
 
 	return (
-		<div className="mr-auto w-full max-w-4xl">
+		<div className="mx-auto w-full max-w-4xl">
 			<Calendar
 				locale={getLocale(i18n.language)}
 				month={selectedDay}

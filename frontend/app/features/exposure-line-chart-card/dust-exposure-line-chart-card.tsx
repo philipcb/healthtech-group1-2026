@@ -1,12 +1,9 @@
-import { ExportButton } from "@/components/export-button.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import {
 	BaseExposureLineChartCard,
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { useUser } from "@/features/user/user-context.tsx";
-import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import {
 	type DustField,
@@ -28,9 +25,6 @@ interface Props {
 
 export function DustExposureLineChartCard({ userId }: Props) {
 	const { t, i18n } = useTranslation();
-	const locale = i18n.language;
-	const { user } = useUser();
-	const { exportToPDF } = useExportPDF();
 	const chartContainerId = useId();
 
 	const [dustField] = useQueryState<DustField>("dustField", parseAsDustField.withDefault(defaultDustField));
@@ -70,20 +64,6 @@ export function DustExposureLineChartCard({ userId }: Props) {
 							<TabsTrigger value="mg">{t(($) => $.exposures.units.mg)}</TabsTrigger>
 						</TabsList>
 					</Tabs>
-					<ExportButton
-						title={t(($) => $.common.exportAsPdf)}
-						onClick={() =>
-							exportToPDF(
-								chartContainerId,
-								`${date.toLocaleDateString(locale, {
-									day: "numeric",
-									month: "long",
-									year: "numeric",
-								})}-${user.name}-Dust-Exposure-Overview`,
-								`${t(($) => $.pdf.dustExposure)} - ${user.name} - ${date.toLocaleDateString(locale)}`,
-							)
-						}
-					/>
 				</div>
 			}
 		>

@@ -1,24 +1,17 @@
-import { ExportButton } from "@/components/export-button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { DayWidget } from "@/features/day-widget/day-widget.tsx";
-import { DustExposureChartSection } from "@/features/exposure-line-chart-card/dust-exposure-chart-section.tsx";
-import { NoiseExposureChartSection } from "@/features/exposure-line-chart-card/noise-exposure-chart-section.tsx";
-import { VibrationExposureChartSection } from "@/features/exposure-line-chart-card/vibration-exposure-chart-section.tsx";
 import { ExposureGraphEmptyState } from "@/features/statistic-card.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { exposureOverviewQueryOptions } from "@/lib/api.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
 import { exposures } from "@/lib/exposures.ts";
-import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain, userRoleToString } from "@/lib/utils.ts";
+import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 export default function OperatorHome() {
@@ -26,11 +19,6 @@ export default function OperatorHome() {
 
 	const { view } = useView();
 	const { date } = useDate();
-	const { exportMultipleToPDF } = useExportPDF();
-
-	const pdfDustChartContainerId = useId();
-	const pdfVibrationChartContainerId = useId();
-	const pdfNoiseChartContainerId = useId();
 
 	const { user } = useUser();
 
@@ -56,95 +44,32 @@ export default function OperatorHome() {
 	);
 
 	return (
-		<>
-			<div className="flex w-full min-w-0 flex-col gap-4">
-				{isLoading ? (
-					<Card className="flex h-24 w-full items-center">
-						<p>{t(($) => $.common.loading)}</p>
-					</Card>
-				) : isError ? (
-					<Card className="flex h-24 w-full items-center">
-						<p>{t(($) => $.common.error)}</p>
-					</Card>
-				) : view === "month" ? (
-					<CalendarWidget
-						selectedDay={date}
-						data={mapOverviewDataToTimeBucketStatuses(overviewBuckets ?? [])}
-					/>
-				) : view === "week" ? (
-					<WeekWidget
-						dayStartHour={minHour}
-						dayEndHour={maxHour}
-						data={mapOverviewDataToTimeBucketStatuses(overviewBuckets ?? [])}
-					/>
-				) : !overviewBuckets || overviewBuckets.length === 0 ? (
-					<ExposureGraphEmptyState date={date} locale={i18n.language} />
-				) : (
-					<DayWidget
-						data={mapOverviewBucketsToChartRows(overviewBuckets ?? [], 0, 23)}
-						startHour={minHour}
-						endHour={maxHour}
-						headerRight={
-							<ExportButton
-								title={t(($) => $.layout.export)}
-								onClick={() =>
-									exportMultipleToPDF(
-										[
-											pdfDustChartContainerId,
-											pdfNoiseChartContainerId,
-											pdfVibrationChartContainerId,
-										],
-										`${date.toLocaleDateString(i18n.language, {
-											day: "numeric",
-											month: "long",
-											year: "numeric",
-										})}-${user.name}-Exposure-Overview`,
-										[
-											`${t(($) => $.pdf.dustExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
-											`${t(($) => $.pdf.noiseExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
-											`${t(($) => $.pdf.vibrationExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
-										],
-										{
-											name: user.name,
-											locationLabel: t(($) => $.profile.location),
-											location: user.location.site,
-											jobTitleLabel: t(($) => $.profile.jobTitle),
-											jobTitle: userRoleToString(user.role, t),
-											securityRegulationsHeading: t(($) => $.profile.currentSecurityRegulations),
-											securityRegulations: getSecurityRegulations(t).map(({ label }) => label),
-											jobDescriptionHeading: t(($) => $.profile.jobDescription),
-											jobDescription: user.jobDescription ?? "-",
-											locale: i18n.language,
-										},
-									)
-								}
-							/>
-						}
-					/>
-				)}
-			</div>
-
-			<div
-				style={{
-					position: "fixed",
-					top: "-9999px",
-					left: "-9999px",
-					width: "1200px",
-					background: "white",
-				}}
-			>
-				<div id={pdfDustChartContainerId}>
-					<DustExposureChartSection />
-				</div>
-
-				<div id={pdfVibrationChartContainerId}>
-					<VibrationExposureChartSection />
-				</div>
-
-				<div id={pdfNoiseChartContainerId}>
-					<NoiseExposureChartSection />
-				</div>
-			</div>
-		</>
+		<div className="flex w-full min-w-0 flex-col gap-4">
+			{isLoading ? (
+				<Card className="flex h-24 w-full items-center">
+					<p>{t(($) => $.common.loading)}</p>
+				</Card>
+			) : isError ? (
+				<Card className="flex h-24 w-full items-center">
+					<p>{t(($) => $.common.error)}</p>
+				</Card>
+			) : view === "month" ? (
+				<CalendarWidget selectedDay={date} data={mapOverviewDataToTimeBucketStatuses(overviewBuckets ?? [])} />
+			) : view === "week" ? (
+				<WeekWidget
+					dayStartHour={minHour}
+					dayEndHour={maxHour}
+					data={mapOverviewDataToTimeBucketStatuses(overviewBuckets ?? [])}
+				/>
+			) : !overviewBuckets || overviewBuckets.length === 0 ? (
+				<ExposureGraphEmptyState date={date} locale={i18n.language} />
+			) : (
+				<DayWidget
+					data={mapOverviewBucketsToChartRows(overviewBuckets ?? [], 0, 23)}
+					startHour={minHour}
+					endHour={maxHour}
+				/>
+			)}
+		</div>
 	);
 }

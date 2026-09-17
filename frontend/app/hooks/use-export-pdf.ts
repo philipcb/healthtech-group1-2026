@@ -1,7 +1,7 @@
 import { toCanvas } from "html-to-image";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
-import { drawCoverPage, type CoverPageData } from "./pdf-cover-page.ts";
+import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -62,27 +62,6 @@ const getImageLayout = (canvas: HTMLCanvasElement) => {
 };
 
 export const useExportPDF = () => {
-	const exportToPDF = useCallback(async (elementId: string, fileName: string, title: string) => {
-		const canvas = await elementToCanvas(elementId);
-		if (!canvas) return;
-
-		const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-
-		pdf.setFont("helvetica", "bold");
-		pdf.setFontSize(14);
-
-		pdf.text(title, A4_LANDSCAPE_WIDTH / 2, 15, {
-			align: "center",
-		});
-
-		const imgData = canvas.toDataURL("image/png", 1.0);
-		const image = getImageLayout(canvas);
-
-		pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
-
-		pdf.save(`${fileName}.pdf`);
-	}, []);
-
 	const exportMultipleToPDF = useCallback(
 		async (elementIds: Array<string>, fileName: string, titles: Array<string>, coverPageData: CoverPageData) => {
 			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -111,5 +90,5 @@ export const useExportPDF = () => {
 		[],
 	);
 
-	return { exportToPDF, exportMultipleToPDF };
+	return { exportMultipleToPDF };
 };

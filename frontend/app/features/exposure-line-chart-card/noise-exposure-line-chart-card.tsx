@@ -1,11 +1,8 @@
-import { ExportButton } from "@/components/export-button.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import {
 	BaseExposureLineChartCard,
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { useUser } from "@/features/user/user-context.tsx";
-import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
 import type { Exposure } from "@/lib/exposures.ts";
@@ -20,10 +17,8 @@ interface Props {
 }
 
 export default function NoiseExposureLineChartCard({ userId }: Props) {
-	const { t, i18n } = useTranslation();
+	const { i18n } = useTranslation();
 
-	const { user } = useUser();
-	const { exportToPDF } = useExportPDF();
 	const chartContainerId = useId();
 
 	const exposure: Exposure = "noise";
@@ -58,22 +53,6 @@ export default function NoiseExposureLineChartCard({ userId }: Props) {
 			exposure={exposure}
 			usePeakData={usePeakAggregation}
 			id={chartContainerId}
-			headerRight={
-				<ExportButton
-					title={t(($) => $.common.exportAsPdf)}
-					onClick={() =>
-						exportToPDF(
-							chartContainerId,
-							`${date.toLocaleDateString(i18n.language, {
-								day: "numeric",
-								month: "long",
-								year: "numeric",
-							})}-${user.name}-Noise-Exposure-Overview`,
-							`${t(($) => $.pdf.noiseExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
-						)
-					}
-				/>
-			}
 		>
 			<ThresholdLine y={dangerThreshold} dangerLevel="danger" />
 			{!usePeakAggregation && <ThresholdLine y={threshold.warning} dangerLevel="warning" />}

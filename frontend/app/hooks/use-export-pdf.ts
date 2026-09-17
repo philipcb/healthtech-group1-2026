@@ -55,7 +55,7 @@ const getImageLayout = (canvas: HTMLCanvasElement) => {
 
 	return {
 		x: (A4_LANDSCAPE_WIDTH - width) / 2,
-		y: TITLE_HEIGHT + (maxHeight - height) / 2,
+		y: TITLE_HEIGHT + PAGE_MARGIN,
 		width,
 		height,
 	};

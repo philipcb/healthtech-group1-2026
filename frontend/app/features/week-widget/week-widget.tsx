@@ -31,9 +31,10 @@ interface WeekWidgetProps {
 	dayEndHour?: number;
 	data: Array<TimeBucketStatus>;
 	selectedDate?: Date;
+	className?: string;
 }
 
-export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDate }: WeekWidgetProps) {
+export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDate, className }: WeekWidgetProps) {
 	const formatDate = useFormatDate();
 	const { date: contextDate, setDate } = useDate();
 	const { setView } = useView();
@@ -70,7 +71,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 	return (
 		<div className="overflow-hidden">
 			<div className="isolate overflow-x-auto">
-				<div className="flex">
+				<div className={cn("flex", className)}>
 					{/* Time-label column */}
 					<div className={cn("flex shrink-0 flex-col", CELL_GAP, PADDING_Y)}>
 						{/* empty div because the time label column has no header */}

@@ -148,6 +148,7 @@ function SingleDayChartRenderer({
 		<>
 			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
 				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView="day" />
+				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
 				<DayWidget
 					data={dayGridData}
 					startHour={minHour}
@@ -155,6 +156,7 @@ function SingleDayChartRenderer({
 					selectedDate={tzDate}
 					exposureTypes={[exposure]}
 				/>
+				</div>
 			</div>
 
 			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
@@ -287,9 +289,13 @@ function TrendChartRenderer({
 			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
 				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
 				{view === "week" ? (
-					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
+					<div style={{ width: "1160px" }}>
+						<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
+					</div>
 				) : (
-					<CalendarWidget selectedDay={tzDate} data={gridData} />
+					<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+						<CalendarWidget selectedDay={tzDate} data={gridData} />
+					</div>
 				)}
 			</div>
 

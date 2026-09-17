@@ -5,7 +5,6 @@ import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
 import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
-import type { View } from "@/lib/views.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
@@ -16,6 +15,7 @@ import type { Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData, getHourDomain } from "@/lib/utils.ts";
+import type { View } from "@/lib/views.ts";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
 import type { CSSProperties } from "react";
@@ -149,13 +149,13 @@ function SingleDayChartRenderer({
 			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
 				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView="day" />
 				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-				<DayWidget
-					data={dayGridData}
-					startHour={minHour}
-					endHour={maxHour}
-					selectedDate={tzDate}
-					exposureTypes={[exposure]}
-				/>
+					<DayWidget
+						data={dayGridData}
+						startHour={minHour}
+						endHour={maxHour}
+						selectedDate={tzDate}
+						exposureTypes={[exposure]}
+					/>
 				</div>
 			</div>
 

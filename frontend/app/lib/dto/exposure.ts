@@ -92,6 +92,5 @@ export type AllExposureData = {
 	isErrorAny: boolean;
 };
 
-
 export type Aggregation = "average" | "peak";
 export const Aggregations: Array<Aggregation> = ["average", "peak"];

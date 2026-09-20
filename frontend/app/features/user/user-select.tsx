@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox.tsx";
+import { getUserComboboxLabel, type UserComboboxUser } from "@/features/user/user-combobox-label.ts";
 import { cn } from "@/lib/utils.ts";
 import { XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-export type UserSelectUser = { id: string; name: string };
+export type UserSelectUser = UserComboboxUser;
 
 interface UserSelectProps {
 	users: Array<UserSelectUser>;
@@ -28,54 +28,23 @@ export function UserSelect({
 }: UserSelectProps) {
 	const { t } = useTranslation();
 
-	const [searchValue, setSearchValue] = useState<string>(() =>
-		value ? userSelectItemToStringLabel(value, users) : "",
-	);
-
-	useEffect(() => {
-		const currentLabel = value ? userSelectItemToStringLabel(value, users) : "";
-		setSearchValue(currentLabel);
-	}, [value, users]);
-
 	const disabled = !users || users.length === 0;
 
-	const items = users.map((user) => ({
-		value: user.id,
-		label: user.name,
-	}));
-
-	const resolveItemLabel = (item: string | UserSelectListItem) => userSelectItemToStringLabel(item, users);
-
-	function handleComboboxValueChange(nextValue: string | UserSelectListItem | null) {
-		if (nextValue === null) {
-			onValueChange(null);
-			return;
-		}
-
-		if (typeof nextValue === "string") {
-			onValueChange(nextValue);
-			return;
-		}
-
-		onValueChange(nextValue.value);
-	}
+	const selectedUser = users.find((user) => user.id === value) ?? null;
 
 	return (
 		<div className="flex gap-1">
 			<Combobox
-				items={items}
+				items={users}
 				disabled={disabled}
-				value={value ?? undefined}
-				onValueChange={handleComboboxValueChange}
-				itemToStringLabel={resolveItemLabel}
+				value={selectedUser ?? undefined}
+				onValueChange={(nextUser: UserSelectUser | null) => onValueChange(nextUser?.id ?? null)}
+				itemToStringValue={(user: UserSelectUser) => user.id}
+				itemToStringLabel={getUserComboboxLabel}
 			>
 				<ComboboxInput
 					placeholder={placeholder}
 					disabled={disabled}
-					value={searchValue}
-					onChange={(e) => {
-						setSearchValue(e.target.value);
-					}}
 					className={cn(
 						"w-full rounded-r-md rounded-l-xl bg-background font-medium dark:bg-input/30",
 						inputClassName,
@@ -83,13 +52,9 @@ export function UserSelect({
 				/>
 				<ComboboxContent className={cn("rounded-xl", contentClassName)}>
 					<ComboboxList>
-						{(item) => (
-							<ComboboxItem
-								key={item.value}
-								value={item.value}
-								className={cn("rounded-lg", itemClassName)}
-							>
-								{item.label}
+						{(user: UserSelectUser) => (
+							<ComboboxItem key={user.id} value={user} className={cn("rounded-lg", itemClassName)}>
+								{user.name}
 							</ComboboxItem>
 						)}
 					</ComboboxList>
@@ -100,10 +65,7 @@ export function UserSelect({
 				aria-label={t(($) => $.foremanDashboard.overview.clearUserSelection)}
 				variant="outline"
 				size="icon"
-				onClick={() => {
-					onValueChange(null);
-					setSearchValue("");
-				}}
+				onClick={() => onValueChange(null)}
 				disabled={disabled || value === null}
 				className="rounded-r-xl"
 			>
@@ -111,18 +73,4 @@ export function UserSelect({
 			</Button>
 		</div>
 	);
-}
-
-type UserSelectListItem = { value: string; label: string };
-
-function userSelectItemToStringLabel(item: string | UserSelectListItem, users: Array<UserSelectUser>): string {
-	if (typeof item === "string") {
-		return users.find((user) => user.id === item)?.name ?? "";
-	}
-
-	if (item.label == null) {
-		return "";
-	}
-
-	return String(item.label);
 }

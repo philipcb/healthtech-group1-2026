@@ -2,7 +2,6 @@ import {
 	Combobox,
 	ComboboxChip,
 	ComboboxChips,
-	ComboboxChipsInput,
 	ComboboxContent,
 	ComboboxEmpty,
 	ComboboxInput,
@@ -10,6 +9,7 @@ import {
 	ComboboxList,
 	ComboboxValue,
 } from "@/components/ui/combobox.tsx";
+import { getUserComboboxLabel } from "@/features/user/user-combobox-label.ts";
 import type { User } from "@/lib/dto/user.ts";
 import type { ComboboxRootProps } from "@base-ui/react";
 
@@ -31,17 +31,19 @@ export const UserSearch = <Multiple extends boolean = false>({
 			items={users}
 			// God knows why I have to explicitly type this one but not the other
 			itemToStringValue={(user: User) => user.id}
-			itemToStringLabel={(user) => user.name}
+			itemToStringLabel={getUserComboboxLabel}
 		>
 			{props.multiple && props.value && Array.isArray(props.value) ? (
-				<ComboboxChips>
-					<ComboboxValue>
-						{props.value.map((item) => (
-							<ComboboxChip key={item.id}>{item.name}</ComboboxChip>
-						))}
-					</ComboboxValue>
-					<ComboboxChipsInput placeholder={placeholder} />
-				</ComboboxChips>
+				<div className="flex flex-col gap-2">
+					<ComboboxInput className="w-73" placeholder={placeholder} showTrigger={false} />
+					<ComboboxChips className="min-h-0 w-73 border-0 bg-transparent p-0 shadow-none focus-within:border-transparent focus-within:ring-0 has-data-[slot=combobox-chip]:px-0 **:data-[slot=combobox-chip-remove]:ml-0 **:data-[slot=combobox-chip-remove]:size-4 dark:bg-transparent">
+						<ComboboxValue>
+							{props.value.map((item) => (
+								<ComboboxChip key={item.id}>{item.name}</ComboboxChip>
+							))}
+						</ComboboxValue>
+					</ComboboxChips>
+				</div>
 			) : (
 				<ComboboxInput placeholder={placeholder} />
 			)}

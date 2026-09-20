@@ -5,11 +5,11 @@ import { useView } from "@/features/views/use-view.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import type { ExposureDto } from "@/lib/dto/exposure.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
 

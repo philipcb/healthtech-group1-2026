@@ -11,7 +11,6 @@ export const granularityEnum = {
 	day: 2,
 } as const;
 export type GranularityKey = keyof typeof granularityEnum;
-export type GranularityValue = (typeof granularityEnum)[GranularityKey];
 
 export const aggregateFnEnum = {
 	avg: 0,
@@ -21,7 +20,6 @@ export const aggregateFnEnum = {
 	count: 4,
 } as const;
 export type AggregateFnKey = keyof typeof aggregateFnEnum;
-export type AggregateFnValue = keyof (typeof aggregateFnEnum)[AggregateFnKey];
 
 export const ExposureTypeFieldSchema = z.enum([
 	"pm1_stel",
@@ -78,20 +76,6 @@ export const ExposureOverviewResponseDtoSchema = z.object({
 });
 
 export type ExposureOverviewResponseDto = z.infer<typeof ExposureOverviewResponseDtoSchema>;
-
-export type ExposureDataResult = {
-	data: Array<ExposureDto> | undefined;
-	isLoading: boolean;
-	isError: boolean;
-};
-
-export type AllExposures = Record<Exposure, ExposureDataResult>;
-
-export type AllExposureData = {
-	everyExposureData: AllExposures;
-	isLoadingAny: boolean;
-	isErrorAny: boolean;
-};
 
 export type Aggregation = "average" | "peak";
 export const Aggregations: Array<Aggregation> = ["average", "peak"];

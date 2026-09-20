@@ -10,7 +10,7 @@ import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
 import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import { getHourDomain } from "@/lib/exposure-time-domain";
+import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";

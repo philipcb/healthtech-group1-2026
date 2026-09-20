@@ -1,8 +1,9 @@
 import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import { TZDate } from "@date-fns/tz";
-import { formatDate, isExists, startOfDay } from "date-fns";
+import { addDays, addMonths, addWeeks, formatDate, isExists, startOfDay, subDays, subMonths, subWeeks } from "date-fns";
 import { createParser } from "nuqs";
 import { z } from "zod";
+import type { View } from "./views.ts";
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DATE_ONLY_FORMAT = "yyyy-MM-dd";
@@ -52,3 +53,29 @@ export const parseAsTZDate = createParser<TZDate>({
 });
 
 export const tzDateSchema = z.coerce.date().transform((value) => toTZDate(value));
+
+export const getPrevDay = (selectedDay: TZDate, view: View): TZDate => {
+	let prevDay: TZDate;
+	if (view === "day") {
+		prevDay = subDays(selectedDay, 1);
+	} else if (view === "week") {
+		prevDay = subWeeks(selectedDay, 1);
+	} else {
+		prevDay = subMonths(selectedDay, 1);
+	}
+
+	return prevDay;
+};
+
+export const getNextDay = (selectedDay: TZDate, view: View): TZDate => {
+	let nextDay: TZDate;
+	if (view === "day") {
+		nextDay = addDays(selectedDay, 1);
+	} else if (view === "week") {
+		nextDay = addWeeks(selectedDay, 1);
+	} else {
+		nextDay = addMonths(selectedDay, 1);
+	}
+
+	return nextDay;
+};

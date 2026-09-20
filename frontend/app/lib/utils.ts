@@ -1,87 +1,16 @@
 import type { TranslateFn } from "@/i18n/config.ts";
-import { TIMEZONE_NAME } from "@/i18n/locale.ts";
-import { TZDate } from "@date-fns/tz";
 import { type ClassValue, clsx } from "clsx";
-import { addDays, addMonths, addWeeks, subDays, subMonths, subWeeks } from "date-fns";
 import { CircleDashedIcon, FrownIcon, MehIcon, SmileIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import type { DangerLevel } from "./danger-levels.ts";
 import type { ExposureDto } from "./dto/exposure.ts";
-import { DEFAULT_MAX_HOUR_DOMAIN, DEFAULT_MIN_HOUR_DOMAIN, type HourDomainDto } from "./dto/hour-domain.ts";
 import type { User } from "./dto/user.ts";
 import type { Exposure, ExposureUnit } from "./exposures.ts";
-import type { View } from "./views.ts";
 
-const MAX_CHART_HOUR = 23;
-const MIN_CHART_HOUR = 0;
 const UG_TO_MG = 0.001;
-export const DUST_Y_AXIS_STEP = 7.5;
 
 export function cn(...inputs: Array<ClassValue>) {
 	return twMerge(clsx(inputs));
-}
-
-export const getPrevDay = (selectedDay: TZDate, view: View): TZDate => {
-	let prevDay: TZDate;
-	if (view === "day") {
-		prevDay = subDays(selectedDay, 1);
-	} else if (view === "week") {
-		prevDay = subWeeks(selectedDay, 1);
-	} else {
-		prevDay = subMonths(selectedDay, 1);
-	}
-
-	return prevDay;
-};
-
-export const getNextDay = (selectedDay: TZDate, view: View): TZDate => {
-	let nextDay: TZDate;
-	if (view === "day") {
-		nextDay = addDays(selectedDay, 1);
-	} else if (view === "week") {
-		nextDay = addWeeks(selectedDay, 1);
-	} else {
-		nextDay = addMonths(selectedDay, 1);
-	}
-
-	return nextDay;
-};
-
-export function computeYAxisRange(
-	data: Array<ExposureDto>,
-	options?: {
-		topPadding?: number;
-		bottomPadding?: number;
-		//Rounds the Y-axix labels to make them more readable. For example, with a step of 10, a max value of 83 would be rounded up to 90.
-		step?: number;
-		clampToZero?: boolean;
-	},
-) {
-	const { topPadding = 5, bottomPadding = 10, step = 10, clampToZero = true } = options ?? {};
-
-	if (!data || data.length === 0) {
-		return { minY: 0, maxY: step };
-	}
-
-	const max = data.reduce((m, c) => (c.value > m ? c.value : m), data[0].value);
-	const min = data.reduce((m, c) => (c.value < m ? c.value : m), data[0].value);
-
-	const maxY = Math.ceil(max / step) * step + topPadding;
-	const minY = Math.floor((min - bottomPadding) / step) * step;
-	const clampedMinY = clampToZero ? Math.max(0, minY) : minY;
-
-	return { minY: clampedMinY, maxY };
-}
-
-export function buildYAxisTicks(minY: number, maxY: number, step: number): Array<number> {
-	const ticks: Array<number> = [];
-	const precision = Math.max(0, `${step}`.split(".")[1]?.length ?? 0);
-
-	for (let value = minY; value <= maxY + step / 1000; value += step) {
-		ticks.push(Number(value.toFixed(precision)));
-	}
-
-	return ticks;
 }
 
 export const userRoleToString = (role: User["role"], t: TranslateFn) => {
@@ -164,50 +93,6 @@ export function getEmoji(dangerLevel: DangerLevel | null) {
 		case null:
 			return CircleDashedIcon;
 	}
-}
-
-export const clampHour = (hour: number) => Math.max(Math.min(hour, MAX_CHART_HOUR), MIN_CHART_HOUR);
-
-export function getHourDomain(
-	hourDomain: HourDomainDto | undefined,
-	dates: Array<TZDate> | undefined,
-	viewForPadding: View,
-): {
-	minHour: number;
-	maxHour: number;
-} {
-	// Should we have no data, then we use the local defaults
-	if (!(dates?.length && hourDomain)) {
-		const minHour = clampHour(hourDomain?.minHourUtc ?? DEFAULT_MIN_HOUR_DOMAIN);
-		const maxHour = clampHour(hourDomain?.maxHourUtc ?? DEFAULT_MAX_HOUR_DOMAIN);
-
-		return { minHour, maxHour };
-	}
-
-	// Should we have data, then the hourDomain is defined and is UTC
-	const { minHourUtc, maxHourUtc } = hourDomain;
-
-	const minHours = dates.map((d) => convertUtcHourToLocalHour(minHourUtc, d));
-	const maxHours = dates.map((d) => convertUtcHourToLocalHour(maxHourUtc, d));
-
-	// maxHour in day views are non-inclusive, meaning if the last data point is 14:30,
-	// maxHour needs to be at least 15 to include that data point in the chart. While week and month views are inclusive.
-	// We add an additional hour of padding to ensure that the data doesn't look cut off
-	const minHourPadding = 1;
-	const maxHourPadding = viewForPadding === "day" ? 2 : 1;
-
-	const rawMin = Math.min(...minHours);
-	const rawMax = Math.max(...maxHours);
-
-	const minHour = clampHour(rawMin - minHourPadding);
-	const maxHour = clampHour(rawMax + maxHourPadding);
-	return { minHour, maxHour };
-}
-
-function convertUtcHourToLocalHour(utcHour: number, date: TZDate): number {
-	const localDate = new TZDate(date, TIMEZONE_NAME);
-	localDate.setUTCHours(utcHour);
-	return localDate.getHours();
 }
 
 export function formatExposureValue(

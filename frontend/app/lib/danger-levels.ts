@@ -29,10 +29,6 @@ export const compareDangerLevels = (a: DangerLevel | null, b: DangerLevel | null
 	return DANGER_LEVEL_SEVERITY[a] - DANGER_LEVEL_SEVERITY[b];
 };
 
-/** Is "b" higher severity than "a"? */
-export const isHigherSeverity = (a: DangerLevel | null, b: DangerLevel | null): boolean =>
-	compareDangerLevels(a, b) < 0;
-
 type DangerLevelInfo = {
 	label: string;
 	color: string;
@@ -103,7 +99,7 @@ export function getHighestDangerLevel(operators: Array<UserWithStatusDto>, expos
 	operators.forEach((operator) => {
 		const level = exposure ? (operator.status[exposure]?.dangerLevel ?? "safe") : operator.status.status;
 
-		if (DANGER_LEVEL_SEVERITY[level] > DANGER_LEVEL_SEVERITY[highestLevel]) {
+		if (compareDangerLevels(level, highestLevel) > 0) {
 			highestLevel = level;
 		}
 	});

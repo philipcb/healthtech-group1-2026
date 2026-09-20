@@ -9,6 +9,10 @@ import { type Exposure, exposures } from "./exposures.ts";
  */
 export type ExposureQueryKind = "default" | "windowed";
 
+function toDayTimestamp(date: TZDate | undefined): number | null {
+	return date ? startOfDay(date).getTime() : null;
+}
+
 function buildExposureQueryCachePart({
 	query,
 	queryKind,
@@ -28,7 +32,7 @@ function buildExposureQueryCachePart({
 		return [...base, "windowed", windowMinutes ?? null];
 	}
 
-	return [...base, startOfDay(query.startTime).getTime(), startOfDay(query.endTime).getTime()];
+	return [...base, toDayTimestamp(query.startTime), toDayTimestamp(query.endTime)];
 }
 
 export function buildExposureQueryKey({
@@ -71,10 +75,7 @@ export function buildExposureOverviewQueryKey({
 }
 
 export function buildSubordinatesQueryKey(userId: string, startTime?: TZDate, endTime?: TZDate) {
-	const start = startTime ? startOfDay(startTime).getTime() : null;
-	const end = endTime ? startOfDay(endTime).getTime() : null;
-
-	return ["user.subordinates", userId, start, end];
+	return ["user.subordinates", userId, toDayTimestamp(startTime), toDayTimestamp(endTime)];
 }
 
 export function buildNotesQueryKey(userId: string, startTime: TZDate, endTime: TZDate) {
@@ -85,10 +86,7 @@ export function buildNotesQueryKey(userId: string, startTime: TZDate, endTime: T
 }
 
 export function buildThresholdSummaryQueryKey(userId: string, startTime?: TZDate, endTime?: TZDate) {
-	const start = startTime ? startOfDay(startTime).getTime() : null;
-	const end = endTime ? startOfDay(endTime).getTime() : null;
-
-	return ["user.subordinates.threshold-summary", userId, start, end];
+	return ["user.subordinates.threshold-summary", userId, toDayTimestamp(startTime), toDayTimestamp(endTime)];
 }
 
 export function buildNotesQueryKeyPrefix(userId: string) {

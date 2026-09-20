@@ -4,6 +4,7 @@ import { NotesCard } from "@/components/notes-card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
+import { PdfExport } from "@/features/sidebar/pdf-export.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { ViewPicker } from "@/features/views/view-picker.tsx";
@@ -77,6 +78,7 @@ export default function ExposureLayout() {
 			<aside className="col-start-1 row-start-2 flex flex-col gap-4">
 				<NotesCard />
 				<LimitExplanation />
+				<PdfExport exposureType={exposure ?? "all"} />
 			</aside>
 
 			<article className="col-start-2 row-start-2 flex flex-col gap-4">

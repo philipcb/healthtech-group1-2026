@@ -30,16 +30,19 @@ interface WeekWidgetProps {
 	dayStartHour?: number;
 	dayEndHour?: number;
 	data: Array<TimeBucketStatus>;
+	selectedDate?: Date;
+	className?: string;
 }
 
-export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data }: WeekWidgetProps) {
+export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDate, className }: WeekWidgetProps) {
 	const formatDate = useFormatDate();
-	const { date: selectedDate, setDate } = useDate();
+	const { date: contextDate, setDate } = useDate();
 	const { setView } = useView();
+	const displayedDate = selectedDate ?? contextDate;
 
 	const daysInWeek = eachDayOfInterval({
-		start: startOfWeek(selectedDate),
-		end: addDays(startOfWeek(selectedDate), 6),
+		start: startOfWeek(displayedDate),
+		end: addDays(startOfWeek(displayedDate), 6),
 	}).map(toTZDate);
 
 	const timeSlotSegments = daysInWeek.map((day) => {
@@ -68,7 +71,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data }: WeekWidg
 	return (
 		<div className="overflow-hidden">
 			<div className="isolate overflow-x-auto">
-				<div className="flex">
+				<div className={cn("flex", className)}>
 					{/* Time-label column */}
 					<div className={cn("flex shrink-0 flex-col", CELL_GAP, PADDING_Y)}>
 						{/* empty div because the time label column has no header */}
@@ -88,7 +91,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data }: WeekWidg
 						const formattedDate = formatDate(segment.date, "yyyy-MM-dd");
 						const today = isToday(segment.date);
 						const weekday = formatDate(segment.date, "EEE");
-						const date = formatDate(segment.date, "dd");
+						const dayNumber = formatDate(segment.date, "dd");
 
 						return (
 							<button
@@ -121,7 +124,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data }: WeekWidg
 												],
 											)}
 										>
-											{date}
+											{dayNumber}
 										</span>
 									</p>
 								</div>

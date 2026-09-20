@@ -1,11 +1,8 @@
-import { ExportButton } from "@/components/export-button.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import {
 	BaseExposureLineChartCard,
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { useUser } from "@/features/user/user-context.tsx";
-import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
@@ -18,10 +15,8 @@ interface Props {
 }
 
 export default function VibrationExposureLineChartCard({ userId }: Props) {
-	const { t, i18n } = useTranslation();
+	const { i18n } = useTranslation();
 
-	const { user } = useUser();
-	const { exportToPDF } = useExportPDF();
 	const chartContainerId = useId();
 
 	const exposure: Exposure = "vibration";
@@ -49,22 +44,6 @@ export default function VibrationExposureLineChartCard({ userId }: Props) {
 			lineType="monotone"
 			exposure={exposure}
 			id={chartContainerId}
-			headerRight={
-				<ExportButton
-					title={t(($) => $.common.exportAsPdf)}
-					onClick={() =>
-						exportToPDF(
-							chartContainerId,
-							`${date.toLocaleDateString(i18n.language, {
-								day: "numeric",
-								month: "long",
-								year: "numeric",
-							})}-${user.name}-Vibration-Exposure-Overview`,
-							`${t(($) => $.pdf.vibrationExposure)} - ${user.name} - ${date.toLocaleDateString(i18n.language)}`,
-						)
-					}
-				/>
-			}
 		>
 			<ThresholdLine y={threshold.danger} dangerLevel="danger" />
 			<ThresholdLine y={threshold.warning} dangerLevel="warning" />

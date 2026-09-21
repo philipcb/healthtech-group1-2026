@@ -8,9 +8,9 @@ import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { exposureOverviewQueryOptions } from "@/lib/api.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
+import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { exposures } from "@/lib/exposures.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 

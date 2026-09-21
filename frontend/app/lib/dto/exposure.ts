@@ -11,7 +11,6 @@ export const granularityEnum = {
 	day: 2,
 } as const;
 export type GranularityKey = keyof typeof granularityEnum;
-export type GranularityValue = (typeof granularityEnum)[GranularityKey];
 
 export const aggregateFnEnum = {
 	avg: 0,

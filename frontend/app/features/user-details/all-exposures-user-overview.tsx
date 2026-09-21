@@ -6,9 +6,9 @@ import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { exposureOverviewQueryOptions } from "@/lib/api.ts";
 import type { UserWithStatusDto } from "@/lib/dto/user.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
+import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { exposures } from "@/lib/exposures.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { getHourDomain } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 
 export function AllExposuresUserOverview({ selectedUser }: { selectedUser: UserWithStatusDto }) {

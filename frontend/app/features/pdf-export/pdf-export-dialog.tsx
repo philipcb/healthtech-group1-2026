@@ -9,17 +9,26 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { PdfChartRenderer, type PdfView } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
-import { getSecurityRegulations } from "@/lib/security-regulations.ts";
-import { userRoleToString } from "@/lib/utils.ts";
-import type { View } from "@/lib/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
+import { getSecurityRegulations } from "@/lib/security-regulations.ts";
+import { userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
-import { addMonths, addWeeks, isToday, startOfMonth, startOfWeek, subMilliseconds } from "date-fns";
+import {
+	addMonths,
+	addWeeks,
+	addYears,
+	getYear,
+	isToday,
+	startOfMonth,
+	startOfWeek,
+	startOfYear,
+	subMilliseconds,
+} from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,7 +66,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	// NOTE: These are independent from the global date/view state that controls the main page.
 	// The dialog has its own date picker so users can export a different date than what's
 	// currently shown on screen.
-	const [localView, setLocalView] = useState<View>("day"); // "day" | "week" | "month"
+	const [localView, setLocalView] = useState<PdfView>("day"); // "day" | "week" | "month" | "year"
 	const [localDate, setLocalDate] = useState<TZDate>(today()); // The selected date in dialog
 	const [isExporting, setIsExporting] = useState(false); // Loading state during PDF generation
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
@@ -107,6 +116,13 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			return { previous, next };
 		}
 
+		if (localView === "year") {
+			const start = startOfYear(localDate, { in: TIMEZONE });
+			const previous = subMilliseconds(start, 1);
+			const next = addYears(start, 1, { in: TIMEZONE });
+			return { previous, next };
+		}
+
 		// month
 		const start = startOfMonth(localDate, { in: TIMEZONE });
 		const previous = subMilliseconds(start, 1); // Last day of previous month
@@ -152,7 +168,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Wait for IDs with timeout
 		const timeoutPromise = new Promise<Array<string>>((_, reject) => {
-			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), 5000);
+			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), 60000); // 60s timeout
 		});
 
 		let ids: Array<string>;
@@ -193,17 +209,26 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 			// For day view: use single date
 			// For week/month view: use date range
-			const dateText =
-				localView === "day"
-					? localDate.toLocaleDateString(i18n.language, {
-							day: "numeric",
-							month: "long",
-							year: "numeric",
-						})
-					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
-
-			const title = `${exposureName} - ${user.name} - ${dateText}`;
-			titles.push(title, title); // page 1: summary+grid, page 2: graph
+			if (localView === "day") {
+				const dateText = localDate.toLocaleDateString(i18n.language, {
+					day: "numeric",
+					month: "long",
+					year: "numeric",
+				});
+				const title = `${exposureName} - ${user.name} - ${dateText}`;
+				titles.push(title, title);
+			} else if (localView === "year") {
+				const yearStart = startOfYear(localDate, { in: TIMEZONE });
+				for (let i = 0; i < 12; i++) {
+					const monthDate = addMonths(yearStart, i);
+					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
+					titles.push(`${exposureName} - ${user.name} - ${monthText}`);
+				}
+			} else {
+				const dateText = `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
+				const title = `${exposureName} - ${user.name} - ${dateText}`;
+				titles.push(title, title);
+			}
 		}
 
 		// Generate filename with date range
@@ -214,7 +239,9 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						month: "long",
 						year: "numeric",
 					})
-				: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
+				: localView === "year"
+					? `${getYear(localDate)}`
+					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
 		const fileName = `${fileNameDate}-${user.name}-${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
 		const coverPageData = {
@@ -259,7 +286,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 							value={localView}
 							variant="outline"
 							className="inline-grid w-full auto-cols-fr grid-flow-col"
-							onValueChange={(value: View) => {
+							onValueChange={(value: PdfView) => {
 								if (value) {
 									setLocalView(value);
 								}
@@ -283,6 +310,13 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								<div className="flex items-center gap-2">
 									<MonthViewIcon className="size-4" />
 									<p className="text-sm">{t(($) => $.views.month)}</p>
+								</div>
+							</ToggleGroupItem>
+
+							<ToggleGroupItem value="year" aria-label={t(($) => $.views.year)}>
+								<div className="flex items-center gap-2">
+									<CalendarIcon className="size-4" />
+									<p className="text-sm">{t(($) => $.views.year)}</p>
 								</div>
 							</ToggleGroupItem>
 						</ToggleGroup>
@@ -327,13 +361,22 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 					{/* Calendar (reuses DatePicker from right sidebar) */}
 					<div className="flex justify-center">
-						<DatePicker
-							mode={localView}
-							date={localDate}
-							onDateChange={setLocalDate}
-							withFooter={true}
-							showWeekNumber={true}
-						/>
+						{localView === "year" ? (
+							<div className="flex flex-col items-center gap-1 py-8">
+								<span className="font-semibold text-4xl tabular-nums">{getYear(localDate)}</span>
+								<p className="text-muted-foreground text-sm">
+									{t(($) => $.layout.selectedYear, { year: getYear(localDate) })}
+								</p>
+							</div>
+						) : (
+							<DatePicker
+								mode={localView}
+								date={localDate}
+								onDateChange={setLocalDate}
+								withFooter={true}
+								showWeekNumber={true}
+							/>
+						)}
 					</div>
 				</div>
 

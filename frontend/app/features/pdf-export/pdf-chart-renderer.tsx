@@ -17,8 +17,9 @@ import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
+import type { TZDate } from "@date-fns/tz";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { setHours } from "date-fns";
+import { addMonths, setHours, startOfYear } from "date-fns"; // add to existing date-fns import
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -37,21 +38,29 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
  *
  * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
  */
-
-type PdfPage = "summary" | "chart";
+export type PdfView = View | "year";
 
 interface CollectedPage {
 	id: string;
 	exposure: Exposure;
-	page: PdfPage;
+	page: string;
 }
 
 interface PdfChartRendererProps {
 	exposureType: "dust" | "noise" | "vibration" | "all";
-	view: View;
+	view: PdfView;
 	date: Date;
 	userId: string;
 	onIdsReady: (ids: Array<string>) => void;
+}
+
+// Which page keys to expect per exposure type, in order, for a given view.
+// Extending this (e.g. adding red-day detail pages) only requires adding
+// keys here — the collection/ordering logic below stays untouched.
+function getPageKeysForView(view: PdfView): Array<string> {
+	if (view === "day") return ["summary", "chart"];
+	if (view === "year") return Array.from({ length: 12 }, (_, i) => `month-${i}`);
+	return ["summary", "chart"]; // week or month
 }
 
 // Extra headroom below the plotted area so the x-axis labels and legend always fit
@@ -317,6 +326,95 @@ function TrendChartRenderer({
 }
 
 /**
+ * One page in a year export: a single month's calendar grid, no chart —
+ * matches the doctor's request that month/week pages show grid only.
+ */
+function MonthGridPage({
+	exposure,
+	monthDate,
+	monthIndex,
+	userId,
+	onPageReady,
+}: {
+	exposure: Exposure;
+	monthDate: TZDate;
+	monthIndex: number;
+	userId: string;
+	onPageReady: (page: CollectedPage) => void;
+}) {
+	const pageId = useId();
+
+	const gridQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "month", monthDate, {
+				field: exposure === "dust" ? "pm1_twa" : undefined,
+				usePeakAggregation: false,
+			}),
+			userId,
+		}),
+	);
+
+	const isLoading = gridQuery.isLoading;
+	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
+
+	useEffect(() => {
+		if (!isLoading) {
+			onPageReady({ id: pageId, exposure, page: `month-${monthIndex}` });
+		}
+	}, [isLoading, pageId, exposure, monthIndex, onPageReady]);
+
+	if (isLoading) {
+		return null;
+	}
+
+	return (
+		<div id={pageId} className="pdf-export-container" style={pdfPageStyle}>
+			<ExposureSummary exposureType={exposure} selectedDate={monthDate} selectedView="month" />
+			<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+				<CalendarWidget selectedDay={monthDate} data={gridData} />
+			</div>
+		</div>
+	);
+}
+
+/**
+ * Year export: 12 month-grid pages per exposure type, January through December.
+ * Does NOT yet append red-day detail pages or notes — that's a separate,
+ * larger task (bookmark/link system + notes lookup), tracked separately.
+ */
+function YearChartRenderer({
+	exposure,
+	date,
+	userId,
+	onPageReady,
+}: {
+	exposure: Exposure;
+	date: Date;
+	userId: string;
+	onPageReady: (page: CollectedPage) => void;
+}) {
+	const tzDate = TIMEZONE(date);
+	const yearStart = startOfYear(tzDate, { in: TIMEZONE });
+	const months = Array.from({ length: 12 }, (_, i) => addMonths(yearStart, i));
+
+	return (
+		<>
+			{months.map((monthDate, i) => (
+				<MonthGridPage
+					key={i}
+					exposure={exposure}
+					monthDate={monthDate}
+					monthIndex={i}
+					userId={userId}
+					onPageReady={onPageReady}
+				/>
+			))}
+		</>
+	);
+}
+
+/**
  * Main renderer - coordinates all pages and reports their final IDs once everything
  * has loaded.
  *
@@ -332,7 +430,8 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 	const [hasReported, setHasReported] = useState(false);
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
-	const expectedCount = exposuresToRender.length * 2; // one summary + one chart page per exposure
+	const pageKeys = getPageKeysForView(view);
+	const expectedCount = exposuresToRender.length * pageKeys.length;
 
 	const handlePageReady = useCallback(
 		(pageInfo: CollectedPage) => {
@@ -341,29 +440,18 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
 
 			if (collectedRef.current.size === expectedCount) {
-				const orderedIds = exposuresToRender.flatMap((exposure) => {
-					const summaryPage = collectedRef.current.get(`${exposure}-summary`);
-					const chartPage = collectedRef.current.get(`${exposure}-chart`);
-					return [summaryPage?.id, chartPage?.id].filter((id): id is string => id != null);
-				});
+				const orderedIds = exposuresToRender.flatMap((exposure) =>
+					pageKeys
+						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.id)
+						.filter((id): id is string => id != null),
+				);
 
 				onIdsReady(orderedIds);
 				setHasReported(true);
 			}
 		},
-		[expectedCount, exposuresToRender, onIdsReady, hasReported],
+		[expectedCount, exposuresToRender, pageKeys, onIdsReady, hasReported],
 	);
-
-	// Reset when component mounts/unmounts
-	useEffect(() => {
-		collectedRef.current.clear();
-		setHasReported(false);
-
-		return () => {
-			collectedRef.current.clear();
-			setHasReported(false);
-		};
-	}, []);
 
 	return (
 		<div
@@ -384,16 +472,26 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 							onPageReady={handlePageReady}
 						/>
 					))
-				: exposuresToRender.map((exposure) => (
-						<TrendChartRenderer
-							key={exposure}
-							exposure={exposure}
-							date={date}
-							view={view}
-							userId={userId}
-							onPageReady={handlePageReady}
-						/>
-					))}
+				: view === "year"
+					? exposuresToRender.map((exposure) => (
+							<YearChartRenderer
+								key={exposure}
+								exposure={exposure}
+								date={date}
+								userId={userId}
+								onPageReady={handlePageReady}
+							/>
+						))
+					: exposuresToRender.map((exposure) => (
+							<TrendChartRenderer
+								key={exposure}
+								exposure={exposure}
+								date={date}
+								view={view}
+								userId={userId}
+								onPageReady={handlePageReady}
+							/>
+						))}
 		</div>
 	);
 }

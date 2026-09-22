@@ -52,6 +52,7 @@
     "day": "Day",
     "week": "Week",
     "month": "Month",
+    "year": "Year",
     "selectionText": "You are viewing a {{view}}.",
     "dateSelectionSingle": "You have selected {{date}}.",
     "dateSelectionMultiple": "You have selected {{startDate}} to {{endDate}}."
@@ -85,7 +86,8 @@
     "exportPdfDescription": "Select time period for PDF export",
     "theme": "Theme",
     "language": "Language",
-    "map": "Map"
+    "map": "Map",
+    "selectedYear": "Selected year: {{year}}"
   },
   "live": {
     "timeRange": {

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
 import { cn } from "@/lib/utils.ts";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,14 +16,7 @@ export function BaseTrendLineChartCard({ children, breakoutOnMobile = false }: P
 	const { t } = useTranslation();
 
 	return (
-		<Card
-			className={cn(
-				"relative w-full",
-				// left-1/2 + -50vw margin cancels out layout.tsx's mx-5 regardless of nesting depth.
-				breakoutOnMobile &&
-					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 lg:left-auto lg:ml-0 lg:w-full lg:rounded-xl lg:border-x",
-			)}
-		>
+		<Card className={cn("relative w-full", breakoutOnMobile && MOBILE_BREAKOUT_CARD_CLASSNAME)}>
 			<CardHeader>
 				<CardTitle>
 					{t(($) => $.exposureTrendLineChartCard.title[view], {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card.tsx";
+import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,9 +32,7 @@ export function BaseExposureLineChartCard({
 			className={cn(
 				"relative w-full",
 				props.variant === "compact" ? "pl-0" : "pr-0",
-				// left-1/2 + -50vw margin cancels out layout.tsx's mx-5 regardless of nesting depth.
-				breakoutOnMobile &&
-					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 lg:left-auto lg:ml-0 lg:w-full lg:rounded-xl lg:border-x",
+				breakoutOnMobile && MOBILE_BREAKOUT_CARD_CLASSNAME,
 				className,
 			)}
 			id={id}

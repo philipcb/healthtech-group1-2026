@@ -139,21 +139,11 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 			>
 				<span className="flex min-w-0 items-center gap-1">
 					<span className="text-xs">{warningLabel}</span>
-					<Popover>
-						<PopoverTrigger asChild={true}>
-							<button
-								type="button"
-								aria-label={`${warningLabel}: ${viewDetailsLabel}`}
-								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-							>
-								<InfoIcon className="size-3.5" />
-							</button>
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-64 text-sm">
-							<p className="font-medium">{actionValueLabel}</p>
-							<p className="text-muted-foreground text-xs">{actionValueDescription}</p>
-						</PopoverContent>
-					</Popover>
+					<LimitPopoverButton
+						ariaLabel={`${warningLabel}: ${viewDetailsLabel}`}
+						label={actionValueLabel}
+						description={actionValueDescription}
+					/>
 				</span>
 				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
 			</p>
@@ -169,21 +159,12 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 				<span className="flex items-center gap-1 text-xs">
 					{warningLabel}
 					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
-					<Popover>
-						<PopoverTrigger asChild={true}>
-							<button
-								type="button"
-								aria-label={`${warningLabel}: ${viewDetailsLabel}`}
-								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 lg:hidden"
-							>
-								<InfoIcon className="size-3.5" />
-							</button>
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-64 text-sm">
-							<p className="font-medium">{actionValueLabel}</p>
-							<p className="text-muted-foreground text-xs">{actionValueDescription}</p>
-						</PopoverContent>
-					</Popover>
+					<LimitPopoverButton
+						ariaLabel={`${warningLabel}: ${viewDetailsLabel}`}
+						label={actionValueLabel}
+						description={actionValueDescription}
+						triggerClassName="lg:hidden"
+					/>
 				</span>
 				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
 			</p>
@@ -197,21 +178,11 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 			>
 				<span className="flex min-w-0 items-center gap-1">
 					<span className="text-xs">{dangerLabel}</span>
-					<Popover>
-						<PopoverTrigger asChild={true}>
-							<button
-								type="button"
-								aria-label={`${dangerLabel}: ${viewDetailsLabel}`}
-								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-							>
-								<InfoIcon className="size-3.5" />
-							</button>
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-64 text-sm">
-							<p className="font-medium">{limitValueLabel}</p>
-							<p className="text-muted-foreground text-xs">{limitValueDescription}</p>
-						</PopoverContent>
-					</Popover>
+					<LimitPopoverButton
+						ariaLabel={`${dangerLabel}: ${viewDetailsLabel}`}
+						label={limitValueLabel}
+						description={limitValueDescription}
+					/>
 				</span>
 				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
 			</p>
@@ -225,25 +196,49 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 				<span className="flex items-center gap-1 text-xs">
 					{dangerLabel}
 					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
-					<Popover>
-						<PopoverTrigger asChild={true}>
-							<button
-								type="button"
-								aria-label={`${dangerLabel}: ${viewDetailsLabel}`}
-								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 lg:hidden"
-							>
-								<InfoIcon className="size-3.5" />
-							</button>
-						</PopoverTrigger>
-						<PopoverContent align="start" className="w-64 text-sm">
-							<p className="font-medium">{limitValueLabel}</p>
-							<p className="text-muted-foreground text-xs">{limitValueDescription}</p>
-						</PopoverContent>
-					</Popover>
+					<LimitPopoverButton
+						ariaLabel={`${dangerLabel}: ${viewDetailsLabel}`}
+						label={limitValueLabel}
+						description={limitValueDescription}
+						triggerClassName="lg:hidden"
+					/>
 				</span>
 				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
 			</p>
 		</div>
+	);
+}
+
+function LimitPopoverButton({
+	ariaLabel,
+	label,
+	description,
+	triggerClassName,
+}: {
+	ariaLabel: string;
+	label: string;
+	description: string;
+	triggerClassName?: string;
+}) {
+	return (
+		<Popover>
+			<PopoverTrigger asChild={true}>
+				<button
+					type="button"
+					aria-label={ariaLabel}
+					className={cn(
+						"-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100",
+						triggerClassName,
+					)}
+				>
+					<InfoIcon className="size-3.5" />
+				</button>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-64 text-sm">
+				<p className="font-medium">{label}</p>
+				<p className="text-muted-foreground text-xs">{description}</p>
+			</PopoverContent>
+		</Popover>
 	);
 }
 

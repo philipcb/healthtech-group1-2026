@@ -9,14 +9,17 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { PdfChartRenderer, type PdfView } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { PdfChartRenderer, type PdfPageSpec, type PdfView } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
+import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
-import { TIMEZONE } from "@/i18n/locale.ts";
+import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
+import { formatMinutesAsDuration } from "@/lib/duration.ts";
+import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
-import { userRoleToString } from "@/lib/utils.ts";
+import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
 import {
 	addMonths,
@@ -43,6 +46,17 @@ import { useTranslation } from "react-i18next";
  */
 
 /**
+ * Chart unit per exposure type, matching the live cards.
+ * Note SingleDayChartRenderer still uses `exposure === "dust" ? "ug" : "db"`, which
+ * labels vibration as dB — don't copy that here.
+ */
+const EXPOSURE_UNIT: Record<Exposure, ExposureUnit> = {
+	dust: "ug",
+	noise: "db",
+	vibration: "points",
+};
+
+/**
  * Props for the PDF Export Dialog
  * @param open - Controls whether the dialog is visible
  * @param onOpenChange - Callback to close the dialog
@@ -60,7 +74,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	// Hooks: Get translation, user info, and PDF export functionality
 	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
 	const { user } = useUser(); // Current logged-in user (used in PDF filename)
-	const { exportMultipleToPDF } = useExportPDF(); // Function to convert HTML to PDF
+	const { exportPagesToPDF } = useExportPDF(); // Function to build the PDF from page specs
 
 	// STATE: Local date/view selection for the dialog
 	// NOTE: These are independent from the global date/view state that controls the main page.
@@ -130,50 +144,49 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		return { previous, next };
 	};
 
-	// Ref to store promise resolver for IDs
-	const idsResolverRef = useRef<((ids: Array<string>) => void) | null>(null);
+	// Ref to store promise resolver for the page specs
+	const pagesResolverRef = useRef<((pages: Array<PdfPageSpec>) => void) | null>(null);
 
-	// Callback: Receive element IDs from PdfRenderer
+	// Callback: Receive page specs from PdfRenderer
 	/**
-	 * Called by PdfRenderer when it has rendered the charts and knows their HTML element IDs.
-	 * These IDs are needed by useExportPDF to find the elements to capture as PDF.
+	 * Called by PdfRenderer once every page has loaded. Each spec says how the page
+	 * should be drawn: an off-screen element to rasterize, or a red-day table.
 	 */
-	const handleIdsReady = useCallback((ids: Array<string>) => {
-		// Resolve the promise if we're waiting for IDs
-		if (idsResolverRef.current) {
-			idsResolverRef.current(ids);
-			idsResolverRef.current = null;
+	const handlePagesReady = useCallback((pages: Array<PdfPageSpec>) => {
+		// Resolve the promise if we're waiting for the pages
+		if (pagesResolverRef.current) {
+			pagesResolverRef.current(pages);
+			pagesResolverRef.current = null;
 		}
 	}, []);
 
 	// Handler: Export button clicked
 	/**
 	 * Main export function that:
-	 * 1. Waits for charts to finish rendering (500ms delay)
-	 * 2. Generates titles for each chart page
-	 * 3. Calls exportMultipleToPDF to capture elements and create PDF
-	 * 4. Logs timing information to console
-	 * 5. Closes the dialog
+	 * 1. Waits for charts to finish rendering
+	 * 2. Generates titles for each page
+	 * 3. Calls exportPagesToPDF to build the document
+	 * 4. Closes the dialog
 	 */
 	const handleExport = async () => {
 		setIsExporting(true);
 		setExportError(null);
 		setShouldRenderCharts(true); // Start rendering charts
 
-		// Wait for charts to render and report their IDs
-		// Create a promise that resolves when handleIdsReady is called
-		const idsPromise = new Promise<Array<string>>((resolve) => {
-			idsResolverRef.current = resolve;
+		// Wait for charts to render and report their pages
+		// Create a promise that resolves when handlePagesReady is called
+		const pagesPromise = new Promise<Array<PdfPageSpec>>((resolve) => {
+			pagesResolverRef.current = resolve;
 		});
 
-		// Wait for IDs with timeout
-		const timeoutPromise = new Promise<Array<string>>((_, reject) => {
+		// Wait for the pages with timeout
+		const timeoutPromise = new Promise<Array<PdfPageSpec>>((_, reject) => {
 			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), 60000); // 60s timeout
 		});
 
-		let ids: Array<string>;
+		let pages: Array<PdfPageSpec>;
 		try {
-			ids = await Promise.race([idsPromise, timeoutPromise]);
+			pages = await Promise.race([pagesPromise, timeoutPromise]);
 		} catch (error) {
 			console.error("PDF export failed:", error);
 			setIsExporting(false);
@@ -183,7 +196,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		}
 
 		// Safety check: make sure we have elements to export
-		if (!ids || ids.length === 0) {
+		if (!pages || pages.length === 0) {
 			console.error("No chart elements ready for export");
 			setIsExporting(false);
 			setShouldRenderCharts(false);
@@ -219,7 +232,9 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				for (let i = 0; i < 12; i++) {
 					const monthDate = addMonths(yearStart, i);
 					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
-					titles.push(`${exposureName} - ${user.name} - ${monthText}`);
+					const heading = `${exposureName} - ${user.name} - ${monthText}`;
+					// Each month contributes two pages: the calendar, then its red-day table.
+					titles.push(heading, `${heading} - ${t(($) => $.pdf.redDays)}`);
 				}
 			} else {
 				const dateText = `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
@@ -254,8 +269,25 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			locale: i18n.language,
 		};
 
-		// Call the PDF export hook to convert HTML elements to PDF
-		await exportMultipleToPDF(ids, fileName, titles, coverPageData);
+		// Everything the red-day tables need from i18n, resolved once here so the
+		// PDF assembler stays free of React.
+		const dateFnsLocale = getLocale(i18n.language);
+		const labels: PdfLabels = {
+			date: t(($) => $.pdf.date),
+			average: t(($) => $.measurement.average),
+			safe: t(($) => $.exposureSummary.aggregated.safe),
+			warning: t(($) => $.exposureSummary.aggregated.warning),
+			danger: t(($) => $.exposureSummary.aggregated.danger),
+			note: t(($) => $.pdf.note),
+			noRedDays: t(($) => $.pdf.noRedDays),
+			formatDay: (date) => date.toLocaleDateString(i18n.language, { day: "numeric", month: "short" }),
+			formatValue: (exposure, value) =>
+				`${formatExposureValue(value, EXPOSURE_UNIT[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[EXPOSURE_UNIT[exposure]])}`,
+			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
+		};
+
+		// Call the PDF export hook to build the document
+		await exportPagesToPDF(pages, fileName, titles, coverPageData, labels);
 
 		setIsExporting(false);
 		setShouldRenderCharts(false); // Clean up charts
@@ -399,7 +431,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					view={localView}
 					date={localDate}
 					userId={user.id}
-					onIdsReady={handleIdsReady}
+					onPagesReady={handlePagesReady}
 				/>
 			)}
 		</Dialog>

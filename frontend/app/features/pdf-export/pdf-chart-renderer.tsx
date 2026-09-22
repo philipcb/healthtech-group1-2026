@@ -5,21 +5,25 @@ import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/b
 import { ExposureSummary } from "@/features/summary-card.tsx";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { exposureQueryOptions, notesRangeQueryOptions } from "@/lib/api.ts";
+import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
+import type { Note } from "@/lib/dto/note.ts";
+import { buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
+import { getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
+import { getYearRange } from "@/lib/pdf/year-range.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
+import type { TZDate } from "@date-fns/tz";
 import { useQuery } from "@tanstack/react-query";
-import { setHours } from "date-fns";
+import { addMonths, setHours, startOfYear } from "date-fns";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { startOfYear, addMonths } from "date-fns"; // add to existing date-fns import
-import type { TZDate } from "@date-fns/tz";
 
 /**
  * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
@@ -38,10 +42,19 @@ import type { TZDate } from "@date-fns/tz";
  */
 export type PdfView = View | "year";
 
+/**
+ * How the assembler should draw one page. "image" is the existing behaviour
+ * (rasterize an off-screen DOM node); "red-days" is drawn as a real vector
+ * table so the rows stay searchable and can carry links.
+ */
+export type PdfPageSpec =
+	| { kind: "image"; id: string }
+	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> };
+
 interface CollectedPage {
-	id: string;
 	exposure: Exposure;
 	page: string;
+	spec: PdfPageSpec;
 }
 
 interface PdfChartRendererProps {
@@ -49,7 +62,7 @@ interface PdfChartRendererProps {
 	view: PdfView;
 	date: Date;
 	userId: string;
-	onIdsReady: (ids: Array<string>) => void;
+	onPagesReady: (pages: Array<PdfPageSpec>) => void;
 }
 
 // Which page keys to expect per exposure type, in order, for a given view.
@@ -57,7 +70,7 @@ interface PdfChartRendererProps {
 // keys here — the collection/ordering logic below stays untouched.
 function getPageKeysForView(view: PdfView): Array<string> {
 	if (view === "day") return ["summary", "chart"];
-	if (view === "year") return Array.from({ length: 12 }, (_, i) => `month-${i}`);
+	if (view === "year") return Array.from({ length: 12 }, (_, i) => [`month-${i}`, `redday-${i}`]).flat();
 	return ["summary"]; // week or month
 }
 
@@ -139,12 +152,11 @@ function SingleDayChartRenderer({
 			}, {}),
 		},
 	];
-
 	// Report both pages once loaded.
 	useEffect(() => {
 		if (!isLoading) {
-			onPageReady({ id: summaryId, exposure, page: "summary" });
-			onPageReady({ id: chartId, exposure, page: "chart" });
+			onPageReady({ exposure, page: "summary", spec: { kind: "image", id: summaryId } });
+			onPageReady({ exposure, page: "chart", spec: { kind: "image", id: chartId } });
 		}
 	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
 
@@ -231,7 +243,7 @@ function TrendChartRenderer({
 	useEffect(() => {
 		if (!isLoading) {
 			const timer = setTimeout(() => {
-				onPageReady({ id: summaryId, exposure, page: "summary" });
+				onPageReady({ exposure, page: "summary", spec: { kind: "image", id: summaryId } });
 			}, 200);
 			return () => clearTimeout(timer);
 		}
@@ -265,35 +277,89 @@ function MonthGridPage({
 	monthDate,
 	monthIndex,
 	userId,
+	notes,
 	onPageReady,
 }: {
 	exposure: Exposure;
 	monthDate: TZDate;
 	monthIndex: number;
 	userId: string;
+	notes: Array<Note>;
 	onPageReady: (page: CollectedPage) => void;
 }) {
 	const pageId = useId();
+	const granularity = getSummaryGranularity(exposure);
 
+	// ExposureSummary (rendered below, on this same page) reads its dust field and
+	// aggregation mode from the page's URL — see summary-card.tsx. We read the exact
+	// same URL state here so our two queries below build to the identical cache key
+	// ExposureSummary's own query uses. If these ever diverge (e.g. this stayed
+	// hardcoded to the default field while the URL had a different one selected),
+	// every month fetches its minute-granularity data TWICE instead of sharing one
+	// cached result — that was causing the export to freeze the page.
+	const [dustField] = useQueryState("dustField", parseAsDustField.withDefault(defaultDustField));
+	const parseAsAggregation = parseAsStringLiteral(Aggregations);
+	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
+	const usePeakAggregation = aggregation === "peak";
+
+	// Day granularity: one bucket per day, drives the calendar colours and tells us
+	// which days are red.
 	const gridQuery = useQuery(
 		exposureQueryOptions({
 			exposure,
 			query: buildExposureQuery(exposure, "month", monthDate, {
-				field: exposure === "dust" ? "pm1_twa" : undefined,
-				usePeakAggregation: false,
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation,
 			}),
 			userId,
 		}),
 	);
 
-	const isLoading = gridQuery.isLoading;
+	// Summary granularity: the SAME query ExposureSummary makes on this page, so it is
+	// served from the React Query cache. Gives per-day zone minutes and averages.
+	const minuteQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "month", monthDate, {
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation,
+				granularity,
+			}),
+			userId,
+		}),
+	);
+
+	const isLoading = gridQuery.isLoading || minuteQuery.isLoading;
 	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
 
+	const dayData = gridQuery.data?.data;
+	const minuteData = minuteQuery.data?.data;
+
 	useEffect(() => {
-		if (!isLoading) {
-			onPageReady({ id: pageId, exposure, page: `month-${monthIndex}` });
-		}
-	}, [isLoading, pageId, exposure, monthIndex, onPageReady]);
+		if (isLoading) return;
+
+		onPageReady({
+			exposure,
+			page: `month-${monthIndex}`,
+			spec: { kind: "image", id: pageId },
+		});
+
+		onPageReady({
+			exposure,
+			page: `redday-${monthIndex}`,
+			spec: {
+				kind: "red-days",
+				exposure,
+				rows: getRedDays({
+					exposure,
+					dayData: dayData ?? [],
+					minuteData: minuteData ?? [],
+					notes,
+					granularity,
+				}),
+			},
+		});
+	}, [isLoading, pageId, exposure, monthIndex, granularity, dayData, minuteData, notes, onPageReady]);
 
 	if (isLoading) {
 		return null;
@@ -316,11 +382,13 @@ function YearChartRenderer({
 	exposure,
 	date,
 	userId,
+	notes,
 	onPageReady,
 }: {
 	exposure: Exposure;
 	date: Date;
 	userId: string;
+	notes: Array<Note>;
 	onPageReady: (page: CollectedPage) => void;
 }) {
 	const tzDate = TIMEZONE(date);
@@ -336,6 +404,7 @@ function YearChartRenderer({
 					monthDate={monthDate}
 					monthIndex={i}
 					userId={userId}
+					notes={notes}
 					onPageReady={onPageReady}
 				/>
 			))}
@@ -354,9 +423,16 @@ function YearChartRenderer({
  * because `titles` in pdf-export-dialog.tsx is built in that same fixed order; without
  * this, a chart that loads faster than another could end up with the wrong title.
  */
-export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady }: PdfChartRendererProps) {
+export function PdfChartRenderer({ exposureType, view, date, userId, onPagesReady }: PdfChartRendererProps) {
 	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
+
+	// One request for the whole year's notes; only the year export needs them.
+	const notesQuery = useQuery({
+		...notesRangeQueryOptions({ ...getYearRange(TIMEZONE(date)), userId }),
+		enabled: view === "year",
+	});
+	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 	const pageKeys = getPageKeysForView(view);
@@ -369,17 +445,17 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
 
 			if (collectedRef.current.size === expectedCount) {
-				const orderedIds = exposuresToRender.flatMap((exposure) =>
+				const orderedPages = exposuresToRender.flatMap((exposure) =>
 					pageKeys
-						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.id)
-						.filter((id): id is string => id != null),
+						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.spec)
+						.filter((spec): spec is PdfPageSpec => spec != null),
 				);
 
-				onIdsReady(orderedIds);
+				onPagesReady(orderedPages);
 				setHasReported(true);
 			}
 		},
-		[expectedCount, exposuresToRender, pageKeys, onIdsReady, hasReported],
+		[expectedCount, exposuresToRender, pageKeys, onPagesReady, hasReported],
 	);
 
 	return (
@@ -402,15 +478,19 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 						/>
 					))
 				: view === "year"
-					? exposuresToRender.map((exposure) => (
-							<YearChartRenderer
-								key={exposure}
-								exposure={exposure}
-								date={date}
-								userId={userId}
-								onPageReady={handlePageReady}
-							/>
-						))
+					? // Hold off until the notes arrive, so getRedDays never runs against an empty list.
+						notesQuery.isLoading
+						? null
+						: exposuresToRender.map((exposure) => (
+								<YearChartRenderer
+									key={exposure}
+									exposure={exposure}
+									date={date}
+									userId={userId}
+									notes={notes}
+									onPageReady={handlePageReady}
+								/>
+							))
 					: exposuresToRender.map((exposure) => (
 							<TrendChartRenderer
 								key={exposure}

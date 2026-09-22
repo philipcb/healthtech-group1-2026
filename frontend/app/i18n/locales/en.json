@@ -331,7 +331,14 @@
   "pdf": {
     "dustExposure": "Dust Exposure",
     "noiseExposure": "Noise Exposure",
-    "vibrationExposure": "Vibration Exposure"
+    "vibrationExposure": "Vibration Exposure",
+    "redDays": "Red days",
+    "noRedDays": "No red days this month.",
+    "date": "Date",
+    "note": "Note",
+    "dayReport": "Day report",
+    "openReport": "Open report",
+    "exceeded": "Above limit value"
   },
   "limitExplanation": {
     "actionValue": {

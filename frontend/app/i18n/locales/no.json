@@ -328,7 +328,14 @@
   "pdf": {
     "dustExposure": "Støveksponering",
     "noiseExposure": "Støyeksponering",
-    "vibrationExposure": "Vibrasjoneksponering"
+    "vibrationExposure": "Vibrasjoneksponering",
+    "redDays": "Røde dager",
+    "noRedDays": "Ingen røde dager denne måneden.",
+    "date": "Dato",
+    "note": "Notat",
+    "dayReport": "Dagsrapport",
+    "openReport": "Åpne rapport",
+    "exceeded": "Over grenseverdi"
   },
   "limitExplanation": {
     "actionValue": {

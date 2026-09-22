@@ -1,7 +1,9 @@
+import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { toCanvas } from "html-to-image";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
 import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
+import { drawRedDayTable, type PdfLabels } from "./pdf-red-day-table.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -61,28 +63,49 @@ const getImageLayout = (canvas: HTMLCanvasElement) => {
 	};
 };
 
+const drawPageTitle = (pdf: jsPDF, title: string) => {
+	pdf.setFont("helvetica", "bold");
+	pdf.setFontSize(14);
+
+	pdf.text(title, A4_LANDSCAPE_WIDTH / 2, 15, {
+		align: "center",
+	});
+};
+
 export const useExportPDF = () => {
-	const exportMultipleToPDF = useCallback(
-		async (elementIds: Array<string>, fileName: string, titles: Array<string>, coverPageData: CoverPageData) => {
+	/**
+	 * `pages` and `titles` are index-aligned: PdfChartRenderer reports pages in a
+	 * fixed order and pdf-export-dialog.tsx builds titles in that same order.
+	 */
+	const exportPagesToPDF = useCallback(
+		async (
+			pages: Array<PdfPageSpec>,
+			fileName: string,
+			titles: Array<string>,
+			coverPageData: CoverPageData,
+			labels: PdfLabels,
+		) => {
 			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 			drawCoverPage(pdf, coverPageData);
 
-			for (let i = 0; i < elementIds.length; i++) {
-				const canvas = await elementToCanvas(elementIds[i]);
-				if (!canvas) continue;
+			for (let i = 0; i < pages.length; i++) {
+				const page = pages[i];
 
-				const imgData = canvas.toDataURL("image/png", 1.0);
-				pdf.addPage("a4", "landscape");
+				if (page.kind === "image") {
+					const canvas = await elementToCanvas(page.id);
+					if (!canvas) continue;
 
-				pdf.setFont("helvetica", "bold");
-				pdf.setFontSize(14);
+					const imgData = canvas.toDataURL("image/png", 1.0);
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
 
-				pdf.text(titles[i], A4_LANDSCAPE_WIDTH / 2, 15, {
-					align: "center",
-				});
-
-				const image = getImageLayout(canvas);
-				pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
+					const image = getImageLayout(canvas);
+					pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
+				} else {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN);
+				}
 			}
 
 			pdf.save(`${fileName}.pdf`);
@@ -90,5 +113,5 @@ export const useExportPDF = () => {
 		[],
 	);
 
-	return { exportMultipleToPDF };
+	return { exportPagesToPDF };
 };

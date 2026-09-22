@@ -54,7 +54,7 @@ export default function ExposureLayout() {
 			<div className="flex flex-col gap-0.5 lg:col-span-3 lg:row-start-1">
 				<div className="flex flex-row items-center gap-3">
 					<ExposureIcon type={exposure ?? "all"} size="lg" className="ml-1" />
-					<h1 className="font-medium text-3xl">
+					<h1 className="font-medium text-2xl md:text-3xl">
 						{exposure
 							? t(($) => $.operatorHeader.title.yourExposureExposure, {
 									exposure: t(($) => $.exposures[exposure]).toLowerCase(),

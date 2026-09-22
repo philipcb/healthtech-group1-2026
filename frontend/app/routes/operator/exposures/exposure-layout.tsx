@@ -63,7 +63,7 @@ export default function ExposureLayout() {
 					</h1>
 				</div>
 
-				<div className="flex items-center gap-2 text-muted-foreground">
+				<div className="flex flex-wrap items-center gap-2 text-muted-foreground md:gap-3">
 					<Badge variant="secondary" className="gap-1.5 px-2.5 py-1 text-sm">
 						<ViewIcon className="size-3.5" />
 						{getViewLabel(t, view, selection)}

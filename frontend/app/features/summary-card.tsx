@@ -166,7 +166,25 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 						: "bg-secondary text-muted-foreground",
 				)}
 			>
-				<span className="text-xs">{warningLabel}</span>
+				<span className="flex items-center gap-1 text-xs">
+					{warningLabel}
+					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
+					<Popover>
+						<PopoverTrigger asChild={true}>
+							<button
+								type="button"
+								aria-label={`${warningLabel}: ${viewDetailsLabel}`}
+								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 lg:hidden"
+							>
+								<InfoIcon className="size-3.5" />
+							</button>
+						</PopoverTrigger>
+						<PopoverContent align="start" className="w-64 text-sm">
+							<p className="font-medium">{actionValueLabel}</p>
+							<p className="text-muted-foreground text-xs">{actionValueDescription}</p>
+						</PopoverContent>
+					</Popover>
+				</span>
 				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
 			</p>
 
@@ -204,7 +222,25 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 					data.dangerMinutes > 0 ? "bg-danger-subtle text-danger-text" : "bg-secondary text-muted-foreground",
 				)}
 			>
-				<span className="text-xs">{dangerLabel}</span>
+				<span className="flex items-center gap-1 text-xs">
+					{dangerLabel}
+					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
+					<Popover>
+						<PopoverTrigger asChild={true}>
+							<button
+								type="button"
+								aria-label={`${dangerLabel}: ${viewDetailsLabel}`}
+								className="-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100 lg:hidden"
+							>
+								<InfoIcon className="size-3.5" />
+							</button>
+						</PopoverTrigger>
+						<PopoverContent align="start" className="w-64 text-sm">
+							<p className="font-medium">{limitValueLabel}</p>
+							<p className="text-muted-foreground text-xs">{limitValueDescription}</p>
+						</PopoverContent>
+					</Popover>
+				</span>
 				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
 			</p>
 		</div>

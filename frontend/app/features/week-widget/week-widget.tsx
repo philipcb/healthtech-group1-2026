@@ -98,7 +98,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 								key={getUnixTime(segment.date)}
 								type="button"
 								className={cn(
-									"flex min-w-0 flex-1 flex-col rounded-xl p-1 text-left md:min-w-20 md:p-1.5",
+									"flex min-w-0 flex-1 flex-col rounded-xl p-1 text-left lg:min-w-20 lg:p-1.5",
 									"cursor-pointer transition-colors hover:bg-secondary",
 									CELL_GAP,
 								)}
@@ -106,7 +106,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 								aria-label={`View day details for ${formattedDate}`}
 							>
 								{/* Column header */}
-								<div className={cn("flex items-center justify-center px-1 text-xs md:text-sm", HEADER_HEIGHT)}>
+								<div className={cn("flex items-center justify-center px-1 text-xs lg:text-sm", HEADER_HEIGHT)}>
 									<p
 										className={cn(
 											"flex items-center justify-center",

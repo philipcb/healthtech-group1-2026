@@ -20,7 +20,7 @@ export function BaseTrendLineChartCard({ children, breakoutOnMobile = false }: P
 				"relative w-full",
 				// left-1/2 + -50vw margin cancels out layout.tsx's mx-5 regardless of nesting depth.
 				breakoutOnMobile &&
-					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 md:left-auto md:ml-0 md:w-full md:rounded-xl md:border-x",
+					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 lg:left-auto lg:ml-0 lg:w-full lg:rounded-xl lg:border-x",
 			)}
 		>
 			<CardHeader>

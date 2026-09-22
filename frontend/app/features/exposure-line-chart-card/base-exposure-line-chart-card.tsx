@@ -33,7 +33,7 @@ export function BaseExposureLineChartCard({
 				props.variant === "compact" ? "pl-0" : "pr-0",
 				// left-1/2 + -50vw margin cancels out layout.tsx's mx-5 regardless of nesting depth.
 				breakoutOnMobile &&
-					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 md:left-auto md:ml-0 md:w-full md:rounded-xl md:border-x",
+					"left-1/2 -ml-[50vw] w-screen rounded-none border-x-0 lg:left-auto lg:ml-0 lg:w-full lg:rounded-xl lg:border-x",
 				className,
 			)}
 			id={id}

@@ -198,10 +198,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// Get date range for titles and filename
 		const { start, end } = getRangeFromSelection();
 
-		// Builds two titles per exposure type: one for the summary/grid page, one
-		// for the chart page. PdfChartRenderer always reports the ids in exactly
-		// this order (see pdf-chart-renderer.tsx), so the titles here must follow
-		// the same pattern after the cover page, or the wrong title ends up on the wrong page.
+		// Titles follow the page order reported by PdfChartRenderer.
 		const titles: Array<string> = [];
 
 		for (const exposure of exposuresToRender) {
@@ -227,7 +224,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			} else {
 				const dateText = `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title, title);
+				titles.push(title);
 			}
 		}
 
@@ -397,6 +394,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			{/* This prevents lag when switching between day/week/month views */}
 			{shouldRenderCharts && (
 				<PdfChartRenderer
+					key={`${exposureType}-${localView}-${localDate.getTime()}`}
 					exposureType={exposureType}
 					view={localView}
 					date={localDate}

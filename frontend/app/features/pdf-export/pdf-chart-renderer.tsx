@@ -1,14 +1,11 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
 import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
 import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
-import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions } from "@/lib/api.ts";
-import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
@@ -17,11 +14,12 @@ import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
-import type { TZDate } from "@date-fns/tz";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { addMonths, setHours, startOfYear } from "date-fns"; // add to existing date-fns import
+import { useQuery } from "@tanstack/react-query";
+import { setHours } from "date-fns";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { startOfYear, addMonths } from "date-fns"; // add to existing date-fns import
+import type { TZDate } from "@date-fns/tz";
 
 /**
  * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
@@ -60,7 +58,7 @@ interface PdfChartRendererProps {
 function getPageKeysForView(view: PdfView): Array<string> {
 	if (view === "day") return ["summary", "chart"];
 	if (view === "year") return Array.from({ length: 12 }, (_, i) => `month-${i}`);
-	return ["summary", "chart"]; // week or month
+	return ["summary"]; // week or month
 }
 
 // Extra headroom below the plotted area so the x-axis labels and legend always fit
@@ -208,35 +206,7 @@ function TrendChartRenderer({
 	onPageReady: (page: CollectedPage) => void;
 }) {
 	const summaryId = useId();
-	const chartId = useId();
 	const tzDate = TIMEZONE(date);
-
-	// Determine which fields to query based on exposure type
-	// (matches DustTrendLineChartCard, NoiseTrendLineChartCard, VibrationTrendLineChartCard)
-	const fields: Array<ExposureTypeField | undefined> = (() => {
-		if (exposure === "dust") {
-			return ["pm1_twa", "pm25_twa", "pm4_twa", "pm10_twa"];
-		}
-		return [undefined]; // noise and vibration have no fields
-	})();
-
-	const granularity: "day" | "week" = view === "week" ? "day" : "week";
-
-	// Fetch data for all fields (replicating useExposureTrendData logic)
-	const queryResults = useQueries({
-		queries: fields.map((field) =>
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, tzDate, {
-					field,
-					usePeakAggregation: false,
-					aggregationFunction: exposure === "dust" ? "max" : undefined,
-					granularity: "day",
-				}),
-				userId,
-			}),
-		),
-	});
 	const gridQuery = useQuery(
 		exposureQueryOptions({
 			exposure,
@@ -248,7 +218,7 @@ function TrendChartRenderer({
 		}),
 	);
 
-	const isLoading = queryResults.some((q) => q.isLoading) || gridQuery.isLoading;
+	const isLoading = gridQuery.isLoading;
 	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
 	const hourDomain = gridQuery.data?.hourDomain;
 	const { minHour, maxHour } = getHourDomain(
@@ -257,77 +227,38 @@ function TrendChartRenderer({
 		view,
 	);
 
-	const series = fields.map((field, index) => {
-		const rawData = queryResults[index]?.data?.data ?? [];
-		const data = granularity === "week" ? toWeeklyMax(rawData) : rawData;
-
-		return {
-			field,
-			data,
-			exposure,
-			exposureField: field,
-		};
-	});
-
-	// Calculate Y-axis range (matching useExposureTrendData)
-	const { minY, maxY } = getExposureYAxisRange(
-		exposure,
-		series.flatMap((s) => s.data),
-		{ usePeakAggregation: false },
-	);
-
-	// Report ID when chart is ready
+	// Report the calendar page when its data is ready.
 	useEffect(() => {
 		if (!isLoading) {
 			const timer = setTimeout(() => {
 				onPageReady({ id: summaryId, exposure, page: "summary" });
-				onPageReady({ id: chartId, exposure, page: "chart" });
 			}, 200);
 			return () => clearTimeout(timer);
 		}
-	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
+	}, [isLoading, summaryId, exposure, onPageReady]);
 
 	if (isLoading) {
 		return null;
 	}
 
-	// Determine unit based on exposure type
-	const unit = exposure === "dust" ? "ug" : exposure === "noise" ? "db" : "points";
-
 	return (
-		<>
-			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
-				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
-				{view === "week" ? (
-					<div style={{ width: "1160px" }}>
-						<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
-					</div>
-				) : (
-					<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-						<CalendarWidget selectedDay={tzDate} data={gridData} />
-					</div>
-				)}
-			</div>
-
-			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
-				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
-					<TrendLineChart
-						selectedDate={tzDate}
-						granularity={granularity}
-						unit={unit}
-						minY={minY}
-						maxY={maxY}
-						series={series}
-					/>
+		<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
+			<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
+			{view === "week" ? (
+				<div style={{ width: "1160px" }}>
+					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
 				</div>
-			</div>
-		</>
+			) : (
+				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+					<CalendarWidget selectedDay={tzDate} data={gridData} />
+				</div>
+			)}
+		</div>
 	);
 }
 
 /**
- * One page in a year export: a single month's calendar grid, no chart —
- * matches the doctor's request that month/week pages show grid only.
+ * One page in a year export: a single month's calendar grid, no chart
  */
 function MonthGridPage({
 	exposure,
@@ -380,8 +311,6 @@ function MonthGridPage({
 
 /**
  * Year export: 12 month-grid pages per exposure type, January through December.
- * Does NOT yet append red-day detail pages or notes — that's a separate,
- * larger task (bookmark/link system + notes lookup), tracked separately.
  */
 function YearChartRenderer({
 	exposure,
@@ -402,7 +331,7 @@ function YearChartRenderer({
 		<>
 			{months.map((monthDate, i) => (
 				<MonthGridPage
-					key={i}
+					key={monthDate.toISOString()}
 					exposure={exposure}
 					monthDate={monthDate}
 					monthIndex={i}

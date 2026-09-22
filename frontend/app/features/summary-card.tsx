@@ -105,8 +105,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	const dangerDuration = formatMinutesAsDuration(data.dangerMinutes, locale);
 
 	return (
-		// Mobile: stacked bars with an info popover on warning/danger. Desktop: plain
-		// grid-cols-3 boxes matching main, no popover.
+		// Mobile: stacked bars. Desktop: plain grid-cols-3 boxes matching main.
 		<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
 			<p
 				title={`${safeLabel}: ${safeDuration}`}

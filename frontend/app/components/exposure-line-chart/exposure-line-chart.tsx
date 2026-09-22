@@ -26,6 +26,8 @@ import {
 	type YAxisTickContentProps,
 } from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
+import { CollapsedYAxisTick } from "./collapsed-y-axis-tick.tsx";
+import { COLLAPSED_Y_AXIS_WIDTH } from "./collapsed-y-axis-width.ts";
 import { ExposureDot } from "./exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "./exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLegend } from "./threshold-legend.tsx";
@@ -33,10 +35,6 @@ import { ThresholdLegend } from "./threshold-legend.tsx";
 export type XAxisMode = "default" | "windowed";
 
 const Y_AXIS_WIDTH = 60;
-// Recharts reserves offset.left based on this width, so shrinking it (not hiding via CSS) is
-// what widens the plot area. CollapsedYAxisTick draws the tick text at its own fixed x instead,
-// since the default position is derived from this width and would otherwise land off-screen.
-const COLLAPSED_Y_AXIS_WIDTH = 4;
 
 const chartConfig = {
 	desktop: {
@@ -329,25 +327,6 @@ function CustomXAxisTick({
 			fill="var(--color-muted-foreground)"
 			fontSize={12}
 			className={cn(variant === "compact" ? "text-xs" : "text-sm")}
-		>
-			{label}
-		</text>
-	);
-}
-
-// Draws at a fixed x instead of the axis's own (near-zero) width, which would place the default
-// position off-screen. Recharts' z-index for axis ticks (500) already sits above grid/area/line
-// (-100/100/400), so it stays legible even where it overlaps the plot.
-function CollapsedYAxisTick({ y, label }: Pick<YAxisTickContentProps, "y"> & { label: string }) {
-	return (
-		<text
-			x={COLLAPSED_Y_AXIS_WIDTH}
-			y={y}
-			textAnchor="start"
-			dominantBaseline="middle"
-			fill="var(--color-muted-foreground)"
-			fontSize={12}
-			className="text-sm"
 		>
 			{label}
 		</text>

@@ -37,7 +37,7 @@ export default function Vibration() {
 					)}
 				</div>
 			</div>
-			{showTrendLineChart && <VibrationTrendLineChartCard />}
+			{showTrendLineChart && <VibrationTrendLineChartCard breakoutOnMobile={true} />}
 		</div>
 	);
 }

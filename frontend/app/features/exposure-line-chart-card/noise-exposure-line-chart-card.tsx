@@ -14,9 +14,10 @@ import { ExposureGraphEmptyState } from "../statistic-card.tsx";
 
 interface Props {
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export default function NoiseExposureLineChartCard({ userId }: Props) {
+export default function NoiseExposureLineChartCard({ userId, breakoutOnMobile }: Props) {
 	const { i18n } = useTranslation();
 
 	const chartContainerId = useId();
@@ -53,6 +54,7 @@ export default function NoiseExposureLineChartCard({ userId }: Props) {
 			exposure={exposure}
 			usePeakData={usePeakAggregation}
 			id={chartContainerId}
+			breakoutOnMobile={breakoutOnMobile}
 		>
 			<ThresholdLine y={dangerThreshold} dangerLevel="danger" />
 			{!usePeakAggregation && <ThresholdLine y={threshold.warning} dangerLevel="warning" />}

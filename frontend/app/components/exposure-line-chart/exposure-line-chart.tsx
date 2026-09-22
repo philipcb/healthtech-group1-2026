@@ -1,6 +1,7 @@
 import { ExposureTooltip } from "@/components/exposure-line-chart/exposure-tooltip.tsx";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import { DangerLevels } from "@/lib/danger-levels.ts";
 import { now as getNow, toTZDate } from "@/lib/date.ts";
@@ -13,7 +14,17 @@ import { TZDate } from "@date-fns/tz";
 import { addMinutes, formatDistanceToNowStrict } from "date-fns";
 import { type PropsWithChildren, useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, type XAxisTickContentProps, YAxis } from "recharts";
+import {
+	Area,
+	CartesianGrid,
+	ComposedChart,
+	Legend,
+	Line,
+	XAxis,
+	type XAxisTickContentProps,
+	YAxis,
+	type YAxisTickContentProps,
+} from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
 import { ExposureDot } from "./exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "./exposure-line-chart-gradient-stops.tsx";
@@ -22,6 +33,10 @@ import { ThresholdLegend } from "./threshold-legend.tsx";
 export type XAxisMode = "default" | "windowed";
 
 const Y_AXIS_WIDTH = 60;
+// Recharts reserves offset.left based on this width, so shrinking it (not hiding via CSS) is
+// what widens the plot area. CollapsedYAxisTick draws the tick text at its own fixed x instead,
+// since the default position is derived from this width and would otherwise land off-screen.
+const COLLAPSED_Y_AXIS_WIDTH = 4;
 
 const chartConfig = {
 	desktop: {
@@ -49,6 +64,7 @@ export interface ExposureLineChartProps extends PropsWithChildren {
 	xAxisMode?: XAxisMode;
 	minTime: Date;
 	maxTime: Date;
+	breakoutOnMobile?: boolean;
 }
 
 export function ExposureLineChart({
@@ -67,10 +83,12 @@ export function ExposureLineChart({
 	variant = "default",
 	showLegend = true,
 	xAxisMode = "default",
+	breakoutOnMobile = false,
 }: ExposureLineChartProps) {
 	const { t, i18n } = useTranslation();
 	const id = useId();
 	const formatDate = useFormatDate();
+	const isMobile = useIsMobile();
 
 	const { warning, danger, peakDanger } = getThreshold(exposure, dustField);
 	const dangerThreshold = usePeakData && peakDanger ? peakDanger : danger;
@@ -86,12 +104,17 @@ export function ExposureLineChart({
 	const xMin = minTime.getTime();
 	const xMax = maxTime.getTime();
 
-	const rawTicks = buildTicks(xAxisMode, minTime, maxTime);
-	const ticks = limitTicks(rawTicks, 6);
-
 	const compact = variant === "compact";
+	const isMobileBreakout = breakoutOnMobile && isMobile;
+	const hideYAxisLabel = compact || isMobileBreakout;
+	const yAxisWidth = compact ? Y_AXIS_WIDTH : isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : undefined;
+
+	const rawTicks = buildTicks(xAxisMode, minTime, maxTime);
+	const ticks = limitTicks(rawTicks, isMobileBreakout ? 4 : 6);
 
 	const formatTime = (time: number) => formatDate(toTZDate(time), "HH:mm");
+	const formatYValue = (value: number) =>
+		formatExposureValue(value, unit as ExposureUnit, defaultFractionDigits, fractionDigitsPerUnit);
 
 	// Pre-calculate values to ensure the Area's gradient bounding box perfectly matches
 	const dataValues = transformedData.map((point) => point.value);
@@ -100,7 +123,12 @@ export function ExposureLineChart({
 	return (
 		<ChartContainer
 			config={chartConfig}
-			className={cn("h-full w-full", chartContainerClassName, compact && "!aspect-auto")}
+			className={cn(
+				"h-full w-full",
+				chartContainerClassName,
+				(compact || isMobileBreakout) && "!aspect-auto",
+				isMobileBreakout && "!h-[50dvh]",
+			)}
 		>
 			<ComposedChart
 				accessibilityLayer={true}
@@ -110,7 +138,7 @@ export function ExposureLineChart({
 						? undefined
 						: {
 								left: 12,
-								right: 12,
+								right: 8,
 								top: 12,
 							}
 				}
@@ -141,30 +169,34 @@ export function ExposureLineChart({
 				/>
 				<YAxis
 					dataKey="value"
-					width={compact ? Y_AXIS_WIDTH : undefined}
+					width={yAxisWidth}
 					tickLine={false}
 					axisLine={false}
-					tick={{
-						className: compact ? "text-xs" : "text-sm",
-						fill: "var(--color-muted-foreground)",
-					}}
+					tick={
+						isMobileBreakout
+							? (tickProps: YAxisTickContentProps) => (
+									<CollapsedYAxisTick y={tickProps.y} label={formatYValue(Number(tickProps.payload.value))} />
+								)
+							: {
+									className: compact ? "text-xs" : "text-sm",
+									fill: "var(--color-muted-foreground)",
+								}
+					}
 					domain={[minY, maxY]}
 					ticks={yTicks}
 					label={
-						compact
+						hideYAxisLabel
 							? undefined
 							: {
 									value: t(($) => $.exposures.units[unit]),
 									position: "inside",
 									dx: -32,
 									angle: -90,
-									className: "text-lg mr-4",
+									className: "mr-4 text-lg",
 									fill: "var(--color-muted-foreground)",
 								}
 					}
-					tickFormatter={(value) =>
-						formatExposureValue(value, unit as ExposureUnit, defaultFractionDigits, fractionDigitsPerUnit)
-					}
+					tickFormatter={formatYValue}
 				/>
 				<ExposureTooltip unit={unit} />
 				<defs>
@@ -230,7 +262,7 @@ export function ExposureLineChart({
 						verticalAlign="bottom"
 						align="left"
 						content={() => (
-							<div style={{ marginLeft: Y_AXIS_WIDTH }}>
+							<div style={{ marginLeft: yAxisWidth ?? Y_AXIS_WIDTH }}>
 								<ThresholdLegend
 									items={[
 										{
@@ -297,6 +329,25 @@ function CustomXAxisTick({
 			fill="var(--color-muted-foreground)"
 			fontSize={12}
 			className={cn(variant === "compact" ? "text-xs" : "text-sm")}
+		>
+			{label}
+		</text>
+	);
+}
+
+// Draws at a fixed x instead of the axis's own (near-zero) width, which would place the default
+// position off-screen. Recharts' z-index for axis ticks (500) already sits above grid/area/line
+// (-100/100/400), so it stays legible even where it overlaps the plot.
+function CollapsedYAxisTick({ y, label }: Pick<YAxisTickContentProps, "y"> & { label: string }) {
+	return (
+		<text
+			x={COLLAPSED_Y_AXIS_WIDTH}
+			y={y}
+			textAnchor="start"
+			dominantBaseline="middle"
+			fill="var(--color-muted-foreground)"
+			fontSize={12}
+			className="text-sm"
 		>
 			{label}
 		</text>

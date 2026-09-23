@@ -106,7 +106,12 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 								aria-label={`View day details for ${formattedDate}`}
 							>
 								{/* Column header */}
-								<div className={cn("flex items-center justify-center px-1 text-xs lg:text-sm", HEADER_HEIGHT)}>
+								<div
+									className={cn(
+										"flex items-center justify-center px-1 text-xs lg:text-sm",
+										HEADER_HEIGHT,
+									)}
+								>
 									<p
 										className={cn(
 											"flex items-center justify-center",

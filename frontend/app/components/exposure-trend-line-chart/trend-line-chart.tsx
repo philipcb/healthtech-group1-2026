@@ -123,7 +123,8 @@ export function TrendLineChart({
 	// Pre-calculate max value for Area bounding box alignment
 	const maxDataValue = singleSeriesValues.length > 0 ? Math.max(...singleSeriesValues) : maxY;
 
-	const formatYValue = (value: number) => formatExposureValue(value, unit, defaultFractionDigits, fractionDigitsPerUnit);
+	const formatYValue = (value: number) =>
+		formatExposureValue(value, unit, defaultFractionDigits, fractionDigitsPerUnit);
 
 	return (
 		<ChartContainer
@@ -152,7 +153,10 @@ export function TrendLineChart({
 					tick={
 						isMobileBreakout
 							? (tickProps: YAxisTickContentProps) => (
-									<CollapsedYAxisTick y={tickProps.y} label={formatYValue(Number(tickProps.payload.value))} />
+									<CollapsedYAxisTick
+										y={tickProps.y}
+										label={formatYValue(Number(tickProps.payload.value))}
+									/>
 								)
 							: {
 									className: "text-base",

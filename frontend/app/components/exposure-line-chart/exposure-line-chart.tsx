@@ -173,7 +173,10 @@ export function ExposureLineChart({
 					tick={
 						isMobileBreakout
 							? (tickProps: YAxisTickContentProps) => (
-									<CollapsedYAxisTick y={tickProps.y} label={formatYValue(Number(tickProps.payload.value))} />
+									<CollapsedYAxisTick
+										y={tickProps.y}
+										label={formatYValue(Number(tickProps.payload.value))}
+									/>
 								)
 							: {
 									className: compact ? "text-xs" : "text-sm",

@@ -18,10 +18,7 @@ export function NavTabs() {
 
 	const routes = getLinks(t, user?.role ?? null);
 
-	const { setNavLinkRef, pillWidth, pillLeft } = useTabPill(
-		routes,
-		location.pathname,
-	);
+	const { setNavLinkRef, pillWidth, pillLeft } = useTabPill(routes, location.pathname);
 
 	return (
 		<div className="relative mx-auto flex h-11 flex-row rounded-full bg-accent px-2 dark:bg-card">
@@ -36,7 +33,7 @@ export function NavTabs() {
 				const className = ({ isActive }: { isActive: boolean }) =>
 					cn(
 						"z-20 flex cursor-pointer select-none items-center rounded-full px-2 py-2 lg:px-5",
-						"text-center font-medium text-muted-foreground text-xs lg:text-sm hover:text-foreground",
+						"text-center font-medium text-muted-foreground text-xs hover:text-foreground lg:text-sm",
 						isActive && "text-foreground",
 					);
 
@@ -52,9 +49,7 @@ export function NavTabs() {
 						className={className}
 						prefetch="intent"
 					>
-						<span className="inline-flex items-center gap-2.5">
-							{route.label}
-						</span>
+						<span className="inline-flex items-center gap-2.5">{route.label}</span>
 					</NavLink>
 				);
 			})}

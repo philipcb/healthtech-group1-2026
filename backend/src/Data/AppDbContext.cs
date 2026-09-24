@@ -18,7 +18,9 @@ public class AppDbContext : DbContext
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);
-		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.UserConfiguration());
+
+		// Store UserRole enum as string
+		modelBuilder.Entity<UserInfo>().Property(user => user.Role).HasConversion<string>();
 
 		modelBuilder
 			.Entity<User>()
@@ -26,8 +28,6 @@ public class AppDbContext : DbContext
 			.WithMany(user => user.Subordinates)
 			.UsingEntity(typeBuilder => typeBuilder.ToTable("UserManagers"));
 
-		// Store UserRole enum as string
-		modelBuilder.Entity<User>().Property(user => user.Role).HasConversion<string>();
 
 		modelBuilder.Entity<VibrationData>(entity =>
 		{

@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Backend.Data.Configuration;
 
-public class UserConfiguration : IEntityTypeConfiguration<User>
+public class UserInfoConfiguration : IEntityTypeConfiguration<UserInfo>
 {
-	public void Configure(EntityTypeBuilder<User> builder)
+	public void Configure(EntityTypeBuilder<UserInfo> builder)
 	{
 		builder.HasKey(u => u.Id);
 

@@ -57,6 +57,12 @@ const EXPOSURE_UNIT: Record<Exposure, ExposureUnit> = {
 };
 
 /**
+ * How long handleExport waits for PdfChartRenderer to report every page
+ * before giving up with "Timeout waiting for chart IDs".
+ */
+const EXPORT_TIMEOUT_MS = 120_000;
+
+/**
  * Props for the PDF Export Dialog
  * @param open - Controls whether the dialog is visible
  * @param onOpenChange - Callback to close the dialog
@@ -181,7 +187,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Wait for the pages with timeout
 		const timeoutPromise = new Promise<Array<PdfPageSpec>>((_, reject) => {
-			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), 60000); // 60s timeout
+			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), EXPORT_TIMEOUT_MS);
 		});
 
 		let pages: Array<PdfPageSpec>;

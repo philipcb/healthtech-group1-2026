@@ -15,6 +15,7 @@ import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposur
 import { getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
 import { getYearRange } from "@/lib/pdf/year-range.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
+import { captureElementAsImage } from "@/hooks/use-export-pdf.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
@@ -26,29 +27,43 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 /**
- * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
+ * PDF Chart Renderer - Off-Screen Rendering for PDF Export
  *
- * Renders TWO separate pages per exposure type, so each ends up on its own A4 sheet:
- *  - a "summary" page: ExposureSummary + the grid widget (Day/Week/Calendar)
- *  - a "chart" page: just the line chart, with extra headroom so the x-axis and
- *    legend are never cropped when the page is captured as an image.
+ * Renders everything a PDF export needs, off-screen, then reports each page as
+ * a PdfPageSpec once its data has loaded. The actual PDF assembly happens
+ * elsewhere (use-export-pdf.ts) - this file only decides what each page is.
+ *
+ * Page count and shape depend on the view:
+ *  - day: 2 pages per exposure type (a summary page, a chart page) - SingleDayChartRenderer
+ *  - week/month: 1 page per exposure type (a summary + grid page) - TrendChartRenderer
+ *  - year: 2 pages per month per exposure type (a calendar image, a red-day
+ *    table) - MonthGridPage, scheduled by YearBatchRenderer
  *
  * The whole tree is wrapped in the "pdf-export-light" class (see app.css), which
  * re-declares every theme CSS variable to its light-mode value. This makes the
  * exported PDF always look the same regardless of the user's dark/light setting,
  * without needing to touch the real page or flash anything on screen.
  *
- * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
+ * Used by: pdf-export-dialog.tsx (renders this when the dialog is exporting)
  */
 export type PdfView = View | "year";
 
 /**
- * How the assembler should draw one page. "image" is the existing behaviour
- * (rasterize an off-screen DOM node); "red-days" is drawn as a real vector
- * table so the rows stay searchable and can carry links.
+ * How the assembler should draw one page.
+ *  - "image": rasterize an off-screen DOM node, looked up by id, when the
+ *    assembler gets to it. Used by the day/week/month exports, where
+ *    everything stays mounted until the whole document is built.
+ *  - "image-captured": already rasterized, carried as a data URL. Used by
+ *    the year export, which captures each month right after its data loads
+ *    and unmounts it immediately after (see MonthGridPage) - by the time the
+ *    assembler runs, the element is long gone, so it can't be looked up by
+ *    id. `dataUrl` is null if the capture itself failed.
+ *  - "red-days": drawn as a real vector table (no image at all), so the
+ *    rows stay searchable and can carry links.
  */
 export type PdfPageSpec =
 	| { kind: "image"; id: string }
+	| { kind: "image-captured"; dataUrl: string | null; width: number; height: number }
 	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> };
 
 interface CollectedPage {
@@ -65,12 +80,35 @@ interface PdfChartRendererProps {
 	onPagesReady: (pages: Array<PdfPageSpec>) => void;
 }
 
+/**
+ * Skips rendering and capturing every month's calendar image in the year
+ * export - only the red-day table pages are produced. Currently true
+ * deliberately: the rasterized calendar images make the PDF far too large,
+ * and they're pending a redesign as a drawn table instead (like the red-day
+ * table already is). Flip to false to bring images back for testing in the
+ * meantime.
+ */
+const DEV_SKIP_CALENDAR_IMAGES: boolean = true;
+
+/**
+ * How many month-pages are mounted at once during a year export - across ALL
+ * exposure types combined (see YearBatchRenderer), not per type. A month is
+ * unmounted as soon as it's done, so this is the most that's ever mounted at
+ * once regardless of how many months or exposure types the export covers.
+ * Without this, "Overview" would mount all 12 months x 3 types = 36 at once.
+ */
+const YEAR_BATCH_SIZE = 3;
+
 // Which page keys to expect per exposure type, in order, for a given view.
 // Extending this (e.g. adding red-day detail pages) only requires adding
 // keys here — the collection/ordering logic below stays untouched.
 function getPageKeysForView(view: PdfView): Array<string> {
 	if (view === "day") return ["summary", "chart"];
-	if (view === "year") return Array.from({ length: 12 }, (_, i) => [`month-${i}`, `redday-${i}`]).flat();
+	if (view === "year") {
+		return Array.from({ length: 12 }, (_, i) =>
+			DEV_SKIP_CALENDAR_IMAGES ? [`redday-${i}`] : [`month-${i}`, `redday-${i}`],
+		).flat();
+	}
 	return ["summary"]; // week or month
 }
 
@@ -270,7 +308,13 @@ function TrendChartRenderer({
 }
 
 /**
- * One page in a year export: a single month's calendar grid, no chart
+ * One month's worth of work in a year export: fetches its data, computes its
+ * red-day rows, and (unless DEV_SKIP_CALENDAR_IMAGES is on) captures its
+ * calendar as an image - then calls onDone so the batch queue in
+ * YearBatchRenderer knows it can unmount this and start the next queued
+ * month. Capture happens here, inline, rather than being deferred to a
+ * later pass, specifically so this component's DOM only needs to exist for
+ * as long as it takes to capture it, not for the whole export.
  */
 function MonthGridPage({
 	exposure,
@@ -279,6 +323,7 @@ function MonthGridPage({
 	userId,
 	notes,
 	onPageReady,
+	onDone,
 }: {
 	exposure: Exposure;
 	monthDate: TZDate;
@@ -286,6 +331,7 @@ function MonthGridPage({
 	userId: string;
 	notes: Array<Note>;
 	onPageReady: (page: CollectedPage) => void;
+	onDone: () => void;
 }) {
 	const pageId = useId();
 	const granularity = getSummaryGranularity(exposure);
@@ -335,33 +381,82 @@ function MonthGridPage({
 	const dayData = gridQuery.data?.data;
 	const minuteData = minuteQuery.data?.data;
 
+	// onPageReady/onDone get a new identity on every YearBatchRenderer re-render
+	// (i.e. whenever any job in the queue finishes, not just this one). Reading
+	// them via refs, instead of depending on them directly below, keeps this
+	// effect from re-running just because a sibling job happened to finish.
+	const onPageReadyRef = useRef(onPageReady);
+	onPageReadyRef.current = onPageReady;
+	const onDoneRef = useRef(onDone);
+	onDoneRef.current = onDone;
+
+	// Ensures this effect's body only ever does real work once per job instance.
+	const hasStartedRef = useRef(false);
+
+	// dayData/minuteData/notes/granularity are deliberately left out of the deps
+	// array below: they're only ever read synchronously, before the async
+	// capture starts, and hasStartedRef already guarantees this body runs at
+	// most once - so there's nothing to gain from re-running when they change,
+	// and excluding them avoids a spurious restart if a background refetch
+	// updates the underlying query data mid-capture.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: see comment above.
 	useEffect(() => {
-		if (isLoading) return;
+		if (isLoading || hasStartedRef.current) return;
+		hasStartedRef.current = true;
 
-		onPageReady({
+		const redDaysSpec: PdfPageSpec = {
+			kind: "red-days",
 			exposure,
-			page: `month-${monthIndex}`,
-			spec: { kind: "image", id: pageId },
-		});
-
-		onPageReady({
-			exposure,
-			page: `redday-${monthIndex}`,
-			spec: {
-				kind: "red-days",
+			rows: getRedDays({
 				exposure,
-				rows: getRedDays({
-					exposure,
-					dayData: dayData ?? [],
-					minuteData: minuteData ?? [],
-					notes,
-					granularity,
-				}),
-			},
-		});
-	}, [isLoading, pageId, exposure, monthIndex, granularity, dayData, minuteData, notes, onPageReady]);
+				dayData: dayData ?? [],
+				minuteData: minuteData ?? [],
+				notes,
+				granularity,
+			}),
+		};
 
-	if (isLoading) {
+		if (DEV_SKIP_CALENDAR_IMAGES) {
+			onPageReadyRef.current({ exposure, page: `redday-${monthIndex}`, spec: redDaysSpec });
+			onDoneRef.current();
+			return;
+		}
+
+		// Capture now, while the calendar below is still mounted, rather than
+		// deferring to a later pass - by the time a later pass could run, this
+		// component (and every other past-batch month) would already be
+		// unmounted. No cancellation guard is needed here: hasStartedRef already
+		// caps this to one real invocation per job, and both onDone and
+		// onPageReady are idempotent against a late/duplicate call.
+		(async () => {
+			let image: { dataUrl: string; width: number; height: number } | null = null;
+
+			try {
+				image = await captureElementAsImage(pageId);
+			} catch (error) {
+				// A capture failure for this one month must not stall the whole batch -
+				// report it as failed and keep going, rather than leaving onDone unfired.
+				console.error(`Failed to capture the calendar image for ${exposure}, month ${monthIndex}:`, error);
+			}
+
+			// A 0-sized "successful" capture would make getImageLayout divide by
+			// zero later; treat it the same as a failed one.
+			onPageReadyRef.current({
+				exposure,
+				page: `month-${monthIndex}`,
+				spec: {
+					kind: "image-captured",
+					dataUrl: image && image.width > 0 && image.height > 0 ? image.dataUrl : null,
+					width: image?.width ?? 0,
+					height: image?.height ?? 0,
+				},
+			});
+			onPageReadyRef.current({ exposure, page: `redday-${monthIndex}`, spec: redDaysSpec });
+			onDoneRef.current();
+		})();
+	}, [isLoading, exposure, monthIndex, pageId]);
+
+	if (isLoading || DEV_SKIP_CALENDAR_IMAGES) {
 		return null;
 	}
 
@@ -375,17 +470,33 @@ function MonthGridPage({
 	);
 }
 
+type MonthJob = {
+	key: string;
+	exposure: Exposure;
+	monthIndex: number;
+	monthDate: TZDate;
+};
+
 /**
- * Year export: 12 month-grid pages per exposure type, January through December.
+ * Year export: schedules every (exposure, month) pair - across ALL exposure
+ * types together, not per type - as one shared queue, processing
+ * YEAR_BATCH_SIZE of them at a time (see the constant's comment for why).
+ *
+ * The active window is always "the earliest still-incomplete jobs", tracked
+ * by key in `completedKeys` - NOT a raw count of how many onDone calls have
+ * arrived so far. Jobs don't finish in the order they started (network timing
+ * varies), so a count would let a later job finishing first slide the window
+ * past an earlier, still-running one and unmount it mid-flight before it
+ * ever reports its pages.
  */
-function YearChartRenderer({
-	exposure,
+function YearBatchRenderer({
+	exposures,
 	date,
 	userId,
 	notes,
 	onPageReady,
 }: {
-	exposure: Exposure;
+	exposures: Array<Exposure>;
 	date: Date;
 	userId: string;
 	notes: Array<Note>;
@@ -395,17 +506,39 @@ function YearChartRenderer({
 	const yearStart = startOfYear(tzDate, { in: TIMEZONE });
 	const months = Array.from({ length: 12 }, (_, i) => addMonths(yearStart, i));
 
+	const jobs: Array<MonthJob> = exposures.flatMap((exposure) =>
+		months.map((monthDate, monthIndex) => ({
+			key: `${exposure}-${monthIndex}`,
+			exposure,
+			monthIndex,
+			monthDate,
+		})),
+	);
+
+	const [completedKeys, setCompletedKeys] = useState<Set<string>>(() => new Set());
+	const activeJobs = jobs.filter((job) => !completedKeys.has(job.key)).slice(0, YEAR_BATCH_SIZE);
+
+	const handleJobDone = useCallback((key: string) => {
+		setCompletedKeys((prev) => {
+			if (prev.has(key)) return prev;
+			const next = new Set(prev);
+			next.add(key);
+			return next;
+		});
+	}, []);
+
 	return (
 		<>
-			{months.map((monthDate, i) => (
+			{activeJobs.map((job) => (
 				<MonthGridPage
-					key={monthDate.toISOString()}
-					exposure={exposure}
-					monthDate={monthDate}
-					monthIndex={i}
+					key={job.key}
+					exposure={job.exposure}
+					monthDate={job.monthDate}
+					monthIndex={job.monthIndex}
 					userId={userId}
 					notes={notes}
 					onPageReady={onPageReady}
+					onDone={() => handleJobDone(job.key)}
 				/>
 			))}
 		</>
@@ -413,15 +546,16 @@ function YearChartRenderer({
 }
 
 /**
- * Main renderer - coordinates all pages and reports their final IDs once everything
- * has loaded.
+ * Top-level renderer: picks the right per-view renderer above, collects every
+ * page it reports via handlePageReady, and calls onPagesReady once the count
+ * matches expectedCount (exposure types x pages-per-type for that view).
  *
- * Each exposure type produces two pages: "summary" (ExposureSummary + grid) and
- * "chart" (the line chart). Pages are reported to the parent in a FIXED order —
- * dust, noise, vibration (or just the single selected type), summary before chart —
- * regardless of which exposure's data happens to finish loading first. This matters
- * because `titles` in pdf-export-dialog.tsx is built in that same fixed order; without
- * this, a chart that loads faster than another could end up with the wrong title.
+ * Pages are assembled back into a FIXED order - exposure types in the order
+ * exposureType implies, and within each, getPageKeysForView's order - rather
+ * than the order they happened to finish loading in. This matters because
+ * pdf-export-dialog.tsx builds its `titles` array in that same fixed order;
+ * without this, a page that loads faster than another could end up under
+ * the wrong title.
  */
 export function PdfChartRenderer({ exposureType, view, date, userId, onPagesReady }: PdfChartRendererProps) {
 	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
@@ -467,40 +601,41 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 				left: "-9999px",
 			}}
 		>
-			{view === "day"
-				? exposuresToRender.map((exposure) => (
-						<SingleDayChartRenderer
-							key={exposure}
-							exposure={exposure}
-							date={date}
-							userId={userId}
-							onPageReady={handlePageReady}
-						/>
-					))
-				: view === "year"
-					? // Hold off until the notes arrive, so getRedDays never runs against an empty list.
-						notesQuery.isLoading
-						? null
-						: exposuresToRender.map((exposure) => (
-								<YearChartRenderer
-									key={exposure}
-									exposure={exposure}
-									date={date}
-									userId={userId}
-									notes={notes}
-									onPageReady={handlePageReady}
-								/>
-							))
-					: exposuresToRender.map((exposure) => (
-							<TrendChartRenderer
-								key={exposure}
-								exposure={exposure}
-								date={date}
-								view={view}
-								userId={userId}
-								onPageReady={handlePageReady}
-							/>
-						))}
+			{view === "day" ? (
+				exposuresToRender.map((exposure) => (
+					<SingleDayChartRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
+			) : view === "year" ? (
+				// Hold off until the notes arrive, so getRedDays never runs against an empty list.
+				// One shared YearBatchRenderer, not one per exposure - this is what makes the
+				// batch size apply across the whole export (e.g. Overview) rather than 3x it.
+				notesQuery.isLoading ? null : (
+					<YearBatchRenderer
+						exposures={exposuresToRender}
+						date={date}
+						userId={userId}
+						notes={notes}
+						onPageReady={handlePageReady}
+					/>
+				)
+			) : (
+				exposuresToRender.map((exposure) => (
+					<TrendChartRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						view={view}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
+			)}
 		</div>
 	);
 }

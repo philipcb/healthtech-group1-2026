@@ -8,6 +8,7 @@ namespace Backend.Services;
 public interface IUserService
 {
 	Task<User?> GetUserByIdAsync(Guid id);
+	Task<UserInfo?> GetUserInfoByIdAsync(Guid id);
 	Task<List<User>> GetSubordinatesAsync(Guid managerId);
 	Task<User?> GetUserByNameAsync(string name);
 	Task<User?> GetUserByEmailAsync(string email);
@@ -16,15 +17,18 @@ public interface IUserService
 	Task<User?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
 	Task<bool> DeleteUserAsync(Guid id);
 	Task<User?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds);
+
 }
 
 public class UserService : IUserService
 {
 	private readonly AppDbContext _context;
+	private readonly LoginDbContext _login_context;
 
-	public UserService(AppDbContext context)
+	public UserService(AppDbContext context, LoginDbContext login_context)
 	{
 		_context = context;
+		_login_context = login_context;
 	}
 
 	public async Task<User?> GetUserByIdAsync(Guid id)
@@ -32,48 +36,69 @@ public class UserService : IUserService
 		return await _context.User.Include(u => u.Location).FirstOrDefaultAsync(u => u.Id == id);
 	}
 
+	public async Task<UserInfo?> GetUserInfoByIdAsync(Guid id)
+	{
+		return await _login_context.User.Include(u => u.Name).FirstOrDefaultAsync(u => u.Id == id);
+	}
+
+
 	public async Task<List<User>> GetSubordinatesAsync(Guid managerId)
 	{
+		
+		//TODO fix this with the new architecture
 		return await _context
 			.User.Where(u => u.Managers.Any(m => m.Id == managerId))
 			.Include(u => u.Location)
-			.OrderBy(u => u.Name)
+			//.OrderBy(u => u.Name)
 			.ToListAsync();
 	}
 
-	public async Task<User?> GetUserByNameAsync(string name)
+	public async Task<UserInfo?> GetUserByNameAsync(string name)
 	{
-		return await _context
-			.User.Include(u => u.Location)
-			.FirstOrDefaultAsync(u => u.Name == name);
+		//TODO fix
+		//return await _login_context
+			//.User.Include(u => u.Location)
+			//.FirstOrDefaultAsync(u => u.Name == name);
+		return await _login_context.User.AsQueryable().FirstOrDefaultAsync(u => u.Name == name);
 	}
 
-	public async Task<User?> GetUserByEmailAsync(string email)
-	{
-		return await _context
-			.User.Include(u => u.Location)
-			.FirstOrDefaultAsync(u => u.Email == email);
-	}
+	//TODO fix
+	// public async Task<User?> GetUserByEmailAsync(string email)
+	// {
+	// 	return await _context
+	// 		.User.Include(u => u.Location)
+	// 		.FirstOrDefaultAsync(u => u.Email == email);
+	// }
 
 	public async Task<List<User>> GetAllUsersAsync()
 	{
 		return await _context.User.Include(u => u.Location).ToListAsync();
 	}
 
+	//TODO Check if it seems correct
 	public async Task<User> CreateUserAsync(CreateUserDto createUserDto)
 	{
-		User user = new User
+		Guid newGuid = Guid.NewGuid();
+		UserInfo userInfo = new UserInfo
 		{
-			Id = Guid.NewGuid(),
+			Id = newGuid,
 			Name = createUserDto.Name,
 			Email = createUserDto.Email,
 			PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserDto.Password),
-			JobDescription = createUserDto.JobDescription,
 			CreatedAt = DateTime.UtcNow,
+		};
+		
+		
+		User user = new User
+		{
+			Id = newGuid,
+			JobDescription = createUserDto.JobDescription,
 			Role = createUserDto.Role,
 			LocationId = createUserDto.LocationId,
 		};
 
+		_login_context.User.Add(userInfo);
+		await _login_context.SaveChangesAsync();
 		_context.User.Add(user);
 		await _context.SaveChangesAsync();
 
@@ -81,35 +106,56 @@ public class UserService : IUserService
 		return createdUser!;
 	}
 
+
+	//TODO check if correct
 	public async Task<User?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
 	{
 		User? user = await GetUserByIdAsync(id);
-		if (user == null)
+		UserInfo? userInfo = await GetUserInfoByIdAsync(id);
+		
+		if (user == null || userInfo == null)
 			return null;
-
-		user.Name = updateUserDto.Name ?? user.Name;
-		user.Email = updateUserDto.Email ?? user.Email;
+		
+		userInfo.Name = updateUserDto.Name ?? userInfo.Name;
+		userInfo.Email = updateUserDto.Email ?? userInfo.Email;
 		user.JobDescription = updateUserDto.JobDescription ?? user.JobDescription;
 
 		if (!string.IsNullOrEmpty(updateUserDto.Password))
 		{
-			user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
+			userInfo.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateUserDto.Password);
 		}
 
 		_context.User.Update(user);
+		_login_context.User.Update(userInfo);
 		await _context.SaveChangesAsync();
+		await _login_context.SaveChangesAsync();
 		return user;
 	}
 
+	//TODO check if correct
 	public async Task<bool> DeleteUserAsync(Guid id)
 	{
-		var user = await GetUserByIdAsync(id);
-		if (user == null)
-			return false;
+		//Before, the next line was var user = ... instead of User? If there is a bug here, that might be why
+		User? user = await GetUserByIdAsync(id);
+		UserInfo? userInfo = await GetUserInfoByIdAsync(id);
+		bool wasUserFound = true;
+		if (user == null) {
+			wasUserFound = false;
+		}
+		else {
+			_context.User.Remove(user);
+			await _context.SaveChangesAsync();
+		}
 
-		_context.User.Remove(user);
-		await _context.SaveChangesAsync();
-		return true;
+
+		if (userInfo == null) {
+			wasUserFound = false;
+		}
+		else {
+			_login_context.User.Remove(userInfo);
+			await _login_context.SaveChangesAsync();
+		}
+		return wasUserFound;
 	}
 
 	public async Task<User?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds)

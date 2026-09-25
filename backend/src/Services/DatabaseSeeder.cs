@@ -16,6 +16,105 @@ public class DatabaseSeeder
 	private const string DefaultPasswordHash =
 		"$2a$11$QXVHkr6TQC8gJvh5P4GFzOYc.HyZA3FxDC3/BghAM3hODQVAoWwwi";
 
+
+	public async Task SeedLoginAsync(DbContext dbContext, CancellationToken ct)
+	{
+		DateTime now = DateTime.UtcNow;
+		List<UserInfo> seedUsers =
+		[
+			new UserInfo
+			{
+				Id = SeedIds.OlaId,
+				Name = "Ola Nordmann",
+				Email = "ola.nordmann@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.KariId,
+				Name = "Kari Nordmann",
+				Email = "kari.nordmann@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.PerId,
+				Name = "Per Hansen",
+				Email = "per.hansen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = TrondId,
+				Name = "Trond Pedersen",
+				Email = "trond.pedersen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = GjertrudId,
+				Name = "Gjertrud Olsen",
+				Email = "gjertrud.olsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = KlaraId,
+				Name = "Klara Johansen",
+				Email = "klara.johansen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = BirgirId,
+				Name = "Birgir Sigurdsson",
+				Email = "birgir.sigurdsson@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = TorleifId,
+				Name = "Torleif Eriksen",
+				Email = "torleif.eriksen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = BjornulfId,
+				Name = "Bjørnulf Knutsen",
+				Email = "bjornul.knutsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+		];
+		
+		HashSet<Guid> existingUserIds = await dbContext
+			.Set<UserInfo>()
+			.Select(user => user.Id)
+			.ToHashSetAsync(ct);
+
+		List<UserInfo> usersToAdd = [];
+
+		foreach (UserInfo user in seedUsers)
+		{
+			if (!existingUserIds.Contains(user.Id))
+			{
+				usersToAdd.Add(user);
+			}
+		}
+
+		dbContext.Set<UserInfo>().AddRange(usersToAdd);
+		await dbContext.SaveChangesAsync(ct);
+	}
+
 	public async Task SeedDataAsync(DbContext dbContext, CancellationToken ct)
 	{
 		DateTime now = DateTime.UtcNow;
@@ -53,10 +152,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.OlaId,
-				Name = "Ola Nordmann",
-				Email = "ola.nordmann@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Formann for bygg 1",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Foreman,
@@ -64,10 +159,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.KariId,
-				Name = "Kari Nordmann",
-				Email = "kari.nordmann@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Sveiser",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -75,10 +166,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.PerId,
-				Name = "Per Hansen",
-				Email = "per.hansen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -86,10 +173,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = TrondId,
-				Name = "Trond Pedersen",
-				Email = "trond.pedersen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -97,10 +180,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = GjertrudId,
-				Name = "Gjertrud Olsen",
-				Email = "gjertrud.olsen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -108,10 +187,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = KlaraId,
-				Name = "Klara Johansen",
-				Email = "klara.johansen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -119,10 +194,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = BirgirId,
-				Name = "Birgir Sigurdsson",
-				Email = "birgir.sigurdsson@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -130,10 +201,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = TorleifId,
-				Name = "Torleif Eriksen",
-				Email = "torleif.eriksen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -141,10 +208,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = BjornulfId,
-				Name = "Bjørnulf Knutsen",
-				Email = "bjornul.knutsen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,

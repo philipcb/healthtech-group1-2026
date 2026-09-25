@@ -20,7 +20,7 @@ public class AppDbContext : DbContext
 		base.OnModelCreating(modelBuilder);
 
 		// Store UserRole enum as string
-		modelBuilder.Entity<UserInfo>().Property(user => user.Role).HasConversion<string>();
+		modelBuilder.Entity<User>().Property(user => user.Role).HasConversion<string>();
 
 		modelBuilder
 			.Entity<User>()

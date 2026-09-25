@@ -14,9 +14,5 @@ public class LoginDbContext : DbContext
 		base.OnModelCreating(modelBuilder);
 		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.UserInfoConfiguration());
 
-
-		// Store UserRole enum as string
-		modelBuilder.Entity<UserInfo>().Property(user => user.Role).HasConversion<string>();
-
 	}
 }

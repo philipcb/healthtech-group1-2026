@@ -8,12 +8,15 @@ public class UserDto
 	public string? JobDescription { get; set; }
 	public LocationDto? Location { get; set; }
 
+	public required UserRole Role { get; set; }
+
 	public static UserDto FromEntity(User user) =>
 		new UserDto
 		{
 			Id = user.Id,
 			JobDescription = user.JobDescription,
 			Location = user.Location != null ? LocationDto.FromEntity(user.Location) : null,
+			Role = user.Role,
 		};
 }
 
@@ -28,6 +31,7 @@ public class UserWithStatusDto : UserDto
 			JobDescription = user.JobDescription,
 			Location = user.Location != null ? LocationDto.FromEntity(user.Location) : null,
 			Status = status,
+			Role = user.Role,
 		};
 }
 

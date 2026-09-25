@@ -53,22 +53,33 @@ public class UserService : IUserService
 			.ToListAsync();
 	}
 
-	public async Task<UserInfo?> GetUserByNameAsync(string name)
+	public async Task<User?> GetUserByNameAsync(string name)
 	{
-		//TODO fix
+		//TODO fix maybe
 		//return await _login_context
 			//.User.Include(u => u.Location)
 			//.FirstOrDefaultAsync(u => u.Name == name);
-		return await _login_context.User.AsQueryable().FirstOrDefaultAsync(u => u.Name == name);
+		
+		UserInfo? login = await _login_context.User.AsQueryable().FirstOrDefaultAsync(u => u.Name == name);
+		if (login == null)
+		{
+			return null;
+		} 
+		return await GetUserByIdAsync(login.Id);
 	}
 
-	//TODO fix
-	// public async Task<User?> GetUserByEmailAsync(string email)
-	// {
-	// 	return await _context
-	// 		.User.Include(u => u.Location)
-	// 		.FirstOrDefaultAsync(u => u.Email == email);
-	// }
+	//TODO fix maybe
+	public async Task<User?> GetUserByEmailAsync(string email)
+	{
+		//await _context.User.Include(u => u.Location).FirstOrDefaultAsync(u => u.Email == email);
+
+		UserInfo? login = await _login_context.User.AsQueryable().FirstOrDefaultAsync(u => u.Email == email);
+		if (login == null)
+		{
+			return null;
+		} 
+		return await GetUserByIdAsync(login.Id);
+	}
 
 	public async Task<List<User>> GetAllUsersAsync()
 	{

@@ -34,7 +34,7 @@ public class UserStatusService(AppDbContext _context, SignedInUserContext _signe
 
 		startTime = AuthorizationUtils.ClampRequestStartDateForRole(
 			startTime,
-			_signedInUserCserontext?.User?.Role
+			_signedInUserContext?.User?.Role
 		);
 		endTime = TimeWindowUtils.ClampRequestEndDateToCurrentDateTime(endTime);
 

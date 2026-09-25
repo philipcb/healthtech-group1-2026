@@ -2,8 +2,8 @@ import { TIMEZONE } from "@/i18n/locale.ts";
 import { createNote, deleteNote, notesQueryOptions, updateNote } from "@/lib/api.ts";
 import { buildNotesQueryKeyPrefix } from "@/lib/query-key-builder.ts";
 import type { View } from "@/lib/views.ts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TZDate } from "@date-fns/tz";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isSameDay } from "date-fns";
 import { useEffect, useState } from "react";
 

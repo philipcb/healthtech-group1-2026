@@ -340,5 +340,9 @@
       "label": "Limit value",
       "description": "Level that must not be exceeded."
     }
+  },
+  "datePicker": {
+    "openLabel": "Choose date and view",
+    "dialogTitle": "Date and view"
   }
 }

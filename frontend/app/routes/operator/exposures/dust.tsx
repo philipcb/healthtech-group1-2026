@@ -48,7 +48,7 @@ export default function Dust() {
 					/>
 				)}
 			</div>
-			{showTrendLineChart && <DustTrendLineChartCard unit={dustUnit} />}
+			{showTrendLineChart && <DustTrendLineChartCard unit={dustUnit} breakoutOnMobile={true} />}
 		</div>
 	);
 }

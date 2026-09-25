@@ -4,6 +4,7 @@ import { NotesCard } from "@/components/notes-card.tsx";
 import { OperatorExposureStatusTable } from "@/components/operator-exposure-status-table.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { UserStatusChart } from "@/components/users-status-chart.tsx";
@@ -25,7 +26,7 @@ import type { User } from "@/lib/dto/user.ts";
 import { type Exposure, exposures, parseAsExposure } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
-import { XIcon } from "lucide-react";
+import { CalendarDaysIcon, XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -77,7 +78,7 @@ export default function ForemanOverview() {
 				</div>
 
 				<div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-6">
-					<div className="grid w-full grid-cols-[auto_1fr] items-center gap-3">
+					<div className="grid w-full grid-cols-1 items-center gap-3 md:grid-cols-[auto_1fr]">
 						<div className="flex gap-1">
 							<ToggleGroup
 								type="single"
@@ -129,7 +130,7 @@ export default function ForemanOverview() {
 						{users === undefined || isSubordinatesLoading ? (
 							<Skeleton className="h-9 w-73 justify-self-end" />
 						) : (
-							<div className="w-73 min-w-0 justify-self-end">
+							<div className="w-full min-w-0 md:w-73 md:justify-self-end">
 								<UserSelect
 									users={users}
 									value={selectedUserId}
@@ -142,20 +143,56 @@ export default function ForemanOverview() {
 				</div>
 			</header>
 
-			<div className="flex w-full flex-row gap-6">
-				<aside className="flex flex-col gap-6 md:w-1/5">
-					<TeamSummary subordinateCount={subordinateCount} />
-					<NotesCard />
-					<LimitExplanation />
+			<div className="lg:hidden">
+				<Popover>
+					<PopoverTrigger asChild={true}>
+						<Button variant="outline" className="w-full">
+							<CalendarDaysIcon aria-hidden="true" />
+							{t(($) => $.datePicker.openLabel)}
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-[calc(100vw-2.5rem)] max-w-sm" align="end">
+						<div className="flex flex-col gap-4">
+							<ViewPicker
+								allowedViews={["day", "week"]}
+								withNavigationButtons={true}
+								minDate={minSelectableDate}
+								maxDate={maxSelectableDate}
+							/>
+							<DatePicker
+								mode={view}
+								showWeekNumber={true}
+								date={date}
+								onDateChange={setDate}
+								disabled={{
+									before: minSelectableDate,
+									after: maxSelectableDate,
+								}}
+								pagedNavigation={false}
+								hideNavigation={true}
+								disableNavigation={true}
+								captionLayout="label"
+							/>
+						</div>
+					</PopoverContent>
+				</Popover>
+			</div>
+
+			<div className="flex w-full flex-col gap-6 lg:flex-row">
+				<aside className="contents lg:flex lg:w-1/5 lg:flex-col lg:gap-6">
+					<div className="order-1 hidden lg:block">
+						<TeamSummary subordinateCount={subordinateCount} />
+					</div>
+					<div className="order-2">
+						<LimitExplanation />
+					</div>
+					<div className="order-4 lg:order-none">
+						<NotesCard />
+					</div>
 				</aside>
 
-				<div
-					className="grid w-full gap-6"
-					style={{
-						gridTemplateColumns: "minmax(0, 3fr) calc(var(--spacing) * 73)",
-					}}
-				>
-					<div className="flex flex-col gap-12">
+				<div className="order-3 grid w-full grid-cols-1 gap-6 lg:order-none lg:grid-cols-[minmax(0,3fr)_calc(var(--spacing)*73)]">
+					<div className="flex flex-col gap-8 p-4 sm:p-6 lg:gap-12 lg:p-0">
 						{/* TODO: Redo the loading logic here */}
 						{isUserSelected ? (
 							<UserDetails selectedUser={selectedUser} exposure={exposure} />
@@ -178,6 +215,10 @@ export default function ForemanOverview() {
 								) : (
 									<>
 										<ExposureSummaryGrid thresholdSummary={thresholdSummary} />
+
+										<div className="lg:hidden">
+											<TeamSummary subordinateCount={subordinateCount} />
+										</div>
 
 										<div className="flex flex-col gap-4">
 											<h2 className="font-medium text-lg">
@@ -203,7 +244,7 @@ export default function ForemanOverview() {
 						)}
 					</div>
 
-					<aside className="flex flex-col gap-4">
+					<aside className="hidden flex-col gap-4 lg:flex">
 						<Card muted={true}>
 							<ViewPicker
 								allowedViews={["day", "week"]}

@@ -21,9 +21,10 @@ import { ExposureGraphEmptyState } from "../statistic-card.tsx";
 
 interface Props {
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export function DustExposureLineChartCard({ userId }: Props) {
+export function DustExposureLineChartCard({ userId, breakoutOnMobile }: Props) {
 	const { t, i18n } = useTranslation();
 	const chartContainerId = useId();
 
@@ -56,6 +57,7 @@ export function DustExposureLineChartCard({ userId }: Props) {
 			minY={minY}
 			exposure={exposure}
 			dustField={query.field}
+			breakoutOnMobile={breakoutOnMobile}
 			headerRight={
 				<div className="flex items-center gap-2">
 					<Tabs value={dustUnit} onValueChange={(v) => setDustUnit(v as ExposureUnit)}>

@@ -1,8 +1,8 @@
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
-import type { View } from "@/lib/views.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
@@ -10,9 +10,11 @@ import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-q
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
+import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { useQueries } from "@tanstack/react-query";
 import { formatDuration, hoursToMinutes, type Locale, minutesToHours } from "date-fns";
+import { InfoIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -92,16 +94,33 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	const warningLabel = t(($) => $.exposureSummary.aggregated.warning);
 	const dangerLabel = t(($) => $.exposureSummary.aggregated.danger);
 
+	const actionValueLabel = t(($) => $.limitExplanation.actionValue.label);
+	const actionValueDescription = t(($) => $.limitExplanation.actionValue.description);
+	const limitValueLabel = t(($) => $.limitExplanation.limitValue.label);
+	const limitValueDescription = t(($) => $.limitExplanation.limitValue.description);
+	const viewDetailsLabel = t(($) => $.interactiveCard.viewDetails);
+
 	const safeDuration = formatMinutesAsDuration(data.safeMinutes, locale);
 	const warningDuration = formatMinutesAsDuration(data.warningMinutes, locale);
 	const dangerDuration = formatMinutesAsDuration(data.dangerMinutes, locale);
 
 	return (
-		<div className="grid grid-cols-3 gap-3">
+		// Mobile: stacked bars. Desktop: plain grid-cols-3 boxes matching main.
+		<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
 			<p
 				title={`${safeLabel}: ${safeDuration}`}
 				className={cn(
-					"flex flex-col rounded-lg px-2 py-1",
+					"flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 md:hidden",
+					data.safeMinutes > 0 ? "bg-safe-subtle text-safe-text" : "bg-secondary text-muted-foreground",
+				)}
+			>
+				<span className="text-xs">{safeLabel}</span>
+				<span className="font-medium text-sm tabular-nums">{safeDuration}</span>
+			</p>
+			<p
+				title={`${safeLabel}: ${safeDuration}`}
+				className={cn(
+					"hidden flex-col rounded-lg px-2 py-1 md:flex",
 					data.safeMinutes > 0 ? "bg-safe-subtle text-safe-text" : "bg-secondary text-muted-foreground",
 				)}
 			>
@@ -112,27 +131,114 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 			<p
 				title={`${warningLabel}: ${warningDuration}`}
 				className={cn(
-					"flex flex-col rounded-lg px-2 py-1",
+					"flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 md:hidden",
 					data.warningMinutes > 0
 						? "bg-warning-subtle text-warning-text"
 						: "bg-secondary text-muted-foreground",
 				)}
 			>
-				<span className="text-xs">{warningLabel}</span>
+				<span className="flex min-w-0 items-center gap-1">
+					<span className="text-xs">{warningLabel}</span>
+					<LimitPopoverButton
+						ariaLabel={`${warningLabel}: ${viewDetailsLabel}`}
+						label={actionValueLabel}
+						description={actionValueDescription}
+					/>
+				</span>
+				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
+			</p>
+			<p
+				title={`${warningLabel}: ${warningDuration}`}
+				className={cn(
+					"hidden flex-col rounded-lg px-2 py-1 md:flex",
+					data.warningMinutes > 0
+						? "bg-warning-subtle text-warning-text"
+						: "bg-secondary text-muted-foreground",
+				)}
+			>
+				<span className="flex items-center gap-1 text-xs">
+					{warningLabel}
+					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
+					<LimitPopoverButton
+						ariaLabel={`${warningLabel}: ${viewDetailsLabel}`}
+						label={actionValueLabel}
+						description={actionValueDescription}
+						triggerClassName="lg:hidden"
+					/>
+				</span>
 				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
 			</p>
 
 			<p
 				title={`${dangerLabel}: ${dangerDuration}`}
 				className={cn(
-					"flex flex-col rounded-lg px-2 py-1",
+					"flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 md:hidden",
 					data.dangerMinutes > 0 ? "bg-danger-subtle text-danger-text" : "bg-secondary text-muted-foreground",
 				)}
 			>
-				<span className="text-xs">{dangerLabel}</span>
+				<span className="flex min-w-0 items-center gap-1">
+					<span className="text-xs">{dangerLabel}</span>
+					<LimitPopoverButton
+						ariaLabel={`${dangerLabel}: ${viewDetailsLabel}`}
+						label={limitValueLabel}
+						description={limitValueDescription}
+					/>
+				</span>
+				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
+			</p>
+			<p
+				title={`${dangerLabel}: ${dangerDuration}`}
+				className={cn(
+					"hidden flex-col rounded-lg px-2 py-1 md:flex",
+					data.dangerMinutes > 0 ? "bg-danger-subtle text-danger-text" : "bg-secondary text-muted-foreground",
+				)}
+			>
+				<span className="flex items-center gap-1 text-xs">
+					{dangerLabel}
+					{/* Tablet only: LimitExplanation in the sidebar covers this from lg, see exposure-layout.tsx. */}
+					<LimitPopoverButton
+						ariaLabel={`${dangerLabel}: ${viewDetailsLabel}`}
+						label={limitValueLabel}
+						description={limitValueDescription}
+						triggerClassName="lg:hidden"
+					/>
+				</span>
 				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
 			</p>
 		</div>
+	);
+}
+
+function LimitPopoverButton({
+	ariaLabel,
+	label,
+	description,
+	triggerClassName,
+}: {
+	ariaLabel: string;
+	label: string;
+	description: string;
+	triggerClassName?: string;
+}) {
+	return (
+		<Popover>
+			<PopoverTrigger asChild={true}>
+				<button
+					type="button"
+					aria-label={ariaLabel}
+					className={cn(
+						"-m-1 rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100",
+						triggerClassName,
+					)}
+				>
+					<InfoIcon className="size-3.5" />
+				</button>
+			</PopoverTrigger>
+			<PopoverContent align="start" className="w-64 text-sm">
+				<p className="font-medium">{label}</p>
+				<p className="text-muted-foreground text-xs">{description}</p>
+			</PopoverContent>
+		</Popover>
 	);
 }
 
@@ -167,7 +273,7 @@ function formatMinutesAsDuration(totalMinutes: number, locale: Locale) {
 
 function SummaryCardSkeleton() {
 	return (
-		<div className="grid grid-cols-3 gap-3">
+		<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
 			<Skeleton className="h-11 w-full rounded-xl" />
 			<Skeleton className="h-11 w-full rounded-xl" />
 			<Skeleton className="h-11 w-full rounded-xl" />

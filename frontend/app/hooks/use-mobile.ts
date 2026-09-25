@@ -1,6 +1,8 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+// Matches Tailwind's `lg` breakpoint, so tablet gets the same layout as mobile and only
+// true desktop widths (lg+) get the desktop layout.
+const MOBILE_BREAKPOINT = 1024;
 
 export function useIsMobile() {
 	const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);

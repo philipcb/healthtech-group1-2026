@@ -1,5 +1,6 @@
 import { ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { DangerLevels } from "@/lib/danger-levels.ts";
 import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
@@ -9,8 +10,10 @@ import { cn, formatExposureValue } from "@/lib/utils.ts";
 import { addDays, addWeeks, endOfMonth, endOfWeek, getISOWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis, type YAxisTickContentProps } from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
+import { CollapsedYAxisTick } from "../exposure-line-chart/collapsed-y-axis-tick.tsx";
+import { COLLAPSED_Y_AXIS_WIDTH } from "../exposure-line-chart/collapsed-y-axis-width.ts";
 import { ExposureDot } from "../exposure-line-chart/exposure-dot.tsx";
 import { ExposureLegend } from "../exposure-line-chart/exposure-legend.tsx";
 import { ExposureLineChartGradientStops } from "../exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
@@ -21,6 +24,7 @@ import { ExposureTrendTooltip } from "./exposure-trend-tooltip.tsx";
 type TrendGranularity = "day" | "week";
 
 const Y_AXIS_WIDTH = 60;
+const MOBILE_MAX_X_TICKS = 4;
 
 export type TrendSeries = {
 	exposure: Exposure;
@@ -38,6 +42,7 @@ export interface TrendLineChartProps {
 	lineType?: CurveType;
 	chartContainerClassName?: string;
 	usePeakDangerThreshold?: boolean;
+	breakoutOnMobile?: boolean;
 }
 
 export type SeriesDefinition = {
@@ -58,14 +63,22 @@ export function TrendLineChart({
 	lineType = "linear",
 	chartContainerClassName,
 	usePeakDangerThreshold = false,
+	breakoutOnMobile = false,
 }: TrendLineChartProps) {
 	const { t } = useTranslation();
 	const formatDate = useFormatDate();
 	const gradientId = useId();
+	const isMobile = useIsMobile();
 
 	const bucketDates = getBucketDates(selectedDate, granularity);
 	const seriesDefinitions = buildSeriesDefinitions(series, granularity, t);
 	const chartData = buildChartData(bucketDates, seriesDefinitions, granularity, formatDate, t);
+
+	const isMobileBreakout = breakoutOnMobile && isMobile;
+	const yAxisWidth = isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
+	const xAxisInterval = isMobileBreakout
+		? Math.max(0, Math.ceil(chartData.length / MOBILE_MAX_X_TICKS) - 1)
+		: undefined;
 
 	const [hoveredSeriesKey, setHoveredSeriesKey] = useState<string | null>(null);
 	const isDustChart = series.every((serie) => serie.exposure === "dust");
@@ -110,8 +123,14 @@ export function TrendLineChart({
 	// Pre-calculate max value for Area bounding box alignment
 	const maxDataValue = singleSeriesValues.length > 0 ? Math.max(...singleSeriesValues) : maxY;
 
+	const formatYValue = (value: number) =>
+		formatExposureValue(value, unit, defaultFractionDigits, fractionDigitsPerUnit);
+
 	return (
-		<ChartContainer config={{}} className={cn("h-full w-full", chartContainerClassName)}>
+		<ChartContainer
+			config={{}}
+			className={cn("h-full w-full", chartContainerClassName, isMobileBreakout && "!aspect-auto !h-[50dvh]")}
+		>
 			<ComposedChart accessibilityLayer={true} data={chartData} margin={{ left: 12, right: 12 }}>
 				<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
 
@@ -120,6 +139,7 @@ export function TrendLineChart({
 					tickLine={false}
 					axisLine={false}
 					tickMargin={8}
+					interval={xAxisInterval}
 					tick={{
 						className: "text-sm",
 						fill: "var(--color-muted-foreground)",
@@ -127,26 +147,37 @@ export function TrendLineChart({
 				/>
 
 				<YAxis
-					width={Y_AXIS_WIDTH}
+					width={yAxisWidth}
 					tickLine={false}
 					axisLine={false}
-					tick={{
-						className: "text-base",
-						fill: "var(--color-muted-foreground)",
-					}}
+					tick={
+						isMobileBreakout
+							? (tickProps: YAxisTickContentProps) => (
+									<CollapsedYAxisTick
+										y={tickProps.y}
+										label={formatYValue(Number(tickProps.payload.value))}
+									/>
+								)
+							: {
+									className: "text-base",
+									fill: "var(--color-muted-foreground)",
+								}
+					}
 					domain={[minY, maxY]}
 					ticks={yTicks}
-					tickFormatter={(value) =>
-						formatExposureValue(value, unit, defaultFractionDigits, fractionDigitsPerUnit)
+					tickFormatter={formatYValue}
+					label={
+						isMobileBreakout
+							? undefined
+							: {
+									value: t(($) => $.exposures.units[unit]),
+									position: "inside",
+									dx: -32,
+									angle: -90,
+									className: "text-lg mr-4",
+									fill: "var(--color-muted-foreground)",
+								}
 					}
-					label={{
-						value: t(($) => $.exposures.units[unit]),
-						position: "inside",
-						dx: -32,
-						angle: -90,
-						className: "text-lg mr-4",
-						fill: "var(--color-muted-foreground)",
-					}}
 				/>
 
 				<ExposureTrendTooltip unit={unit} seriesDefinitions={seriesDefinitions} />
@@ -239,7 +270,7 @@ export function TrendLineChart({
 
 				<Legend
 					content={() => (
-						<div className="mt-2 flex flex-col gap-3" style={{ marginLeft: Y_AXIS_WIDTH }}>
+						<div className="mt-2 flex flex-col gap-3" style={{ marginLeft: yAxisWidth }}>
 							{/* Only show exposure legend if there are multiple exposures or fields */}
 							{!isSingleSeries && (
 								<ExposureLegend

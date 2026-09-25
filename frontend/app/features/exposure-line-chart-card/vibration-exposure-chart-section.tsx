@@ -23,7 +23,7 @@ export function VibrationExposureChartSection() {
 			maxHour={maxHour}
 			locale={i18n.language}
 		>
-			<VibrationExposureLineChartCard />
+			<VibrationExposureLineChartCard breakoutOnMobile={true} />
 		</ExposureChartView>
 	);
 }

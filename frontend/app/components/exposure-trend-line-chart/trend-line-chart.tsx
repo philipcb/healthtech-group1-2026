@@ -140,6 +140,7 @@ export function TrendLineChart({
 					axisLine={false}
 					tickMargin={8}
 					interval={xAxisInterval}
+					padding={{ left: 24, right: 24 }}
 					tick={{
 						className: "text-sm",
 						fill: "var(--color-muted-foreground)",

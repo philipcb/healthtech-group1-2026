@@ -1,7 +1,10 @@
+import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { toCanvas } from "html-to-image";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
 import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
+import { drawRedDayTable, type PdfLabels } from "./pdf-red-day-table.ts";
+import { drawCalendarPage, drawDayGridPage, drawWeekGridPage, type PdfCalendarLabels } from "./pdf-calendar.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -46,12 +49,13 @@ const A4_LANDSCAPE_HEIGHT = 210;
 const PAGE_MARGIN = 12;
 const TITLE_HEIGHT = 20;
 
-const getImageLayout = (canvas: HTMLCanvasElement) => {
+// Scales a captured canvas to fit the available PDF page area.
+const getImageLayout = (dimensions: { width: number; height: number }) => {
 	const maxWidth = A4_LANDSCAPE_WIDTH - PAGE_MARGIN * 2;
 	const maxHeight = A4_LANDSCAPE_HEIGHT - PAGE_MARGIN - TITLE_HEIGHT;
-	const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
-	const width = canvas.width * scale;
-	const height = canvas.height * scale;
+	const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height);
+	const width = dimensions.width * scale;
+	const height = dimensions.height * scale;
 
 	return {
 		x: (A4_LANDSCAPE_WIDTH - width) / 2,
@@ -61,28 +65,63 @@ const getImageLayout = (canvas: HTMLCanvasElement) => {
 	};
 };
 
+const drawPageTitle = (pdf: jsPDF, title: string) => {
+	pdf.setFont("helvetica", "bold");
+	pdf.setFontSize(14);
+	pdf.setTextColor(0, 0, 0);
+
+	pdf.text(title, A4_LANDSCAPE_WIDTH / 2, 15, {
+		align: "center",
+	});
+};
+
 export const useExportPDF = () => {
-	const exportMultipleToPDF = useCallback(
-		async (elementIds: Array<string>, fileName: string, titles: Array<string>, coverPageData: CoverPageData) => {
-			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+	/**
+	 * `pages` and `titles` are index-aligned: PdfChartRenderer reports pages in a
+	 * fixed order and pdf-export-dialog.tsx builds titles in that same order.
+	 */
+	const exportPagesToPDF = useCallback(
+		async (
+			pages: Array<PdfPageSpec>,
+			fileName: string,
+			titles: Array<string>,
+			coverPageData: CoverPageData,
+			labels: PdfLabels & PdfCalendarLabels,
+		) => {
+			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
 			drawCoverPage(pdf, coverPageData);
 
-			for (let i = 0; i < elementIds.length; i++) {
-				const canvas = await elementToCanvas(elementIds[i]);
-				if (!canvas) continue;
+			for (let i = 0; i < pages.length; i++) {
+				const page = pages[i];
 
-				const imgData = canvas.toDataURL("image/png", 1.0);
-				pdf.addPage("a4", "landscape");
+				if (page.kind === "image") {
+					// Deferred capture: the element is still in the document, looked up by id.
+					const canvas = await elementToCanvas(page.id);
+					if (!canvas) continue;
 
-				pdf.setFont("helvetica", "bold");
-				pdf.setFontSize(14);
+					const imgData = canvas.toDataURL("image/png", 1.0);
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
 
-				pdf.text(titles[i], A4_LANDSCAPE_WIDTH / 2, 15, {
-					align: "center",
-				});
-
-				const image = getImageLayout(canvas);
-				pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
+					const image = getImageLayout(canvas);
+					pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
+				} else if (page.kind === "calendar") {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4);
+				} else if (page.kind === "day-grid") {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawDayGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+				} else if (page.kind === "week-grid") {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawWeekGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+				} else {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN);
+				}
 			}
 
 			pdf.save(`${fileName}.pdf`);
@@ -90,5 +129,5 @@ export const useExportPDF = () => {
 		[],
 	);
 
-	return { exportMultipleToPDF };
+	return { exportPagesToPDF };
 };

@@ -6,13 +6,13 @@ import type { View } from "@/lib/views.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
-import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { buildExposureOverviewQuery, buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
+import { formatMinutesAsDuration } from "@/lib/duration.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import type { TZDate } from "@date-fns/tz";
 import { useQueries } from "@tanstack/react-query";
-import { formatDuration, hoursToMinutes, type Locale, minutesToHours } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -44,7 +44,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	// Because vibration data is cumulative and has few data points, we never fetch it with minute granularity
 	// TODO: When we take vibration disconnectedOn into account we could fetch it with minute granularity for the day
 	// view as well
-	const granularity = exposure === "vibration" ? "hour" : "minute";
+	const granularity = getSummaryGranularity(exposure);
 
 	const exposureQuery =
 		exposure &&
@@ -134,35 +134,6 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 			</p>
 		</div>
 	);
-}
-
-const HOURS_IN_DAY = 24;
-
-function formatMinutesAsDuration(totalMinutes: number, locale: Locale) {
-	if (totalMinutes === 0) {
-		return formatDuration({ minutes: 0 }, { locale, format: ["minutes"], zero: true });
-	}
-
-	const totalHours = minutesToHours(totalMinutes);
-	const days = Math.floor(totalHours / HOURS_IN_DAY);
-	const hours = totalHours - days * HOURS_IN_DAY;
-	const minutes = totalMinutes - hoursToMinutes(totalHours);
-
-	const format: Array<"days" | "hours" | "minutes"> = [];
-
-	if (days > 0) {
-		format.push("days");
-	}
-
-	if (hours > 0) {
-		format.push("hours");
-	}
-
-	if (minutes > 0) {
-		format.push("minutes");
-	}
-
-	return formatDuration({ days, hours, minutes: minutes }, { locale, format }).replace("en", "1");
 }
 
 function SummaryCardSkeleton() {

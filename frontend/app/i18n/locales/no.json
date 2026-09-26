@@ -49,6 +49,7 @@
     "day": "Dag",
     "week": "Uke",
     "month": "Måned",
+    "year": "År",
     "selectionText": "Du blir vist en {{view}}.",
     "dateSelectionSingle": "Du har valgt {{date}}.",
     "dateSelectionMultiple": "Du har valgt {{startDate}} til {{endDate}}."
@@ -82,7 +83,8 @@
     "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
     "theme": "Fargetema",
     "language": "Språk",
-    "map": "Kart"
+    "map": "Kart",
+    "selectedYear": "Valgt år: {{year}}"
   },
   "live": {
     "timeRange": {
@@ -326,7 +328,14 @@
   "pdf": {
     "dustExposure": "Støveksponering",
     "noiseExposure": "Støyeksponering",
-    "vibrationExposure": "Vibrasjoneksponering"
+    "vibrationExposure": "Vibrasjoneksponering",
+    "redDays": "Røde dager",
+    "noRedDays": "Ingen røde dager denne måneden.",
+    "date": "Dato",
+    "note": "Notat",
+    "dayReport": "Dagsrapport",
+    "openReport": "Åpne rapport",
+    "exceeded": "Over grenseverdi"
   },
   "limitExplanation": {
     "actionValue": {

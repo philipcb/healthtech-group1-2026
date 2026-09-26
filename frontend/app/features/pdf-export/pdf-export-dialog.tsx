@@ -13,10 +13,11 @@ import { PdfChartRenderer, type PdfPageSpec, type PdfView } from "@/features/pdf
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
+import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
-import { formatMinutesAsDuration } from "@/lib/duration.ts";
+import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
 import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
@@ -31,6 +32,8 @@ import {
 	startOfWeek,
 	startOfYear,
 	subMilliseconds,
+	eachDayOfInterval,
+	addDays,
 } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
@@ -278,7 +281,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// Everything the red-day tables need from i18n, resolved once here so the
 		// PDF assembler stays free of React.
 		const dateFnsLocale = getLocale(i18n.language);
-		const labels: PdfLabels = {
+		const weekdayLabels = eachDayOfInterval({
+			start: startOfWeek(new Date(), { weekStartsOn: 1 }),
+			end: addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6),
+		}).map((day) => day.toLocaleDateString(i18n.language, { weekday: "short" }));
+		const labels: PdfLabels & PdfCalendarLabels = {
 			date: t(($) => $.pdf.date),
 			average: t(($) => $.measurement.average),
 			safe: t(($) => $.exposureSummary.aggregated.safe),
@@ -290,6 +297,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			formatValue: (exposure, value) =>
 				`${formatExposureValue(value, EXPOSURE_UNIT[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[EXPOSURE_UNIT[exposure]])}`,
 			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
+			formatHoursAndMinutes: (minutes) => formatMinutesAsHoursAndMinutes(minutes, dateFnsLocale),
+			weekdays: weekdayLabels,
 		};
 
 		// Call the PDF export hook to build the document

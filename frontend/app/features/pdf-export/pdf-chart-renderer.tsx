@@ -15,8 +15,7 @@ import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposur
 import { getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
 import { getYearRange } from "@/lib/pdf/year-range.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
-import { captureElementAsImage } from "@/hooks/use-export-pdf.ts";
-import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
@@ -25,6 +24,7 @@ import { addMonths, setHours, startOfYear } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 
 /**
  * PDF Chart Renderer - Off-Screen Rendering for PDF Export
@@ -53,17 +53,13 @@ export type PdfView = View | "year";
  *  - "image": rasterize an off-screen DOM node, looked up by id, when the
  *    assembler gets to it. Used by the day/week/month exports, where
  *    everything stays mounted until the whole document is built.
- *  - "image-captured": already rasterized, carried as a data URL. Used by
- *    the year export, which captures each month right after its data loads
- *    and unmounts it immediately after (see MonthGridPage) - by the time the
- *    assembler runs, the element is long gone, so it can't be looked up by
- *    id. `dataUrl` is null if the capture itself failed.
+ *  - "calendar": a vector-drawn calendar page for the year export.
  *  - "red-days": drawn as a real vector table (no image at all), so the
  *    rows stay searchable and can carry links.
  */
 export type PdfPageSpec =
 	| { kind: "image"; id: string }
-	| { kind: "image-captured"; dataUrl: string | null; width: number; height: number }
+	| { kind: "calendar"; monthDate: TZDate; days: Array<PdfCalendarDay>; summary: ReturnType<typeof calculateSummaryCounts> }
 	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> };
 
 interface CollectedPage {
@@ -88,8 +84,6 @@ interface PdfChartRendererProps {
  * table already is). Flip to false to bring images back for testing in the
  * meantime.
  */
-const DEV_SKIP_CALENDAR_IMAGES: boolean = true;
-
 /**
  * How many month-pages are mounted at once during a year export - across ALL
  * exposure types combined (see YearBatchRenderer), not per type. A month is
@@ -105,9 +99,7 @@ const YEAR_BATCH_SIZE = 3;
 function getPageKeysForView(view: PdfView): Array<string> {
 	if (view === "day") return ["summary", "chart"];
 	if (view === "year") {
-		return Array.from({ length: 12 }, (_, i) =>
-			DEV_SKIP_CALENDAR_IMAGES ? [`redday-${i}`] : [`month-${i}`, `redday-${i}`],
-		).flat();
+		return Array.from({ length: 12 }, (_, i) => [`calendar-${i}`, `redday-${i}`]).flat();
 	}
 	return ["summary"]; // week or month
 }
@@ -307,15 +299,7 @@ function TrendChartRenderer({
 	);
 }
 
-/**
- * One month's worth of work in a year export: fetches its data, computes its
- * red-day rows, and (unless DEV_SKIP_CALENDAR_IMAGES is on) captures its
- * calendar as an image - then calls onDone so the batch queue in
- * YearBatchRenderer knows it can unmount this and start the next queued
- * month. Capture happens here, inline, rather than being deferred to a
- * later pass, specifically so this component's DOM only needs to exist for
- * as long as it takes to capture it, not for the whole export.
- */
+/** Collects calendar and red-day page data for one exposure and month. */
 function MonthGridPage({
 	exposure,
 	monthDate,
@@ -333,16 +317,7 @@ function MonthGridPage({
 	onPageReady: (page: CollectedPage) => void;
 	onDone: () => void;
 }) {
-	const pageId = useId();
 	const granularity = getSummaryGranularity(exposure);
-
-	// ExposureSummary (rendered below, on this same page) reads its dust field and
-	// aggregation mode from the page's URL — see summary-card.tsx. We read the exact
-	// same URL state here so our two queries below build to the identical cache key
-	// ExposureSummary's own query uses. If these ever diverge (e.g. this stayed
-	// hardcoded to the default field while the URL had a different one selected),
-	// every month fetches its minute-granularity data TWICE instead of sharing one
-	// cached result — that was causing the export to freeze the page.
 	const [dustField] = useQueryState("dustField", parseAsDustField.withDefault(defaultDustField));
 	const parseAsAggregation = parseAsStringLiteral(Aggregations);
 	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
@@ -376,98 +351,50 @@ function MonthGridPage({
 	);
 
 	const isLoading = gridQuery.isLoading || minuteQuery.isLoading;
-	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
 
-	const dayData = gridQuery.data?.data;
-	const minuteData = minuteQuery.data?.data;
-
-	// onPageReady/onDone get a new identity on every YearBatchRenderer re-render
-	// (i.e. whenever any job in the queue finishes, not just this one). Reading
-	// them via refs, instead of depending on them directly below, keeps this
-	// effect from re-running just because a sibling job happened to finish.
 	const onPageReadyRef = useRef(onPageReady);
 	onPageReadyRef.current = onPageReady;
 	const onDoneRef = useRef(onDone);
 	onDoneRef.current = onDone;
-
-	// Ensures this effect's body only ever does real work once per job instance.
 	const hasStartedRef = useRef(false);
 
-	// dayData/minuteData/notes/granularity are deliberately left out of the deps
-	// array below: they're only ever read synchronously, before the async
-	// capture starts, and hasStartedRef already guarantees this body runs at
-	// most once - so there's nothing to gain from re-running when they change,
-	// and excluding them avoids a spurious restart if a background refetch
-	// updates the underlying query data mid-capture.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: see comment above.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: dayData/minuteData/notes read synchronously once, guarded by hasStartedRef — see MonthGridPage's original comment for the same reasoning.
 	useEffect(() => {
 		if (isLoading || hasStartedRef.current) return;
 		hasStartedRef.current = true;
 
-		const redDaysSpec: PdfPageSpec = {
-			kind: "red-days",
+		const dayData = gridQuery.data?.data ?? [];
+		const minuteData = minuteQuery.data?.data ?? [];
+
+		onPageReadyRef.current({
 			exposure,
-			rows: getRedDays({
+			page: `calendar-${monthIndex}`,
+			spec: {
+				kind: "calendar",
+				monthDate,
+				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
+				summary: calculateSummaryCounts(minuteData, {
+					exposure,
+					peakAggregation: usePeakAggregation,
+					granularity,
+				}),
+			},
+		});
+
+		onPageReadyRef.current({
+			exposure,
+			page: `redday-${monthIndex}`,
+			spec: {
+				kind: "red-days",
 				exposure,
-				dayData: dayData ?? [],
-				minuteData: minuteData ?? [],
-				notes,
-				granularity,
-			}),
-		};
+				rows: getRedDays({ exposure, dayData, minuteData, notes, granularity }),
+			},
+		});
 
-		if (DEV_SKIP_CALENDAR_IMAGES) {
-			onPageReadyRef.current({ exposure, page: `redday-${monthIndex}`, spec: redDaysSpec });
-			onDoneRef.current();
-			return;
-		}
+		onDoneRef.current();
+	}, [isLoading, exposure, monthIndex, monthDate]);
 
-		// Capture now, while the calendar below is still mounted, rather than
-		// deferring to a later pass - by the time a later pass could run, this
-		// component (and every other past-batch month) would already be
-		// unmounted. No cancellation guard is needed here: hasStartedRef already
-		// caps this to one real invocation per job, and both onDone and
-		// onPageReady are idempotent against a late/duplicate call.
-		(async () => {
-			let image: { dataUrl: string; width: number; height: number } | null = null;
-
-			try {
-				image = await captureElementAsImage(pageId);
-			} catch (error) {
-				// A capture failure for this one month must not stall the whole batch -
-				// report it as failed and keep going, rather than leaving onDone unfired.
-				console.error(`Failed to capture the calendar image for ${exposure}, month ${monthIndex}:`, error);
-			}
-
-			// A 0-sized "successful" capture would make getImageLayout divide by
-			// zero later; treat it the same as a failed one.
-			onPageReadyRef.current({
-				exposure,
-				page: `month-${monthIndex}`,
-				spec: {
-					kind: "image-captured",
-					dataUrl: image && image.width > 0 && image.height > 0 ? image.dataUrl : null,
-					width: image?.width ?? 0,
-					height: image?.height ?? 0,
-				},
-			});
-			onPageReadyRef.current({ exposure, page: `redday-${monthIndex}`, spec: redDaysSpec });
-			onDoneRef.current();
-		})();
-	}, [isLoading, exposure, monthIndex, pageId]);
-
-	if (isLoading || DEV_SKIP_CALENDAR_IMAGES) {
-		return null;
-	}
-
-	return (
-		<div id={pageId} className="pdf-export-container" style={pdfPageStyle}>
-			<ExposureSummary exposureType={exposure} selectedDate={monthDate} selectedView="month" />
-			<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-				<CalendarWidget selectedDay={monthDate} data={gridData} />
-			</div>
-		</div>
-	);
+	return null; // nothing to mount — no DOM capture needed anymore
 }
 
 type MonthJob = {

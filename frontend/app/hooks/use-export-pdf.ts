@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import { useCallback } from "react";
 import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
 import { drawRedDayTable, type PdfLabels } from "./pdf-red-day-table.ts";
+import { drawCalendarPage, type PdfCalendarLabels } from "./pdf-calendar.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -86,6 +87,7 @@ const getImageLayout = (dimensions: { width: number; height: number }) => {
 const drawPageTitle = (pdf: jsPDF, title: string) => {
 	pdf.setFont("helvetica", "bold");
 	pdf.setFontSize(14);
+	pdf.setTextColor(0, 0, 0);
 
 	pdf.text(title, A4_LANDSCAPE_WIDTH / 2, 15, {
 		align: "center",
@@ -103,9 +105,9 @@ export const useExportPDF = () => {
 			fileName: string,
 			titles: Array<string>,
 			coverPageData: CoverPageData,
-			labels: PdfLabels,
+			labels: PdfLabels & PdfCalendarLabels,
 		) => {
-			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
 			drawCoverPage(pdf, coverPageData);
 
 			for (let i = 0; i < pages.length; i++) {
@@ -122,18 +124,11 @@ export const useExportPDF = () => {
 
 					const image = getImageLayout(canvas);
 					pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
-				} else if (page.kind === "image-captured") {
-					// Already captured (and its element already unmounted) - nothing to look
-					// up. Skip a missing or unusable (0-sized) capture rather than feed
-					// NaN dimensions into pdf.addImage below.
-					if (!page.dataUrl || page.width <= 0 || page.height <= 0) continue;
-
-					pdf.addPage("a4", "landscape");
-					drawPageTitle(pdf, titles[i]);
-
-					const image = getImageLayout(page);
-					pdf.addImage(page.dataUrl, "PNG", image.x, image.y, image.width, image.height);
-				} else {
+				} else if (page.kind === "calendar") {
+ 					pdf.addPage("a4", "landscape");
+ 					drawPageTitle(pdf, titles[i]);
+ 					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+ 				} else {
 					pdf.addPage("a4", "landscape");
 					drawPageTitle(pdf, titles[i]);
 					drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN);

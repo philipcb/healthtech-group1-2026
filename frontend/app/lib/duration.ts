@@ -32,3 +32,15 @@ export function formatMinutesAsDuration(totalMinutes: number, locale: Locale) {
 
 	return formatDuration({ days, hours, minutes: minutes }, { locale, format }).replace("en", "1");
 }
+
+/** Formats a minute count as localized hours and remaining minutes. */
+export function formatMinutesAsHoursAndMinutes(totalMinutes: number, locale: Locale) {
+	const hours = Math.floor(totalMinutes / 60);
+	const minutes = totalMinutes - hoursToMinutes(hours);
+	const format: Array<"hours" | "minutes"> = [];
+
+	if (hours > 0) format.push("hours");
+	if (minutes > 0 || format.length === 0) format.push("minutes");
+
+	return formatDuration({ hours, minutes }, { locale, format, zero: true }).replace("en", "1");
+}

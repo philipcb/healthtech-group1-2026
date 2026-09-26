@@ -125,10 +125,10 @@ export const useExportPDF = () => {
 					const image = getImageLayout(canvas);
 					pdf.addImage(imgData, "PNG", image.x, image.y, image.width, image.height);
 				} else if (page.kind === "calendar") {
- 					pdf.addPage("a4", "landscape");
- 					drawPageTitle(pdf, titles[i]);
- 					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
- 				} else {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+				} else {
 					pdf.addPage("a4", "landscape");
 					drawPageTitle(pdf, titles[i]);
 					drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN);

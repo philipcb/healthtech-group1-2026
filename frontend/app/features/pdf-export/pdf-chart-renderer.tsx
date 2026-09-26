@@ -53,13 +53,18 @@ export type PdfView = View | "year";
  *  - "image": rasterize an off-screen DOM node, looked up by id, when the
  *    assembler gets to it. Used by the day/week/month exports, where
  *    everything stays mounted until the whole document is built.
- *  - "calendar": a vector-drawn calendar page for the year export.
+ *  - "calendar": a vector-drawn calendar page for the month and year exports.
  *  - "red-days": drawn as a real vector table (no image at all), so the
  *    rows stay searchable and can carry links.
  */
 export type PdfPageSpec =
 	| { kind: "image"; id: string }
-	| { kind: "calendar"; monthDate: TZDate; days: Array<PdfCalendarDay>; summary: ReturnType<typeof calculateSummaryCounts> }
+	| {
+			kind: "calendar";
+			monthDate: TZDate;
+			days: Array<PdfCalendarDay>;
+			summary: ReturnType<typeof calculateSummaryCounts>;
+	  }
 	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> };
 
 interface CollectedPage {
@@ -297,6 +302,74 @@ function TrendChartRenderer({
 			)}
 		</div>
 	);
+}
+
+/** Collects a month calendar and its exposure summary for vector rendering. */
+function MonthCalendarRenderer({
+	exposure,
+	date,
+	userId,
+	onPageReady,
+}: {
+	exposure: Exposure;
+	date: Date;
+	userId: string;
+	onPageReady: (page: CollectedPage) => void;
+}) {
+	const monthDate = TIMEZONE(date);
+	const granularity = getSummaryGranularity(exposure);
+	const [dustField] = useQueryState("dustField", parseAsDustField.withDefault(defaultDustField));
+	const parseAsAggregation = parseAsStringLiteral(Aggregations);
+	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
+	const usePeakAggregation = aggregation === "peak";
+	const dayQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "month", monthDate, {
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation,
+			}),
+			userId,
+		}),
+	);
+	const summaryQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "month", monthDate, {
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation,
+				granularity,
+			}),
+			userId,
+		}),
+	);
+	const isLoading = dayQuery.isLoading || summaryQuery.isLoading;
+	const dayData = dayQuery.data?.data ?? [];
+	const summaryData = summaryQuery.data?.data ?? [];
+	const hasReportedRef = useRef(false);
+	const onPageReadyRef = useRef(onPageReady);
+	onPageReadyRef.current = onPageReady;
+
+	useEffect(() => {
+		if (isLoading || hasReportedRef.current) return;
+		hasReportedRef.current = true;
+		onPageReadyRef.current({
+			exposure,
+			page: "summary",
+			spec: {
+				kind: "calendar",
+				monthDate,
+				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
+				summary: calculateSummaryCounts(summaryData, {
+					exposure,
+					peakAggregation: usePeakAggregation,
+					granularity,
+				}),
+			},
+		});
+	}, [isLoading, exposure, monthDate, dayData, summaryData, usePeakAggregation, granularity]);
+
+	return null;
 }
 
 /** Collects calendar and red-day page data for one exposure and month. */
@@ -551,6 +624,16 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 						onPageReady={handlePageReady}
 					/>
 				)
+			) : view === "month" ? (
+				exposuresToRender.map((exposure) => (
+					<MonthCalendarRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
 			) : (
 				exposuresToRender.map((exposure) => (
 					<TrendChartRenderer

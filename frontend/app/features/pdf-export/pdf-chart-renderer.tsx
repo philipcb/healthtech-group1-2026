@@ -1,9 +1,5 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
-import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { ExposureSummary } from "@/features/summary-card.tsx";
-import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions, notesRangeQueryOptions } from "@/lib/api.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
@@ -11,6 +7,7 @@ import type { Note } from "@/lib/dto/note.ts";
 import { buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
+import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
 import { getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
 import { getYearRange } from "@/lib/pdf/year-range.ts";
@@ -20,11 +17,21 @@ import { downsampleExposureData } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { useQuery } from "@tanstack/react-query";
-import { addMonths, setHours, startOfYear } from "date-fns";
+import {
+	addDays,
+	addMonths,
+	eachDayOfInterval,
+	setHours,
+	startOfDay,
+	startOfHour,
+	startOfWeek,
+	startOfYear,
+} from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
+import type { PdfDayGridPage, PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
 
 /**
  * PDF Chart Renderer - Off-Screen Rendering for PDF Export
@@ -35,7 +42,7 @@ import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts
  *
  * Page count and shape depend on the view:
  *  - day: 2 pages per exposure type (a summary page, a chart page) - SingleDayChartRenderer
- *  - week/month: 1 page per exposure type (a summary + grid page) - TrendChartRenderer
+ *  - week/month: 1 vector-drawn grid page per exposure type
  *  - year: 2 pages per month per exposure type (a calendar image, a red-day
  *    table) - MonthGridPage, scheduled by YearBatchRenderer
  *
@@ -59,6 +66,8 @@ export type PdfView = View | "year";
  */
 export type PdfPageSpec =
 	| { kind: "image"; id: string }
+	| { kind: "day-grid"; page: PdfDayGridPage }
+	| { kind: "week-grid"; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
 			monthDate: TZDate;
@@ -139,11 +148,14 @@ function SingleDayChartRenderer({
 	userId: string;
 	onPageReady: (page: CollectedPage) => void;
 }) {
-	const summaryId = useId();
 	const chartId = useId();
 
 	// Convert to TZDate
 	const tzDate = TIMEZONE(date);
+	const [dustField] = useQueryState("dustField", parseAsDustField.withDefault(defaultDustField));
+	const parseAsAggregation = parseAsStringLiteral(Aggregations);
+	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
+	const peakAggregation = aggregation === "peak";
 
 	// Always use "day" view for individual day charts
 	const query = buildExposureQuery(exposure, "day", tzDate, {
@@ -152,16 +164,30 @@ function SingleDayChartRenderer({
 	});
 
 	// Fetch data directly
-	const { data: response, isLoading } = useQuery(
+	const gridQuery = useQuery(
 		exposureQueryOptions({
 			exposure,
 			query,
 			userId,
 		}),
 	);
+	const summaryGranularity = getSummaryGranularity(exposure);
+	const summaryQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "day", tzDate, {
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation: peakAggregation,
+				granularity: summaryGranularity,
+			}),
+			userId,
+		}),
+	);
 
-	const data = response?.data ?? [];
-	const hourDomain = response?.hourDomain;
+	const data = gridQuery.data?.data ?? [];
+	const summaryData = summaryQuery.data?.data ?? [];
+	const hourDomain = gridQuery.data?.hourDomain;
+	const isLoading = gridQuery.isLoading || summaryQuery.isLoading;
 
 	// Calculate Y-axis range and hour domain
 	const { minY, maxY } = getExposureYAxisRange(exposure, data, {
@@ -178,130 +204,164 @@ function SingleDayChartRenderer({
 
 	// Get thresholds for warning/danger lines
 	const threshold = getThreshold(exposure, exposure === "dust" ? "pm10_twa" : undefined);
-	const dayGridData = [
-		{
-			exposure,
-			dangerLevelByHour: data.reduce<Record<number, (typeof data)[number]["dangerLevel"]>>((levels, point) => {
-				levels[point.time.getUTCHours()] = point.dangerLevel;
-				return levels;
-			}, {}),
-		},
-	];
 	// Report both pages once loaded.
 	useEffect(() => {
 		if (!isLoading) {
-			onPageReady({ exposure, page: "summary", spec: { kind: "image", id: summaryId } });
+			const dangerLevelByUtcHour = new Map<number, DangerLevel>();
+			for (const point of data) dangerLevelByUtcHour.set(point.time.getUTCHours(), point.dangerLevel);
+
+			onPageReady({
+				exposure,
+				page: "summary",
+				spec: {
+					kind: "day-grid",
+					page: {
+						exposure,
+						hours: Array.from({ length: maxHour - minHour + 1 }, (_, index) => {
+							const hour = minHour + index;
+							return {
+								hour,
+								dangerLevel: dangerLevelByUtcHour.get(setHours(tzDate, hour).getUTCHours()) ?? null,
+							};
+						}),
+						summary: calculateSummaryCounts(summaryData, {
+							exposure,
+							peakAggregation,
+							granularity: summaryGranularity,
+						}),
+					},
+				},
+			});
 			onPageReady({ exposure, page: "chart", spec: { kind: "image", id: chartId } });
 		}
-	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
+	}, [
+		isLoading,
+		data,
+		summaryData,
+		minHour,
+		maxHour,
+		tzDate,
+		exposure,
+		summaryGranularity,
+		peakAggregation,
+		chartId,
+		onPageReady,
+	]);
 
 	if (isLoading) {
 		return null;
 	}
 
 	return (
-		<>
-			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
-				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView="day" />
-				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-					<DayWidget
-						data={dayGridData}
-						startHour={minHour}
-						endHour={maxHour}
-						selectedDate={tzDate}
-						exposureTypes={[exposure]}
-					/>
-				</div>
+		<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
+			<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
+				<BaseExposureLineChartCard
+					minTime={minTime}
+					maxTime={maxTime}
+					chartData={downsampleExposureData(exposure, data)}
+					unit={exposure === "dust" ? "ug" : "db"}
+					id={`${chartId}-chart`}
+					maxY={maxY}
+					minY={minY}
+					exposure={exposure}
+					dustField={exposure === "dust" ? "pm10_twa" : undefined}
+				>
+					<ThresholdLine y={threshold.danger} dangerLevel="danger" />
+					<ThresholdLine y={threshold.warning} dangerLevel="warning" />
+				</BaseExposureLineChartCard>
 			</div>
-
-			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
-				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
-					<BaseExposureLineChartCard
-						minTime={minTime}
-						maxTime={maxTime}
-						chartData={downsampleExposureData(exposure, data)}
-						unit={exposure === "dust" ? "ug" : "db"}
-						id={`${chartId}-chart`}
-						maxY={maxY}
-						minY={minY}
-						exposure={exposure}
-						dustField={exposure === "dust" ? "pm10_twa" : undefined}
-					>
-						<ThresholdLine y={threshold.danger} dangerLevel="danger" />
-						<ThresholdLine y={threshold.warning} dangerLevel="warning" />
-					</BaseExposureLineChartCard>
-				</div>
-			</div>
-		</>
+		</div>
 	);
 }
 
-/**
- * Aggregated trend chart renderer - handles one exposure type for week/month view
- */
-function TrendChartRenderer({
+/** Collects a week's hourly exposure data and summary for vector rendering. */
+function WeekGridRenderer({
 	exposure,
 	date,
-	view,
 	userId,
 	onPageReady,
 }: {
 	exposure: Exposure;
 	date: Date;
-	view: "week" | "month";
 	userId: string;
 	onPageReady: (page: CollectedPage) => void;
 }) {
-	const summaryId = useId();
 	const tzDate = TIMEZONE(date);
+	const granularity = getSummaryGranularity(exposure);
+	const [dustField] = useQueryState("dustField", parseAsDustField.withDefault(defaultDustField));
+	const parseAsAggregation = parseAsStringLiteral(Aggregations);
+	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
+	const peakAggregation = aggregation === "peak";
 	const gridQuery = useQuery(
 		exposureQueryOptions({
 			exposure,
-			query: buildExposureQuery(exposure, view, tzDate, {
+			query: buildExposureQuery(exposure, "week", tzDate, {
 				field: exposure === "dust" ? "pm1_twa" : undefined,
 				usePeakAggregation: false,
 			}),
 			userId,
 		}),
 	);
+	const summaryQuery = useQuery(
+		exposureQueryOptions({
+			exposure,
+			query: buildExposureQuery(exposure, "week", tzDate, {
+				field: exposure === "dust" ? dustField : undefined,
+				usePeakAggregation: peakAggregation,
+				granularity,
+			}),
+			userId,
+		}),
+	);
 
-	const isLoading = gridQuery.isLoading;
-	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
+	const isLoading = gridQuery.isLoading || summaryQuery.isLoading;
+	const gridData = gridQuery.data?.data ?? [];
+	const summaryData = summaryQuery.data?.data ?? [];
 	const hourDomain = gridQuery.data?.hourDomain;
 	const { minHour, maxHour } = getHourDomain(
 		hourDomain,
-		gridQuery.data?.data.map((point) => point.time),
-		view,
+		gridData.map((point) => point.time),
+		"week",
 	);
+	const hasReportedRef = useRef(false);
+	const onPageReadyRef = useRef(onPageReady);
+	onPageReadyRef.current = onPageReady;
 
-	// Report the calendar page when its data is ready.
 	useEffect(() => {
-		if (!isLoading) {
-			const timer = setTimeout(() => {
-				onPageReady({ exposure, page: "summary", spec: { kind: "image", id: summaryId } });
-			}, 200);
-			return () => clearTimeout(timer);
-		}
-	}, [isLoading, summaryId, exposure, onPageReady]);
+		if (isLoading || hasReportedRef.current) return;
+		hasReportedRef.current = true;
 
-	if (isLoading) {
-		return null;
-	}
+		const weekStart = startOfWeek(tzDate, { weekStartsOn: 1, in: TIMEZONE });
+		const weekDates = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
+		const hours = Array.from({ length: maxHour - minHour + 1 }, (_, index) => minHour + index);
+		const dangerLevelByHour = new Map<number, DangerLevel>();
+		for (const bucket of gridData) dangerLevelByHour.set(startOfHour(bucket.time).getTime(), bucket.dangerLevel);
 
-	return (
-		<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
-			<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
-			{view === "week" ? (
-				<div style={{ width: "1160px" }}>
-					<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
-				</div>
-			) : (
-				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-					<CalendarWidget selectedDay={tzDate} data={gridData} />
-				</div>
-			)}
-		</div>
-	);
+		onPageReadyRef.current({
+			exposure,
+			page: "summary",
+			spec: {
+				kind: "week-grid",
+				page: {
+					hours,
+					days: weekDates.map((weekDate) => ({
+						date: weekDate,
+						dangerLevels: hours.map((hour) => {
+							const slot = setHours(startOfDay(weekDate), hour);
+							return dangerLevelByHour.get(startOfHour(slot).getTime()) ?? null;
+						}),
+					})),
+					summary: calculateSummaryCounts(summaryData, {
+						exposure,
+						peakAggregation,
+						granularity,
+					}),
+				},
+			},
+		});
+	}, [isLoading, tzDate, minHour, maxHour, gridData, summaryData, exposure, granularity, peakAggregation]);
+
+	return null;
 }
 
 /** Collects a month calendar and its exposure summary for vector rendering. */
@@ -636,11 +696,10 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 				))
 			) : (
 				exposuresToRender.map((exposure) => (
-					<TrendChartRenderer
+					<WeekGridRenderer
 						key={exposure}
 						exposure={exposure}
 						date={date}
-						view={view}
 						userId={userId}
 						onPageReady={handlePageReady}
 					/>

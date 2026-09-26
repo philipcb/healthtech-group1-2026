@@ -298,6 +298,13 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				`${formatExposureValue(value, EXPOSURE_UNIT[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[EXPOSURE_UNIT[exposure]])}`,
 			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
 			formatHoursAndMinutes: (minutes) => formatMinutesAsHoursAndMinutes(minutes, dateFnsLocale),
+			formatHour: (hour) =>
+				new Date(2000, 0, 1, hour).toLocaleTimeString(i18n.language, {
+					hour: "2-digit",
+					minute: "2-digit",
+					hourCycle: "h23",
+				}),
+			exposureName: (exposure) => t(($) => $.exposures[exposure]),
 			weekdays: weekdayLabels,
 		};
 

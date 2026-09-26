@@ -4,7 +4,7 @@ import jsPDF from "jspdf";
 import { useCallback } from "react";
 import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
 import { drawRedDayTable, type PdfLabels } from "./pdf-red-day-table.ts";
-import { drawCalendarPage, type PdfCalendarLabels } from "./pdf-calendar.ts";
+import { drawCalendarPage, drawDayGridPage, drawWeekGridPage, type PdfCalendarLabels } from "./pdf-calendar.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -127,7 +127,15 @@ export const useExportPDF = () => {
 				} else if (page.kind === "calendar") {
 					pdf.addPage("a4", "landscape");
 					drawPageTitle(pdf, titles[i]);
-					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4);
+				} else if (page.kind === "day-grid") {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawDayGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+				} else if (page.kind === "week-grid") {
+					pdf.addPage("a4", "landscape");
+					drawPageTitle(pdf, titles[i]);
+					drawWeekGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
 				} else {
 					pdf.addPage("a4", "landscape");
 					drawPageTitle(pdf, titles[i]);

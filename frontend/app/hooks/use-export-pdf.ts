@@ -44,31 +44,12 @@ const elementToCanvas = async (elementId: string) => {
 	return toCanvas(wrapper, { skipFonts: true, pixelRatio: 2 });
 };
 
-/**
- * Captures an off-screen element and returns its image data right away,
- * instead of just an id to look up in a later pass. The year export uses
- * this: it captures each month as soon as that month's data has loaded, then
- * unmounts it before starting the next one, so the element never needs to
- * stay in the document until a separate assembly step runs later.
- */
-export const captureElementAsImage = async (
-	elementId: string,
-): Promise<{ dataUrl: string; width: number; height: number } | null> => {
-	const canvas = await elementToCanvas(elementId);
-	if (!canvas) return null;
-
-	return { dataUrl: canvas.toDataURL("image/png", 1.0), width: canvas.width, height: canvas.height };
-};
-
 const A4_LANDSCAPE_WIDTH = 297;
 const A4_LANDSCAPE_HEIGHT = 210;
 const PAGE_MARGIN = 12;
 const TITLE_HEIGHT = 20;
 
-// Accepts anything with width/height, so both a raw HTMLCanvasElement (the
-// "image" case, captured right before this is called) and a plain
-// {width, height} pair (the "image-captured" case, captured earlier and
-// carried in the page spec) can share this layout math.
+// Scales a captured canvas to fit the available PDF page area.
 const getImageLayout = (dimensions: { width: number; height: number }) => {
 	const maxWidth = A4_LANDSCAPE_WIDTH - PAGE_MARGIN * 2;
 	const maxHeight = A4_LANDSCAPE_HEIGHT - PAGE_MARGIN - TITLE_HEIGHT;

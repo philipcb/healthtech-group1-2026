@@ -43,7 +43,7 @@ import type { PdfDayGridPage, PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
  * Page count and shape depend on the view:
  *  - day: 2 pages per exposure type (a summary page, a chart page) - SingleDayChartRenderer
  *  - week/month: 1 vector-drawn grid page per exposure type
- *  - year: 2 pages per month per exposure type (a calendar image, a red-day
+ *  - year: 2 pages per month per exposure type (a vector calendar, a red-day
  *    table) - MonthGridPage, scheduled by YearBatchRenderer
  *
  * The whole tree is wrapped in the "pdf-export-light" class (see app.css), which
@@ -70,7 +70,6 @@ export type PdfPageSpec =
 	| { kind: "week-grid"; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
-			monthDate: TZDate;
 			days: Array<PdfCalendarDay>;
 			summary: ReturnType<typeof calculateSummaryCounts>;
 	  }
@@ -90,14 +89,6 @@ interface PdfChartRendererProps {
 	onPagesReady: (pages: Array<PdfPageSpec>) => void;
 }
 
-/**
- * Skips rendering and capturing every month's calendar image in the year
- * export - only the red-day table pages are produced. Currently true
- * deliberately: the rasterized calendar images make the PDF far too large,
- * and they're pending a redesign as a drawn table instead (like the red-day
- * table already is). Flip to false to bring images back for testing in the
- * meantime.
- */
 /**
  * How many month-pages are mounted at once during a year export - across ALL
  * exposure types combined (see YearBatchRenderer), not per type. A month is
@@ -418,7 +409,6 @@ function MonthCalendarRenderer({
 			page: "summary",
 			spec: {
 				kind: "calendar",
-				monthDate,
 				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
 				summary: calculateSummaryCounts(summaryData, {
 					exposure,
@@ -504,7 +494,6 @@ function MonthGridPage({
 			page: `calendar-${monthIndex}`,
 			spec: {
 				kind: "calendar",
-				monthDate,
 				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
 				summary: calculateSummaryCounts(minuteData, {
 					exposure,

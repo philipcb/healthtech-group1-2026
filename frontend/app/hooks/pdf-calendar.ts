@@ -49,7 +49,7 @@ const MONTH_CALENDAR_WIDTH = 24 * 7;
 /** Draws a month calendar and its exposure summary as vector shapes and text. */
 export function drawCalendarPage(
 	pdf: jsPDF,
-	page: { monthDate: TZDate; days: Array<PdfCalendarDay>; summary: SummaryLevelCounts },
+	page: { days: Array<PdfCalendarDay>; summary: SummaryLevelCounts },
 	labels: PdfCalendarLabels,
 	startY: number,
 ): void {

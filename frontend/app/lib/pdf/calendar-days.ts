@@ -1,7 +1,7 @@
 /** Data preparation helpers for vector-drawn PDF calendars. */
 import { TIMEZONE } from "@/i18n/locale.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import type { SummaryLevelCounts, TimeBucketStatus } from "@/lib/time-bucket-types.ts";
+import type { TimeBucketStatus } from "@/lib/time-bucket-types.ts";
 import type { TZDate } from "@date-fns/tz";
 import { eachDayOfInterval, endOfMonth, startOfMonth, endOfWeek, isSameDay, isSameMonth, startOfWeek } from "date-fns";
 
@@ -10,8 +10,6 @@ export type PdfCalendarDay = {
 	inMonth: boolean;
 	dangerLevel: DangerLevel | null;
 };
-
-export type PdfCalendarSummary = SummaryLevelCounts;
 
 /**
  * Builds a full calendar grid (including leading/trailing days from adjacent

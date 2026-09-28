@@ -11,14 +11,14 @@ public interface IUserService
 	Task<FullUser?> GetFullUserByIdAsync(Guid id);
 	Task<User?> GetUserByIdAsync(Guid id);
 	Task<UserInfo?> GetUserInfoByIdAsync(Guid id);
-	Task<List<User>> GetSubordinatesAsync(Guid managerId);
+	Task<List<FullUser>> GetSubordinatesAsync(Guid managerId);
 	Task<FullUser?> GetUserByNameAsync(string name);
 	Task<FullUser?> GetUserByEmailAsync(string email);
 	Task<List<FullUser>> GetAllUsersAsync();
 	Task<FullUser> CreateUserAsync(CreateUserDto createUserDto);
 	Task<FullUser?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
 	Task<bool> DeleteUserAsync(Guid id);
-	Task<User?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds);
+	Task<FullUser?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds);
 
 }
 
@@ -51,14 +51,17 @@ public class UserService : IUserService
 	}
 
 
-	public async Task<List<User>> GetSubordinatesAsync(Guid managerId)
+	public async Task<List<FullUser>> GetSubordinatesAsync(Guid managerId)
 	{
 		//TODO fix this with the new architecture
-		return await _context
-			.User.Where(u => u.Managers.Any(m => m.Id == managerId))
-			.Include(u => u.Location)
-			//.OrderBy(u => u.Name)
-			.ToListAsync();
+		List<User> subordinateList = await _context.User.Where(u => u.Managers.Any(m => m.Id == managerId)).Include(u => u.Location).ToListAsync();
+		List<FullUser> returnedList = [];
+		foreach (User subordinate in subordinateList)
+		{
+			UserInfo? subordinateInfo = await GetUserInfoByIdAsync(subordinate.Id);
+			returnedList.Add(new FullUser(){user = subordinate, userInfo = subordinateInfo!});
+		}
+		return returnedList.OrderBy(u => u.userInfo.Name).ToList<FullUser>();
 	}
 
 	public async Task<FullUser?> GetUserByNameAsync(string name)
@@ -192,7 +195,7 @@ public class UserService : IUserService
 		return wasUserFound;
 	}
 
-	public async Task<User?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds)
+	public async Task<FullUser?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds)
 	{
 		User? manager = await _context
 			.User.Include(u => u.Subordinates)
@@ -220,7 +223,7 @@ public class UserService : IUserService
 		manager.Subordinates = newSubordinates;
 		await _context.SaveChangesAsync();
 
-		return manager;
+		return new FullUser(){user = manager, userInfo = (await GetUserInfoByIdAsync(manager.Id))!};
 	}
 }
 

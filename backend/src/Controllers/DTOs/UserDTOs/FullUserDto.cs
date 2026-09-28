@@ -44,5 +44,8 @@ public class FullUserWithStatusDto : FullUserDto
 			Location = user.Location != null ? LocationDto.FromEntity(user.Location) : null,
 			Status = status,
 		};
+
+	public static FullUserWithStatusDto FromEntity(FullUser fullUser, UserStatusDto status) => FullUserWithStatusDto.FromEntity(fullUser.user, fullUser.userInfo, status);	
+
 }
 

@@ -33,31 +33,31 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	}
 
 	[HttpGet("{managerId}/subordinates")]
-	public async Task<ActionResult<IEnumerable<UserWithStatusDto>>> GetSubordinates(
+	public async Task<ActionResult<IEnumerable<FullUserWithStatusDto>>> GetSubordinates(
 		Guid managerId,
 		[FromQuery] DateTime? startTime,
 		[FromQuery] DateTime? endTime
 	)
 	{
-		List<User> subordinates = await _userService.GetSubordinatesAsync(managerId);
+		List<FullUser> subordinates = await _userService.GetSubordinatesAsync(managerId);
 
 		// Default to current day if no time range is provided
 		DateTime start = startTime ?? DateTime.UtcNow.Date;
 		DateTime end = endTime ?? DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
 
 		IEnumerable<UserStatusDto> userStatuses = await _userStatusService.GetStatusForUsersInRange(
-			subordinates.Select(u => u.Id),
+			subordinates.Select(u => u.user.Id),
 			start,
 			end
 		);
 
-		List<UserWithStatusDto> dtos = subordinates
-			.Select(user =>
+		List<FullUserWithStatusDto> dtos = subordinates
+			.Select(u =>
 			{
-				UserStatusDto? status = userStatuses.FirstOrDefault(s => s.UserId == user.Id);
-				return UserWithStatusDto.FromEntity(
-					user,
-					status ?? new UserStatusDto { UserId = user.Id, Status = DangerLevel.Safe }
+				UserStatusDto? status = userStatuses.FirstOrDefault(s => s.UserId == u.userInfo.Id);
+				return FullUserWithStatusDto.FromEntity(
+					u,
+					status ?? new UserStatusDto { UserId = u.user.Id, Status = DangerLevel.Safe }
 				);
 			})
 			.ToList();
@@ -74,7 +74,7 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 		[FromQuery] DateTime? endTime
 	)
 	{
-		List<User> subordinates = await _userService.GetSubordinatesAsync(managerId);
+		List<FullUser> subordinates = await _userService.GetSubordinatesAsync(managerId);
 		if (subordinates.Count == 0)
 		{
 			return Ok(new Dictionary<string, ExposureThresholdSummaryDto>());
@@ -84,7 +84,7 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 		var end = endTime ?? DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
 
 		IEnumerable<UserStatusDto> userStatuses = await _userStatusService.GetStatusForUsersInRange(
-			subordinates.Select(u => u.Id),
+			subordinates.Select(u => u.user.Id),
 			start,
 			end
 		);
@@ -167,44 +167,44 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	}
 
 	[HttpPut("{managerId}/subordinates/delete")]
-	public async Task<ActionResult<UserDto>> DeleteSubordinates(
+	public async Task<ActionResult<FullUserDto>> DeleteSubordinates(
 		Guid managerId,
 		List<Guid> subordinateIds
 	)
 	{
-		List<User> subordinates = await _userService.GetSubordinatesAsync(managerId);
+		List<FullUser> subordinates = await _userService.GetSubordinatesAsync(managerId);
 		List<Guid> remainingSubordinateIds = subordinates
-			.Select(s => s.Id)
+			.Select(s => s.user.Id)
 			.Where(id => !subordinateIds.Contains(id))
 			.ToList();
 
-		User? user = await _userService.UpdateSubordinatesAsync(managerId, remainingSubordinateIds);
+		FullUser? user = await _userService.UpdateSubordinatesAsync(managerId, remainingSubordinateIds);
 		if (user == null)
 		{
 			return NotFound();
 		}
 
-		return UserDto.FromEntity(user);
+		return FullUserDto.FromEntity(user);
 	}
 
 	[HttpPut("{managerId}/subordinates/create")]
-	public async Task<ActionResult<UserDto>> CreateSubordinates(
+	public async Task<ActionResult<FullUserDto>> CreateSubordinates(
 		Guid managerId,
 		List<Guid> subordinateIds
 	)
 	{
-		List<User> subordinates = await _userService.GetSubordinatesAsync(managerId);
+		List<FullUser> subordinates = await _userService.GetSubordinatesAsync(managerId);
 		List<Guid> newSubordinateIdList = subordinates
-			.Select(s => s.Id)
+			.Select(s => s.user.Id)
 			.Concat(subordinateIds)
 			.ToList();
 
-		User? user = await _userService.UpdateSubordinatesAsync(managerId, newSubordinateIdList);
+		FullUser? user = await _userService.UpdateSubordinatesAsync(managerId, newSubordinateIdList);
 		if (user == null)
 		{
 			return NotFound();
 		}
 
-		return UserDto.FromEntity(user);
+		return FullUserDto.FromEntity(user);
 	}
 }

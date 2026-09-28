@@ -1,29 +1,17 @@
 import { DangerLevelDots } from "@/components/danger-level-dots.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { TIMEZONE } from "@/i18n/locale.ts";
 import { dangerlevelStyles } from "@/lib/danger-levels.ts";
-import { toTZDate } from "@/lib/date.ts";
 import type { TimeBucketStatus } from "@/lib/time-bucket-types.ts";
 import { cn } from "@/lib/utils.ts";
-import {
-	addDays,
-	eachDayOfInterval,
-	eachHourOfInterval,
-	getUnixTime,
-	isSameWeek,
-	isToday,
-	setHours,
-	startOfDay,
-	startOfHour,
-	startOfWeek,
-} from "date-fns";
+import { getUnixTime, isToday, startOfHour } from "date-fns";
 import { useView } from "../views/use-view.ts";
+import { useWeekTimeGrid } from "./use-week-time-grid.ts";
 
 // ensure alignment between time-labels and hour slots
 const ROW_HEIGHT = "h-9";
 const CELL_GAP = "gap-y-1";
-const HEADER_HEIGHT = "h-6";
+const HEADER_HEIGHT = "h-10 sm:h-6";
 const PADDING_Y = "py-1.5";
 
 interface WeekWidgetProps {
@@ -40,28 +28,12 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 	const { setView } = useView();
 	const displayedDate = selectedDate ?? contextDate;
 
-	const daysInWeek = eachDayOfInterval({
-		start: startOfWeek(displayedDate),
-		end: addDays(startOfWeek(displayedDate), 6),
-	}).map(toTZDate);
-
-	const timeSlotSegments = daysInWeek.map((day) => {
-		const start = setHours(startOfDay(day), dayStartHour);
-		const end = setHours(startOfDay(day), dayEndHour);
-		return {
-			date: day,
-			timeSlots: eachHourOfInterval({ start, end }).map(toTZDate),
-		};
+	const { timeSlotSegments, timeBucketsByHour } = useWeekTimeGrid({
+		displayedDate,
+		dayStartHour,
+		dayEndHour,
+		data,
 	});
-
-	const visibleTimeBuckets = data.filter((timeBucket) => {
-		const hour = timeBucket.time.getHours();
-		return (
-			isSameWeek(daysInWeek[0], timeBucket.time, { in: TIMEZONE }) && hour >= dayStartHour && hour <= dayEndHour
-		);
-	});
-
-	const timeBucketsByHour = groupTimeBucketsByHour(visibleTimeBuckets);
 
 	const handleHourClick = (date: TimeBucketStatus["time"]) => {
 		setDate(date);
@@ -91,6 +63,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 						const formattedDate = formatDate(segment.date, "yyyy-MM-dd");
 						const today = isToday(segment.date);
 						const weekday = formatDate(segment.date, "EEE");
+						const weekdayLetter = formatDate(segment.date, "EEEEE");
 						const dayNumber = formatDate(segment.date, "dd");
 
 						return (
@@ -98,41 +71,19 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 								key={getUnixTime(segment.date)}
 								type="button"
 								className={cn(
-									"flex min-w-0 flex-1 flex-col rounded-xl p-1 text-left lg:min-w-20 lg:p-1.5",
+									"flex min-w-0 flex-1 flex-col rounded-xl p-1 text-left sm:min-w-20 sm:p-1.5",
 									"cursor-pointer transition-colors hover:bg-secondary",
 									CELL_GAP,
 								)}
 								onClick={() => handleHourClick(segment.date)}
 								aria-label={`View day details for ${formattedDate}`}
 							>
-								{/* Column header */}
-								<div
-									className={cn(
-										"flex items-center justify-center px-1 text-xs lg:text-sm",
-										HEADER_HEIGHT,
-									)}
-								>
-									<p
-										className={cn(
-											"flex items-center justify-center",
-											!today && "text-muted-foreground",
-											today && "font-semibold",
-										)}
-									>
-										{weekday}{" "}
-										<span
-											className={cn(
-												"ml-1.5",
-												today && [
-													"flex size-6 items-center justify-center rounded-full",
-													"bg-foreground text-secondary",
-												],
-											)}
-										>
-											{dayNumber}
-										</span>
-									</p>
-								</div>
+								<DayColumnHeader
+									weekday={weekday}
+									weekdayLetter={weekdayLetter}
+									dayNumber={dayNumber}
+									today={today}
+								/>
 
 								{/* Cells */}
 								{segment.timeSlots.map((timeSlot, timeSlotIndex) => {
@@ -158,12 +109,42 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 	);
 }
 
-function groupTimeBucketsByHour(timeBuckets: Array<TimeBucketStatus>) {
-	const lookup = new Map<number, TimeBucketStatus>();
-	for (const timeBucket of timeBuckets) {
-		lookup.set(startOfHour(timeBucket.time).getTime(), timeBucket);
-	}
-	return lookup;
+interface DayColumnHeaderProps {
+	weekday: string;
+	weekdayLetter: string;
+	dayNumber: string;
+	today: boolean;
+}
+
+function DayColumnHeader({ weekday, weekdayLetter, dayNumber, today }: DayColumnHeaderProps) {
+	const textColor = !today && "text-muted-foreground";
+
+	return (
+		<div className={cn("flex items-center justify-center px-1 text-xs sm:text-sm", HEADER_HEIGHT)}>
+			<div className={cn("flex flex-col items-center justify-center gap-0.5 sm:hidden", textColor)}>
+				<span className={cn(today && "font-semibold")}>{weekdayLetter}</span>
+				<span
+					className={cn(
+						today && ["flex size-5 items-center justify-center rounded-full", "bg-foreground text-secondary"],
+					)}
+				>
+					{dayNumber}
+				</span>
+			</div>
+
+			<p className={cn("hidden items-center justify-center sm:flex", textColor, today && "font-semibold")}>
+				{weekday}{" "}
+				<span
+					className={cn(
+						"ml-1.5",
+						today && ["flex size-6 items-center justify-center rounded-full", "bg-foreground text-secondary"],
+					)}
+				>
+					{dayNumber}
+				</span>
+			</p>
+		</div>
+	);
 }
 
 interface CellProps {

@@ -14,17 +14,19 @@ export default function Layout() {
 		<SidebarProvider defaultOpen={false}>
 			<SidebarInset>
 				<div className="mx-auto w-full max-w-[90rem]">
-					<header className="sticky top-0 z-40 mx-5 flex items-center justify-between bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-						<HomeLink />
+					<header className="sticky top-0 z-40 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:mx-5">
+						<div className="mx-5 flex items-center justify-between lg:mx-0">
+							<HomeLink />
 
-						<nav className="hidden list-none items-center rounded-full lg:flex">
-							<NavTabs />
-						</nav>
+							<nav className="hidden list-none items-center rounded-full lg:flex">
+								<NavTabs />
+							</nav>
 
-						<div className="flex flex-row items-center gap-4">
-							<NotificationBell />
+							<div className="flex flex-row items-center gap-4">
+								<NotificationBell />
 
-							<UserDropdown />
+								<UserDropdown />
+							</div>
 						</div>
 					</header>
 

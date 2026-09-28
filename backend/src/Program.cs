@@ -63,6 +63,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetValue<string>("DATABASE_URL"))
 );
 
+builder.Services.AddDbContext<LoginDbContext>(options =>
+	options.UseNpgsql(builder.Configuration.GetValue<string>("LOGIN_DATABASE_URL"))
+);
+
+Console.WriteLine(builder.Configuration.GetValue<string>("LOGIN_DATABASE_URL"));
+
 builder.Services.AddScoped<SignedInUserContext>();
 builder.Services.AddScoped<IExposureDataService, ExposureDataService>();
 builder.Services.AddScoped<ValidateFieldForExposureTypeFilter>();

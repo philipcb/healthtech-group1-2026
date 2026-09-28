@@ -12,24 +12,24 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	: ControllerBase
 {
 	[HttpGet]
-	public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
+	public async Task<ActionResult<IEnumerable<FullUserDto>>> GetAllUsers()
 	{
-		List<User> users = await _userService.GetAllUsersAsync();
-		List<UserDto> dtos = users.Select(UserDto.FromEntity).ToList();
-
+		List<FullUser> users = await _userService.GetAllUsersAsync();
+		List<FullUserDto> dtos = users.Select(FullUserDto.FromEntity).ToList();
+		Console.WriteLine(dtos);
 		return dtos;
 	}
 
 	[HttpGet("{id}")]
-	public async Task<ActionResult<UserDto>> GetUserById(Guid id)
+	public async Task<ActionResult<FullUserDto>> GetUserById(Guid id)
 	{
-		User? user = await _userService.GetUserByIdAsync(id);
+		FullUser? user = await _userService.GetFullUserByIdAsync(id);
 		if (user == null)
 		{
 			return NotFound();
 		}
 
-		return UserDto.FromEntity(user);
+		return FullUserDto.FromEntity(user);
 	}
 
 	[HttpGet("{managerId}/subordinates")]
@@ -135,23 +135,23 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto createUserDto)
+	public async Task<ActionResult<FullUserDto>> CreateUser(CreateUserDto createUserDto)
 	{
-		User user = await _userService.CreateUserAsync(createUserDto);
+		FullUser user = await _userService.CreateUserAsync(createUserDto);
 
-		return UserDto.FromEntity(user);
+		return FullUserDto.FromEntity(user);
 	}
 
 	[HttpPut("{id}")]
-	public async Task<ActionResult<UserDto>> UpdateUser(Guid id, UpdateUserDto updateUserDto)
+	public async Task<ActionResult<FullUserDto>> UpdateUser(Guid id, UpdateUserDto updateUserDto)
 	{
-		User? user = await _userService.UpdateUserAsync(id, updateUserDto);
+		FullUser? user = await _userService.UpdateUserAsync(id, updateUserDto);
 		if (user == null)
 		{
 			return NotFound();
 		}
 
-		return UserDto.FromEntity(user);
+		return FullUserDto.FromEntity(user);
 	}
 
 	[HttpDelete("{id}")]

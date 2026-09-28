@@ -2,19 +2,21 @@ using Backend.DTOs;
 using Backend.Extensions;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Services;
 
 public interface IUserService
 {
+	Task<FullUser?> GetFullUserByIdAsync(Guid id);
 	Task<User?> GetUserByIdAsync(Guid id);
 	Task<UserInfo?> GetUserInfoByIdAsync(Guid id);
 	Task<List<User>> GetSubordinatesAsync(Guid managerId);
-	Task<User?> GetUserByNameAsync(string name);
-	Task<User?> GetUserByEmailAsync(string email);
-	Task<List<User>> GetAllUsersAsync();
-	Task<User> CreateUserAsync(CreateUserDto createUserDto);
-	Task<User?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
+	Task<FullUser?> GetUserByNameAsync(string name);
+	Task<FullUser?> GetUserByEmailAsync(string email);
+	Task<List<FullUser>> GetAllUsersAsync();
+	Task<FullUser> CreateUserAsync(CreateUserDto createUserDto);
+	Task<FullUser?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto);
 	Task<bool> DeleteUserAsync(Guid id);
 	Task<User?> UpdateSubordinatesAsync(Guid managerId, List<Guid> subordinateIds);
 
@@ -31,20 +33,26 @@ public class UserService : IUserService
 		_login_context = login_context;
 	}
 
-	public async Task<User?> GetUserByIdAsync(Guid id)
+	public async Task<FullUser?> GetFullUserByIdAsync(Guid id)
 	{
+		
+		User? user = await _context.User.Include(u => u.Location).FirstOrDefaultAsync(u => u.Id == id);
+		UserInfo? userInfo = await GetUserInfoByIdAsync(id);
+		return new FullUser(){user = user!, userInfo = userInfo!};
+	}
+
+	public async Task<User?> GetUserByIdAsync(Guid id){
 		return await _context.User.Include(u => u.Location).FirstOrDefaultAsync(u => u.Id == id);
 	}
 
 	public async Task<UserInfo?> GetUserInfoByIdAsync(Guid id)
 	{
-		return await _login_context.User.Include(u => u.Name).FirstOrDefaultAsync(u => u.Id == id);
+		return await _login_context.User.AsQueryable().FirstOrDefaultAsync(u => u.Id == id);
 	}
 
 
 	public async Task<List<User>> GetSubordinatesAsync(Guid managerId)
 	{
-		
 		//TODO fix this with the new architecture
 		return await _context
 			.User.Where(u => u.Managers.Any(m => m.Id == managerId))
@@ -53,7 +61,7 @@ public class UserService : IUserService
 			.ToListAsync();
 	}
 
-	public async Task<User?> GetUserByNameAsync(string name)
+	public async Task<FullUser?> GetUserByNameAsync(string name)
 	{
 		//TODO fix maybe
 		//return await _login_context
@@ -65,11 +73,13 @@ public class UserService : IUserService
 		{
 			return null;
 		} 
-		return await GetUserByIdAsync(login.Id);
+		
+		User? user = await GetUserByIdAsync(login.Id);
+		return new FullUser(){user = user!, userInfo = login};
 	}
 
 	//TODO fix maybe
-	public async Task<User?> GetUserByEmailAsync(string email)
+	public async Task<FullUser?> GetUserByEmailAsync(string email)
 	{
 		//await _context.User.Include(u => u.Location).FirstOrDefaultAsync(u => u.Email == email);
 
@@ -78,16 +88,28 @@ public class UserService : IUserService
 		{
 			return null;
 		} 
-		return await GetUserByIdAsync(login.Id);
+		User? user = await GetUserByIdAsync(login.Id);
+		return new FullUser(){user = user!, userInfo = login};
 	}
 
-	public async Task<List<User>> GetAllUsersAsync()
+	public async Task<List<FullUser>> GetAllUsersAsync()
 	{
-		return await _context.User.Include(u => u.Location).ToListAsync();
+		List<User> userList = await _context.User.Include(u => u.Location).ToListAsync();
+		List<UserInfo> userInfoList = await _login_context.User.AsQueryable().ToListAsync();
+		if (userList.Count != userInfoList.Count)
+		{
+			throw new Exception("user and userinfo have different count");
+		}
+		List<FullUser> returnedList = [];
+		for (int i = 0; i < userList.Count; i++)
+		{
+			returnedList.Add(new FullUser(){user = userList[i], userInfo = userInfoList[i]});
+		}
+		return returnedList;
 	}
 
 	//TODO Check if it seems correct
-	public async Task<User> CreateUserAsync(CreateUserDto createUserDto)
+	public async Task<FullUser> CreateUserAsync(CreateUserDto createUserDto)
 	{
 		Guid newGuid = Guid.NewGuid();
 		UserInfo userInfo = new UserInfo
@@ -112,14 +134,15 @@ public class UserService : IUserService
 		await _login_context.SaveChangesAsync();
 		_context.User.Add(user);
 		await _context.SaveChangesAsync();
-
-		var createdUser = await GetUserByIdAsync(user.Id);
-		return createdUser!;
+		User? createdUser = await GetUserByIdAsync(user.Id);
+		
+		FullUser returnedUser = new FullUser(){user = createdUser!, userInfo = userInfo};
+		return returnedUser;
 	}
 
 
 	//TODO check if correct
-	public async Task<User?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
+	public async Task<FullUser?> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
 	{
 		User? user = await GetUserByIdAsync(id);
 		UserInfo? userInfo = await GetUserInfoByIdAsync(id);
@@ -140,7 +163,7 @@ public class UserService : IUserService
 		_login_context.User.Update(userInfo);
 		await _context.SaveChangesAsync();
 		await _login_context.SaveChangesAsync();
-		return user;
+		return new FullUser(){user = user, userInfo = userInfo};
 	}
 
 	//TODO check if correct
@@ -200,3 +223,9 @@ public class UserService : IUserService
 		return manager;
 	}
 }
+
+public class FullUser
+{
+	public required User user { get; set; }
+	public required UserInfo userInfo { get; set; }
+} 

@@ -338,7 +338,9 @@
     "note": "Note",
     "dayReport": "Day report",
     "openReport": "Open report",
-    "exceeded": "Above limit value"
+    "exceeded": "Above limit value",
+    "tableOfContents": "Table of contents",
+    "dayReports": "Day reports"
   },
   "limitExplanation": {
     "actionValue": {

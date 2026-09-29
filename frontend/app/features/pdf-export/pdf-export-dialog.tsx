@@ -13,12 +13,13 @@ import { PdfChartRenderer, type PdfPageSpec, type PdfView } from "@/features/pdf
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
+import type { PdfTocEntry } from "@/hooks/pdf-table-of-contents.ts";
 import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
-import { exposureUnitByExposure } from "@/lib/exposures.ts";
+import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -211,6 +212,9 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Titles follow the page order reported by PdfChartRenderer.
 		const titles: Array<string> = [];
+		// Year exports only. Each entry points at a position in `pages` - at any
+		// point below, titles.length is the position the next page will have.
+		const tocEntries: Array<PdfTocEntry> = [];
 
 		for (const exposure of exposuresToRender) {
 			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
@@ -226,11 +230,19 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				const title = `${exposureName} - ${user.name} - ${dateText}`;
 				titles.push(title, title);
 			} else if (localView === "year") {
+				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
 				const yearStart = startOfYear(localDate, { in: TIMEZONE });
 				for (let i = 0; i < 12; i++) {
 					const monthDate = addMonths(yearStart, i);
 					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
 					const heading = `${exposureName} - ${user.name} - ${monthText}`;
+					// Keeps the year, since a report may later span several. Norwegian month
+					// names are lowercase, so capitalise the first letter for the TOC line.
+					tocEntries.push({
+						label: monthText.charAt(0).toLocaleUpperCase(i18n.language) + monthText.slice(1),
+						level: 1,
+						pageIndex: titles.length,
+					});
 					// Each month contributes two pages: the calendar, then its red-day table.
 					titles.push(heading, `${heading} - ${t(($) => $.pdf.redDays)}`);
 				}
@@ -243,8 +255,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Day reports are appended after every page above, one title per report -
 		// read from the reports themselves, since their count is only known now.
-		for (const page of pages) {
-			if (page.kind !== "day-report") continue;
+		// Also note where each exposure's reports start and end, for the TOC.
+		const dayReportRanges = new Map<Exposure, { first: number; last: number }>();
+		pages.forEach((page, index) => {
+			if (page.kind !== "day-report") return;
 			const dateText = page.date.toLocaleDateString(i18n.language, {
 				day: "numeric",
 				month: "long",
@@ -253,6 +267,23 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			titles.push(
 				`${t(($) => $.pdf.dayReport)} - ${t(($) => $.exposures[page.exposure])} - ${user.name} - ${dateText}`,
 			);
+			dayReportRanges.set(page.exposure, {
+				first: dayReportRanges.get(page.exposure)?.first ?? index,
+				last: index,
+			});
+		});
+
+		if (dayReportRanges.size > 0) {
+			const [firstRange] = dayReportRanges.values();
+			tocEntries.push({ label: t(($) => $.pdf.dayReports), level: 0, pageIndex: firstRange.first });
+			for (const [exposure, range] of dayReportRanges) {
+				tocEntries.push({
+					label: t(($) => $.exposures[exposure]),
+					level: 1,
+					pageIndex: range.first,
+					lastPageIndex: range.last,
+				});
+			}
 		}
 
 		// Generate filename with date range
@@ -312,7 +343,14 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		};
 
 		// Call the PDF export hook to build the document
-		await exportPagesToPDF(pages, fileName, titles, coverPageData, labels);
+		await exportPagesToPDF(
+			pages,
+			fileName,
+			titles,
+			coverPageData,
+			labels,
+			localView === "year" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
+		);
 
 		setIsExporting(false);
 		setShouldRenderCharts(false); // Clean up charts

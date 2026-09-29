@@ -335,7 +335,9 @@
     "note": "Notat",
     "dayReport": "Dagsrapport",
     "openReport": "Åpne rapport",
-    "exceeded": "Over grenseverdi"
+    "exceeded": "Over grenseverdi",
+    "tableOfContents": "Innholdsfortegnelse",
+    "dayReports": "Dagsrapporter"
   },
   "limitExplanation": {
     "actionValue": {

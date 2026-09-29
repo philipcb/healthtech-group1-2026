@@ -6,6 +6,12 @@ import { type CoverPageData, drawCoverPage } from "./pdf-cover-page.ts";
 import { getDayReportKey } from "@/lib/pdf/red-days.ts";
 import { type DayReportLinkArea, drawRedDayTable, type PdfLabels } from "./pdf-red-day-table.ts";
 import { drawCalendarPage, drawDayGridPage, drawWeekGridPage, type PdfCalendarLabels } from "./pdf-calendar.ts";
+import {
+	drawTableOfContentsEntries,
+	type PdfTocEntry,
+	type ResolvedTocEntry,
+	TOC_ENTRIES_PER_PAGE,
+} from "./pdf-table-of-contents.ts";
 
 const waitForStableDom = (element: HTMLElement, { quietMs = 300, timeoutMs = 4000 } = {}) =>
 	new Promise<void>((resolve) => {
@@ -91,6 +97,22 @@ const drawPageTitle = (pdf: jsPDF, title: string) => {
 	});
 };
 
+// Reads the current page's own size, so it stays centred on a portrait page too.
+const drawPageNumber = (pdf: jsPDF, pageNumber: number, pageCount: number) => {
+	pdf.setFont("helvetica", "bold");
+	pdf.setFontSize(9);
+	pdf.setTextColor(120, 120, 120);
+
+	pdf.text(
+		`${pageNumber}`,
+		pdf.internal.pageSize.getWidth() / 2,
+		pdf.internal.pageSize.getHeight() - 6,
+		{
+			align: "center",
+		},
+	);
+};
+
 export const useExportPDF = () => {
 	/**
 	 * `pages` and `titles` are index-aligned: PdfChartRenderer reports pages in a
@@ -103,10 +125,25 @@ export const useExportPDF = () => {
 			titles: Array<string>,
 			coverPageData: CoverPageData,
 			labels: PdfLabels & PdfCalendarLabels,
+			/** Only the year export has one; null skips it entirely. */
+			toc: { title: string; entries: Array<PdfTocEntry> } | null,
 		) => {
 			const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
 			drawCoverPage(pdf, coverPageData);
 			const pdfOrientation = "landscape";
+
+			// The TOC goes right after the cover, but lists page numbers that are only
+			// known once everything else is drawn - so reserve its pages now and fill
+			// them in at the end. Inserting pages afterwards instead would shift every
+			// page number, including the red-day links' targets.
+			const tocPageCount = toc ? Math.ceil(toc.entries.length / TOC_ENTRIES_PER_PAGE) : 0;
+			const firstTocPage = pdf.getNumberOfPages() + 1;
+			for (let p = 0; p < tocPageCount; p++) pdf.addPage("a4", pdfOrientation);
+
+			// Which PDF pages each entry of `pages` landed on. Not always one page each:
+			// a day report is two, a long red-day table can spill onto a second, and a
+			// chart that failed to capture adds none (left undefined).
+			const pageRanges: Array<{ first: number; last: number } | undefined> = [];
 			// Red-day date cells, and the page each day report starts on. Reports are
 			// drawn after the tables that link to them, so links are attached below,
 			// once every report's page number is known.
@@ -115,6 +152,7 @@ export const useExportPDF = () => {
 
 			for (let i = 0; i < pages.length; i++) {
 				const page = pages[i];
+				const pagesBefore = pdf.getNumberOfPages();
 
 				if (page.kind === "image") {
 					// Deferred capture: the element is still in the document, looked up by id.
@@ -159,6 +197,42 @@ export const useExportPDF = () => {
 						const image = getImageLayout(page.chart);
 						pdf.addImage(page.chart.dataUrl, "PNG", image.x, image.y, image.width, image.height);
 					}
+				}
+
+				const pagesAfter = pdf.getNumberOfPages();
+				if (pagesAfter > pagesBefore) pageRanges[i] = { first: pagesBefore + 1, last: pagesAfter };
+			}
+
+			if (toc) {
+				// Swap each entry's page index for the PDF pages it actually landed on.
+				const resolvedEntries: Array<ResolvedTocEntry> = toc.entries.flatMap((entry) => {
+					const range = pageRanges[entry.pageIndex];
+					if (!range) return [];
+					const lastPage =
+						entry.lastPageIndex === undefined ? undefined : pageRanges[entry.lastPageIndex]?.last;
+					return [{ label: entry.label, level: entry.level, firstPage: range.first, lastPage }];
+				});
+
+				for (let p = 0; p < tocPageCount; p++) {
+					pdf.setPage(firstTocPage + p);
+					drawPageTitle(pdf, toc.title);
+					drawTableOfContentsEntries(
+						pdf,
+						resolvedEntries.slice(p * TOC_ENTRIES_PER_PAGE, (p + 1) * TOC_ENTRIES_PER_PAGE),
+						TITLE_HEIGHT + PAGE_MARGIN + 4,
+						PAGE_MARGIN,
+					);
+				}
+			}
+
+			// Page numbers in the footer, so the TOC's numbers can be followed on paper
+			// too. Drawn last, once the total is known. The cover is left unnumbered but
+			// still counted, so the numbers match the TOC and the PDF viewer.
+			if (toc) {
+				const pageCount = pdf.getNumberOfPages();
+				for (let p = 2; p <= pageCount; p++) {
+					pdf.setPage(p);
+					drawPageNumber(pdf, p, pageCount);
 				}
 			}
 

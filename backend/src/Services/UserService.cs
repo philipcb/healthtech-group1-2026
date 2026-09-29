@@ -95,6 +95,7 @@ public class UserService : IUserService
 		return new FullUser(){user = user!, userInfo = login};
 	}
 
+	//TODO Check if the order list makes sense
 	public async Task<List<FullUser>> GetAllUsersAsync()
 	{
 		List<User> userList = await _context.User.Include(u => u.Location).ToListAsync();

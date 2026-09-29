@@ -8,7 +8,7 @@ import { buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
+import { defaultDustField, type Exposure, exposureUnitByExposure, parseAsDustField } from "@/lib/exposures.ts";
 import { getDayReportKey, getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
 import { type CapturedImage, captureElementAsImage } from "@/hooks/use-export-pdf.ts";
 import { getYearRange } from "@/lib/pdf/year-range.ts";
@@ -297,7 +297,7 @@ function SingleDayChartRenderer({
 					minTime={minTime}
 					maxTime={maxTime}
 					chartData={downsampleExposureData(exposure, data)}
-					unit={exposure === "dust" ? "ug" : "db"}
+					unit={exposureUnitByExposure[exposure]}
 					id={`${chartId}-chart`}
 					maxY={maxY}
 					minY={minY}

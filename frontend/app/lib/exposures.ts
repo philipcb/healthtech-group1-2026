@@ -11,6 +11,13 @@ export const exposureUnits = ["mg", "ug", "points", "db"] as const;
 export type ExposureUnit = (typeof exposureUnits)[number];
 export const parseAsExposureUnit = parseAsStringLiteral(exposureUnits);
 
+/** Default unit per exposure type, matching the live exposure cards. */
+export const exposureUnitByExposure: Record<Exposure, ExposureUnit> = {
+	dust: "ug",
+	noise: "db",
+	vibration: "points",
+};
+
 export const dustFields = ["pm1_twa", "pm25_twa", "pm10_twa"] as const satisfies ReadonlyArray<ExposureTypeField>;
 export type DustField = (typeof dustFields)[number];
 export const defaultDustField: DustField = "pm1_twa";

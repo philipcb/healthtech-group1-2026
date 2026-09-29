@@ -18,7 +18,7 @@ import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import { exposureUnitByExposure } from "@/lib/exposures.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -47,17 +47,6 @@ import { useTranslation } from "react-i18next";
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
  */
-
-/**
- * Chart unit per exposure type, matching the live cards.
- * Note SingleDayChartRenderer still uses `exposure === "dust" ? "ug" : "db"`, which
- * labels vibration as dB — don't copy that here.
- */
-const EXPOSURE_UNIT: Record<Exposure, ExposureUnit> = {
-	dust: "ug",
-	noise: "db",
-	vibration: "points",
-};
 
 /**
  * How long handleExport waits for PdfChartRenderer to report every page
@@ -309,7 +298,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			noRedDays: t(($) => $.pdf.noRedDays),
 			formatDay: (date) => date.toLocaleDateString(i18n.language, { day: "numeric", month: "short" }),
 			formatValue: (exposure, value) =>
-				`${formatExposureValue(value, EXPOSURE_UNIT[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[EXPOSURE_UNIT[exposure]])}`,
+				`${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,
 			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
 			formatHoursAndMinutes: (minutes) => formatMinutesAsHoursAndMinutes(minutes, dateFnsLocale),
 			formatHour: (hour) =>

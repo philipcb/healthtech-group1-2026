@@ -103,14 +103,9 @@ const drawPageNumber = (pdf: jsPDF, pageNumber: number, pageCount: number) => {
 	pdf.setFontSize(9);
 	pdf.setTextColor(120, 120, 120);
 
-	pdf.text(
-		`${pageNumber}`,
-		pdf.internal.pageSize.getWidth() / 2,
-		pdf.internal.pageSize.getHeight() - 6,
-		{
-			align: "center",
-		},
-	);
+	pdf.text(`${pageNumber}`, pdf.internal.pageSize.getWidth() / 2, pdf.internal.pageSize.getHeight() - 6, {
+		align: "center",
+	});
 };
 
 export const useExportPDF = () => {
@@ -177,7 +172,7 @@ export const useExportPDF = () => {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
 					drawWeekGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
-				} else if (page.kind === "red-days" && page.rows.length >0) {
+				} else if (page.kind === "red-days" && page.rows.length > 0) {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
 					linkAreas.push(...drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN));

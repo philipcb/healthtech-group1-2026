@@ -177,7 +177,7 @@ export const useExportPDF = () => {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
 					drawWeekGridPage(pdf, page.page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
-				} else if (page.kind === "red-days") {
+				} else if (page.kind === "red-days" && page.rows.length >0) {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
 					linkAreas.push(...drawRedDayTable(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN, PAGE_MARGIN));

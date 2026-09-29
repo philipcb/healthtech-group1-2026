@@ -13,9 +13,16 @@ export type RedDayRow = {
 	averageValue: number;
 	zoneMinutes: SummaryLevelCounts;
 	note: string | null;
-	/** Minute-level series for this day, reused by the appended day report in Phase B. */
-	series: Array<ExposureDto>;
 };
+
+/**
+ * Identifies one exposure's report for one day. Shared by the red-day table
+ * (which links from it) and the appended day reports (which it links to), so
+ * both sides always agree on which row points at which report.
+ */
+export function getDayReportKey(exposure: Exposure, date: TZDate): string {
+	return `${exposure}-${date.getTime()}`;
+}
 
 /**
  * Red days for one exposure in one month.
@@ -49,7 +56,6 @@ export function getRedDays({
 					series.length > 0 ? series.reduce((sum, point) => sum + point.value, 0) / series.length : day.value,
 				zoneMinutes: calculateSummaryCounts(series, { exposure, peakAggregation: false, granularity }),
 				note: notes.find((note) => isSameDay(note.time, day.time, { in: TIMEZONE }))?.note ?? null,
-				series,
 			};
 		});
 }

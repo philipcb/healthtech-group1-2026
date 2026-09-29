@@ -1,5 +1,5 @@
 import type { Exposure } from "@/lib/exposures.ts";
-import type { RedDayRow } from "@/lib/pdf/red-days.ts";
+import { getDayReportKey, type RedDayRow } from "@/lib/pdf/red-days.ts";
 import type { TZDate } from "@date-fns/tz";
 import type jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -25,9 +25,23 @@ export type PdfLabels = {
 	formatDuration: (minutes: number) => string;
 };
 
+/** Where a red day's date cell was drawn, so it can link to that day's report. */
+export type DayReportLinkArea = {
+	key: string;
+	pageNumber: number;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
+
+// Standard link blue, so the date column reads as clickable.
+const LINK_COLOR: [number, number, number] = [37, 99, 235];
+
 /**
  * Draws one month's red days as a real vector table, so the rows stay
- * searchable and can later carry links to the appended day reports.
+ * searchable. Returns where each date cell ended up: the day reports it links
+ * to are drawn after this, so the links can only be attached once they exist.
  */
 export function drawRedDayTable(
 	pdf: jsPDF,
@@ -35,21 +49,41 @@ export function drawRedDayTable(
 	labels: PdfLabels,
 	startY: number,
 	margin: number,
-): void {
+): Array<DayReportLinkArea> {
 	if (page.rows.length === 0) {
 		pdf.setFont("helvetica", "normal");
 		pdf.setFontSize(11);
 		pdf.text(labels.noRedDays, margin, startY);
-		return;
+		return [];
 	}
+
+	const linkAreas: Array<DayReportLinkArea> = [];
 
 	autoTable(pdf, {
 		startY,
 		margin: { left: margin, right: margin },
 		styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak" },
 		headStyles: { fillColor: [244, 244, 245], textColor: 40 },
-		// The note is free text, so it gets the slack while the rest stay compact.
-		columnStyles: { 5: { cellWidth: 90 } },
+		columnStyles: {
+			0: { textColor: LINK_COLOR },
+			// The note is free text, so it gets the slack while the rest stay compact.
+			5: { cellWidth: 90 },
+		},
+		// The table can spill onto a second page, so record each cell's real page.
+		didDrawCell: (data) => {
+			if (data.section !== "body" || data.column.index !== 0) return;
+			const row = page.rows[data.row.index];
+			if (!row) return;
+
+			linkAreas.push({
+				key: getDayReportKey(row.exposure, row.date),
+				pageNumber: pdf.getCurrentPageInfo().pageNumber,
+				x: data.cell.x,
+				y: data.cell.y,
+				width: data.cell.width,
+				height: data.cell.height,
+			});
+		},
 		head: [[labels.date, labels.average, labels.safe, labels.warning, labels.danger, labels.note]],
 		body: page.rows.map((row) => [
 			labels.formatDay(row.date),
@@ -60,4 +94,6 @@ export function drawRedDayTable(
 			row.note ?? "-",
 		]),
 	});
+
+	return linkAreas;
 }

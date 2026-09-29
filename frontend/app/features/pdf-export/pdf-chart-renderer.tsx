@@ -9,7 +9,8 @@ import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
-import { getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
+import { getDayReportKey, getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
+import { type CapturedImage, captureElementAsImage } from "@/hooks/use-export-pdf.ts";
 import { getYearRange } from "@/lib/pdf/year-range.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
@@ -44,7 +45,9 @@ import type { PdfDayGridPage, PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
  *  - day: 2 pages per exposure type (a summary page, a chart page) - SingleDayChartRenderer
  *  - week/month: 1 vector-drawn grid page per exposure type
  *  - year: 2 pages per month per exposure type (a vector calendar, a red-day
- *    table) - MonthGridPage, scheduled by YearBatchRenderer
+ *    table) - MonthGridPage, scheduled by YearBatchRenderer. Then, once those
+ *    are all in, one day report per red day appended at the end - the day
+ *    export's own SingleDayChartRenderer, scheduled by DayReportBatchRenderer.
  *
  * The whole tree is wrapped in the "pdf-export-light" class (see app.css), which
  * re-declares every theme CSS variable to its light-mode value. This makes the
@@ -63,6 +66,10 @@ export type PdfView = View | "year";
  *  - "calendar": a vector-drawn calendar page for the month and year exports.
  *  - "red-days": drawn as a real vector table (no image at all), so the
  *    rows stay searchable and can carry links.
+ *  - "day-report": one red day's full report, appended after the year pages.
+ *    A single spec that the assembler turns into two PDF pages (hour grid, then
+ *    chart) under one title - so shrinking a report to one page later only
+ *    touches the one place that draws it. Either half can be null if it failed.
  */
 export type PdfPageSpec =
 	| { kind: "image"; id: string }
@@ -73,7 +80,16 @@ export type PdfPageSpec =
 			days: Array<PdfCalendarDay>;
 			summary: ReturnType<typeof calculateSummaryCounts>;
 	  }
-	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> };
+	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> }
+	| DayReportSpec;
+
+export type DayReportSpec = {
+	kind: "day-report";
+	exposure: Exposure;
+	date: TZDate;
+	grid: PdfDayGridPage | null;
+	chart: CapturedImage | null;
+};
 
 interface CollectedPage {
 	exposure: Exposure;
@@ -96,7 +112,38 @@ interface PdfChartRendererProps {
  * once regardless of how many months or exposure types the export covers.
  * Without this, "Overview" would mount all 12 months x 3 types = 36 at once.
  */
-const YEAR_BATCH_SIZE = 3;
+const YEAR_BATCH_SIZE = 6;
+
+/**
+ * How many day reports are mounted at once. Separate from YEAR_BATCH_SIZE
+ * because each one is much heavier: it renders and screenshots a real chart,
+ * where a year month is now pure data. A full Overview year can have 100+ red
+ * days, so these must never all mount at once.
+ */
+const DAY_REPORT_BATCH_SIZE = 3;
+
+/**
+ * Runs a list of keyed jobs `batchSize` at a time. `activeJobs` is always the
+ * earliest jobs not yet marked done - tracked by key, NOT by a count of how many
+ * have finished. Jobs finish out of order, so a count would let a later job
+ * finishing first slide the window past an earlier, still-running one and
+ * unmount it before it ever reported.
+ */
+function useBatchQueue<T extends { key: string }>(jobs: Array<T>, batchSize: number) {
+	const [completedKeys, setCompletedKeys] = useState<Set<string>>(() => new Set());
+	const activeJobs = jobs.filter((job) => !completedKeys.has(job.key)).slice(0, batchSize);
+
+	const markDone = useCallback((key: string) => {
+		setCompletedKeys((prev) => {
+			if (prev.has(key)) return prev;
+			const next = new Set(prev);
+			next.add(key);
+			return next;
+		});
+	}, []);
+
+	return { activeJobs, markDone };
+}
 
 // Which page keys to expect per exposure type, in order, for a given view.
 // Extending this (e.g. adding red-day detail pages) only requires adding
@@ -529,14 +576,8 @@ type MonthJob = {
 /**
  * Year export: schedules every (exposure, month) pair - across ALL exposure
  * types together, not per type - as one shared queue, processing
- * YEAR_BATCH_SIZE of them at a time (see the constant's comment for why).
- *
- * The active window is always "the earliest still-incomplete jobs", tracked
- * by key in `completedKeys` - NOT a raw count of how many onDone calls have
- * arrived so far. Jobs don't finish in the order they started (network timing
- * varies), so a count would let a later job finishing first slide the window
- * past an earlier, still-running one and unmount it mid-flight before it
- * ever reports its pages.
+ * YEAR_BATCH_SIZE of them at a time (see the constant's comment for why, and
+ * useBatchQueue for how the window advances).
  */
 function YearBatchRenderer({
 	exposures,
@@ -564,17 +605,7 @@ function YearBatchRenderer({
 		})),
 	);
 
-	const [completedKeys, setCompletedKeys] = useState<Set<string>>(() => new Set());
-	const activeJobs = jobs.filter((job) => !completedKeys.has(job.key)).slice(0, YEAR_BATCH_SIZE);
-
-	const handleJobDone = useCallback((key: string) => {
-		setCompletedKeys((prev) => {
-			if (prev.has(key)) return prev;
-			const next = new Set(prev);
-			next.add(key);
-			return next;
-		});
-	}, []);
+	const { activeJobs, markDone } = useBatchQueue(jobs, YEAR_BATCH_SIZE);
 
 	return (
 		<>
@@ -587,7 +618,140 @@ function YearBatchRenderer({
 					userId={userId}
 					notes={notes}
 					onPageReady={onPageReady}
-					onDone={() => handleJobDone(job.key)}
+					onDone={() => markDone(job.key)}
+				/>
+			))}
+		</>
+	);
+}
+
+type DayReportJob = {
+	key: string;
+	exposure: Exposure;
+	date: TZDate;
+};
+
+/**
+ * One day report per red-day row, in the order the year pages already have
+ * them: exposure types in export order, months in order within each, days in
+ * order within each month - so no sorting is needed.
+ */
+function getDayReportJobs(pages: Array<PdfPageSpec>): Array<DayReportJob> {
+	return pages.flatMap((page) =>
+		page.kind === "red-days"
+			? page.rows.map((row) => ({
+					key: getDayReportKey(row.exposure, row.date),
+					exposure: row.exposure,
+					date: row.date,
+				}))
+			: [],
+	);
+}
+
+/**
+ * One red day's report. Renders the day export's own SingleDayChartRenderer
+ * unchanged, keeps the hour grid it reports, screenshots the chart while it's
+ * still mounted, and hands both back as a single DayReportSpec.
+ */
+function DayReportPage({
+	job,
+	userId,
+	onDone,
+}: {
+	job: DayReportJob;
+	userId: string;
+	onDone: (report: DayReportSpec) => void;
+}) {
+	const gridRef = useRef<PdfDayGridPage | null>(null);
+	const hasStartedCaptureRef = useRef(false);
+	const onDoneRef = useRef(onDone);
+	onDoneRef.current = onDone;
+
+	// SingleDayChartRenderer re-reports its pages on every render, so this is
+	// called many times per report - the guard makes the capture happen once.
+	// It always reports the grid before the chart, in the same effect.
+	const handlePageReady = useCallback(
+		({ spec }: CollectedPage) => {
+			if (spec.kind === "day-grid") {
+				gridRef.current = spec.page;
+				return;
+			}
+
+			if (spec.kind !== "image" || hasStartedCaptureRef.current) return;
+			hasStartedCaptureRef.current = true;
+
+			(async () => {
+				let chart: CapturedImage | null = null;
+
+				try {
+					chart = await captureElementAsImage(spec.id);
+				} catch (error) {
+					// One failed chart must not stall the queue - report the day without it.
+					console.error(`Failed to capture the day report chart for ${job.key}:`, error);
+				}
+
+				onDoneRef.current({
+					kind: "day-report",
+					exposure: job.exposure,
+					date: job.date,
+					grid: gridRef.current,
+					chart,
+				});
+			})();
+		},
+		[job],
+	);
+
+	return (
+		<SingleDayChartRenderer exposure={job.exposure} date={job.date} userId={userId} onPageReady={handlePageReady} />
+	);
+}
+
+/**
+ * Renders every day report DAY_REPORT_BATCH_SIZE at a time, then hands them all
+ * back in job order (not finishing order) once the last one is in.
+ */
+function DayReportBatchRenderer({
+	jobs,
+	userId,
+	onAllDone,
+}: {
+	jobs: Array<DayReportJob>;
+	userId: string;
+	onAllDone: (reports: Array<DayReportSpec>) => void;
+}) {
+	const { activeJobs, markDone } = useBatchQueue(jobs, DAY_REPORT_BATCH_SIZE);
+	const reportsRef = useRef(new Map<string, DayReportSpec>());
+	const hasFinishedRef = useRef(false);
+	const onAllDoneRef = useRef(onAllDone);
+	onAllDoneRef.current = onAllDone;
+
+	const handleDone = useCallback(
+		(key: string, report: DayReportSpec) => {
+			reportsRef.current.set(key, report);
+			markDone(key);
+
+			if (hasFinishedRef.current || reportsRef.current.size < jobs.length) return;
+			hasFinishedRef.current = true;
+
+			onAllDoneRef.current(
+				jobs.flatMap((job) => {
+					const done = reportsRef.current.get(job.key);
+					return done ? [done] : [];
+				}),
+			);
+		},
+		[jobs, markDone],
+	);
+
+	return (
+		<>
+			{activeJobs.map((job) => (
+				<DayReportPage
+					key={job.key}
+					job={job}
+					userId={userId}
+					onDone={(report) => handleDone(job.key, report)}
 				/>
 			))}
 		</>
@@ -609,6 +773,12 @@ function YearBatchRenderer({
 export function PdfChartRenderer({ exposureType, view, date, userId, onPagesReady }: PdfChartRendererProps) {
 	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
+	// Set once a year export's own pages are all in AND it has red days: the day
+	// reports are rendered next, and onPagesReady only fires once they're done.
+	const [dayReportPhase, setDayReportPhase] = useState<{
+		yearPages: Array<PdfPageSpec>;
+		jobs: Array<DayReportJob>;
+	} | null>(null);
 
 	// One request for the whole year's notes; only the year export needs them.
 	const notesQuery = useQuery({
@@ -634,11 +804,27 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 						.filter((spec): spec is PdfPageSpec => spec != null),
 				);
 
-				onPagesReady(orderedPages);
 				setHasReported(true);
+
+				// A year export isn't finished yet if it has red days - each still
+				// needs its day report appended. Everything else is done now.
+				const dayReportJobs = view === "year" ? getDayReportJobs(orderedPages) : [];
+
+				if (dayReportJobs.length > 0) {
+					setDayReportPhase({ yearPages: orderedPages, jobs: dayReportJobs });
+				} else {
+					onPagesReady(orderedPages);
+				}
 			}
 		},
-		[expectedCount, exposuresToRender, pageKeys, onPagesReady, hasReported],
+		[expectedCount, exposuresToRender, pageKeys, onPagesReady, hasReported, view],
+	);
+
+	const handleDayReportsDone = useCallback(
+		(reports: Array<DayReportSpec>) => {
+			if (dayReportPhase) onPagesReady([...dayReportPhase.yearPages, ...reports]);
+		},
+		[dayReportPhase, onPagesReady],
 	);
 
 	return (
@@ -693,6 +879,9 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 						onPageReady={handlePageReady}
 					/>
 				))
+			)}
+			{dayReportPhase && (
+				<DayReportBatchRenderer jobs={dayReportPhase.jobs} userId={userId} onAllDone={handleDayReportsDone} />
 			)}
 		</div>
 	);

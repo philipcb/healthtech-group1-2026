@@ -63,7 +63,7 @@ const EXPOSURE_UNIT: Record<Exposure, ExposureUnit> = {
  * How long handleExport waits for PdfChartRenderer to report every page
  * before giving up with "Timeout waiting for chart IDs".
  */
-const EXPORT_TIMEOUT_MS = 120_000;
+const EXPORT_TIMEOUT_MS = 300_000;
 
 /**
  * Props for the PDF Export Dialog
@@ -250,6 +250,20 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				const title = `${exposureName} - ${user.name} - ${dateText}`;
 				titles.push(title);
 			}
+		}
+
+		// Day reports are appended after every page above, one title per report -
+		// read from the reports themselves, since their count is only known now.
+		for (const page of pages) {
+			if (page.kind !== "day-report") continue;
+			const dateText = page.date.toLocaleDateString(i18n.language, {
+				day: "numeric",
+				month: "long",
+				year: "numeric",
+			});
+			titles.push(
+				`${t(($) => $.pdf.dayReport)} - ${t(($) => $.exposures[page.exposure])} - ${user.name} - ${dateText}`,
+			);
 		}
 
 		// Generate filename with date range

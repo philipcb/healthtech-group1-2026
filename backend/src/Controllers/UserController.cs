@@ -16,7 +16,7 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	{
 		List<FullUser> users = await _userService.GetAllUsersAsync();
 		List<FullUserDto> dtos = users.Select(FullUserDto.FromEntity).ToList();
-		Console.WriteLine(dtos);
+		Console.WriteLine("plz answerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",dtos);
 		return dtos;
 	}
 

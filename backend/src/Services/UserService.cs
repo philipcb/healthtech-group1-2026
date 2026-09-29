@@ -108,6 +108,8 @@ public class UserService : IUserService
 		{
 			returnedList.Add(new FullUser(){user = userList[i], userInfo = userInfoList[i]});
 		}
+		
+		
 		return returnedList;
 	}
 

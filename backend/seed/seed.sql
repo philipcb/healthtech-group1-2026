@@ -17,6 +17,12 @@ SELECT setseed(0.424242);
 \set BIRGIR_ID 'ddd3801e-f3ff-4b0c-9692-56e7505e9c31'
 \set TORLEIF_ID 'eee3801e-f3ff-4b0c-9692-56e7505e9c31'
 \set BJØRNULF_ID 'fff3801e-f3ff-4b0c-9692-56e7505e9c31' 
+\set ASTRID_ID 'aa23801e-f3ff-4b0c-9692-56e7505e9c31'
+\set ERIK_ID 'bb23801e-f3ff-4b0c-9692-56e7505e9c32'
+\set MAGNUS_ID 'cc23801e-f3ff-4b0c-9692-56e7505e9c33'
+\set HAKON_ID 'dd23801e-f3ff-4b0c-9692-56e7505e9c31'
+\set NORA_ID 'ee23801e-f3ff-4b0c-9692-56e7505e9c31'
+\set EGON_ID 'ff23801e-f3ff-4b0c-9692-56e7505e9c31' 
 
 \set DEFAULT_PASSWORD_HASH '$2a$11$QXVHkr6TQC8gJvh5P4GFzOYc.HyZA3FxDC3/BghAM3hODQVAoWwwi' -- hashed 'password123'
 
@@ -56,7 +62,13 @@ FROM (VALUES
     (:'KLARA_ID'::uuid),
     (:'BIRGIR_ID'::uuid),
     (:'TORLEIF_ID'::uuid),
-    (:'BJØRNULF_ID'::uuid)
+    (:'BJØRNULF_ID'::uuid),
+    (:'ASTRID_ID'::uuid),
+    (:'ERIK_ID'::uuid),
+    (:'MAGNUS_ID'::uuid),
+    (:'HAKON_ID'::uuid),
+    (:'NORA_ID'::uuid),
+    (:'EGON_ID'::uuid)
 ) AS t(u);
 
 

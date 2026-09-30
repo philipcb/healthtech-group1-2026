@@ -38,7 +38,8 @@ public class AggregateDbContext : DbContext
 			entity
 				.HasOne(average => average.Sample)
 				.WithMany(sample => sample.NoiseAverages)
-				.HasForeignKey(average => average.SampleId);
+				.HasForeignKey(average => average.SampleId)
+        		 .OnDelete(DeleteBehavior.Cascade);
 		});
 
 		modelBuilder.Entity<DustAverage>(entity =>
@@ -48,7 +49,8 @@ public class AggregateDbContext : DbContext
 			entity
 				.HasOne(average => average.Sample)
 				.WithMany(sample => sample.DustAverages)
-				.HasForeignKey(average => average.SampleId);
+				.HasForeignKey(average => average.SampleId)
+				 .OnDelete(DeleteBehavior.Cascade);
 		});
 
 		modelBuilder.Entity<VibrationAverage>(entity =>
@@ -58,7 +60,8 @@ public class AggregateDbContext : DbContext
 			entity
 				.HasOne(average => average.Sample)
 				.WithMany(sample => sample.VibrationAverages)
-				.HasForeignKey(average => average.SampleId);
+				.HasForeignKey(average => average.SampleId)
+        		 .OnDelete(DeleteBehavior.Cascade);
 		});
 
 		modelBuilder.Entity<AveragePer8HourShift>(entity =>
@@ -74,7 +77,8 @@ public class AggregateDbContext : DbContext
 			entity
 				.HasOne(average => average.Sample)
 				.WithMany(sample => sample.AveragesPer8HourShift)
-				.HasForeignKey(average => average.SampleId);
+				.HasForeignKey(average => average.SampleId)
+        		 .OnDelete(DeleteBehavior.Cascade);
 		});
 
 		modelBuilder.Entity<NoiseAverage>().HasIndex(average => average.SampleId);

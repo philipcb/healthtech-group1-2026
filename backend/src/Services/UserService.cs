@@ -95,11 +95,10 @@ public class UserService : IUserService
 		return new FullUser(){user = user!, userInfo = login};
 	}
 
-	//TODO Check if the order list makes sense
 	public async Task<List<FullUser>> GetAllUsersAsync()
 	{
-		List<User> userList = await _context.User.Include(u => u.Location).ToListAsync();
-		List<UserInfo> userInfoList = await _login_context.User.AsQueryable().ToListAsync();
+		List<User> userList = await _context.User.Include(u => u.Location).OrderBy(u => u.Id).ToListAsync();
+		List<UserInfo> userInfoList = await _login_context.User.AsQueryable().OrderBy(u => u.Id).ToListAsync();
 		if (userList.Count != userInfoList.Count)
 		{
 			throw new Exception("user and userinfo have different count");
@@ -107,6 +106,11 @@ public class UserService : IUserService
 		List<FullUser> returnedList = [];
 		for (int i = 0; i < userList.Count; i++)
 		{
+			// Should definitely not happen, if it does, rewrite the function
+			if (userList[i].Id != userInfoList[i].Id)
+			{
+				throw new Exception("Ids not matching");
+			}
 			returnedList.Add(new FullUser(){user = userList[i], userInfo = userInfoList[i]});
 		}
 		

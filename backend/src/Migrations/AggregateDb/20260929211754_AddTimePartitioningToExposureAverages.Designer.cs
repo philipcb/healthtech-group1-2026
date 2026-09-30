@@ -133,7 +133,7 @@ namespace backend.Migrations.AggregateDb
 
                     b.ToTable("Sample", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Sample_SampleCount_Nonnegative", "\"SampleCount\" >= 0");
+                            t.HasCheckConstraint("CK_Sample_SampleCount_Enough", "\"SampleCount\" >= 5");
                         });
                 });
 

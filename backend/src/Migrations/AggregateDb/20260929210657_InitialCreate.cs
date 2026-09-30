@@ -28,8 +28,8 @@ namespace backend.Migrations.AggregateDb
 				{
 					table.PrimaryKey("PK_Sample", x => x.Id);
 					table.CheckConstraint(
-						"CK_Sample_SampleCount_Nonnegative",
-						"\"SampleCount\" >= 0"
+						"CK_Sample_SampleCount_Enough",
+						"\"SampleCount\" >= 5"
 					);
 				}
 			);

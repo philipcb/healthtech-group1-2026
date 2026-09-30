@@ -64,6 +64,7 @@ export function CalendarWidget({ selectedDay, data }: CalendarProps) {
 				classNames={{
 					week: cn("mt-3 flex w-full", WEEK_ROW_GAP),
 					month_caption: "hidden",
+					today: "",
 					day: "max-h-20 relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
 				}}
 				captionLayout="label"

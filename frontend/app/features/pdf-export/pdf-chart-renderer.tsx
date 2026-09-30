@@ -30,7 +30,7 @@ import {
 } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useId, useRef, useState } from "react";
 import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 import type { PdfDayGridPage, PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
 
@@ -91,6 +91,17 @@ export type DayReportSpec = {
 	chart: CapturedImage | null;
 };
 
+/**
+ * How far along a running export is. This file reports the first two steps as
+ * pages and day reports come in; "building" (the final PDF assembly) is set by
+ * the dialog, which runs that step itself.
+ */
+export type PdfExportProgress = {
+	step: "collecting" | "dayReports" | "building";
+	done: number;
+	total: number;
+};
+
 interface CollectedPage {
 	exposure: Exposure;
 	page: string;
@@ -103,6 +114,8 @@ interface PdfChartRendererProps {
 	date: Date;
 	userId: string;
 	onPagesReady: (pages: Array<PdfPageSpec>) => void;
+	/** Called whenever a new page or day report comes in - drives the progress bar and stall timeout. */
+	onProgress?: (progress: PdfExportProgress) => void;
 }
 
 /**
@@ -715,21 +728,29 @@ function DayReportBatchRenderer({
 	jobs,
 	userId,
 	onAllDone,
+	onProgress,
 }: {
 	jobs: Array<DayReportJob>;
 	userId: string;
 	onAllDone: (reports: Array<DayReportSpec>) => void;
+	onProgress?: (progress: PdfExportProgress) => void;
 }) {
 	const { activeJobs, markDone } = useBatchQueue(jobs, DAY_REPORT_BATCH_SIZE);
 	const reportsRef = useRef(new Map<string, DayReportSpec>());
 	const hasFinishedRef = useRef(false);
 	const onAllDoneRef = useRef(onAllDone);
 	onAllDoneRef.current = onAllDone;
+	const onProgressRef = useRef(onProgress);
+	onProgressRef.current = onProgress;
 
 	const handleDone = useCallback(
 		(key: string, report: DayReportSpec) => {
+			const countBefore = reportsRef.current.size;
 			reportsRef.current.set(key, report);
 			markDone(key);
+			if (reportsRef.current.size > countBefore) {
+				onProgressRef.current?.({ step: "dayReports", done: reportsRef.current.size, total: jobs.length });
+			}
 
 			if (hasFinishedRef.current || reportsRef.current.size < jobs.length) return;
 			hasFinishedRef.current = true;
@@ -769,8 +790,18 @@ function DayReportBatchRenderer({
  * pdf-export-dialog.tsx builds its `titles` array in that same fixed order;
  * without this, a page that loads faster than another could end up under
  * the wrong title.
+ *
+ * Memoized: the dialog re-renders on every progress update, and without this
+ * the whole off-screen export tree would re-render with it each time.
  */
-export function PdfChartRenderer({ exposureType, view, date, userId, onPagesReady }: PdfChartRendererProps) {
+export const PdfChartRenderer = memo(function PdfChartRendererInner({
+	exposureType,
+	view,
+	date,
+	userId,
+	onPagesReady,
+	onProgress,
+}: PdfChartRendererProps) {
 	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
 	// Set once a year export's own pages are all in AND it has red days: the day
@@ -795,7 +826,13 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 		(pageInfo: CollectedPage) => {
 			if (hasReported) return;
 
+			// Renderers re-report the same page on re-renders; only a genuinely new page
+			// counts as progress, or a stuck export would keep resetting its stall timer.
+			const countBefore = collectedRef.current.size;
 			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
+			if (collectedRef.current.size > countBefore) {
+				onProgress?.({ step: "collecting", done: collectedRef.current.size, total: expectedCount });
+			}
 
 			if (collectedRef.current.size === expectedCount) {
 				const orderedPages = exposuresToRender.flatMap((exposure) =>
@@ -812,12 +849,13 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 
 				if (dayReportJobs.length > 0) {
 					setDayReportPhase({ yearPages: orderedPages, jobs: dayReportJobs });
+					onProgress?.({ step: "dayReports", done: 0, total: dayReportJobs.length });
 				} else {
 					onPagesReady(orderedPages);
 				}
 			}
 		},
-		[expectedCount, exposuresToRender, pageKeys, onPagesReady, hasReported, view],
+		[expectedCount, exposuresToRender, pageKeys, onPagesReady, onProgress, hasReported, view],
 	);
 
 	const handleDayReportsDone = useCallback(
@@ -881,8 +919,13 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onPagesRead
 				))
 			)}
 			{dayReportPhase && (
-				<DayReportBatchRenderer jobs={dayReportPhase.jobs} userId={userId} onAllDone={handleDayReportsDone} />
+				<DayReportBatchRenderer
+					jobs={dayReportPhase.jobs}
+					userId={userId}
+					onAllDone={handleDayReportsDone}
+					onProgress={onProgress}
+				/>
 			)}
 		</div>
 	);
-}
+});

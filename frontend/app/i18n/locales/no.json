@@ -337,7 +337,10 @@
     "openReport": "Åpne rapport",
     "exceeded": "Over grenseverdi",
     "tableOfContents": "Innholdsfortegnelse",
-    "dayReports": "Dagsrapporter"
+    "dayReports": "Dagsrapporter",
+    "progressCollecting": "Henter data",
+    "progressDayReports": "Lager dagsrapporter",
+    "progressBuilding": "Bygger PDF"
   },
   "limitExplanation": {
     "actionValue": {

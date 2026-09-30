@@ -340,7 +340,10 @@
     "openReport": "Open report",
     "exceeded": "Above limit value",
     "tableOfContents": "Table of contents",
-    "dayReports": "Day reports"
+    "dayReports": "Day reports",
+    "progressCollecting": "Collecting data",
+    "progressDayReports": "Creating day reports",
+    "progressBuilding": "Building PDF"
   },
   "limitExplanation": {
     "actionValue": {

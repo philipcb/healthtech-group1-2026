@@ -9,7 +9,13 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { PdfChartRenderer, type PdfPageSpec, type PdfView } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { Progress } from "@/components/ui/progress.tsx";
+import {
+	PdfChartRenderer,
+	type PdfExportProgress,
+	type PdfPageSpec,
+	type PdfView,
+} from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
@@ -50,10 +56,33 @@ import { useTranslation } from "react-i18next";
  */
 
 /**
- * How long handleExport waits for PdfChartRenderer to report every page
- * before giving up with "Timeout waiting for chart IDs".
+ * How long an export may go without ANY progress (a new page or day report
+ * coming in) before giving up. Restarted on every progress update, so a big
+ * export that's still moving never hits it - only a stuck one does.
  */
-const EXPORT_TIMEOUT_MS = 300_000;
+const EXPORT_STALL_TIMEOUT_MS = 30_000;
+
+/** Thrown into the export's wait by the Cancel button - a user choice, not an error to show. */
+class ExportCancelledError extends Error {}
+
+/**
+ * Where the progress bar sits. One continuous bar that never moves backwards,
+ * split by where the time actually goes: collecting data is quick (0-10%), day
+ * reports are most of the export (10-95%), and building the PDF is the last step
+ * (held at 95% while it runs, since it can't report progress).
+ */
+function getProgressPercent(progress: PdfExportProgress): number {
+	if (progress.step === "collecting") return progress.total > 0 ? (progress.done / progress.total) * 10 : 0;
+	if (progress.step === "dayReports") return 10 + (progress.total > 0 ? (progress.done / progress.total) * 85 : 85);
+	return 95;
+}
+
+/**
+ * Resolves once the browser has painted. Building the PDF never pauses, so
+ * without waiting for a paint first, the "Building PDF" label would never
+ * actually reach the screen before that work starts.
+ */
+const waitForPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
 
 /**
  * Props for the PDF Export Dialog
@@ -84,6 +113,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const [isExporting, setIsExporting] = useState(false); // Loading state during PDF generation
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
 	const [exportError, setExportError] = useState<string | null>(null);
+	const [progress, setProgress] = useState<PdfExportProgress | null>(null); // Drives the progress bar
 
 	// Helper function: Calculate date range from selected view/date
 	/**
@@ -159,6 +189,45 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		}
 	}, []);
 
+	// Abandons the wait for pages. Two things can trigger it: the stall timer
+	// (nothing progressed for too long) and the Cancel button.
+	const abortWaitRef = useRef<((reason: Error) => void) | null>(null);
+	const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Restarted when an export starts and on every progress update.
+	const restartStallTimer = useCallback(() => {
+		if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+		stallTimerRef.current = setTimeout(
+			() =>
+				abortWaitRef.current?.(new Error(`Export stalled: no progress for ${EXPORT_STALL_TIMEOUT_MS / 1000}s`)),
+			EXPORT_STALL_TIMEOUT_MS,
+		);
+	}, []);
+
+	// Kept stable so the memoized PdfChartRenderer doesn't re-render on every update.
+	const handleProgress = useCallback(
+		(update: PdfExportProgress) => {
+			setProgress(update);
+			restartStallTimer();
+		},
+		[restartStallTimer],
+	);
+
+	// Stops waiting on the renderer: clears the stall timer and forgets the pending wait.
+	const stopWaiting = () => {
+		if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+		stallTimerRef.current = null;
+		abortWaitRef.current = null;
+		pagesResolverRef.current = null;
+	};
+
+	// Back to idle, and unmounts the off-screen renderer so no more work is started.
+	const resetExport = () => {
+		setIsExporting(false);
+		setShouldRenderCharts(false);
+		setProgress(null);
+	};
+
 	// Handler: Export button clicked
 	/**
 	 * Main export function that:
@@ -170,6 +239,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const handleExport = async () => {
 		setIsExporting(true);
 		setExportError(null);
+		setProgress({ step: "collecting", done: 0, total: 0 });
 		setShouldRenderCharts(true); // Start rendering charts
 
 		// Wait for charts to render and report their pages
@@ -178,27 +248,29 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			pagesResolverRef.current = resolve;
 		});
 
-		// Wait for the pages with timeout
-		const timeoutPromise = new Promise<Array<PdfPageSpec>>((_, reject) => {
-			setTimeout(() => reject(new Error("Timeout waiting for chart IDs")), EXPORT_TIMEOUT_MS);
+		// Only settles if the wait is abandoned - by the stall timer or the Cancel button.
+		const abortPromise = new Promise<never>((_, reject) => {
+			abortWaitRef.current = reject;
 		});
+		restartStallTimer();
 
 		let pages: Array<PdfPageSpec>;
 		try {
-			pages = await Promise.race([pagesPromise, timeoutPromise]);
+			pages = await Promise.race([pagesPromise, abortPromise]);
 		} catch (error) {
+			resetExport();
+			if (error instanceof ExportCancelledError) return; // The user's choice, not a failure.
 			console.error("PDF export failed:", error);
-			setIsExporting(false);
-			setShouldRenderCharts(false);
 			setExportError("Could not generate PDF. Try again.");
 			return;
+		} finally {
+			stopWaiting();
 		}
 
 		// Safety check: make sure we have elements to export
 		if (!pages || pages.length === 0) {
 			console.error("No chart elements ready for export");
-			setIsExporting(false);
-			setShouldRenderCharts(false);
+			resetExport();
 			setExportError("Could not generate PDF. No charts found.");
 			return;
 		}
@@ -342,6 +414,12 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			weekdays: weekdayLabels,
 		};
 
+		// Building the PDF never pauses, so the browser can't repaint or handle clicks
+		// until it's done - it can't show a count or be cancelled. Get the label on
+		// screen first, so the user sees what's happening while it runs.
+		setProgress({ step: "building", done: 0, total: 0 });
+		await waitForPaint();
+
 		// Call the PDF export hook to build the document
 		await exportPagesToPDF(
 			pages,
@@ -352,10 +430,36 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			localView === "year" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
 		);
 
-		setIsExporting(false);
-		setShouldRenderCharts(false); // Clean up charts
+		resetExport();
 		onOpenChange(false); // Close the dialog
 	};
+
+	// While exporting: abandon the export but keep the dialog open, so the range can
+	// be changed and retried. When idle: just close the dialog, as before.
+	const handleCancel = () => {
+		if (abortWaitRef.current) {
+			abortWaitRef.current(new ExportCancelledError());
+		} else {
+			onOpenChange(false);
+		}
+	};
+
+	// Closing the dialog (the X, Escape, clicking outside) mid-export cancels it too -
+	// otherwise the export would keep running hidden and pop up a download later.
+	const handleDialogOpenChange = (nextOpen: boolean) => {
+		if (!nextOpen) abortWaitRef.current?.(new ExportCancelledError());
+		onOpenChange(nextOpen);
+	};
+
+	const progressLabel = (() => {
+		if (!progress) return null;
+		const label = {
+			collecting: t(($) => $.pdf.progressCollecting),
+			dayReports: t(($) => $.pdf.progressDayReports),
+			building: t(($) => $.pdf.progressBuilding),
+		}[progress.step];
+		return progress.total > 0 ? `${label} (${progress.done} / ${progress.total})` : label;
+	})();
 
 	// Calculate values for UI
 	const { previous, next } = getNavigationValues();
@@ -363,7 +467,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 	// RENDER: Dialog UI
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={handleDialogOpenChange}>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{t(($) => $.layout.exportPdf)}</DialogTitle>
@@ -474,9 +578,18 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 				{exportError && <p className="text-destructive text-sm">{exportError}</p>}
 
+				{/* Progress, year exports only - the only ones long enough to need it */}
+				{isExporting && localView === "year" && progress && (
+					<div className="flex flex-col gap-1.5">
+						<Progress value={getProgressPercent(progress)} />
+						<p className="text-muted-foreground text-xs">{progressLabel}</p>
+					</div>
+				)}
+
 				{/* Footer buttons (Cancel / Export) */}
 				<DialogFooter>
-					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting}>
+					{/* Usable mid-export, except while building - that step can't be interrupted */}
+					<Button variant="outline" onClick={handleCancel} disabled={progress?.step === "building"}>
 						{t(($) => $.common.cancel)}
 					</Button>
 					<Button onClick={handleExport} disabled={isExporting}>
@@ -495,6 +608,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					date={localDate}
 					userId={user.id}
 					onPagesReady={handlePagesReady}
+					onProgress={handleProgress}
 				/>
 			)}
 		</Dialog>

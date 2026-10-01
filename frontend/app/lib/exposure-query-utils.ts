@@ -124,3 +124,7 @@ export function buildExposureOverviewQuery(
 		]),
 	);
 }
+
+export function getSummaryGranularity(exposure: Exposure | null): GranularityKey {
+	return exposure === "vibration" ? "hour" : "minute";
+}

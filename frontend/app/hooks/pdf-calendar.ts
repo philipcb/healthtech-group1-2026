@@ -133,7 +133,7 @@ export function drawCompactDayGrid(
 	height: number,
 ): void {
 	if (page.hours.length === 0) return;
-	const columnCount = Math.min(6, page.hours.length);
+	const columnCount = Math.min(5, page.hours.length);
 	const rowCount = Math.ceil(page.hours.length / columnCount);
 	const gap = 2;
 	// Reserve room for the hour label and center each square-plus-label block within its row.

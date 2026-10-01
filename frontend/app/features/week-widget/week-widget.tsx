@@ -125,7 +125,10 @@ function DayColumnHeader({ weekday, weekdayLetter, dayNumber, today }: DayColumn
 				<span className={cn(today && "font-semibold")}>{weekdayLetter}</span>
 				<span
 					className={cn(
-						today && ["flex size-5 items-center justify-center rounded-full", "bg-foreground text-secondary"],
+						today && [
+							"flex size-5 items-center justify-center rounded-full",
+							"bg-foreground text-secondary",
+						],
 					)}
 				>
 					{dayNumber}
@@ -137,7 +140,10 @@ function DayColumnHeader({ weekday, weekdayLetter, dayNumber, today }: DayColumn
 				<span
 					className={cn(
 						"ml-1.5",
-						today && ["flex size-6 items-center justify-center rounded-full", "bg-foreground text-secondary"],
+						today && [
+							"flex size-6 items-center justify-center rounded-full",
+							"bg-foreground text-secondary",
+						],
 					)}
 				>
 					{dayNumber}

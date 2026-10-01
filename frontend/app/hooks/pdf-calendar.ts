@@ -1,7 +1,7 @@
 /** Vector drawing helpers for PDF calendars and their exposure summaries. */
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import type { PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 import type { Exposure } from "@/lib/exposures.ts";
+import type { PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 import type { SummaryLevelCounts } from "@/lib/time-bucket-types.ts";
 import type { TZDate } from "@date-fns/tz";
 import type jsPDF from "jspdf";
@@ -119,6 +119,40 @@ export function drawDayGridPage(
 		pdf.setFontSize(cellWidth < 10 ? 6 : 7);
 		pdf.setTextColor(...MUTED_TEXT);
 		pdf.text(labels.formatHour(hour), cellX + cellWidth / 2, cellY + cellWidth + 4, { align: "center" });
+	});
+}
+
+/** Draws chronological hour status squares in a compact multi-row grid. */
+export function drawCompactDayGrid(
+	pdf: jsPDF,
+	page: PdfDayGridPage,
+	labels: PdfCalendarLabels,
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+): void {
+	if (page.hours.length === 0) return;
+	const columnCount = Math.min(6, page.hours.length);
+	const rowCount = Math.ceil(page.hours.length / columnCount);
+	const gap = 2;
+	// Reserve room for the hour label and center each square-plus-label block within its row.
+	const cellSize = Math.min(8, (width - gap * (columnCount - 1)) / columnCount, height / rowCount - 4);
+	const rowHeight = height / rowCount;
+	const cellBlockHeight = cellSize + 5;
+	const gridWidth = columnCount * cellSize + (columnCount - 1) * gap;
+	const gridX = x + (width - gridWidth) / 2;
+
+	page.hours.forEach(({ hour, dangerLevel }, index) => {
+		const row = Math.floor(index / columnCount);
+		const column = index % columnCount;
+		const cellX = gridX + column * (cellSize + gap);
+		const cellY = y + row * rowHeight + Math.max(0, (rowHeight - cellBlockHeight) / 2);
+		pdf.setFont("helvetica", "normal");
+		pdf.setFontSize(5);
+		pdf.setTextColor(...MUTED_TEXT);
+		pdf.text(labels.formatHour(hour).slice(0, 2), cellX + cellSize / 2, cellY + cellSize + 3, { align: "center" });
+		drawDangerCell(pdf, dangerLevel, cellX, cellY, cellSize, cellSize);
 	});
 }
 

@@ -8,8 +8,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog.tsx";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { Progress } from "@/components/ui/progress.tsx";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
 	PdfChartRenderer,
 	type PdfExportProgress,
@@ -18,9 +18,9 @@ import {
 } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
+import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
 import type { PdfTocEntry } from "@/hooks/pdf-table-of-contents.ts";
-import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
@@ -30,17 +30,17 @@ import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
 import {
+	addDays,
 	addMonths,
 	addWeeks,
 	addYears,
+	eachDayOfInterval,
 	getYear,
 	isToday,
 	startOfMonth,
 	startOfWeek,
 	startOfYear,
 	subMilliseconds,
-	eachDayOfInterval,
-	addDays,
 } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
@@ -300,7 +300,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					year: "numeric",
 				});
 				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title, title);
+				titles.push(title);
 			} else if (localView === "year") {
 				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
 				const yearStart = startOfYear(localDate, { in: TIMEZONE });
@@ -399,6 +399,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			danger: t(($) => $.exposureSummary.aggregated.danger),
 			note: t(($) => $.pdf.note),
 			noRedDays: t(($) => $.pdf.noRedDays),
+			noData: t(($) => $.common.noDataLive),
 			formatDay: (date) => date.toLocaleDateString(i18n.language, { day: "numeric", month: "short" }),
 			formatValue: (exposure, value) =>
 				`${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,

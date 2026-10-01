@@ -20,6 +20,7 @@ export type PdfLabels = {
 	danger: string;
 	note: string;
 	noRedDays: string;
+	noData: string;
 	formatDay: (date: TZDate) => string;
 	formatValue: (exposure: Exposure, value: number) => string;
 	formatDuration: (minutes: number) => string;

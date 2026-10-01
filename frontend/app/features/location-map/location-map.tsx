@@ -6,7 +6,7 @@ import type { UserWithStatusDto } from "@/lib/dto/user.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
 import L, { type LatLngBoundsExpression, type PathOptions } from "leaflet";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { ImageOverlay, MapContainer, Marker, Polygon } from "react-leaflet";
@@ -78,7 +78,8 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 		},
 	];
 
-	const [selectedHallName, setSelectedHallName] = useState<string | null>(halls.length === 1 ? halls[0].name : null);
+		const initialHallName = halls.find((hall) => hall.operators.length > 0)?.name ?? null;
+		const [selectedHallName, setSelectedHallName] = useState<string | null>(initialHallName);
 
 	const bounds: LatLngBoundsExpression | undefined = imageSize
 		? [
@@ -86,6 +87,22 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 				[imageSize.height, imageSize.width],
 			]
 		: undefined;
+
+		useEffect(() => {
+			if (!selectedHallName || !mapRef.current) {
+				return;
+			}
+
+			const hall = halls.find((item) => item.name === selectedHallName);
+			if (!hall) {
+				return;
+			}
+
+			mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
+				padding: [20, 20],
+				maxZoom: 1,
+			});
+		}, [imageSize, selectedHallName]);
 
 	if (!(imageSize && bounds)) {
 		return <Skeleton className="w-full rounded-xl bg-muted" style={{ aspectRatio: "16 / 9" }} />;
@@ -119,8 +136,8 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 	return (
 		<Card className="overflow-hidden">
 			<CardContent>
-				<div className="flex h-full w-full flex-row gap-4">
-					<div className="flex w-72 min-w-72 flex-col gap-1 border-r-2 border-solid pr-2">
+				<div className="flex h-full w-full flex-col gap-4 lg:flex-row">
+					<div className="flex w-full min-w-0 flex-col gap-1 border-b-2 border-solid pb-2 lg:w-72 lg:min-w-72 lg:border-r-2 lg:border-b-0 lg:pr-2 lg:pb-0">
 						{isLoading ? (
 							<>
 								<HallOperatorListSkeleton />
@@ -141,7 +158,7 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 							))
 						)}
 					</div>
-					<div className="w-full">
+					<div className="w-full min-w-0">
 						<ToggleGroup
 							type="single"
 							value={exposure}
@@ -167,6 +184,21 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 						>
 							<MapContainer
 								ref={mapRef}
+										whenReady={() => {
+											if (!selectedHallName) {
+												return;
+											}
+
+											const hall = halls.find((item) => item.name === selectedHallName);
+											if (!hall || !mapRef.current) {
+												return;
+											}
+
+											mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
+												padding: [20, 20],
+												maxZoom: 1,
+											});
+										}}
 								crs={L.CRS.Simple}
 								bounds={bounds}
 								maxBounds={bounds}

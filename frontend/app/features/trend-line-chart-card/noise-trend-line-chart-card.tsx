@@ -5,13 +5,14 @@ import { BaseTrendLineChartCard } from "./base-trend-line-chart-card.tsx";
 interface Props {
 	usePeakAggregation?: boolean;
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export function NoiseTrendLineChartCard({ usePeakAggregation, userId }: Props) {
+export function NoiseTrendLineChartCard({ usePeakAggregation, userId, breakoutOnMobile }: Props) {
 	const { date, granularity, series, minY, maxY } = useExposureTrendData("noise", { userId, usePeakAggregation });
 
 	return (
-		<BaseTrendLineChartCard>
+		<BaseTrendLineChartCard breakoutOnMobile={breakoutOnMobile}>
 			<TrendLineChart
 				selectedDate={date}
 				granularity={granularity}
@@ -25,6 +26,7 @@ export function NoiseTrendLineChartCard({ usePeakAggregation, userId }: Props) {
 					},
 				]}
 				usePeakDangerThreshold={usePeakAggregation === true}
+				breakoutOnMobile={breakoutOnMobile}
 			/>
 		</BaseTrendLineChartCard>
 	);

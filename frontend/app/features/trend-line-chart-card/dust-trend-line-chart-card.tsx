@@ -6,9 +6,10 @@ import { BaseTrendLineChartCard } from "./base-trend-line-chart-card.tsx";
 interface Props {
 	unit: ExposureUnit;
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export function DustTrendLineChartCard({ unit, userId }: Props) {
+export function DustTrendLineChartCard({ unit, userId, breakoutOnMobile }: Props) {
 	//TODO: Switch 2500 instead of 25, same for the other ones
 	const { date, granularity, series, minY, maxY } = useExposureTrendData("dust", {
 		userId,
@@ -18,7 +19,7 @@ export function DustTrendLineChartCard({ unit, userId }: Props) {
 	});
 
 	return (
-		<BaseTrendLineChartCard>
+		<BaseTrendLineChartCard breakoutOnMobile={breakoutOnMobile}>
 			<TrendLineChart
 				selectedDate={date}
 				granularity={granularity}
@@ -30,6 +31,7 @@ export function DustTrendLineChartCard({ unit, userId }: Props) {
 					exposure: "dust",
 					exposureField: serie.field,
 				}))}
+				breakoutOnMobile={breakoutOnMobile}
 			/>
 		</BaseTrendLineChartCard>
 	);

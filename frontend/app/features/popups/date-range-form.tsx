@@ -3,8 +3,8 @@ import { DateRangePicker } from "@/components/ui/date-range-picker.tsx";
 import { Field } from "@/components/ui/field.tsx";
 import { Form } from "@/components/ui/form.tsx";
 import type { TZDate } from "@date-fns/tz";
-import { useTranslation } from "react-i18next";
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import type { DateFormValues } from "./privacy-settings-popup.tsx";
 
 interface DateRangeFormProps {

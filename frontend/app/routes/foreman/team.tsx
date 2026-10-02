@@ -120,41 +120,86 @@ export default function TeamPage() {
 		<div className="flex flex-col gap-8">
 			<div className="flex flex-col gap-4">
 				<h1 className="font-bold text-2xl">{t(($) => $.foremanDashboard.team.title)}</h1>
-				<div className="flex items-start gap-2">
-					<UserSearch
-						users={filteredUsers}
-						placeholder={t(($) => $.user.searchPlaceholder)}
-						multiple={true}
-						value={userIdSelection}
-						onValueChange={(value) => {
-							if (value == null || value.length === 0) {
-								setUserIdSelection([]);
-								return;
-							}
+				<div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+					<div className="min-w-0 sm:flex-1">
+						<UserSearch
+							users={filteredUsers}
+							placeholder={t(($) => $.user.searchPlaceholder)}
+							multiple={true}
+							value={userIdSelection}
+							onValueChange={(value) => {
+								if (value == null || value.length === 0) {
+									setUserIdSelection([]);
+									return;
+								}
 
-							setUserIdSelection(value);
-						}}
-						disabled={filteredUsers.length === 0}
-						emptyLabel={t(($) => $.common.noOptions)}
-					/>
-					<Button onClick={handleAddSubordinates} disabled={userIdSelection.length === 0}>
+								setUserIdSelection(value);
+							}}
+							disabled={filteredUsers.length === 0}
+							emptyLabel={t(($) => $.common.noOptions)}
+						/>
+					</div>
+					<Button
+						className="w-full sm:w-auto"
+						onClick={handleAddSubordinates}
+						disabled={userIdSelection.length === 0}
+					>
 						{t(($) => $.foremanDashboard.team.action.addSubordinate)}
 					</Button>
 				</div>
 				{subordinateList.length === 0 ? (
 					<div className="p-4 text-muted-foreground">{t(($) => $.foremanDashboard.team.noMembersFound)}</div>
 				) : (
-					<DataTable
-						columns={columns}
-						data={subordinateList}
-						selectionLabelT={t}
-						state={{ rowSelection }}
-						onRowSelectionChange={setRowSelection}
-						getRowId={(user) => user.id}
-					/>
+					<>
+						<div className="hidden min-w-0 lg:block">
+							<DataTable
+								columns={columns}
+								data={subordinateList}
+								selectionLabelT={t}
+								state={{ rowSelection }}
+								onRowSelectionChange={setRowSelection}
+								getRowId={(user) => user.id}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-3 lg:hidden">
+							{subordinateList.map((teamMember) => (
+								<div
+									className="flex min-w-0 items-start gap-3 rounded-lg border p-4"
+									key={teamMember.id}
+								>
+									<Checkbox
+										checked={rowSelection[teamMember.id] === true}
+										onCheckedChange={(value) => {
+											setRowSelection((current) => {
+												const next = { ...current };
+
+												if (value) {
+													next[teamMember.id] = true;
+												} else {
+													delete next[teamMember.id];
+												}
+
+												return next;
+											});
+										}}
+										aria-label={t(($) => $.select.row)}
+									/>
+									<div className="min-w-0 flex-1 space-y-1 text-sm">
+										<p className="break-words font-medium">{teamMember.name}</p>
+										<p className="break-words text-muted-foreground">{teamMember.email}</p>
+										<p className="break-words text-muted-foreground">
+											{teamMember.jobDescription ?? "-"}
+										</p>
+									</div>
+								</div>
+							))}
+						</div>
+					</>
 				)}
 				<div>
 					<Button
+						className="w-full sm:w-auto"
 						onClick={handleRemoveSubordinates}
 						disabled={Object.keys(rowSelection).length === 0}
 						variant="destructive"

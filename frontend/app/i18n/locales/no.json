@@ -337,5 +337,9 @@
       "label": "Grenseverdi",
       "description": "Nivå som ikke må overskrides."
     }
+  },
+  "datePicker": {
+    "openLabel": "Velg dato og visning",
+    "dialogTitle": "Dato og visning"
   }
 }

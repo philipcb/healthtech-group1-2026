@@ -1,8 +1,10 @@
 import { Card, CardTitle } from "@/components/ui/card.tsx";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
+import { ChevronDownIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const formatValue = (value: number | null, unit: ExposureUnit) =>
@@ -46,7 +48,8 @@ export function ExposureStatisticsSection({
 	const maxPointCaption = maxTime ? t(($) => $.measurement.recordedAt, { time: formatTime(maxTime) }) : undefined;
 
 	return (
-		<div className="grid gap-3 md:grid-cols-3">
+		// Mobile: one card per row. Desktop: grid-cols-3, matching main's pre-redesign layout.
+		<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
 			{averageValue !== null && (
 				<StatisticCard
 					label={t(($) => $.measurement.average)}
@@ -98,15 +101,23 @@ export function ExposureGraphEmptyState({ date, locale }: { date: Date; locale: 
 
 function ExposureStatisticsSkeleton() {
 	return (
-		<div className="grid gap-3 md:grid-cols-3">
-			{["average", "maximum", "latest"].map((key) => (
-				<Card key={key} className="gap-2">
-					<Skeleton className="h-3 w-20" />
-					<Skeleton className="h-8 w-32" />
-					<Skeleton className="h-3 w-24" />
-				</Card>
-			))}
-		</div>
+		<>
+			<div className="flex flex-col gap-3 md:hidden">
+				{["average", "maximum", "latest"].map((key) => (
+					<Skeleton key={key} className="h-11 rounded-xl" />
+				))}
+			</div>
+
+			<div className="hidden gap-3 md:grid md:grid-cols-3">
+				{["average", "maximum", "latest"].map((key) => (
+					<Card key={key} className="gap-2">
+						<Skeleton className="h-3 w-20" />
+						<Skeleton className="h-8 w-32" />
+						<Skeleton className="h-3 w-24" />
+					</Card>
+				))}
+			</div>
+		</>
 	);
 }
 
@@ -134,38 +145,85 @@ function StatisticCard({ label, value, unit, recordedAt, warningThreshold, dange
 
 	const unitLabel = t(($) => $.exposures.units[unit]);
 
+	const labelText = (
+		<span className="min-w-0 truncate text-muted-foreground text-xs uppercase tracking-widest">{label}</span>
+	);
+	const valueText = (
+		<span className="shrink-0 font-medium text-sm tabular-nums">
+			{valueString} {unitLabel}
+		</span>
+	);
+
 	return (
-		<Card className="min-h-26.25 gap-1">
-			<p className="text-muted-foreground text-xs uppercase tracking-widest">{label}</p>
+		<>
+			{/* Mobile: expandable, whole row is the trigger (same pattern as HallOperatorList). */}
+			<Card variant="labeled" className="md:hidden">
+				<Collapsible>
+					<CollapsibleTrigger asChild={true}>
+						<button
+							type="button"
+							className="group flex w-full min-w-0 items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/50"
+						>
+							{labelText}
 
-			<div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-2">
-				<div className="size-4 rounded-md" style={{ backgroundColor: color }} />
+							<span className="flex shrink-0 items-center gap-1.5">
+								{valueText}
+								<ChevronDownIcon className="size-3.5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+							</span>
+						</button>
+					</CollapsibleTrigger>
 
-				<p className="font-semibold text-2xl">
-					{limitValuePercentage}
-					{" % "}
-					<span className="font-normal text-muted-foreground text-sm">
-						{t(($) => $.measurement.ofTheLimitValue)}
-					</span>
-				</p>
-			</div>
+					<CollapsibleContent className="flex flex-col gap-3 border-card-border border-t px-3 py-2">
+						<div className="flex items-center gap-2">
+							<div className="size-4 shrink-0 rounded-md" style={{ backgroundColor: color }} />
 
-			<div className="flex flex-wrap items-center gap-x-2 text-muted-foreground text-xs">
-				<p className="tabular-nums">
-					{valueString} {unitLabel}
-				</p>
-
-				{recordedAt !== undefined && (
-					<>
-						<span aria-hidden={true} className="size-1 rounded-full bg-muted-foreground" />
-
-						<div className="flex items-center gap-1">
-							<p>{recordedAt}</p>
+							<p className="font-semibold text-2xl">
+								{limitValuePercentage}
+								{" % "}
+								<span className="font-normal text-muted-foreground text-sm">
+									{t(($) => $.measurement.ofTheLimitValue)}
+								</span>
+							</p>
 						</div>
-					</>
-				)}
-			</div>
-		</Card>
+
+						{recordedAt !== undefined && <p className="text-muted-foreground text-xs">{recordedAt}</p>}
+					</CollapsibleContent>
+				</Collapsible>
+			</Card>
+
+			{/* Desktop: static card matching main, no button/Collapsible. */}
+			<Card className="hidden min-h-26.25 gap-1 md:flex">
+				<p className="text-muted-foreground text-xs uppercase tracking-widest">{label}</p>
+
+				<div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-2">
+					<div className="size-4 rounded-md" style={{ backgroundColor: color }} />
+
+					<p className="font-semibold text-2xl">
+						{limitValuePercentage}
+						{" % "}
+						<span className="font-normal text-muted-foreground text-sm">
+							{t(($) => $.measurement.ofTheLimitValue)}
+						</span>
+					</p>
+				</div>
+
+				<div className="flex flex-wrap items-center gap-x-2 text-muted-foreground text-xs">
+					<p className="tabular-nums">
+						{valueString} {unitLabel}
+					</p>
+
+					{recordedAt !== undefined && (
+						<>
+							<span aria-hidden={true} className="size-1 rounded-full bg-muted-foreground" />
+
+							<div className="flex items-center gap-1">
+								<p>{recordedAt}</p>
+							</div>
+						</>
+					)}
+				</div>
+			</Card>
+		</>
 	);
 }
 

@@ -42,7 +42,7 @@ export function NoiseExposureChartSection() {
 				maxHour={maxHour}
 				locale={i18n.language}
 			>
-				<NoiseExposureLineChartCard />
+				<NoiseExposureLineChartCard breakoutOnMobile={true} />
 			</ExposureChartView>
 		</div>
 	);

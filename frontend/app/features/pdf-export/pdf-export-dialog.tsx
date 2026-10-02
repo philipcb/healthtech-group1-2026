@@ -11,13 +11,13 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
-import { getSecurityRegulations } from "@/lib/security-regulations.ts";
-import { userRoleToString } from "@/lib/utils.ts";
-import type { View } from "@/lib/views.ts";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
+import { getSecurityRegulations } from "@/lib/security-regulations.ts";
+import { userRoleToString } from "@/lib/utils.ts";
+import type { View } from "@/lib/views.ts";
 import { TZDate } from "@date-fns/tz";
 import { addMonths, addWeeks, isToday, startOfMonth, startOfWeek, subMilliseconds } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";

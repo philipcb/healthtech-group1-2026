@@ -58,7 +58,40 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 		})),
 	];
 
-	return <DataTable columns={columns} data={data ?? []} getRowId={(teamMember) => teamMember.id} />;
+	return (
+		<>
+			<div className="hidden min-w-0 lg:block">
+				<DataTable columns={columns} data={data ?? []} getRowId={(teamMember) => teamMember.id} />
+			</div>
+
+			<div className="flex flex-col gap-3 lg:hidden">
+				{(data ?? []).map((teamMember) => (
+					<div className="min-w-0 rounded-lg border p-4" key={teamMember.id}>
+						<Link
+							to={{ search: buildSearchParams(teamMember.id, undefined) }}
+							className="break-words font-medium hover:underline"
+						>
+							{teamMember.name}
+						</Link>
+						<div className="mt-3 flex flex-wrap items-center gap-2">
+							{exposures.map((exposure) => {
+								const status = teamMember.status[exposure]?.dangerLevel ?? "safe";
+
+								return (
+									<OperatorExposureStatusExposureCell
+										key={exposure}
+										status={status}
+										exposure={exposure}
+										search={buildSearchParams(teamMember.id, exposure)}
+									/>
+								);
+							})}
+						</div>
+					</div>
+				))}
+			</div>
+		</>
+	);
 }
 
 interface OperatorExposureStatusCellProps {

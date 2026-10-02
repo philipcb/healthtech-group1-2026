@@ -180,6 +180,9 @@
   "interactiveCard": {
     "viewDetails": "View details"
   },
+  "medicalTeamDashboard": {
+    "title": "Medical Team Dashboard"
+  },
   "foremanDashboard": {
     "team": {
       "title": "Your team",
@@ -259,7 +262,8 @@
   "user": {
     "role": {
       "operator": "Operator",
-      "foreman": "Foreman"
+      "foreman": "Foreman",
+      "medicalTeam": "Medical team"
     },
     "searchPlaceholder": "Search users..."
   },

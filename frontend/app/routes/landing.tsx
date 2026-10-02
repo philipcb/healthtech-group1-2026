@@ -20,6 +20,11 @@ export default function Page() {
 			return;
 		}
 
+		if (user.role === UserRole.MedicalTeam) {
+			navigate("/medical-team/");
+			return;
+		}
+
 		setError(new Error(`Unknown user role "${user.role}"`));
 	}, [user, navigate]);
 

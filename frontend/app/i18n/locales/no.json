@@ -177,6 +177,9 @@
   "interactiveCard": {
     "viewDetails": "Se detaljer"
   },
+  "medicalTeamDashboard": {
+    "title": "Dashbord for medisinsk team"
+  },
   "foremanDashboard": {
     "team": {
       "title": "Ditt team",
@@ -256,7 +259,8 @@
   "user": {
     "role": {
       "operator": "Operatør",
-      "foreman": "Formann"
+      "foreman": "Formann",
+      "medicalTeam": "Medisinsk team"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },

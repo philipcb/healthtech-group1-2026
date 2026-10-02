@@ -66,9 +66,10 @@ export function drawRedDayTable(
 		styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak" },
 		headStyles: { fillColor: [244, 244, 245], textColor: 40 },
 		columnStyles: {
-			0: { textColor: LINK_COLOR },
+			0: { cellWidth: 16, textColor: LINK_COLOR },
+			1: { cellWidth: 20 },
 			// The note is free text, so it gets the slack while the rest stay compact.
-			5: { cellWidth: 90 },
+			5: { cellWidth: 80 },
 		},
 		// The table can spill onto a second page, so record each cell's real page.
 		didDrawCell: (data) => {

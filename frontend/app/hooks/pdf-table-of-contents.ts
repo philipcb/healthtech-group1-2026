@@ -23,8 +23,8 @@ export type ResolvedTocEntry = {
 	lastPage?: number;
 };
 
-/** How many entries fit on one landscape TOC page below the page title. */
-export const TOC_ENTRIES_PER_PAGE = 22;
+/** How many entries fit on one portrait TOC page below the page title. */
+export const TOC_ENTRIES_PER_PAGE = 35;
 
 const LINE_HEIGHT = 7;
 const INDENT = 8;

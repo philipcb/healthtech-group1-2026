@@ -41,7 +41,9 @@ export default function Noise() {
 					/>
 				)}
 			</div>
-			{showTrendLineChart && <NoiseTrendLineChartCard usePeakAggregation={usePeakAggregation} />}
+			{showTrendLineChart && (
+				<NoiseTrendLineChartCard usePeakAggregation={usePeakAggregation} breakoutOnMobile={true} />
+			)}
 		</div>
 	);
 }

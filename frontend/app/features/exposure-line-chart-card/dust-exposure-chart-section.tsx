@@ -43,7 +43,7 @@ export function DustExposureChartSection() {
 				maxHour={maxHour}
 				locale={i18n.language}
 			>
-				<DustExposureLineChartCard />
+				<DustExposureLineChartCard breakoutOnMobile={true} />
 			</ExposureChartView>
 		</div>
 	);

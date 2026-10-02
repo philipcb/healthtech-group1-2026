@@ -4,13 +4,14 @@ import { BaseTrendLineChartCard } from "./base-trend-line-chart-card.tsx";
 
 interface Props {
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export function VibrationTrendLineChartCard({ userId }: Props) {
+export function VibrationTrendLineChartCard({ userId, breakoutOnMobile }: Props) {
 	const { date, granularity, series, minY, maxY } = useExposureTrendData("vibration", { userId });
 
 	return (
-		<BaseTrendLineChartCard>
+		<BaseTrendLineChartCard breakoutOnMobile={breakoutOnMobile}>
 			<TrendLineChart
 				selectedDate={date}
 				granularity={granularity}
@@ -23,6 +24,7 @@ export function VibrationTrendLineChartCard({ userId }: Props) {
 						exposure: "vibration",
 					},
 				]}
+				breakoutOnMobile={breakoutOnMobile}
 			/>
 		</BaseTrendLineChartCard>
 	);

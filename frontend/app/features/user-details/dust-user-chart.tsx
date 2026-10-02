@@ -107,7 +107,7 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 	const showDustStatistics = view === "day";
 
 	return (
-		<div className="flex max-w-4xl flex-col gap-4">
+		<div className="flex flex-col gap-4 lg:max-w-4xl">
 			<Tabs value={dustField} onValueChange={(value) => setDustField(value as DustField)}>
 				<TabsList>
 					{dustFields.map((field) => (
@@ -132,7 +132,7 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 						data={mapOverviewDataToTimeBucketStatuses(overviewResponse?.data ?? [])}
 					/>
 				) : (
-					<DustExposureLineChartCard userId={selectedUser.id} />
+					<DustExposureLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />
 				)}
 			</ExposureChartCard>
 
@@ -203,7 +203,9 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 				</CardContent>
 			</Card>
 
-			{showTrendLineChart && <DustTrendLineChartCard unit={dustUnit} userId={selectedUser.id} />}
+			{showTrendLineChart && (
+				<DustTrendLineChartCard unit={dustUnit} userId={selectedUser.id} breakoutOnMobile={true} />
+			)}
 		</div>
 	);
 }

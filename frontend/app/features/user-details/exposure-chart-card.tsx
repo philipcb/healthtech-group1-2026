@@ -51,7 +51,7 @@ export function ExposureChartCard({
 		);
 	}
 
-	return <div className="w-full max-w-4xl">{children}</div>;
+	return <div className="w-full lg:max-w-4xl">{children}</div>;
 }
 
 function formatChartDate(selectedDate: TZDate, locale: string) {

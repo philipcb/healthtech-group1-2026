@@ -16,7 +16,7 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 	{
 		List<FullUser> users = await _userService.GetAllUsersAsync();
 		List<FullUserDto> dtos = users.Select(FullUserDto.FromEntity).ToList();
-		Console.WriteLine("plz answerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",dtos);
+		Console.WriteLine("plz answerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr", dtos);
 		return dtos;
 	}
 
@@ -178,7 +178,10 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 			.Where(id => !subordinateIds.Contains(id))
 			.ToList();
 
-		FullUser? user = await _userService.UpdateSubordinatesAsync(managerId, remainingSubordinateIds);
+		FullUser? user = await _userService.UpdateSubordinatesAsync(
+			managerId,
+			remainingSubordinateIds
+		);
 		if (user == null)
 		{
 			return NotFound();
@@ -199,7 +202,10 @@ public class UserController(IUserService _userService, IUserStatusService _userS
 			.Concat(subordinateIds)
 			.ToList();
 
-		FullUser? user = await _userService.UpdateSubordinatesAsync(managerId, newSubordinateIdList);
+		FullUser? user = await _userService.UpdateSubordinatesAsync(
+			managerId,
+			newSubordinateIdList
+		);
 		if (user == null)
 		{
 			return NotFound();

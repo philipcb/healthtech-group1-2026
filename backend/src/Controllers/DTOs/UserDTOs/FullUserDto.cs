@@ -24,15 +24,20 @@ public class FullUserDto
 			Role = user.Role,
 			Location = user.Location != null ? LocationDto.FromEntity(user.Location) : null,
 		};
-    
-    public static FullUserDto FromEntity(FullUser fullUser) => FullUserDto.FromEntity(fullUser.user, fullUser.userInfo);
+
+	public static FullUserDto FromEntity(FullUser fullUser) =>
+		FullUserDto.FromEntity(fullUser.user, fullUser.userInfo);
 }
 
 public class FullUserWithStatusDto : FullUserDto
 {
 	public required UserStatusDto Status { get; set; }
 
-	public static FullUserWithStatusDto FromEntity(User user, UserInfo userInfo, UserStatusDto status) =>
+	public static FullUserWithStatusDto FromEntity(
+		User user,
+		UserInfo userInfo,
+		UserStatusDto status
+	) =>
 		new FullUserWithStatusDto
 		{
 			Id = user.Id,
@@ -45,7 +50,6 @@ public class FullUserWithStatusDto : FullUserDto
 			Status = status,
 		};
 
-	public static FullUserWithStatusDto FromEntity(FullUser fullUser, UserStatusDto status) => FullUserWithStatusDto.FromEntity(fullUser.user, fullUser.userInfo, status);	
-
+	public static FullUserWithStatusDto FromEntity(FullUser fullUser, UserStatusDto status) =>
+		FullUserWithStatusDto.FromEntity(fullUser.user, fullUser.userInfo, status);
 }
-

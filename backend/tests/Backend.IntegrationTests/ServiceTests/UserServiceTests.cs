@@ -12,8 +12,9 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task GetUserByIdAsync_ReturnsUserWithLocation_WhenUserExists()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
 		User? user = await service.GetUserByIdAsync(SeedIds.KariId);
 
@@ -26,8 +27,9 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task GetUserByIdAsync_ReturnsNull_WhenUserDoesNotExist()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
 		User? user = await service.GetUserByIdAsync(Guid.NewGuid());
 
@@ -37,44 +39,46 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task GetSubordinatesAsync_ReturnsUsersOrderedByName_WhenManagerHasSubordinates()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User manager = CreateUser("mgr", UserRole.Foreman);
-		User subordinateZ = CreateUser("zed", UserRole.Operator);
-		User subordinateA = CreateUser("amy", UserRole.Operator);
+		FullUser manager = CreateUser("mgr", UserRole.Foreman);
+		FullUser subordinateZ = CreateUser("zed", UserRole.Operator);
+		FullUser subordinateA = CreateUser("amy", UserRole.Operator);
 
-		subordinateZ.Managers.Add(manager);
-		subordinateA.Managers.Add(manager);
+		subordinateZ.user.Managers.Add(manager.user);
+		subordinateA.user.Managers.Add(manager.user);
 
-		context.User.AddRange(manager, subordinateZ, subordinateA);
-		await context.SaveChangesAsync();
+		await SaveFullUsersAsync(appContext, loginContext, [manager, subordinateZ, subordinateA]);
 
-		List<User> result = await service.GetSubordinatesAsync(manager.Id);
+		List<FullUser> result = await service.GetSubordinatesAsync(manager.user.Id);
 
 		Assert.Equal(2, result.Count);
-		Assert.Equal(subordinateA.Id, result[0].Id);
-		Assert.Equal(subordinateZ.Id, result[1].Id);
-		Assert.All(result, user => Assert.NotNull(user.Location));
+		Assert.Equal(subordinateA.user.Id, result[0].user.Id);
+		Assert.Equal(subordinateZ.user.Id, result[1].user.Id);
+		Assert.All(result, user => Assert.NotNull(user.user.Location));
 	}
 
 	[Fact]
 	public async Task GetAllUsersAsync_ReturnsUsersWithLocations()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		List<User> users = await service.GetAllUsersAsync();
+		List<FullUser> users = await service.GetAllUsersAsync();
 
 		Assert.NotEmpty(users);
-		Assert.All(users, user => Assert.NotNull(user.Location));
+		Assert.All(users, user => Assert.NotNull(user.user.Location));
 	}
 
 	[Fact]
 	public async Task CreateUserAsync_PersistsUserAndHashesPassword()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 		string suffix = NewSuffix();
 
 		CreateUserDto createDto = new(
@@ -87,29 +91,30 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 			JobDescription: "welder"
 		);
 
-		User created = await service.CreateUserAsync(createDto);
+		FullUser created = await service.CreateUserAsync(createDto);
 
-		Assert.NotEqual(Guid.Empty, created.Id);
-		Assert.Equal(createDto.Name, created.Name);
-		Assert.Equal(createDto.Email, created.Email);
-		Assert.Equal(createDto.LocationId, created.LocationId);
-		Assert.NotNull(created.Location);
-		Assert.NotEqual(createDto.Password, created.PasswordHash);
-		Assert.True(BCrypt.Net.BCrypt.Verify(createDto.Password, created.PasswordHash));
+		Assert.NotEqual(Guid.Empty, created.user.Id);
+		Assert.Equal(createDto.Name, created.userInfo.Name);
+		Assert.Equal(createDto.Email, created.userInfo.Email);
+		Assert.Equal(createDto.LocationId, created.user.LocationId);
+		Assert.NotNull(created.user.Location);
+		Assert.NotEqual(createDto.Password, created.userInfo.PasswordHash);
+		Assert.True(BCrypt.Net.BCrypt.Verify(createDto.Password, created.userInfo.PasswordHash));
 
-		User? persisted = await context.User.FirstOrDefaultAsync(u => u.Id == created.Id);
+		User? persisted = await appContext.User.FirstOrDefaultAsync(u => u.Id == created.user.Id);
 		Assert.NotNull(persisted);
 	}
 
 	[Fact]
 	public async Task UpdateUserAsync_ReturnsNull_WhenUserDoesNotExist()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
 		UpdateUserDto updateDto = new(Name: "new-name", Email: "new@example.com");
 
-		User? updated = await service.UpdateUserAsync(Guid.NewGuid(), updateDto);
+		FullUser? updated = await service.UpdateUserAsync(Guid.NewGuid(), updateDto);
 
 		Assert.Null(updated);
 	}
@@ -117,13 +122,13 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task UpdateUserAsync_UpdatesFieldsAndPassword_WhenUserExists()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User user = CreateUser("upd", UserRole.Operator);
-		user.PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass");
-		context.User.Add(user);
-		await context.SaveChangesAsync();
+		FullUser user = CreateUser("upd", UserRole.Operator);
+		user.userInfo.PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass");
+		await SaveFullUsersAsync(appContext, loginContext, user);
 
 		UpdateUserDto updateDto = new(
 			Name: "updated-name",
@@ -132,20 +137,21 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 			JobDescription: "updated-job"
 		);
 
-		User? updated = await service.UpdateUserAsync(user.Id, updateDto);
+		FullUser? updated = await service.UpdateUserAsync(user.user.Id, updateDto);
 
 		Assert.NotNull(updated);
-		Assert.Equal("updated-name", updated!.Name);
-		Assert.Equal("updated-name@example.com", updated.Email);
-		Assert.Equal("updated-job", updated.JobDescription);
-		Assert.True(BCrypt.Net.BCrypt.Verify("newpass123", updated.PasswordHash));
+		Assert.Equal("updated-name", updated!.userInfo.Name);
+		Assert.Equal("updated-name@example.com", updated.userInfo.Email);
+		Assert.Equal("updated-job", updated.user.JobDescription);
+		Assert.True(BCrypt.Net.BCrypt.Verify("newpass123", updated.userInfo.PasswordHash));
 	}
 
 	[Fact]
 	public async Task DeleteUserAsync_ReturnsFalse_WhenUserDoesNotExist()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
 		bool deleted = await service.DeleteUserAsync(Guid.NewGuid());
 
@@ -155,27 +161,31 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task DeleteUserAsync_DeletesUser_WhenUserExists()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User user = CreateUser("del", UserRole.Operator);
-		context.User.Add(user);
-		await context.SaveChangesAsync();
+		FullUser user = CreateUser("del", UserRole.Operator);
+		await SaveFullUsersAsync(appContext, loginContext, user);
 
-		bool deleted = await service.DeleteUserAsync(user.Id);
+		bool deleted = await service.DeleteUserAsync(user.user.Id);
 
 		Assert.True(deleted);
-		bool exists = await context.User.AnyAsync(u => u.Id == user.Id);
-		Assert.False(exists);
+		bool appUserExists = await appContext.User.AnyAsync(u => u.Id == user.user.Id);
+		bool loginUserExists = await loginContext.User.AnyAsync(u => u.Id == user.user.Id);
+
+		Assert.False(appUserExists);
+		Assert.False(loginUserExists);
 	}
 
 	[Fact]
 	public async Task UpdateSubordinatesAsync_ReturnsNull_WhenManagerDoesNotExist()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User? result = await service.UpdateSubordinatesAsync(Guid.NewGuid(), [Guid.NewGuid()]);
+		FullUser? result = await service.UpdateSubordinatesAsync(Guid.NewGuid(), [Guid.NewGuid()]);
 
 		Assert.Null(result);
 	}
@@ -183,17 +193,18 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task UpdateSubordinatesAsync_ReturnsNull_WhenAnySubordinateIdDoesNotExist()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User manager = CreateUser("mgr2", UserRole.Foreman);
-		User subordinate = CreateUser("sub1", UserRole.Operator);
-		context.User.AddRange(manager, subordinate);
-		await context.SaveChangesAsync();
+		FullUser manager = CreateUser("mgr2", UserRole.Foreman);
+		FullUser subordinate = CreateUser("sub1", UserRole.Operator);
 
-		List<Guid> requestedIds = [subordinate.Id, Guid.NewGuid()];
+		await SaveFullUsersAsync(appContext, loginContext, [manager, subordinate]);
 
-		User? result = await service.UpdateSubordinatesAsync(manager.Id, requestedIds);
+		List<Guid> requestedIds = [subordinate.user.Id, Guid.NewGuid()];
+
+		FullUser? result = await service.UpdateSubordinatesAsync(manager.user.Id, requestedIds);
 
 		Assert.Null(result);
 	}
@@ -201,14 +212,18 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task UpdateSubordinatesAsync_ReturnsNull_WhenManagerIncludedAsSubordinate()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User manager = CreateUser("mgr3", UserRole.Foreman);
-		context.User.Add(manager);
-		await context.SaveChangesAsync();
+		FullUser manager = CreateUser("mgr3", UserRole.Foreman);
+		appContext.User.Add(manager.user);
+		await appContext.SaveChangesAsync();
 
-		User? result = await service.UpdateSubordinatesAsync(manager.Id, [manager.Id]);
+		FullUser? result = await service.UpdateSubordinatesAsync(
+			manager.user.Id,
+			[manager.user.Id]
+		);
 
 		Assert.Null(result);
 	}
@@ -216,17 +231,17 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task UpdateSubordinatesAsync_ReturnsNull_WhenManagerCannotManageSubordinateRole()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User operatorManager = CreateUser("mgr4", UserRole.Operator);
-		User operatorSubordinate = CreateUser("sub2", UserRole.Operator);
-		context.User.AddRange(operatorManager, operatorSubordinate);
-		await context.SaveChangesAsync();
+		FullUser operatorManager = CreateUser("mgr4", UserRole.Operator);
+		FullUser operatorSubordinate = CreateUser("sub2", UserRole.Operator);
+		await SaveFullUsersAsync(appContext, loginContext, [operatorManager, operatorSubordinate]);
 
-		User? result = await service.UpdateSubordinatesAsync(
-			operatorManager.Id,
-			[operatorSubordinate.Id]
+		FullUser? result = await service.UpdateSubordinatesAsync(
+			operatorManager.user.Id,
+			[operatorSubordinate.user.Id]
 		);
 
 		Assert.Null(result);
@@ -235,24 +250,24 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 	[Fact]
 	public async Task UpdateSubordinatesAsync_UpdatesSubordinates_WhenInputIsValid()
 	{
-		await using var context = Fixture.CreateDbContext();
-		var service = new UserService(context);
+		await using var appContext = Fixture.CreateDbContext();
+		await using var loginContext = Fixture.CreateLoginDbContext();
+		var service = new UserService(appContext, loginContext);
 
-		User manager = CreateUser("mgr5", UserRole.Foreman);
-		User subordinateA = CreateUser("sub3", UserRole.Operator);
-		User subordinateB = CreateUser("sub4", UserRole.Operator);
-		context.User.AddRange(manager, subordinateA, subordinateB);
-		await context.SaveChangesAsync();
+		FullUser manager = CreateUser("mgr5", UserRole.Foreman);
+		FullUser subordinateA = CreateUser("sub3", UserRole.Operator);
+		FullUser subordinateB = CreateUser("sub4", UserRole.Operator);
+		await SaveFullUsersAsync(appContext, loginContext, [manager, subordinateA, subordinateB]);
 
-		User? result = await service.UpdateSubordinatesAsync(
-			manager.Id,
-			[subordinateA.Id, subordinateB.Id]
+		FullUser? result = await service.UpdateSubordinatesAsync(
+			manager.user.Id,
+			[subordinateA.user.Id, subordinateB.user.Id]
 		);
 
 		Assert.NotNull(result);
-		Assert.Equal(2, result!.Subordinates.Count);
-		Assert.Contains(result.Subordinates, u => u.Id == subordinateA.Id);
-		Assert.Contains(result.Subordinates, u => u.Id == subordinateB.Id);
+		Assert.Equal(2, result!.user.Subordinates.Count);
+		Assert.Contains(result.user.Subordinates, u => u.Id == subordinateA.user.Id);
+		Assert.Contains(result.user.Subordinates, u => u.Id == subordinateB.user.Id);
 	}
 
 	private static string NewSuffix()
@@ -260,18 +275,40 @@ public sealed class UserServiceTests(PostgresTestDbFixture fixture) : Integratio
 		return Guid.NewGuid().ToString("N")[..8];
 	}
 
-	private static User CreateUser(string suffix, UserRole role)
+	private static FullUser CreateUser(string suffix, UserRole role)
 	{
-		return new User
+		Guid Id_common = Guid.NewGuid();
+		return new FullUser
 		{
-			Id = Guid.NewGuid(),
-			Name = $"usr-{suffix}-{NewSuffix()}",
-			Email = $"usr-{suffix}-{NewSuffix()}@example.com",
-			PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
-			CreatedAt = DateTime.UtcNow,
-			Role = role,
-			JobDescription = "job",
-			LocationId = SeedIds.VerdalLocationId,
+			user = new User
+			{
+				Id = Id_common,
+				Role = role,
+				JobDescription = "job",
+				LocationId = SeedIds.VerdalLocationId,
+			},
+
+			userInfo = new UserInfo
+			{
+				Id = Id_common,
+				Name = suffix,
+				Email = suffix + "@test.no",
+				PasswordHash = "hashed",
+				CreatedAt = DateTime.UtcNow,
+			},
 		};
+	}
+
+	private static async Task SaveFullUsersAsync(
+		AppDbContext appContext,
+		LoginDbContext loginContext,
+		params FullUser[] users
+	)
+	{
+		appContext.User.AddRange(users.Select(user => user.user));
+		loginContext.User.AddRange(users.Select(user => user.userInfo));
+
+		await appContext.SaveChangesAsync();
+		await loginContext.SaveChangesAsync();
 	}
 }

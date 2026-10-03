@@ -27,10 +27,7 @@ namespace backend.Migrations.AggregateDb
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Sample", x => x.Id);
-					table.CheckConstraint(
-						"CK_Sample_SampleCount_Enough",
-						"\"SampleCount\" >= 5"
-					);
+					table.CheckConstraint("CK_Sample_SampleCount_Enough", "\"SampleCount\" >= 5");
 				}
 			);
 

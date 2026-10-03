@@ -5,12 +5,9 @@ namespace Backend.Services;
 
 public class DatabaseSeeder
 {
-
-
 	// password123
 	private const string DefaultPasswordHash =
 		"$2a$11$QXVHkr6TQC8gJvh5P4GFzOYc.HyZA3FxDC3/BghAM3hODQVAoWwwi";
-
 
 	public async Task SeedLoginAsync(DbContext dbContext, CancellationToken ct)
 	{
@@ -89,7 +86,6 @@ public class DatabaseSeeder
 				PasswordHash = DefaultPasswordHash,
 				CreatedAt = now,
 			},
-
 			//----
 			new UserInfo
 			{
@@ -140,7 +136,7 @@ public class DatabaseSeeder
 				CreatedAt = now,
 			},
 		];
-		
+
 		HashSet<Guid> existingUserIds = await dbContext
 			.Set<UserInfo>()
 			.Select(user => user.Id)

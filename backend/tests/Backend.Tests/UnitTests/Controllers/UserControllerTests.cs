@@ -39,13 +39,13 @@ public class UserControllerTests
 		// Arrange
 		_mockUserService
 			.Setup(service => service.GetAllUsersAsync())
-			.ReturnsAsync(new List<User>());
+			.ReturnsAsync(new List<FullUser>());
 
 		// Act
 		var result = await _controller.GetAllUsers();
 
 		// Assert
-		var users = Assert.IsAssignableFrom<IEnumerable<UserDto>>(result.Value);
+		var users = Assert.IsAssignableFrom<IEnumerable<FullUserDto>>(result.Value);
 		Assert.Empty(users);
 	}
 
@@ -53,7 +53,7 @@ public class UserControllerTests
 	public async Task GetAllUsers_ReturnsMappedUsers_WhenUsersExist()
 	{
 		// Arrange
-		var users = new List<User>
+		var users = new List<FullUser>
 		{
 			CreateUser(Guid.NewGuid(), "Alice Operator", "alice@example.com", UserRole.Operator),
 			CreateUser(Guid.NewGuid(), "Bob Foreman", "bob@example.com", UserRole.Foreman),
@@ -65,7 +65,7 @@ public class UserControllerTests
 		var result = await _controller.GetAllUsers();
 
 		// Assert
-		var data = Assert.IsAssignableFrom<IEnumerable<UserDto>>(result.Value).ToList();
+		var data = Assert.IsAssignableFrom<IEnumerable<FullUserDto>>(result.Value).ToList();
 		Assert.Equal(2, data.Count);
 		Assert.Equal("Alice Operator", data[0].Name);
 		Assert.Equal("Bob Foreman", data[1].Name);
@@ -94,13 +94,13 @@ public class UserControllerTests
 		var userId = Guid.NewGuid();
 		var user = CreateUser(userId, "Kari Nordmann", "kari@example.com", UserRole.Operator);
 
-		_mockUserService.Setup(service => service.GetUserByIdAsync(userId)).ReturnsAsync(user);
+		_mockUserService.Setup(service => service.GetFullUserByIdAsync(userId)).ReturnsAsync(user);
 
 		// Act
 		var result = await _controller.GetUserById(userId);
 
 		// Assert
-		var dto = Assert.IsType<UserDto>(result.Value);
+		var dto = Assert.IsType<FullUserDto>(result.Value);
 		Assert.Equal(userId, dto.Id);
 		Assert.Equal("Kari Nordmann", dto.Name);
 		Assert.Equal("kari@example.com", dto.Email);
@@ -120,19 +120,25 @@ public class UserControllerTests
 			JobDescription: "Welder"
 		);
 
-		var expectedUser = new User
+		var expectedUser = new FullUser
 		{
+			user = new User{
 			Id = Guid.NewGuid(),
-			Name = createUserDto.Name,
-			Email = createUserDto.Email,
-			PasswordHash = "hashed",
-			CreatedAt = DateTime.UtcNow,
 			Role = createUserDto.Role,
 			LocationId = createUserDto.LocationId,
 			Location = MockLocation,
 			JobDescription = createUserDto.JobDescription,
 			Managers = [],
-			Subordinates = [],
+			Subordinates = []
+			},
+
+			userInfo = new UserInfo{
+			Id = Guid.NewGuid(),
+			Name = createUserDto.Name,
+			Email = createUserDto.Email,
+			PasswordHash = "hashed",
+			CreatedAt = DateTime.UtcNow
+			}
 		};
 
 		_mockUserService
@@ -143,9 +149,9 @@ public class UserControllerTests
 		var result = await _controller.CreateUser(createUserDto);
 
 		// Assert
-		var userResponse = Assert.IsType<UserDto>(result.Value);
-		Assert.Equal(expectedUser.Name, userResponse.Name);
-		Assert.Equal(expectedUser.Email, userResponse.Email);
+		var userResponse = Assert.IsType<FullUserDto>(result.Value);
+		Assert.Equal(expectedUser.userInfo.Name, userResponse.Name);
+		Assert.Equal(expectedUser.userInfo.Email, userResponse.Email);
 	}
 
 	[Fact]
@@ -157,7 +163,7 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.UpdateUserAsync(userId, updateUserDto))
-			.ReturnsAsync((User?)null);
+			.ReturnsAsync((FullUser?)null);
 
 		// Act
 		var result = await _controller.UpdateUser(userId, updateUserDto);
@@ -187,7 +193,7 @@ public class UserControllerTests
 		var result = await _controller.UpdateUser(userId, updateUserDto);
 
 		// Assert
-		var dto = Assert.IsType<UserDto>(result.Value);
+		var dto = Assert.IsType<FullUserDto>(result.Value);
 		Assert.Equal("updateduser", dto.Name);
 		Assert.Equal("updated@example.com", dto.Email);
 	}
@@ -243,19 +249,19 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
-			.ReturnsAsync(new List<User> { subordinateA, subordinateB });
+			.ReturnsAsync(new List<FullUser> { subordinateA, subordinateB });
 
 		var statuses = new List<UserStatusDto>
 		{
-			new() { UserId = subordinateA.Id, Status = DangerLevel.Warning },
-			new() { UserId = subordinateB.Id, Status = DangerLevel.Danger },
+			new() { UserId = subordinateA.user.Id, Status = DangerLevel.Warning },
+			new() { UserId = subordinateB.user.Id, Status = DangerLevel.Danger },
 		};
 
 		_mockUserStatusService
 			.Setup(service =>
 				service.GetStatusForUsersInRange(
 					It.Is<IEnumerable<Guid>>(ids =>
-						ids.SequenceEqual(new[] { subordinateA.Id, subordinateB.Id })
+						ids.SequenceEqual(new[] { subordinateA.user.Id, subordinateB.user.Id })
 					),
 					startTime,
 					endTime
@@ -267,7 +273,7 @@ public class UserControllerTests
 		var result = await _controller.GetSubordinates(managerId, startTime, endTime);
 
 		// Assert
-		var data = Assert.IsAssignableFrom<IEnumerable<UserWithStatusDto>>(result.Value).ToList();
+		var data = Assert.IsAssignableFrom<IEnumerable<FullUserWithStatusDto>>(result.Value).ToList();
 		Assert.Equal(2, data.Count);
 		Assert.Equal(DangerLevel.Warning, data[0].Status.Status);
 		Assert.Equal(DangerLevel.Danger, data[1].Status.Status);
@@ -290,7 +296,7 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
-			.ReturnsAsync(new List<User> { subordinate });
+			.ReturnsAsync(new List<FullUser> { subordinate });
 
 		_mockUserStatusService
 			.Setup(service =>
@@ -303,9 +309,9 @@ public class UserControllerTests
 
 		// Assert
 		var dto = Assert.Single(
-			Assert.IsAssignableFrom<IEnumerable<UserWithStatusDto>>(result.Value)
+			Assert.IsAssignableFrom<IEnumerable<FullUserWithStatusDto>>(result.Value)
 		);
-		Assert.Equal(subordinate.Id, dto.Id);
+		Assert.Equal(subordinate.user.Id, dto.Id);
 		Assert.Equal(DangerLevel.Safe, dto.Status.Status);
 	}
 
@@ -316,7 +322,7 @@ public class UserControllerTests
 		var managerId = Guid.NewGuid();
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
-			.ReturnsAsync(new List<User>());
+			.ReturnsAsync(new List<FullUser>());
 
 		// Act
 		var result = await _controller.GetSubordinatesThresholdStatus(managerId, null, null);
@@ -350,13 +356,13 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
-			.ReturnsAsync(new List<User> { subordinateA, subordinateB });
+			.ReturnsAsync(new List<FullUser> { subordinateA, subordinateB });
 
 		var statuses = new List<UserStatusDto>
 		{
 			new()
 			{
-				UserId = subordinateA.Id,
+				UserId = subordinateA.user.Id,
 				Status = DangerLevel.Warning,
 				Noise = new UserExposureStatusDto(DangerLevel.Safe, null, 70, null),
 				Dust = new UserExposureStatusDto(DangerLevel.Warning, null, 25, null),
@@ -364,7 +370,7 @@ public class UserControllerTests
 			},
 			new()
 			{
-				UserId = subordinateB.Id,
+				UserId = subordinateB.user.Id,
 				Status = DangerLevel.Danger,
 				Noise = new UserExposureStatusDto(DangerLevel.Danger, null, 95, null),
 				Dust = null,
@@ -376,7 +382,7 @@ public class UserControllerTests
 			.Setup(service =>
 				service.GetStatusForUsersInRange(
 					It.Is<IEnumerable<Guid>>(ids =>
-						ids.SequenceEqual(new[] { subordinateA.Id, subordinateB.Id })
+						ids.SequenceEqual(new[] { subordinateA.user.Id, subordinateB.user.Id })
 					),
 					startTime,
 					endTime
@@ -425,7 +431,7 @@ public class UserControllerTests
 
 		var manager = CreateUser(managerId, "Manager", "manager@example.com", UserRole.Foreman);
 
-		var currentSubordinates = new List<User>
+		var currentSubordinates = new List<FullUser>
 		{
 			CreateUser(subordinateAId, "Sub A", "suba@example.com", UserRole.Operator),
 			CreateUser(subordinateBId, "Sub B", "subb@example.com", UserRole.Operator),
@@ -451,7 +457,7 @@ public class UserControllerTests
 		);
 
 		// Assert
-		var dto = Assert.IsType<UserDto>(result.Value);
+		var dto = Assert.IsType<FullUserDto>(result.Value);
 		Assert.Equal(managerId, dto.Id);
 	}
 
@@ -465,7 +471,7 @@ public class UserControllerTests
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
 			.ReturnsAsync(
-				new List<User>
+				new List<FullUser>
 				{
 					CreateUser(subordinateId, "Sub A", "suba@example.com", UserRole.Operator),
 				}
@@ -473,7 +479,7 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.UpdateSubordinatesAsync(managerId, It.IsAny<List<Guid>>()))
-			.ReturnsAsync((User?)null);
+			.ReturnsAsync((FullUser?)null);
 
 		// Act
 		var result = await _controller.DeleteSubordinates(
@@ -498,7 +504,7 @@ public class UserControllerTests
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
 			.ReturnsAsync(
-				new List<User>
+				new List<FullUser>
 				{
 					CreateUser(
 						existingSubordinateId,
@@ -529,7 +535,7 @@ public class UserControllerTests
 		);
 
 		// Assert
-		var dto = Assert.IsType<UserDto>(result.Value);
+		var dto = Assert.IsType<FullUserDto>(result.Value);
 		Assert.Equal(managerId, dto.Id);
 	}
 
@@ -542,11 +548,11 @@ public class UserControllerTests
 
 		_mockUserService
 			.Setup(service => service.GetSubordinatesAsync(managerId))
-			.ReturnsAsync(new List<User>());
+			.ReturnsAsync(new List<FullUser>());
 
 		_mockUserService
 			.Setup(service => service.UpdateSubordinatesAsync(managerId, It.IsAny<List<Guid>>()))
-			.ReturnsAsync((User?)null);
+			.ReturnsAsync((FullUser?)null);
 
 		// Act
 		var result = await _controller.CreateSubordinates(
@@ -558,20 +564,27 @@ public class UserControllerTests
 		Assert.IsType<NotFoundResult>(result.Result);
 	}
 
-	private User CreateUser(Guid id, string name, string email, UserRole role)
+	private FullUser CreateUser(Guid id, string name, string email, UserRole role)
 	{
-		return new User
+		return new FullUser
 		{
+			user = new User{
 			Id = id,
-			Name = name,
-			Email = email,
-			PasswordHash = "hashed",
-			CreatedAt = DateTime.UtcNow,
 			Role = role,
 			LocationId = MockLocation.Id,
 			Location = MockLocation,
 			Managers = [],
-			Subordinates = [],
+			Subordinates = []
+			},
+
+			userInfo = new UserInfo{
+			Id = id,
+			Name = name,
+			Email = email,
+			PasswordHash = "hashed",
+			CreatedAt = DateTime.UtcNow
+				
+			}
 		};
 	}
 }

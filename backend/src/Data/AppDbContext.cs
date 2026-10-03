@@ -28,7 +28,6 @@ public class AppDbContext : DbContext
 			.WithMany(user => user.Subordinates)
 			.UsingEntity(typeBuilder => typeBuilder.ToTable("UserManagers"));
 
-
 		modelBuilder.Entity<VibrationData>(entity =>
 		{
 			entity

@@ -8,11 +8,10 @@ public class LoginDbContext : DbContext
 		: base(options) { }
 
 	public DbSet<UserInfo> User { get; set; }
-	
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);
 		modelBuilder.ApplyConfiguration(new Backend.Data.Configuration.UserInfoConfiguration());
-
 	}
 }

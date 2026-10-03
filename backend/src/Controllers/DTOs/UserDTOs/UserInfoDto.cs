@@ -21,4 +21,3 @@ public class UserInfoDto
 			CreatedAt = user.CreatedAt,
 		};
 }
-

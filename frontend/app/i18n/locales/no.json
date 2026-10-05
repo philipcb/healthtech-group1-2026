@@ -178,7 +178,17 @@
     "viewDetails": "Se detaljer"
   },
   "medicalTeamDashboard": {
-    "title": "Dashbord for medisinsk team"
+    "yardOverview": {
+      "title": "Verftsoversikt",
+      "noYardAssigned": "Brukeren din er ikke knyttet til et verft.",
+      "filters": {
+        "hall": "Hall",
+        "entireYard": "Hele verftet",
+        "period": "Periode",
+        "month": "Måned",
+        "year": "År"
+      }
+    }
   },
   "foremanDashboard": {
     "team": {

@@ -50,7 +50,7 @@ export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithSta
 						data={mapOverviewDataToTimeBucketStatuses(overviewResponse?.data ?? [])}
 					/>
 				) : (
-					<VibrationExposureLineChartCard userId={selectedUser.id} />
+					<VibrationExposureLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />
 				)}
 			</ExposureChartCard>
 
@@ -69,7 +69,7 @@ export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithSta
 				/>
 			)}
 
-			{showTrendLineChart && <VibrationTrendLineChartCard userId={selectedUser.id} />}
+			{showTrendLineChart && <VibrationTrendLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />}
 		</div>
 	);
 }

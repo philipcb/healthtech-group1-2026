@@ -55,7 +55,7 @@ export function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusD
 	const showNoiseStatistics = view === "day";
 
 	return (
-		<div className="flex max-w-4xl flex-col gap-4">
+		<div className="flex flex-col gap-4 lg:max-w-4xl">
 			<Tabs value={aggregation} onValueChange={(value) => setAggregation(value as Aggregation)}>
 				<TabsList>
 					<TabsTrigger value="average">{t(($) => $.measurement.average)}</TabsTrigger>
@@ -77,7 +77,7 @@ export function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusD
 						data={mapOverviewDataToTimeBucketStatuses(overviewResponse?.data ?? [])}
 					/>
 				) : (
-					<NoiseExposureLineChartCard userId={selectedUser.id} />
+					<NoiseExposureLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />
 				)}
 			</ExposureChartCard>
 
@@ -96,7 +96,7 @@ export function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusD
 				/>
 			)}
 
-			{showTrendLineChart && <NoiseTrendLineChartCard userId={selectedUser.id} />}
+			{showTrendLineChart && <NoiseTrendLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />}
 		</div>
 	);
 }

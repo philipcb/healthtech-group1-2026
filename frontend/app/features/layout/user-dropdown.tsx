@@ -44,11 +44,14 @@ export function UserDropdown() {
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild={true}>
-					<Button variant="ghost" className="h-11 max-w-[14rem] cursor-pointer gap-2 rounded-full pr-3 pl-1">
+					<Button
+						variant="ghost"
+						className="h-11 w-11 max-w-[14rem] cursor-pointer gap-2 rounded-full p-0 md:w-auto md:py-2 md:pr-3 md:pl-1"
+					>
 						<div className="flex size-9 items-center justify-center rounded-full bg-primary">
 							<UserIcon className="size-5 text-primary-foreground" />
 						</div>
-						<div className="min-w-0 grow text-left leading-tight">
+						<div className="hidden min-w-0 grow text-left leading-tight md:block">
 							<p className="truncate font-medium">{shorthandName(user.name)}</p>
 							<p className="truncate text-foreground/60 text-xs">{user.location.site}</p>
 						</div>

@@ -10,6 +10,10 @@
 		"Noto Color Emoji";
 }
 
+html {
+	scrollbar-gutter: stable;
+}
+
 html,
 body {
 	@apply bg-white dark:bg-gray-950;

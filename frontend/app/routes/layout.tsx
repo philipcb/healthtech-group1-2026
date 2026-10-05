@@ -14,21 +14,33 @@ export default function Layout() {
 		<SidebarProvider defaultOpen={false}>
 			<SidebarInset>
 				<div className="mx-auto w-full max-w-[90rem]">
-					<header className="sticky top-0 z-40 mx-5 flex items-center justify-between bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-						<HomeLink />
+					<header className="sticky top-0 z-40 bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:mx-5">
+						<div className="mx-5 flex items-center justify-between lg:mx-0">
+							<HomeLink />
 
-						<nav className="flex list-none items-center rounded-full">
-							<NavTabs />
-						</nav>
+							<nav className="hidden list-none items-center rounded-full lg:flex">
+								<NavTabs />
+							</nav>
 
-						<div className="flex flex-row items-center gap-4">
-							<NotificationBell />
+							<div className="flex flex-row items-center gap-4">
+								<NotificationBell />
 
-							<UserDropdown />
+								<UserDropdown />
+							</div>
 						</div>
 					</header>
 
-					<main className="m-5 items-center justify-center">
+					{/*
+					  position: sticky can't produce a pinned bottom bar here without moving this nav
+					  after <main> inside a min-height flex column, since sticky only pins once its
+					  normal flow position would otherwise sit below the target offset. This nav
+					  renders before <main>, so `fixed` is the correct tool here, not a shortcut.
+					*/}
+					<nav className="fixed inset-x-0 bottom-0 z-40 flex list-none items-center justify-center border-t bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+						<NavTabs />
+					</nav>
+
+					<main className="mx-5 mt-5 mb-24 items-center justify-center lg:mb-5">
 						<Outlet />
 					</main>
 				</div>

@@ -6,7 +6,7 @@ import type { UserWithStatusDto } from "@/lib/dto/user.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
 import L, { type LatLngBoundsExpression, type PathOptions } from "leaflet";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { useTranslation } from "react-i18next";
 import { ImageOverlay, MapContainer, Marker, Polygon } from "react-leaflet";
@@ -42,43 +42,45 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 
 	const highestDangerLevel = getHighestDangerLevel(operators, exposure === "all" ? null : exposure);
 
-	// To avoid combining danger levels from multiple exposures when "all" is selected, we use a default color
 	const hallOverlayColor =
 		exposure === "all" ? "var(--color-blue-600)" : `var(--${mapDangerLevelToColor(highestDangerLevel)})`;
 
 	const markerColor = exposure === "all" ? "bg-teal-700" : dangerlevelStyles[highestDangerLevel].bg;
 
-	// TODO: Data for prototype
-	const halls: Array<Hall> = [
-		{
-			name: "M-hallen",
-			operators,
-			positions: [xyToyx(440, 255), xyToyx(875, 250), xyToyx(875, 125), xyToyx(440, 125)],
-			baseStyle: {
-				color: hallOverlayColor,
-				weight: 2,
-				opacity: 1,
-				fillColor: hallOverlayColor,
-				fillOpacity: 0.2,
+	const halls = useMemo<Array<Hall>>(
+		() => [
+			{
+				name: "M-hallen",
+				operators,
+				positions: [xyToyx(440, 255), xyToyx(875, 250), xyToyx(875, 125), xyToyx(440, 125)],
+				baseStyle: {
+					color: hallOverlayColor,
+					weight: 2,
+					opacity: 1,
+					fillColor: hallOverlayColor,
+					fillOpacity: 0.2,
+				},
+				hoverStyle: {
+					color: hallOverlayColor,
+					weight: 2,
+					opacity: 1,
+					fillColor: hallOverlayColor,
+					fillOpacity: 0.3,
+				},
+				selectedStyle: {
+					color: hallOverlayColor,
+					weight: 3,
+					opacity: 1,
+					fillColor: hallOverlayColor,
+					fillOpacity: 0.3,
+				},
 			},
-			hoverStyle: {
-				color: hallOverlayColor,
-				weight: 2,
-				opacity: 1,
-				fillColor: hallOverlayColor,
-				fillOpacity: 0.3,
-			},
-			selectedStyle: {
-				color: hallOverlayColor,
-				weight: 3,
-				opacity: 1,
-				fillColor: hallOverlayColor,
-				fillOpacity: 0.3,
-			},
-		},
-	];
+		],
+		[operators, hallOverlayColor],
+	);
 
-	const [selectedHallName, setSelectedHallName] = useState<string | null>(halls.length === 1 ? halls[0].name : null);
+	const initialHallName = halls.find((hall) => hall.operators.length > 0)?.name ?? null;
+	const [selectedHallName, setSelectedHallName] = useState<string | null>(initialHallName);
 
 	const bounds: LatLngBoundsExpression | undefined = imageSize
 		? [
@@ -86,6 +88,23 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 				[imageSize.height, imageSize.width],
 			]
 		: undefined;
+
+	useEffect(() => {
+		if (!(selectedHallName && mapRef.current)) {
+			return;
+		}
+
+		const hall = halls.find((item) => item.name === selectedHallName);
+
+		if (!hall) {
+			return;
+		}
+
+		mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
+			padding: [20, 20],
+			maxZoom: 1,
+		});
+	}, [halls, selectedHallName]);
 
 	if (!(imageSize && bounds)) {
 		return <Skeleton className="w-full rounded-xl bg-muted" style={{ aspectRatio: "16 / 9" }} />;
@@ -95,17 +114,19 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 		setSelectedHallName(hallName);
 
 		const hall = halls.find((h) => h.name === hallName);
+
 		if (!hall) {
 			return;
 		}
 
 		const map = mapRef.current;
+
 		if (!map) {
 			return;
 		}
 
-		// Move to the selected hall on the map
 		const hallBounds = L.latLngBounds(hall.positions);
+
 		map.fitBounds(hallBounds, {
 			padding: [20, 20],
 			maxZoom: 1,
@@ -119,8 +140,8 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 	return (
 		<Card className="overflow-hidden">
 			<CardContent>
-				<div className="flex h-full w-full flex-row gap-4">
-					<div className="flex w-72 min-w-72 flex-col gap-1 border-r-2 border-solid pr-2">
+				<div className="flex h-full w-full flex-col gap-4 lg:flex-row">
+					<div className="flex w-full min-w-0 flex-col gap-1 border-b-2 border-solid pb-2 lg:w-72 lg:min-w-72 lg:border-r-2 lg:border-b-0 lg:pr-2 lg:pb-0">
 						{isLoading ? (
 							<>
 								<HallOperatorListSkeleton />
@@ -141,7 +162,8 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 							))
 						)}
 					</div>
-					<div className="w-full">
+
+					<div className="w-full min-w-0">
 						<ToggleGroup
 							type="single"
 							value={exposure}
@@ -153,13 +175,15 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 								}
 							}}
 						>
-							<ToggleGroupItem value="all"> {t(($) => $.exposures.overview)}</ToggleGroupItem>
+							<ToggleGroupItem value="all">{t(($) => $.exposures.overview)}</ToggleGroupItem>
+
 							{exposures.map((s) => (
 								<ToggleGroupItem key={s} value={s}>
 									{t(($) => $.exposures[s])}
 								</ToggleGroupItem>
 							))}
 						</ToggleGroup>
+
 						<div
 							style={{
 								aspectRatio: `${imageSize.width} / ${imageSize.height}`,
@@ -167,6 +191,22 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 						>
 							<MapContainer
 								ref={mapRef}
+								whenReady={() => {
+									if (!selectedHallName) {
+										return;
+									}
+
+									const hall = halls.find((item) => item.name === selectedHallName);
+
+									if (!(hall && mapRef.current)) {
+										return;
+									}
+
+									mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
+										padding: [20, 20],
+										maxZoom: 1,
+									});
+								}}
 								crs={L.CRS.Simple}
 								bounds={bounds}
 								maxBounds={bounds}
@@ -182,6 +222,7 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 								}}
 							>
 								<ImageOverlay url={imageUrl} bounds={bounds} />
+
 								{halls.map((hall) => (
 									<Fragment key={hall.name}>
 										<Polygon
@@ -203,6 +244,7 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 												},
 											}}
 										/>
+
 										<Marker
 											position={getCenterPoint(hall.positions)}
 											icon={createUsersIcon(hall.operators.length, markerColor, isLoading)}
@@ -223,7 +265,7 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 
 function createUsersIcon(count: number, badgeBgClassName: string, isLoading?: boolean) {
 	return L.divIcon({
-		className: "", // Prevents default Leaflet styling
+		className: "",
 		html: renderToString(<MapUsersBadge count={count} badgeBgClassName={badgeBgClassName} isLoading={isLoading} />),
 		iconSize: [60, 32],
 	});

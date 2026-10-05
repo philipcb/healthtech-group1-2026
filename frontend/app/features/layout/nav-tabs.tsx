@@ -32,8 +32,8 @@ export function NavTabs() {
 			{routes.map((route, i) => {
 				const className = ({ isActive }: { isActive: boolean }) =>
 					cn(
-						"z-20 flex cursor-pointer select-none items-center rounded-full px-5 py-2",
-						"text-center font-medium text-muted-foreground text-sm hover:text-foreground",
+						"z-20 flex cursor-pointer select-none items-center rounded-full px-2 py-2 lg:px-5",
+						"text-center font-medium text-muted-foreground text-xs hover:text-foreground lg:text-sm",
 						isActive && "text-foreground",
 					);
 

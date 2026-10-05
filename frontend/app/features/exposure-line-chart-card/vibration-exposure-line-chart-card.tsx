@@ -12,9 +12,10 @@ import { ExposureGraphEmptyState } from "../statistic-card.tsx";
 
 interface Props {
 	userId?: string;
+	breakoutOnMobile?: boolean;
 }
 
-export default function VibrationExposureLineChartCard({ userId }: Props) {
+export default function VibrationExposureLineChartCard({ userId, breakoutOnMobile }: Props) {
 	const { i18n } = useTranslation();
 
 	const chartContainerId = useId();
@@ -44,6 +45,7 @@ export default function VibrationExposureLineChartCard({ userId }: Props) {
 			lineType="monotone"
 			exposure={exposure}
 			id={chartContainerId}
+			breakoutOnMobile={breakoutOnMobile}
 		>
 			<ThresholdLine y={threshold.danger} dangerLevel="danger" />
 			<ThresholdLine y={threshold.warning} dangerLevel="warning" />

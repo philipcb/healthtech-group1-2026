@@ -1,14 +1,13 @@
-import { DatePicker } from "@/components/date-picker.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
 import { OperatorExposureStatusTable } from "@/components/operator-exposure-status-table.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { UserStatusChart } from "@/components/users-status-chart.tsx";
 import { AttentionCard } from "@/features/attention-card/attention-card.tsx";
 import { PieChartCard } from "@/features/attention-card/pie-chart-card.tsx";
+import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { TeamSummary } from "@/features/sidebar/team-summary.tsx";
@@ -16,7 +15,6 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { UserSelect } from "@/features/user/user-select.tsx";
 import { UserDetails } from "@/features/user-details/user-details.tsx";
 import { useView } from "@/features/views/use-view.ts";
-import { ViewPicker } from "@/features/views/view-picker.tsx";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { fetchSubordinatesQueryOptions, fetchThresholdSummaryQueryOptions } from "@/lib/api.ts";
 import { today } from "@/lib/date.ts";
@@ -35,8 +33,6 @@ export default function ForemanOverview() {
 
 	const [exposure, setExposure] = useQueryState("exposure", parseAsExposure.withOptions({ history: "push" }));
 	const {
-		date,
-		setDate,
 		selection: { start: startDate, end: endDate },
 	} = useDate();
 	const [selectedUserId, setSelectedUserId] = useQueryState("userId", parseAsString.withOptions({ history: "push" }));
@@ -77,7 +73,7 @@ export default function ForemanOverview() {
 				</div>
 
 				<div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-6">
-					<div className="grid w-full grid-cols-[auto_1fr] items-center gap-3">
+					<div className="grid w-full grid-cols-1 items-center gap-3 md:grid-cols-[auto_1fr]">
 						<div className="flex gap-1">
 							<ToggleGroup
 								type="single"
@@ -129,7 +125,7 @@ export default function ForemanOverview() {
 						{users === undefined || isSubordinatesLoading ? (
 							<Skeleton className="h-9 w-73 justify-self-end" />
 						) : (
-							<div className="w-73 min-w-0 justify-self-end">
+							<div className="w-full min-w-0 md:w-73 md:justify-self-end">
 								<UserSelect
 									users={users}
 									value={selectedUserId}
@@ -142,20 +138,21 @@ export default function ForemanOverview() {
 				</div>
 			</header>
 
-			<div className="flex w-full flex-row gap-6">
-				<aside className="flex flex-col gap-6 md:w-1/5">
-					<TeamSummary subordinateCount={subordinateCount} />
-					<NotesCard />
-					<LimitExplanation />
+			<div className="flex w-full flex-col gap-6 lg:flex-row">
+				<aside className="contents lg:flex lg:w-1/5 lg:flex-col lg:gap-6">
+					<div className="order-1 hidden lg:block">
+						<TeamSummary subordinateCount={subordinateCount} />
+					</div>
+					<div className="order-2">
+						<LimitExplanation />
+					</div>
+					<div className="order-4 lg:order-none">
+						<NotesCard />
+					</div>
 				</aside>
 
-				<div
-					className="grid w-full gap-6"
-					style={{
-						gridTemplateColumns: "minmax(0, 3fr) calc(var(--spacing) * 73)",
-					}}
-				>
-					<div className="flex flex-col gap-12">
+				<div className="contents lg:grid lg:w-full lg:grid-cols-[minmax(0,3fr)_calc(var(--spacing)*73)] lg:gap-6">
+					<div className="order-3 flex flex-col gap-8 p-4 sm:p-6 lg:order-none lg:gap-12 lg:p-0">
 						{/* TODO: Redo the loading logic here */}
 						{isUserSelected ? (
 							<UserDetails selectedUser={selectedUser} exposure={exposure} />
@@ -178,6 +175,10 @@ export default function ForemanOverview() {
 								) : (
 									<>
 										<ExposureSummaryGrid thresholdSummary={thresholdSummary} />
+
+										<div className="lg:hidden">
+											<TeamSummary subordinateCount={subordinateCount} />
+										</div>
 
 										<div className="flex flex-col gap-4">
 											<h2 className="font-medium text-lg">
@@ -203,32 +204,15 @@ export default function ForemanOverview() {
 						)}
 					</div>
 
-					<aside className="flex flex-col gap-4">
-						<Card muted={true}>
-							<ViewPicker
-								allowedViews={["day", "week"]}
-								withNavigationButtons={true}
-								minDate={minSelectableDate}
-								maxDate={maxSelectableDate}
-							/>
-						</Card>
-
-						<Card muted={true}>
-							<DatePicker
-								mode={view}
-								showWeekNumber={true}
-								date={date}
-								onDateChange={setDate}
-								disabled={{
-									before: minSelectableDate,
-									after: maxSelectableDate,
-								}}
-								pagedNavigation={false}
-								hideNavigation={true}
-								disableNavigation={true}
-								captionLayout="label"
-							/>
-						</Card>
+					{/* order-first: on mobile this sits directly under the header; on lg+ it returns to the
+					    right-hand column. */}
+					<aside className="order-first flex flex-col gap-4 lg:order-none">
+						<DateAndViewPicker
+							allowedViews={["day", "week"]}
+							minDate={minSelectableDate}
+							maxDate={maxSelectableDate}
+							lockNavigation={true}
+						/>
 					</aside>
 				</div>
 			</div>

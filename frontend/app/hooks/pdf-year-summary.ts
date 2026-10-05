@@ -49,7 +49,7 @@ export function drawYearSummaryPage(
 		{ label: labels.yearSummary.totalRedDays, width: tableWidth / 5 },
 		{ label: labels.yearSummary.worstMonth, width: tableWidth / 5 },
 		{ label: labels.yearSummary.registeredDays, width: tableWidth / 5 },
-		{ label: labels.yearSummary.averageExposure, width: tableWidth / 5},
+		{ label: labels.yearSummary.averageExposure, width: tableWidth / 5 },
 	];
 	const rowHeight = 20;
 	const headerHeight = 14;
@@ -71,10 +71,26 @@ export function drawYearSummaryPage(
 		x = margin;
 		const values = [
 			labels.exposureName(row.exposure),
-			row.metrics.map((metric) => (row.exposure === "dust" ? `${metric.label}: ${metric.redDays}` : `${metric.redDays}`)).join("\n"),
-			row.metrics.map((metric) => (row.exposure === "dust" ? `${metric.label}: ${metric.worstMonth}` : metric.worstMonth)).join("\n"),
-			row.metrics.map((metric) => (row.exposure === "dust" ? `${metric.label}: ${metric.registeredDays}` : metric.registeredDays)).join("\n"),
-			row.metrics.map((metric) => (row.exposure === "dust" ? `${metric.label}: ${labels.formatAverage(row.exposure, metric.average)}` : labels.formatAverage(row.exposure, metric.average))).join("\n"),
+			row.metrics
+				.map((metric) => (row.exposure === "dust" ? `${metric.label}: ${metric.redDays}` : `${metric.redDays}`))
+				.join("\n"),
+			row.metrics
+				.map((metric) =>
+					row.exposure === "dust" ? `${metric.label}: ${metric.worstMonth}` : metric.worstMonth,
+				)
+				.join("\n"),
+			row.metrics
+				.map((metric) =>
+					row.exposure === "dust" ? `${metric.label}: ${metric.registeredDays}` : metric.registeredDays,
+				)
+				.join("\n"),
+			row.metrics
+				.map((metric) =>
+					row.exposure === "dust"
+						? `${metric.label}: ${labels.formatAverage(row.exposure, metric.average)}`
+						: labels.formatAverage(row.exposure, metric.average),
+				)
+				.join("\n"),
 		];
 
 		values.forEach((value, columnIndex) => {

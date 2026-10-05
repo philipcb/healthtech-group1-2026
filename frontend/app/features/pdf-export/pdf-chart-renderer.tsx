@@ -126,8 +126,6 @@ interface PdfChartRendererProps {
 	onProgress?: (progress: PdfExportProgress) => void;
 }
 
-
-
 /**
  * How many month-pages are mounted at once during a year export - across ALL
  * exposure types combined (see YearBatchRenderer), not per type. A month is
@@ -709,7 +707,7 @@ function YearSummaryRenderer({
 	const selectedDate = TIMEZONE(date);
 	const periodStart = startOfYear(selectedDate, { in: TIMEZONE });
 	const today = TIMEZONE(new Date());
-	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
+	const { i18n } = useTranslation();
 	const periodEnd =
 		today < endOfYear(selectedDate, { in: TIMEZONE }) ? today : endOfYear(selectedDate, { in: TIMEZONE });
 	const months = Array.from({ length: 12 }, (_, index) => addMonths(periodStart, index));
@@ -758,7 +756,7 @@ function YearSummaryRenderer({
 			metrics: YEAR_SUMMARY_METRICS.filter((metric) => metric.exposure === exposure).map((metric) => {
 				const metricIndex = YEAR_SUMMARY_METRICS.indexOf(metric);
 				const monthly = months.map(
-					(month, monthIndex) => dayQueries[metricIndex * months.length + monthIndex].data?.data ?? [],
+					(_month, monthIndex) => dayQueries[metricIndex * months.length + monthIndex].data?.data ?? [],
 				);
 				const allDays = monthly.flat();
 				const monthRedDays = monthly.map(
@@ -783,8 +781,9 @@ function YearSummaryRenderer({
 					redDays: `${monthRedDays.reduce((sum, count) => sum + count, 0)} / ${differenceInCalendarDays(periodEnd, periodStart) + 1}`,
 					worstMonth:
 						monthRedDays[worstMonthIndex] > 0
-							? months[worstMonthIndex].toLocaleDateString(i18n.language, { month: "long" })
-							.replace(/^./, (c) => c.toLocaleUpperCase(i18n.language))
+							? months[worstMonthIndex]
+									.toLocaleDateString(i18n.language, { month: "long" })
+									.replace(/^./, (c) => c.toLocaleUpperCase(i18n.language))
 							: "-",
 					registeredDays: `${registeredDays.size} / ${differenceInCalendarDays(periodEnd, periodStart) + 1}`,
 				};
@@ -794,9 +793,9 @@ function YearSummaryRenderer({
 		onPageReady({
 			exposure: "dust",
 			page: "year-summary",
-			spec: { kind: "year-summary", periodStart, periodEnd, rows},
+			spec: { kind: "year-summary", periodStart, periodEnd, rows },
 		});
-	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady]);
+	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady, i18n.language]);
 
 	return null;
 }

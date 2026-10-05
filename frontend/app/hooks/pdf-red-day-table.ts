@@ -21,8 +21,16 @@ export type PdfLabels = {
 	note: string;
 	noRedDays: string;
 	noData: string;
+	yearSummary: {
+		exposure: string;
+		totalRedDays: string;
+		worstMonth: string;
+		registeredDays: string;
+		averageExposure: string;
+	};
 	formatDay: (date: TZDate) => string;
 	formatValue: (exposure: Exposure, value: number) => string;
+	formatAverage: (exposure: Exposure, value: number | null) => string;
 	formatDuration: (minutes: number) => string;
 };
 

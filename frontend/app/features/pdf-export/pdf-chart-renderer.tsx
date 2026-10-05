@@ -2,6 +2,7 @@ import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.t
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import type { PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
 import { type PdfDayReport, type PdfDaySeries, serializeChartSvg } from "@/hooks/pdf-day-report.ts";
+import type { PdfYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions, notesRangeQueryOptions } from "@/lib/api.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
@@ -30,7 +31,10 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import {
 	addDays,
 	addMonths,
+	differenceInCalendarDays,
 	eachDayOfInterval,
+	endOfMonth,
+	endOfYear,
 	setHours,
 	startOfDay,
 	startOfHour,
@@ -39,6 +43,7 @@ import {
 } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * PDF Chart Renderer - Off-Screen Rendering for PDF Export
@@ -72,6 +77,7 @@ export type PdfView = View | "year";
  *  - "day-report": one day's report with a Recharts SVG and its hourly grid.
  */
 export type PdfPageSpec =
+	| PdfYearSummaryPage
 	| { kind: "week-grid"; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
@@ -80,6 +86,16 @@ export type PdfPageSpec =
 	  }
 	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> }
 	| PdfDayReport;
+
+type SummaryMetric = { exposure: Exposure; field?: DustField; label: string };
+
+const YEAR_SUMMARY_METRICS: Array<SummaryMetric> = [
+	{ exposure: "dust", field: "pm1_twa", label: "PM1" },
+	{ exposure: "dust", field: "pm25_twa", label: "PM2.5" },
+	{ exposure: "dust", field: "pm10_twa", label: "PM10" },
+	{ exposure: "noise", label: "Noise" },
+	{ exposure: "vibration", label: "Vibration" },
+];
 
 /**
  * How far along a running export is. This file reports the first two steps as
@@ -109,6 +125,8 @@ interface PdfChartRendererProps {
 	/** Called whenever a new page or day report comes in - drives the progress bar and stall timeout. */
 	onProgress?: (progress: PdfExportProgress) => void;
 }
+
+
 
 /**
  * How many month-pages are mounted at once during a year export - across ALL
@@ -678,6 +696,111 @@ function YearBatchRenderer({
 	);
 }
 
+/** Fetches the selected year and aggregates all summary metrics before export. */
+function YearSummaryRenderer({
+	date,
+	userId,
+	onPageReady,
+}: {
+	date: Date;
+	userId: string;
+	onPageReady: (page: CollectedPage) => void;
+}) {
+	const selectedDate = TIMEZONE(date);
+	const periodStart = startOfYear(selectedDate, { in: TIMEZONE });
+	const today = TIMEZONE(new Date());
+	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
+	const periodEnd =
+		today < endOfYear(selectedDate, { in: TIMEZONE }) ? today : endOfYear(selectedDate, { in: TIMEZONE });
+	const months = Array.from({ length: 12 }, (_, index) => addMonths(periodStart, index));
+	const dayQueries = useQueries({
+		queries: YEAR_SUMMARY_METRICS.flatMap((metric) =>
+			months.map((month) =>
+				exposureQueryOptions({
+					exposure: metric.exposure,
+					enabled: month <= periodEnd,
+					query: buildExposureQuery(metric.exposure, "day", selectedDate, {
+						field: metric.field,
+						granularity: "day",
+						startTime: month,
+						endTime:
+							endOfMonth(month, { in: TIMEZONE }) < periodEnd
+								? endOfMonth(month, { in: TIMEZONE })
+								: periodEnd,
+					}),
+					userId,
+				}),
+			),
+		),
+	});
+	const averageQueries = useQueries({
+		queries: YEAR_SUMMARY_METRICS.map((metric) =>
+			exposureQueryOptions({
+				exposure: metric.exposure,
+				query: buildExposureQuery(metric.exposure, "day", selectedDate, {
+					field: metric.field,
+					granularity: "minute",
+					startTime: periodStart,
+					endTime: periodEnd,
+				}),
+				userId,
+			}),
+		),
+	});
+	const isLoading = [...dayQueries, ...averageQueries].some((query) => query.isLoading);
+	const hasReportedRef = useRef(false);
+
+	useEffect(() => {
+		if (isLoading || hasReportedRef.current) return;
+		hasReportedRef.current = true;
+		const rows = ["dust", "noise", "vibration"].map((exposure) => ({
+			exposure: exposure as Exposure,
+			metrics: YEAR_SUMMARY_METRICS.filter((metric) => metric.exposure === exposure).map((metric) => {
+				const metricIndex = YEAR_SUMMARY_METRICS.indexOf(metric);
+				const monthly = months.map(
+					(month, monthIndex) => dayQueries[metricIndex * months.length + monthIndex].data?.data ?? [],
+				);
+				const allDays = monthly.flat();
+				const monthRedDays = monthly.map(
+					(data) => data.filter((point) => point.dangerLevel === "danger").length,
+				);
+				const worstMonthIndex = monthRedDays.reduce(
+					(best, count, index) => (count > monthRedDays[best] ? index : best),
+					0,
+				);
+				const averageData = averageQueries[metricIndex].data?.data ?? [];
+				const registeredDays = new Set(
+					allDays.map((point) => point.time.toLocaleDateString("en-CA", { timeZone: "Europe/Oslo" })),
+				);
+				const average =
+					averageData.length === 0
+						? null
+						: averageData.reduce((sum, point) => sum + point.value, 0) / averageData.length;
+
+				return {
+					label: metric.label,
+					average,
+					redDays: `${monthRedDays.reduce((sum, count) => sum + count, 0)} / ${differenceInCalendarDays(periodEnd, periodStart) + 1}`,
+					worstMonth:
+						monthRedDays[worstMonthIndex] > 0
+							? months[worstMonthIndex].toLocaleDateString(i18n.language, { month: "long" })
+							.replace(/^./, (c) => c.toLocaleUpperCase(i18n.language))
+							: "-",
+					registeredDays: `${registeredDays.size} / ${differenceInCalendarDays(periodEnd, periodStart) + 1}`,
+				};
+			}),
+		}));
+
+		onPageReady({
+			exposure: "dust",
+			page: "year-summary",
+			spec: { kind: "year-summary", periodStart, periodEnd, rows},
+		});
+	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady]);
+
+	return null;
+}
+
 type DayReportJob = {
 	key: string;
 	exposure: Exposure;
@@ -828,7 +951,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 	const pageKeys = getPageKeysForView(view);
-	const expectedCount = exposuresToRender.length * pageKeys.length;
+	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "year" ? 1 : 0);
 
 	const handlePageReady = useCallback(
 		(pageInfo: CollectedPage) => {
@@ -848,6 +971,8 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.spec)
 						.filter((spec): spec is PdfPageSpec => spec != null),
 				);
+				const summaryPage = collectedRef.current.get("dust-year-summary")?.spec;
+				if (summaryPage?.kind === "year-summary") orderedPages.unshift(summaryPage);
 
 				setHasReported(true);
 
@@ -897,13 +1022,16 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				// One shared YearBatchRenderer, not one per exposure - this is what makes the
 				// batch size apply across the whole export (e.g. Overview) rather than 3x it.
 				notesQuery.isLoading ? null : (
-					<YearBatchRenderer
-						exposures={exposuresToRender}
-						date={date}
-						userId={userId}
-						notes={notes}
-						onPageReady={handlePageReady}
-					/>
+					<>
+						<YearSummaryRenderer date={date} userId={userId} onPageReady={handlePageReady} />
+						<YearBatchRenderer
+							exposures={exposuresToRender}
+							date={date}
+							userId={userId}
+							notes={notes}
+							onPageReady={handlePageReady}
+						/>
+					</>
 				)
 			) : view === "month" ? (
 				exposuresToRender.map((exposure) => (

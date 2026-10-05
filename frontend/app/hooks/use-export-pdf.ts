@@ -1,5 +1,6 @@
 import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { drawDayReportPage } from "@/hooks/pdf-day-report.ts";
+import { drawYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
 import { getDayReportKey } from "@/lib/pdf/red-days.ts";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
@@ -77,7 +78,11 @@ export const useExportPDF = () => {
 				const page = pages[i];
 				const pagesBefore = pdf.getNumberOfPages();
 
-				if (page.kind === "calendar") {
+				if (page.kind === "year-summary") {
+					pdf.addPage("a4", pdfOrientation);
+					drawPageTitle(pdf, titles[i]);
+					drawYearSummaryPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+				} else if (page.kind === "calendar") {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
 					drawCalendarPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4);

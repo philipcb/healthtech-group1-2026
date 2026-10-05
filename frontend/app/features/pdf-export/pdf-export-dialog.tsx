@@ -287,6 +287,14 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// Year exports only. Each entry points at a position in `pages` - at any
 		// point below, titles.length is the position the next page will have.
 		const tocEntries: Array<PdfTocEntry> = [];
+		if (localView === "year") {
+			tocEntries.push({
+				label: t(($) => $.pdf.yearSummary),
+				level: 0,
+				pageIndex: titles.length,
+			});
+			titles.push(t(($) => $.pdf.yearSummary));
+		}
 
 		for (const exposure of exposuresToRender) {
 			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
@@ -400,9 +408,20 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			note: t(($) => $.pdf.note),
 			noRedDays: t(($) => $.pdf.noRedDays),
 			noData: t(($) => $.common.noDataLive),
+			yearSummary: {
+				exposure: t(($) => $.pdf.summaryExposure),
+				totalRedDays: t(($) => $.pdf.summaryRedDays),
+				worstMonth: t(($) => $.pdf.summaryWorstMonth),
+				registeredDays: t(($) => $.pdf.summaryRegisteredDays),
+				averageExposure: t(($) => $.pdf.summaryAverage),
+			},
 			formatDay: (date) => date.toLocaleDateString(i18n.language, { day: "numeric", month: "short" }),
 			formatValue: (exposure, value) =>
 				`${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,
+			formatAverage: (exposure, value) =>
+				value == null
+					? "-"
+					: `${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,
 			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
 			formatHoursAndMinutes: (minutes) => formatMinutesAsHoursAndMinutes(minutes, dateFnsLocale),
 			formatHour: (hour) =>

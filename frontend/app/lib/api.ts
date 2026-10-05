@@ -161,11 +161,21 @@ export const fetchNoteData = async (noteDataRequest: NoteDataRequest, userId: st
 };
 
 export function notesQueryOptions({ view, selectedDay, userId }: { view: View; selectedDay: TZDate; userId: string }) {
-	const query = getStartEnd(view, selectedDay);
+	return notesRangeQueryOptions({ ...getStartEnd(view, selectedDay), userId });
+}
 
+export function notesRangeQueryOptions({
+	startTime,
+	endTime,
+	userId,
+}: {
+	startTime: TZDate;
+	endTime: TZDate;
+	userId: string;
+}) {
 	return queryOptions({
-		queryKey: buildNotesQueryKey(userId, query.startTime, query.endTime),
-		queryFn: () => fetchNoteData(query, userId),
+		queryKey: buildNotesQueryKey(userId, startTime, endTime),
+		queryFn: () => fetchNoteData({ startTime, endTime }, userId),
 		staleTime: minutesToMilliseconds(10),
 		refetchInterval: DEFAULT_REFETCH_INTERVAL,
 		placeholderData: keepPreviousData,

@@ -6,7 +6,7 @@ import { useView } from "@/features/views/use-view.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
-import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { buildExposureOverviewQuery, buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
@@ -46,7 +46,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	// Because vibration data is cumulative and has few data points, we never fetch it with minute granularity
 	// TODO: When we take vibration disconnectedOn into account we could fetch it with minute granularity for the day
 	// view as well
-	const granularity = exposure === "vibration" ? "hour" : "minute";
+	const granularity = getSummaryGranularity(exposure);
 
 	const exposureQuery =
 		exposure &&

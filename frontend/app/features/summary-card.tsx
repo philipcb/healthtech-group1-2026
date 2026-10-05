@@ -8,7 +8,6 @@ import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts
 import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
 import { buildExposureOverviewQuery, buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
 import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
-import { formatMinutesAsDuration } from "@/lib/duration.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";

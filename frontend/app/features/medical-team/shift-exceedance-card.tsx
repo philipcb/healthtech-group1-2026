@@ -1,10 +1,11 @@
 import { DangerLevelPieChart } from "@/components/danger-level-pie-chart.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
-import { DANGER_LEVEL_SEVERITY, type DangerLevel, DangerLevelSchema, dangerlevelStyles } from "@/lib/danger-levels.ts";
+import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { cn } from "@/lib/utils.ts";
 import { UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getLevelLabels, severityOrder } from "./level-labels.ts";
 import { MIN_GROUP_SIZE } from "./medical-team-privacy.ts";
 import type { ShiftExceedanceDto } from "./shift-exceedance-mock-data.ts";
 
@@ -14,11 +15,7 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 	const { exposure, peopleCount, shifts, peopleAboveAction } = exceedance;
 	const totalShifts = shifts.safe + shifts.warning + shifts.danger;
 
-	const levelLabels: Record<DangerLevel, string> = {
-		safe: t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.safe),
-		warning: t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.betweenActionAndLimit),
-		danger: t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.aboveLimit),
-	};
+	const levelLabels = getLevelLabels(t);
 
 	return (
 		<Card className="gap-3">
@@ -83,9 +80,6 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 		</Card>
 	);
 }
-
-/** Most severe first, the same order as the foreman's pie chart cards */
-const severityOrder = DangerLevelSchema.options.toSorted((a, b) => DANGER_LEVEL_SEVERITY[b] - DANGER_LEVEL_SEVERITY[a]);
 
 function ExceedanceValue({ level, label, count }: { level: DangerLevel; label: string; count: number }) {
 	return (

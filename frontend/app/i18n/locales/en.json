@@ -208,6 +208,19 @@
         "repeatedExceedances_other": "{{count}} people exceeded the action value at least {{n}} times",
         "error": "Could not load shift data."
       },
+      "levelClassification": {
+        "trigger": "How levels are classified",
+        "title": "How levels are classified",
+        "description": "A shift is one person's measurements for one exposure on one day. Each shift is placed in exactly one level.",
+        "rules": {
+          "safe": "Below the action value",
+          "warning": "At or above the action value, but below the limit value",
+          "danger": "At or above the limit value"
+        },
+        "exposure": "Exposure",
+        "actionValueIncludesLimit": "People who exceeded the action value also include people with shifts above the limit value.",
+        "noisePeaks": "Short noise peaks (limit {{peak}}) are not part of these levels."
+      },
       "filters": {
         "hall": "Hall",
         "entireYard": "Entire yard",

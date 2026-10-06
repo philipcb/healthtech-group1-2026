@@ -205,6 +205,19 @@
         "repeatedExceedances_other": "{{count}} personer har vært over tiltaksverdien minst {{n}} ganger",
         "error": "Kunne ikke hente skiftdata."
       },
+      "levelClassification": {
+        "trigger": "Slik klassifiseres nivåene",
+        "title": "Slik klassifiseres nivåene",
+        "description": "Et skift er én persons målinger for én eksponering på én dag. Hvert skift havner i nøyaktig ett nivå.",
+        "rules": {
+          "safe": "Under tiltaksverdien",
+          "warning": "Ved eller over tiltaksverdien, men under grenseverdien",
+          "danger": "Ved eller over grenseverdien"
+        },
+        "exposure": "Eksponering",
+        "actionValueIncludesLimit": "Personer som har vært over tiltaksverdien, inkluderer også personer med skift over grenseverdien.",
+        "noisePeaks": "Korte støytopper (grense {{peak}}) er ikke med i disse nivåene."
+      },
       "filters": {
         "hall": "Hall",
         "entireYard": "Hele verftet",

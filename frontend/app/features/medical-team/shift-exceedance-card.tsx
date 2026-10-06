@@ -1,7 +1,7 @@
 import { DangerLevelPieChart } from "@/components/danger-level-pie-chart.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
-import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
+import { DANGER_LEVEL_SEVERITY, type DangerLevel, DangerLevelSchema, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTranslation } from "react-i18next";
 import type { ShiftExceedanceDto } from "./shift-exceedance-mock-data.ts";
@@ -14,11 +14,6 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 
 	const { exposure, peopleCount, shifts } = exceedance;
 	const totalShifts = shifts.safe + shifts.warning + shifts.danger;
-
-	const aboveActionPercent = Math.round(((shifts.warning + shifts.danger) / totalShifts) * 100);
-	const aboveLimitPercent = Math.round((shifts.danger / totalShifts) * 100);
-	// Safe and above action are complements, so safe is derived from the rounded value to always add up to 100%
-	const safePercent = 100 - aboveActionPercent;
 
 	const levelLabels: Record<DangerLevel, string> = {
 		safe: t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.safe),
@@ -47,9 +42,9 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 						<div
 							role="img"
 							aria-label={t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.distribution, {
-								safe: safePercent,
-								action: aboveActionPercent - aboveLimitPercent,
-								limit: aboveLimitPercent,
+								limit: shifts.danger,
+								action: shifts.warning,
+								safe: shifts.safe,
 							})}
 							className="size-28 shrink-0"
 						>
@@ -57,21 +52,14 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 						</div>
 
 						<div className="flex flex-col gap-2">
-							<ExceedanceValue
-								level="warning"
-								label={t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.aboveAction)}
-								percent={aboveActionPercent}
-							/>
-							<ExceedanceValue
-								level="danger"
-								label={t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.ofWhichAboveLimit)}
-								percent={aboveLimitPercent}
-							/>
-							<ExceedanceValue
-								level="safe"
-								label={t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.safe)}
-								percent={safePercent}
-							/>
+							{severityOrder.map((level) => (
+								<ExceedanceValue
+									key={level}
+									level={level}
+									label={levelLabels[level]}
+									count={shifts[level]}
+								/>
+							))}
 						</div>
 					</div>
 
@@ -87,11 +75,14 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 	);
 }
 
-function ExceedanceValue({ level, label, percent }: { level: DangerLevel; label: string; percent: number }) {
+/** Most severe first, the same order as the foreman's pie chart cards */
+const severityOrder = DangerLevelSchema.options.toSorted((a, b) => DANGER_LEVEL_SEVERITY[b] - DANGER_LEVEL_SEVERITY[a]);
+
+function ExceedanceValue({ level, label, count }: { level: DangerLevel; label: string; count: number }) {
 	return (
 		<div className={cn("border-l-4 pl-1.5", dangerlevelStyles[level].border)}>
 			<p className="pb-1 text-neutral-500 text-xs dark:text-zinc-400">{label}</p>
-			<p className="text-2xl tabular-nums leading-6">{`${percent}%`}</p>
+			<p className="text-2xl tabular-nums leading-6">{count}</p>
 		</div>
 	);
 }

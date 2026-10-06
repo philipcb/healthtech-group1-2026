@@ -188,11 +188,9 @@
       "shiftExceedance": {
         "title": "Skift over tiltaks- og grenseverdi",
         "safe": "Innenfor trygge grenser",
-        "aboveAction": "Over tiltaksverdi",
-        "ofWhichAboveLimit": "Herav over grenseverdi",
         "betweenActionAndLimit": "Mellom tiltaks- og grenseverdi",
         "aboveLimit": "Over grenseverdi",
-        "distribution": "{{safe}} % innenfor trygge grenser, {{action}} % mellom tiltaks- og grenseverdi, {{limit}} % over grenseverdi",
+        "distribution": "Skift over grenseverdi: {{limit}}, mellom tiltaks- og grenseverdi: {{action}}, innenfor trygge grenser: {{safe}}",
         "shiftsAndPeople": "{{shifts}} skift · {{people}} personer",
         "tooFewPeople": "For få personer til å vise",
         "noShifts": "Ingen målte skift",

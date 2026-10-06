@@ -191,11 +191,9 @@
       "shiftExceedance": {
         "title": "Shifts above action and limit value",
         "safe": "Within safe limits",
-        "aboveAction": "Above action value",
-        "ofWhichAboveLimit": "Of which above limit value",
         "betweenActionAndLimit": "Between action and limit value",
         "aboveLimit": "Above limit value",
-        "distribution": "{{safe}}% within safe limits, {{action}}% between action and limit value, {{limit}}% above limit value",
+        "distribution": "Shifts above limit value: {{limit}}, between action and limit value: {{action}}, within safe limits: {{safe}}",
         "shiftsAndPeople": "{{shifts}} shifts · {{people}} people",
         "tooFewPeople": "Too few people to show",
         "noShifts": "No measured shifts",

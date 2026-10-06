@@ -182,6 +182,59 @@
   "interactiveCard": {
     "viewDetails": "View details"
   },
+  "medicalTeamDashboard": {
+    "yardOverview": {
+      "title": "Yard overview",
+      "noYardAssigned": "Your user is not assigned to a yard.",
+      "anonymizationNotice": "All data is anonymized and aggregated. Groups with fewer than {{count}} people are not shown.",
+      "activeSensors": {
+        "title": "Active sensors",
+        "tooFewPeople": "Too few people to show",
+        "error": "Could not load sensor status."
+      },
+      "activePeople": {
+        "title": "Active people",
+        "tooFewPeople": "Too few people to show",
+        "error": "Could not load active people."
+      },
+      "shiftExceedance": {
+        "title": "Shifts above action and limit value",
+        "safe": "Within safe limits",
+        "betweenActionAndLimit": "Between action and limit value",
+        "aboveLimit": "Above limit value",
+        "distribution": "Shifts above limit value: {{limit}}, between action and limit value: {{action}}, within safe limits: {{safe}}",
+        "shiftsAndPeople": "{{shifts}} shifts · {{people}} people",
+        "tooFewPeople": "Too few people to show",
+        "noShifts": "No measured shifts",
+        "repeatedExceedances": "{{count}} people exceeded the action value at least {{n}} times",
+        "repeatedExceedances_one": "{{count}} person exceeded the action value at least {{n}} times",
+        "repeatedExceedances_other": "{{count}} people exceeded the action value at least {{n}} times",
+        "error": "Could not load shift data."
+      },
+      "levelClassification": {
+        "trigger": "How levels are classified",
+        "title": "How levels are classified",
+        "description": "A shift is one person's measurements for one exposure on one day. Each shift is placed in exactly one level.",
+        "rules": {
+          "safe": "Below the action value",
+          "warning": "At or above the action value, but below the limit value",
+          "danger": "At or above the limit value"
+        },
+        "exposure": "Exposure",
+        "actionValueIncludesLimit": "People who exceeded the action value also include people with shifts above the limit value.",
+        "noisePeaks": "Short noise peaks (limit {{peak}}) are not part of these levels."
+      },
+      "filters": {
+        "hall": "Hall",
+        "entireYard": "Entire yard",
+        "occupation": "Occupation",
+        "allOccupations": "All occupations",
+        "period": "Period",
+        "month": "Month",
+        "year": "Year"
+      }
+    }
+  },
   "foremanDashboard": {
     "team": {
       "title": "Your team",
@@ -261,7 +314,8 @@
   "user": {
     "role": {
       "operator": "Operator",
-      "foreman": "Foreman"
+      "foreman": "Foreman",
+      "medicalTeam": "Medical team"
     },
     "searchPlaceholder": "Search users..."
   },

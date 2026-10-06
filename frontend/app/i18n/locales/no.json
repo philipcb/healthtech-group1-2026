@@ -181,6 +181,7 @@
     "yardOverview": {
       "title": "Verftsoversikt",
       "noYardAssigned": "Brukeren din er ikke knyttet til et verft.",
+      "anonymizationNotice": "All data er anonymisert og samlet. Grupper med færre enn {{count}} personer vises ikke.",
       "activeSensors": {
         "title": "Aktive sensorer",
         "error": "Kunne ikke hente sensorstatus."

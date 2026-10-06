@@ -5,10 +5,8 @@ import { DANGER_LEVEL_SEVERITY, type DangerLevel, DangerLevelSchema, dangerlevel
 import { cn } from "@/lib/utils.ts";
 import { UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { MIN_GROUP_SIZE } from "./medical-team-privacy.ts";
 import type { ShiftExceedanceDto } from "./shift-exceedance-mock-data.ts";
-
-// TODO: The backend should hide small groups when the real endpoint exists, this only guards the frontend
-const MIN_GROUP_SIZE = 5;
 
 export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanceDto }) {
 	const { t } = useTranslation();

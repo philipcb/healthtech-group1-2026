@@ -184,6 +184,7 @@
     "yardOverview": {
       "title": "Yard overview",
       "noYardAssigned": "Your user is not assigned to a yard.",
+      "anonymizationNotice": "All data is anonymized and aggregated. Groups with fewer than {{count}} people are not shown.",
       "activeSensors": {
         "title": "Active sensors",
         "error": "Could not load sensor status."

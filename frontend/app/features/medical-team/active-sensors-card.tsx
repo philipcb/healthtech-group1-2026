@@ -1,22 +1,17 @@
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { useQueryStates } from "nuqs";
 import { useTranslation } from "react-i18next";
 import { activeSensorsQueryOptions } from "./active-sensors-query.ts";
 import type { Yard } from "./medical-team-yards.ts";
-import { getPeriodRange, yardFilterParsers } from "./yard-filter-parsers.ts";
+import { useYardScope } from "./use-yard-scope.ts";
 
 export function ActiveSensorsCard({ yard }: { yard: Yard }) {
 	const { t } = useTranslation();
 
-	const [{ hall: hallParam, period }] = useQueryStates(yardFilterParsers);
-	const hall = yard.halls.find((h) => h === hallParam) ?? null;
-	const { start, end } = getPeriodRange(period);
+	const scope = useYardScope(yard);
 
-	const { data, isPending, isError } = useQuery(
-		activeSensorsQueryOptions({ yardId: yard.id, halls: yard.halls, hall, start, end }),
-	);
+	const { data, isPending, isError } = useQuery(activeSensorsQueryOptions(scope));
 
 	return (
 		<Card className="justify-between gap-3">
@@ -32,6 +27,10 @@ export function ActiveSensorsCard({ yard }: { yard: Yard }) {
 			) : isError ? (
 				<p className="text-muted-foreground text-sm">
 					{t(($) => $.medicalTeamDashboard.yardOverview.activeSensors.error)}
+				</p>
+			) : data.activeSensors === null ? (
+				<p className="text-muted-foreground text-sm">
+					{t(($) => $.medicalTeamDashboard.yardOverview.activeSensors.tooFewPeople)}
 				</p>
 			) : (
 				<p className="font-medium text-4xl tabular-nums leading-none">{data.activeSensors}</p>

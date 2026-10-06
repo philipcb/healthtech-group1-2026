@@ -10,7 +10,19 @@ export type Period = (typeof periods)[number];
 /** URL state for the yard overview filters, shared by every component that reads them */
 export const yardFilterParsers = {
 	hall: parseAsString,
+	occupation: parseAsString,
 	period: parseAsStringLiteral(periods).withDefault("month"),
+};
+
+/** The selected part of the yard and period that every medical team query is filtered by */
+export type YardScope = {
+	yardId: string;
+	/** Null is the entire yard */
+	hall: string | null;
+	/** Null is every occupation */
+	occupation: string | null;
+	start: TZDate;
+	end: TZDate;
 };
 
 /** The page has no date picker yet, so the selected period is always the current calendar month or year */

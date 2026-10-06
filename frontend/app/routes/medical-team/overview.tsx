@@ -48,7 +48,7 @@ export default function MedicalTeamOverview() {
 					</p>
 				</div>
 
-				<YardFilters halls={yard.halls} />
+				<YardFilters halls={yard.halls} occupations={yard.occupations} />
 			</header>
 
 			<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

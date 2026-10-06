@@ -184,6 +184,7 @@
       "anonymizationNotice": "All data er anonymisert og samlet. Grupper med færre enn {{count}} personer vises ikke.",
       "activeSensors": {
         "title": "Aktive sensorer",
+        "tooFewPeople": "For få personer til å vise",
         "error": "Kunne ikke hente sensorstatus."
       },
       "activePeople": {
@@ -221,6 +222,8 @@
       "filters": {
         "hall": "Hall",
         "entireYard": "Hele verftet",
+        "occupation": "Yrke",
+        "allOccupations": "Alle yrker",
         "period": "Periode",
         "month": "Måned",
         "year": "År"

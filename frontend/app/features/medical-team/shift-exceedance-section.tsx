@@ -2,24 +2,19 @@ import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { exposures } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";
-import { useQueryStates } from "nuqs";
 import { useTranslation } from "react-i18next";
 import { LevelClassificationDialog } from "./level-classification-dialog.tsx";
 import type { Yard } from "./medical-team-yards.ts";
 import { ShiftExceedanceCard } from "./shift-exceedance-card.tsx";
 import { shiftExceedanceQueryOptions } from "./shift-exceedance-query.ts";
-import { getPeriodRange, yardFilterParsers } from "./yard-filter-parsers.ts";
+import { useYardScope } from "./use-yard-scope.ts";
 
 export function ShiftExceedanceSection({ yard }: { yard: Yard }) {
 	const { t } = useTranslation();
 
-	const [{ hall: hallParam, period }] = useQueryStates(yardFilterParsers);
-	const hall = yard.halls.find((h) => h === hallParam) ?? null;
-	const { start, end } = getPeriodRange(period);
+	const scope = useYardScope(yard);
 
-	const { data, isPending, isError } = useQuery(
-		shiftExceedanceQueryOptions({ yardId: yard.id, halls: yard.halls, hall, start, end }),
-	);
+	const { data, isPending, isError } = useQuery(shiftExceedanceQueryOptions(scope));
 
 	return (
 		<section className="flex flex-col gap-4">

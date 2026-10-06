@@ -6,13 +6,15 @@ import { useTranslation } from "react-i18next";
 import { type Period, periods, yardFilterParsers } from "./yard-filter-parsers.ts";
 
 const ENTIRE_YARD = "all";
+const ALL_OCCUPATIONS = "all";
 
-export function YardFilters({ halls }: { halls: Array<string> }) {
+export function YardFilters({ halls, occupations }: { halls: Array<string>; occupations: Array<string> }) {
 	const { t } = useTranslation();
 
 	const [filters, setFilters] = useQueryStates(yardFilterParsers, { history: "push" });
 
 	const hall = halls.find((h) => h === filters.hall) ?? ENTIRE_YARD;
+	const occupation = occupations.find((o) => o === filters.occupation) ?? ALL_OCCUPATIONS;
 
 	return (
 		<div className="flex flex-wrap items-end gap-3">
@@ -34,6 +36,30 @@ export function YardFilters({ halls }: { halls: Array<string> }) {
 						{halls.map((h) => (
 							<SelectItem key={h} value={h}>
 								{h}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</FilterField>
+
+			<FilterField label={t(($) => $.medicalTeamDashboard.yardOverview.filters.occupation)}>
+				<Select
+					value={occupation}
+					onValueChange={(value) => setFilters({ occupation: value === ALL_OCCUPATIONS ? null : value })}
+				>
+					<SelectTrigger
+						className="w-52"
+						aria-label={t(($) => $.medicalTeamDashboard.yardOverview.filters.occupation)}
+					>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={ALL_OCCUPATIONS}>
+							{t(($) => $.medicalTeamDashboard.yardOverview.filters.allOccupations)}
+						</SelectItem>
+						{occupations.map((o) => (
+							<SelectItem key={o} value={o}>
+								{o}
 							</SelectItem>
 						))}
 					</SelectContent>

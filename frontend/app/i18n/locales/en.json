@@ -187,6 +187,7 @@
       "anonymizationNotice": "All data is anonymized and aggregated. Groups with fewer than {{count}} people are not shown.",
       "activeSensors": {
         "title": "Active sensors",
+        "tooFewPeople": "Too few people to show",
         "error": "Could not load sensor status."
       },
       "activePeople": {
@@ -224,6 +225,8 @@
       "filters": {
         "hall": "Hall",
         "entireYard": "Entire yard",
+        "occupation": "Occupation",
+        "allOccupations": "All occupations",
         "period": "Period",
         "month": "Month",
         "year": "Year"

@@ -1,22 +1,17 @@
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { useQueryStates } from "nuqs";
 import { useTranslation } from "react-i18next";
 import { activePeopleQueryOptions } from "./active-people-query.ts";
 import type { Yard } from "./medical-team-yards.ts";
-import { getPeriodRange, yardFilterParsers } from "./yard-filter-parsers.ts";
+import { useYardScope } from "./use-yard-scope.ts";
 
 export function ActivePeopleCard({ yard }: { yard: Yard }) {
 	const { t } = useTranslation();
 
-	const [{ hall: hallParam, period }] = useQueryStates(yardFilterParsers);
-	const hall = yard.halls.find((h) => h === hallParam) ?? null;
-	const { start, end } = getPeriodRange(period);
+	const scope = useYardScope(yard);
 
-	const { data, isPending, isError } = useQuery(
-		activePeopleQueryOptions({ yardId: yard.id, halls: yard.halls, hall, start, end }),
-	);
+	const { data, isPending, isError } = useQuery(activePeopleQueryOptions(scope));
 
 	return (
 		<Card className="justify-between gap-3">

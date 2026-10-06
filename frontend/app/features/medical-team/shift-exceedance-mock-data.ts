@@ -4,16 +4,9 @@
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
 import { isSameMonth } from "date-fns";
-import { isInScope } from "./medical-team-mock-groups.ts";
+import { isInScope } from "./medical-team-mock-data.ts";
+import type { ShiftExceedanceDto } from "./medical-team-queries.ts";
 import type { YardScope } from "./yard-filter-parsers.ts";
-
-export type ShiftExceedanceDto = {
-	exposure: Exposure;
-	peopleCount: number;
-	shifts: Record<DangerLevel, number>;
-	/** People with at least 1 and at least `n` shifts at or above the action value. Null when the group is too small. */
-	peopleAboveAction: { atLeastOnce: number; atLeastN: number; n: number } | null;
-};
 
 // TODO: Placeholder, how many exceedances count as "repeated" is a medical decision that hasn't been made yet
 const REPEATED_EXCEEDANCE_THRESHOLD = 3;

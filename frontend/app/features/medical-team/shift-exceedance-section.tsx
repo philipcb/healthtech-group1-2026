@@ -4,9 +4,9 @@ import { exposures } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { LevelClassificationDialog } from "./level-classification-dialog.tsx";
+import { shiftExceedanceQueryOptions } from "./medical-team-queries.ts";
 import type { Yard } from "./medical-team-yards.ts";
 import { ShiftExceedanceCard } from "./shift-exceedance-card.tsx";
-import { shiftExceedanceQueryOptions } from "./shift-exceedance-query.ts";
 import { useYardScope } from "./use-yard-scope.ts";
 
 export function ShiftExceedanceSection({ yard }: { yard: Yard }) {

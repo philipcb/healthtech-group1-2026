@@ -7,7 +7,7 @@ import { UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getLevelLabels, severityOrder } from "./level-labels.ts";
 import { MIN_GROUP_SIZE } from "./medical-team-privacy.ts";
-import type { ShiftExceedanceDto } from "./shift-exceedance-mock-data.ts";
+import type { ShiftExceedanceDto } from "./medical-team-queries.ts";
 
 export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanceDto }) {
 	const { t } = useTranslation();

@@ -1,7 +1,13 @@
-// TODO: Placeholder until the backend has aggregate endpoints for the medical team. The occupations are examples, not
-// final values. Hall and occupation are independent, so the same occupation can work in several halls.
+// TODO: Placeholder until the backend has aggregate endpoints for the medical team. Only returns aggregated counts, never
+// data about individual people. The occupations are examples, not final values. Hall and occupation are independent, so
+// the same occupation can work in several halls.
 
+import { isSameMonth } from "date-fns";
+import type { ActivePeopleDto, ActiveSensorsDto } from "./medical-team-queries.ts";
 import type { YardScope } from "./yard-filter-parsers.ts";
+
+// Mirrors the small-group rule the backend is expected to apply
+const MIN_GROUP_SIZE = 5;
 
 type MockGroup = {
 	hall: string;
@@ -73,6 +79,31 @@ export function isInScope(row: { hall: string; occupation: string }, { hall, occ
 	return (hall === null || row.hall === hall) && (occupation === null || row.occupation === occupation);
 }
 
-export function getMockGroups(scope: YardScope): Array<MockGroup> {
-	return mockGroups.filter((group) => isInScope(group, scope));
+function getPeriod({ start, end }: YardScope): "month" | "year" {
+	return isSameMonth(start, end) ? "month" : "year";
+}
+
+/**
+ * Mock of the future endpoint: the number of unique people who registered at least one measurement during the period.
+ * The entire yard is the sum of its halls.
+ */
+export function fetchActivePeople(scope: YardScope): Promise<ActivePeopleDto> {
+	const period = getPeriod(scope);
+
+	const activePeople = mockGroups
+		.filter((group) => isInScope(group, scope))
+		.reduce((sum, group) => sum + group.activePeople[period], 0);
+
+	return Promise.resolve({ activePeople: activePeople < MIN_GROUP_SIZE ? null : activePeople });
+}
+
+/** Mock of the future endpoint: the number of sensors that registered at least one measurement during the period */
+export function fetchActiveSensors(scope: YardScope): Promise<ActiveSensorsDto> {
+	const period = getPeriod(scope);
+	const groups = mockGroups.filter((group) => isInScope(group, scope));
+
+	const activePeople = groups.reduce((sum, group) => sum + group.activePeople[period], 0);
+	const activeSensors = groups.reduce((sum, group) => sum + group.activeSensors[period], 0);
+
+	return Promise.resolve({ activeSensors: activePeople < MIN_GROUP_SIZE ? null : activeSensors });
 }

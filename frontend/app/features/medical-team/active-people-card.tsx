@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { activePeopleQueryOptions } from "./active-people-query.ts";
+import { activePeopleQueryOptions } from "./medical-team-queries.ts";
 import type { Yard } from "./medical-team-yards.ts";
 import { useYardScope } from "./use-yard-scope.ts";
 

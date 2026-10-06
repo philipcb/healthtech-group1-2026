@@ -197,6 +197,9 @@
         "shiftsAndPeople": "{{shifts}} shifts · {{people}} people",
         "tooFewPeople": "Too few people to show",
         "noShifts": "No measured shifts",
+        "repeatedExceedances": "{{count}} people exceeded the action value at least {{n}} times",
+        "repeatedExceedances_one": "{{count}} person exceeded the action value at least {{n}} times",
+        "repeatedExceedances_other": "{{count}} people exceeded the action value at least {{n}} times",
         "error": "Could not load shift data."
       },
       "filters": {

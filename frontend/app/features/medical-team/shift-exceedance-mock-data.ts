@@ -2,53 +2,149 @@
 // per exposure, never data about individual people.
 
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { type Exposure, exposures } from "@/lib/exposures.ts";
 import type { TZDate } from "@date-fns/tz";
 import { isSameMonth } from "date-fns";
-import seedrandom from "seedrandom";
 
 export type ShiftExceedanceDto = {
 	exposure: Exposure;
 	peopleCount: number;
 	shifts: Record<DangerLevel, number>;
+	/** People with at least 1 and at least `n` shifts at or above the action value. Null when the group is too small. */
+	peopleAboveAction: { atLeastOnce: number; atLeastN: number; n: number } | null;
 };
 
-const peopleByHall: Record<string, number> = {
-	"M-hallen": 30,
-	"Hall 2": 24,
-	"Hall 3": 12,
+// TODO: Placeholder, how many exceedances count as "repeated" is a medical decision that hasn't been made yet
+const REPEATED_EXCEEDANCE_THRESHOLD = 3;
+
+// Mirrors the small-group rule the backend is expected to apply
+const MIN_GROUP_SIZE = 5;
+
+type HallExposureMock = {
+	peopleCount: number;
+	shifts: Record<DangerLevel, number>;
+	peopleAboveAction: { atLeastOnce: number; atLeastN: number };
 };
 
-/** Not everyone wears every sensor, so vibration is measured for far fewer people than noise */
-const sensorCoverage: Record<Exposure, number> = {
-	dust: 0.9,
-	noise: 1,
-	vibration: 0.4,
+const mockByHall: Record<string, Record<Exposure, Record<"month" | "year", HallExposureMock>>> = {
+	"M-hallen": {
+		dust: {
+			month: {
+				peopleCount: 27,
+				shifts: { safe: 375, warning: 59, danger: 12 },
+				peopleAboveAction: { atLeastOnce: 9, atLeastN: 5 },
+			},
+			year: {
+				peopleCount: 27,
+				shifts: { safe: 4061, warning: 498, danger: 100 },
+				peopleAboveAction: { atLeastOnce: 12, atLeastN: 9 },
+			},
+		},
+		noise: {
+			month: {
+				peopleCount: 30,
+				shifts: { safe: 338, warning: 120, danger: 45 },
+				peopleAboveAction: { atLeastOnce: 21, atLeastN: 13 },
+			},
+			year: {
+				peopleCount: 30,
+				shifts: { safe: 3420, warning: 1597, danger: 599 },
+				peopleAboveAction: { atLeastOnce: 28, atLeastN: 23 },
+			},
+		},
+		vibration: {
+			month: {
+				peopleCount: 12,
+				shifts: { safe: 141, warning: 38, danger: 13 },
+				peopleAboveAction: { atLeastOnce: 5, atLeastN: 2 },
+			},
+			year: {
+				peopleCount: 12,
+				shifts: { safe: 1722, warning: 411, danger: 137 },
+				peopleAboveAction: { atLeastOnce: 7, atLeastN: 4 },
+			},
+		},
+	},
+	"Hall 2": {
+		dust: {
+			month: {
+				peopleCount: 21,
+				shifts: { safe: 286, warning: 36, danger: 7 },
+				peopleAboveAction: { atLeastOnce: 7, atLeastN: 4 },
+			},
+			year: {
+				peopleCount: 21,
+				shifts: { safe: 3191, warning: 439, danger: 88 },
+				peopleAboveAction: { atLeastOnce: 8, atLeastN: 7 },
+			},
+		},
+		noise: {
+			month: {
+				peopleCount: 24,
+				shifts: { safe: 274, warning: 93, danger: 35 },
+				peopleAboveAction: { atLeastOnce: 18, atLeastN: 12 },
+			},
+			year: {
+				peopleCount: 24,
+				shifts: { safe: 2601, warning: 1114, danger: 418 },
+				peopleAboveAction: { atLeastOnce: 24, atLeastN: 21 },
+			},
+		},
+		vibration: {
+			month: {
+				peopleCount: 9,
+				shifts: { safe: 127, warning: 18, danger: 6 },
+				peopleAboveAction: { atLeastOnce: 3, atLeastN: 2 },
+			},
+			year: {
+				peopleCount: 9,
+				shifts: { safe: 1368, warning: 235, danger: 78 },
+				peopleAboveAction: { atLeastOnce: 4, atLeastN: 3 },
+			},
+		},
+	},
+	"Hall 3": {
+		dust: {
+			month: {
+				peopleCount: 10,
+				shifts: { safe: 144, warning: 10, danger: 2 },
+				peopleAboveAction: { atLeastOnce: 2, atLeastN: 1 },
+			},
+			year: {
+				peopleCount: 10,
+				shifts: { safe: 1631, warning: 114, danger: 23 },
+				peopleAboveAction: { atLeastOnce: 2, atLeastN: 1 },
+			},
+		},
+		noise: {
+			month: {
+				peopleCount: 12,
+				shifts: { safe: 134, warning: 37, danger: 14 },
+				peopleAboveAction: { atLeastOnce: 6, atLeastN: 4 },
+			},
+			year: {
+				peopleCount: 12,
+				shifts: { safe: 1601, warning: 416, danger: 156 },
+				peopleAboveAction: { atLeastOnce: 7, atLeastN: 6 },
+			},
+		},
+		vibration: {
+			month: {
+				peopleCount: 4,
+				shifts: { safe: 58, warning: 6, danger: 2 },
+				peopleAboveAction: { atLeastOnce: 2, atLeastN: 1 },
+			},
+			year: {
+				peopleCount: 4,
+				shifts: { safe: 637, warning: 85, danger: 28 },
+				peopleAboveAction: { atLeastOnce: 3, atLeastN: 2 },
+			},
+		},
+	},
 };
 
-/** Typical share of shifts over the action value (warning) and the limit value (danger) for each exposure */
-const exceedanceRates: Record<Exposure, { warning: number; danger: number }> = {
-	dust: { warning: 0.1, danger: 0.02 },
-	noise: { warning: 0.24, danger: 0.09 },
-	vibration: { warning: 0.15, danger: 0.05 },
-};
-
-/** Some halls are noisier and dustier than others */
-const hallExposureFactor: Record<string, number> = {
-	"M-hallen": 1.2,
-	"Hall 2": 1,
-	"Hall 3": 0.7,
-};
-
-const SHIFTS_PER_PERSON_PER_MONTH = 18;
-const SHIFTS_PER_PERSON_PER_YEAR = 200;
-
-/**
- * Mock of the future endpoint: the number of measured shifts in each danger level for each exposure during the period.
- * The same yard, hall and period always gives the same numbers.
- */
+/** Mock of the future endpoint. Every month uses the same values, and the entire yard is the sum of its halls. */
 export function fetchShiftExceedance({
-	yardId,
 	halls,
 	hall,
 	start,
@@ -61,35 +157,30 @@ export function fetchShiftExceedance({
 	end: TZDate;
 }): Promise<Array<ShiftExceedanceDto>> {
 	const hallsInScope = hall ? [hall] : halls;
-	const shiftsPerPerson = isSameMonth(start, end) ? SHIFTS_PER_PERSON_PER_MONTH : SHIFTS_PER_PERSON_PER_YEAR;
+	const period = isSameMonth(start, end) ? "month" : "year";
 
-	const exposures = Object.keys(exceedanceRates) as Array<Exposure>;
+	const rows = exposures.map((exposure): ShiftExceedanceDto => {
+		const hallMocks = hallsInScope.flatMap((h) => mockByHall[h]?.[exposure][period] ?? []);
+		const peopleCount = hallMocks.reduce((sum, mock) => sum + mock.peopleCount, 0);
 
-	const result = exposures.map((exposure) =>
-		hallsInScope.reduce<ShiftExceedanceDto>(
-			(sum, h) => {
-				const random = seedrandom(`${yardId}|${h}|${exposure}|${start.getTime()}|${end.getTime()}`);
-				const people = Math.floor((peopleByHall[h] ?? 0) * sensorCoverage[exposure]);
-				const attendance = 0.85 + random() * 0.1;
-				const total = Math.round(people * shiftsPerPerson * attendance);
-
-				const factor = (hallExposureFactor[h] ?? 1) * (0.8 + random() * 0.4);
-				const danger = Math.round(total * exceedanceRates[exposure].danger * factor);
-				const warning = Math.round(total * exceedanceRates[exposure].warning * factor);
-
-				return {
-					exposure,
-					peopleCount: sum.peopleCount + people,
-					shifts: {
-						safe: sum.shifts.safe + total - warning - danger,
-						warning: sum.shifts.warning + warning,
-						danger: sum.shifts.danger + danger,
-					},
-				};
+		return {
+			exposure,
+			peopleCount,
+			shifts: {
+				safe: hallMocks.reduce((sum, mock) => sum + mock.shifts.safe, 0),
+				warning: hallMocks.reduce((sum, mock) => sum + mock.shifts.warning, 0),
+				danger: hallMocks.reduce((sum, mock) => sum + mock.shifts.danger, 0),
 			},
-			{ exposure, peopleCount: 0, shifts: { safe: 0, warning: 0, danger: 0 } },
-		),
-	);
+			peopleAboveAction:
+				peopleCount < MIN_GROUP_SIZE
+					? null
+					: {
+							atLeastOnce: hallMocks.reduce((sum, mock) => sum + mock.peopleAboveAction.atLeastOnce, 0),
+							atLeastN: hallMocks.reduce((sum, mock) => sum + mock.peopleAboveAction.atLeastN, 0),
+							n: REPEATED_EXCEEDANCE_THRESHOLD,
+						},
+		};
+	});
 
-	return Promise.resolve(result);
+	return Promise.resolve(rows);
 }

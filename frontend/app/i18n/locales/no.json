@@ -194,6 +194,9 @@
         "shiftsAndPeople": "{{shifts}} skift · {{people}} personer",
         "tooFewPeople": "For få personer til å vise",
         "noShifts": "Ingen målte skift",
+        "repeatedExceedances": "{{count}} personer har vært over tiltaksverdien minst {{n}} ganger",
+        "repeatedExceedances_one": "{{count}} person har vært over tiltaksverdien minst {{n}} ganger",
+        "repeatedExceedances_other": "{{count}} personer har vært over tiltaksverdien minst {{n}} ganger",
         "error": "Kunne ikke hente skiftdata."
       },
       "filters": {

@@ -3,6 +3,7 @@ import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { DANGER_LEVEL_SEVERITY, type DangerLevel, DangerLevelSchema, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { cn } from "@/lib/utils.ts";
+import { UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ShiftExceedanceDto } from "./shift-exceedance-mock-data.ts";
 
@@ -12,7 +13,7 @@ const MIN_GROUP_SIZE = 5;
 export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanceDto }) {
 	const { t } = useTranslation();
 
-	const { exposure, peopleCount, shifts } = exceedance;
+	const { exposure, peopleCount, shifts, peopleAboveAction } = exceedance;
 	const totalShifts = shifts.safe + shifts.warning + shifts.danger;
 
 	const levelLabels: Record<DangerLevel, string> = {
@@ -62,6 +63,16 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 							))}
 						</div>
 					</div>
+
+					{peopleAboveAction && (
+						<p className="flex items-center gap-2 border-t pt-3 text-sm">
+							<UsersIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+							{t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.repeatedExceedances, {
+								count: peopleAboveAction.atLeastN,
+								n: peopleAboveAction.n,
+							})}
+						</p>
+					)}
 
 					<p className="text-muted-foreground text-xs">
 						{t(($) => $.medicalTeamDashboard.yardOverview.shiftExceedance.shiftsAndPeople, {

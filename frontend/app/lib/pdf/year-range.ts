@@ -8,3 +8,16 @@ export function getYearRange(date: TZDate): { startTime: TZDate; endTime: TZDate
 		endTime: endOfYear(date, { in: TIMEZONE }),
 	};
 }
+
+/**
+ * The year export's actual reporting period: the selected year, clipped at
+ * the end to "today" if the year isn't over yet. Shared by YearSummaryRenderer
+ * and YearTrendChartsRenderer so both use exactly the same period boundary.
+ */
+export function getYearSummaryPeriod(selectedDate: TZDate): { periodStart: TZDate; periodEnd: TZDate } {
+	const periodStart = startOfYear(selectedDate, { in: TIMEZONE });
+	const today = TIMEZONE(new Date());
+	const periodEnd =
+		today < endOfYear(selectedDate, { in: TIMEZONE }) ? today : endOfYear(selectedDate, { in: TIMEZONE });
+	return { periodStart, periodEnd };
+}

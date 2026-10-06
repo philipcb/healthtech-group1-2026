@@ -41,7 +41,7 @@ export function drawYearSummaryPage(
 	labels: PdfYearSummaryLabels,
 	startY: number,
 	margin: number,
-): void {
+): number {
 	const pageWidth = pdf.internal.pageSize.getWidth();
 	const tableWidth = pageWidth - margin * 2;
 	const columns = [
@@ -105,4 +105,6 @@ export function drawYearSummaryPage(
 			x += column.width;
 		});
 	});
+
+	return startY + headerHeight + page.rows.length * rowHeight;
 }

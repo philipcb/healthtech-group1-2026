@@ -288,12 +288,27 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		// point below, titles.length is the position the next page will have.
 		const tocEntries: Array<PdfTocEntry> = [];
 		if (localView === "year") {
+			const summaryIndex = titles.length;
 			tocEntries.push({
 				label: t(($) => $.pdf.yearSummary),
 				level: 0,
-				pageIndex: titles.length,
+				pageIndex: summaryIndex,
 			});
 			titles.push(t(($) => $.pdf.yearSummary));
+
+			// Trend spec 0 is drawn on the summary page itself, so it has no PDF page of its own.
+			// The trends entry therefore starts at the summary page and ends at the last trend spec.
+			const trendPageCount = pages.filter((page) => page.kind === "year-trend").length;
+			if (trendPageCount > 0) {
+				tocEntries.push({
+					label: t(($) => $.pdf.yearTrends),
+					level: 0,
+					pageIndex: summaryIndex,
+				});
+			}
+			for (let i = 0; i < trendPageCount; i++) {
+				titles.push(i === 0 ? t(($) => $.pdf.yearSummary) : t(($) => $.pdf.yearTrends));
+			}
 		}
 
 		for (const exposure of exposuresToRender) {

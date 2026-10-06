@@ -1,6 +1,7 @@
 import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { drawDayReportPage } from "@/hooks/pdf-day-report.ts";
 import { drawYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
+import { drawYearTrendPage } from "@/hooks/pdf-year-trend-chart.ts";
 import { getDayReportKey } from "@/lib/pdf/red-days.ts";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
@@ -74,6 +75,9 @@ export const useExportPDF = () => {
 			const linkAreas: Array<DayReportLinkArea> = [];
 			const dayReportPages = new Map<string, number>();
 
+			// Where the summary table ended, so the first trend chart can be drawn right under it.
+			let summaryTableBottom = 0;
+
 			for (let i = 0; i < pages.length; i++) {
 				const page = pages[i];
 				const pagesBefore = pdf.getNumberOfPages();
@@ -81,7 +85,22 @@ export const useExportPDF = () => {
 				if (page.kind === "year-summary") {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
-					drawYearSummaryPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+					summaryTableBottom = drawYearSummaryPage(
+						pdf,
+						page,
+						labels,
+						TITLE_HEIGHT + PAGE_MARGIN + 4,
+						PAGE_MARGIN,
+					);
+				} else if (page.kind === "year-trend") {
+					if (page.placement === "below-summary") {
+						// Same PDF page as the summary table - no addPage, no title.
+						await drawYearTrendPage(pdf, page, labels, summaryTableBottom + 6, PAGE_MARGIN);
+					} else {
+						pdf.addPage("a4", pdfOrientation);
+						drawPageTitle(pdf, titles[i]);
+						await drawYearTrendPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+					}
 				} else if (page.kind === "calendar") {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);

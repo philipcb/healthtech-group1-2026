@@ -349,7 +349,10 @@
     "dayReports": "Day reports",
     "progressCollecting": "Collecting data",
     "progressDayReports": "Creating day reports",
-    "progressBuilding": "Building PDF"
+    "progressBuilding": "Building PDF",
+    "yearTrends": "Yearly trends",
+    "trendAverageDescription": "Shows the average value per day",
+    "trendPeakDescription": "Shows the maximum value per day"
   },
   "limitExplanation": {
     "actionValue": {

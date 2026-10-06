@@ -1,8 +1,10 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
+import { YearTrendLineChart } from "@/components/exposure-line-chart/year-trend-line-chart.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import type { PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
 import { type PdfDayReport, type PdfDaySeries, serializeChartSvg } from "@/hooks/pdf-day-report.ts";
 import type { PdfYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
+import type { PdfYearTrendPage, PdfYearTrendSeries } from "@/hooks/pdf-year-trend-chart.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions, notesRangeQueryOptions } from "@/lib/api.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
@@ -21,7 +23,7 @@ import {
 } from "@/lib/exposures.ts";
 import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 import { getDayReportKey, getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
-import { getYearRange } from "@/lib/pdf/year-range.ts";
+import { getYearRange, getYearSummaryPeriod } from "@/lib/pdf/year-range.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
@@ -34,7 +36,6 @@ import {
 	differenceInCalendarDays,
 	eachDayOfInterval,
 	endOfMonth,
-	endOfYear,
 	setHours,
 	startOfDay,
 	startOfHour,
@@ -44,7 +45,6 @@ import {
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 /**
  * PDF Chart Renderer - Off-Screen Rendering for PDF Export
  *
@@ -78,6 +78,7 @@ export type PdfView = View | "year";
  */
 export type PdfPageSpec =
 	| PdfYearSummaryPage
+	| PdfYearTrendPage
 	| { kind: "week-grid"; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
@@ -96,6 +97,21 @@ const YEAR_SUMMARY_METRICS: Array<SummaryMetric> = [
 	{ exposure: "noise", label: "Noise" },
 	{ exposure: "vibration", label: "Vibration" },
 ];
+
+/**
+ * Trend charts: the first one sits under the summary table, the rest go
+ * TREND_CHARTS_PER_PAGE per page. Only metrics for the exported exposure types are included.
+ */
+const TREND_CHARTS_PER_PAGE = 2;
+
+function getTrendMetrics(exposures: Array<Exposure>): Array<SummaryMetric> {
+	return YEAR_SUMMARY_METRICS.filter((metric) => exposures.includes(metric.exposure));
+}
+
+/** Number of year-trend page specs (the one under the table counts as one). */
+function getTrendPageCount(chartCount: number): number {
+	return chartCount === 0 ? 0 : 1 + Math.ceil((chartCount - 1) / TREND_CHARTS_PER_PAGE);
+}
 
 /**
  * How far along a running export is. This file reports the first two steps as
@@ -698,25 +714,24 @@ function YearBatchRenderer({
 function YearSummaryRenderer({
 	date,
 	userId,
+	exposures,
 	onPageReady,
 }: {
 	date: Date;
 	userId: string;
+	exposures: Array<Exposure>;
 	onPageReady: (page: CollectedPage) => void;
 }) {
 	const selectedDate = TIMEZONE(date);
-	const periodStart = startOfYear(selectedDate, { in: TIMEZONE });
-	const today = TIMEZONE(new Date());
 	const { i18n } = useTranslation();
-	const periodEnd =
-		today < endOfYear(selectedDate, { in: TIMEZONE }) ? today : endOfYear(selectedDate, { in: TIMEZONE });
+	const { periodStart, periodEnd } = getYearSummaryPeriod(selectedDate);
 	const months = Array.from({ length: 12 }, (_, index) => addMonths(periodStart, index));
 	const dayQueries = useQueries({
 		queries: YEAR_SUMMARY_METRICS.flatMap((metric) =>
 			months.map((month) =>
 				exposureQueryOptions({
 					exposure: metric.exposure,
-					enabled: month <= periodEnd,
+					enabled: exposures.includes(metric.exposure) && month <= periodEnd,
 					query: buildExposureQuery(metric.exposure, "day", selectedDate, {
 						field: metric.field,
 						granularity: "day",
@@ -735,6 +750,7 @@ function YearSummaryRenderer({
 		queries: YEAR_SUMMARY_METRICS.map((metric) =>
 			exposureQueryOptions({
 				exposure: metric.exposure,
+				enabled: exposures.includes(metric.exposure),
 				query: buildExposureQuery(metric.exposure, "day", selectedDate, {
 					field: metric.field,
 					granularity: "minute",
@@ -751,8 +767,8 @@ function YearSummaryRenderer({
 	useEffect(() => {
 		if (isLoading || hasReportedRef.current) return;
 		hasReportedRef.current = true;
-		const rows = ["dust", "noise", "vibration"].map((exposure) => ({
-			exposure: exposure as Exposure,
+		const rows = exposures.map((exposure) => ({
+			exposure,
 			metrics: YEAR_SUMMARY_METRICS.filter((metric) => metric.exposure === exposure).map((metric) => {
 				const metricIndex = YEAR_SUMMARY_METRICS.indexOf(metric);
 				const monthly = months.map(
@@ -795,9 +811,149 @@ function YearSummaryRenderer({
 			page: "year-summary",
 			spec: { kind: "year-summary", periodStart, periodEnd, rows },
 		});
-	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady, i18n.language]);
+	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady, i18n.language, exposures]);
 
 	return null;
+}
+/** Fetches the full period's daily series per metric and captures each as an SVG trend chart. */
+function YearTrendChartsRenderer({
+	exposures,
+	date,
+	userId,
+	onPageReady,
+}: {
+	exposures: Array<Exposure>;
+	date: Date;
+	userId: string;
+	onPageReady: (page: CollectedPage) => void;
+}) {
+	const { t } = useTranslation();
+	const { periodStart, periodEnd } = getYearSummaryPeriod(TIMEZONE(date));
+	const metrics = getTrendMetrics(exposures);
+
+	const queries = useQueries({
+		queries: metrics.map((metric) =>
+			exposureQueryOptions({
+				exposure: metric.exposure,
+				query: buildExposureQuery(metric.exposure, "day", periodStart, {
+					field: metric.field,
+					granularity: "day",
+					startTime: periodStart,
+					endTime: periodEnd,
+				}),
+				userId,
+			}),
+		),
+	});
+
+	const isLoading = queries.some((query) => query.isLoading);
+
+	const series = metrics.map((metric, index) => {
+		const data = queries[index].data?.data ?? [];
+		// Vibration shows the daily peak (total dose); everything else the daily average.
+		const usePeakData = metric.exposure === "vibration";
+		const { minY, maxY } = getExposureYAxisRange(metric.exposure, data, { usePeakAggregation: usePeakData });
+		const description = usePeakData
+			? t(($) => $.pdf.trendPeakDescription)
+			: t(($) => $.pdf.trendAverageDescription);
+
+		// PM fields keep their fixed label; noise/vibration use the translated exposure name.
+		const label = metric.field ? metric.label : t(($) => $.exposures[metric.exposure]);
+
+		return { metric, label, data, minY, maxY, usePeakData, description };
+	});
+
+	const chartRefs = useRef<Array<HTMLDivElement | null>>([]);
+	const hasReportedRef = useRef(false);
+
+	useEffect(() => {
+		if (isLoading || hasReportedRef.current) return;
+		let attempts = 0;
+		let timeout: ReturnType<typeof setTimeout> | undefined;
+
+		const captureCharts = () => {
+			let allReady = true;
+			const capturedSeries: Array<PdfYearTrendSeries> = series.map((item, index) => {
+				const svg = chartRefs.current[index]?.querySelector("svg");
+				if (!svg || svg.getBoundingClientRect().width <= 0 || svg.getBoundingClientRect().height <= 0) {
+					allReady = false;
+					return {
+						label: item.label,
+						description: item.description,
+						chart: {
+							element: document.createElementNS("http://www.w3.org/2000/svg", "svg"),
+							width: 0,
+							height: 0,
+							hasData: item.data.length > 0,
+						},
+					};
+				}
+				return {
+					label: item.label,
+					description: item.description,
+					chart: serializeChartSvg(svg, item.data.length > 0),
+				};
+			});
+
+			if (!allReady && attempts < 30) {
+				attempts++;
+				timeout = setTimeout(captureCharts, 50);
+				return;
+			}
+
+			hasReportedRef.current = true;
+
+			// Page 0 = the first chart alone (drawn under the summary table).
+			// Remaining charts are grouped TREND_CHARTS_PER_PAGE per page.
+			const [first, ...rest] = capturedSeries;
+			const groups: Array<Array<PdfYearTrendSeries>> = first ? [[first]] : [];
+			for (let i = 0; i < rest.length; i += TREND_CHARTS_PER_PAGE) {
+				groups.push(rest.slice(i, i + TREND_CHARTS_PER_PAGE));
+			}
+
+			groups.forEach((group, pageIndex) => {
+				onPageReady({
+					exposure: "dust", // placeholder key - this page isn't tied to one exposure, same pattern as year-summary
+					page: `year-trend-${pageIndex}`,
+					spec: {
+						kind: "year-trend",
+						placement: pageIndex === 0 ? "below-summary" : "full-page",
+						series: group,
+					},
+				});
+			});
+		};
+
+		captureCharts();
+		return () => clearTimeout(timeout);
+	}, [isLoading, series, onPageReady]);
+
+	return (
+		<div aria-hidden="true" style={{ position: "fixed", top: "-10000px", left: 0, pointerEvents: "none" }}>
+			{!isLoading &&
+				series.map((item, index) => (
+					<div
+						key={item.metric.label}
+						ref={(element) => {
+							chartRefs.current[index] = element;
+						}}
+						style={{ width: "1000px", height: "380px" }}
+					>
+						<YearTrendLineChart
+							data={item.data}
+							periodStart={periodStart}
+							periodEnd={periodEnd}
+							minY={item.minY}
+							maxY={item.maxY}
+							unit={exposureUnitByExposure[item.metric.exposure]}
+							exposure={item.metric.exposure}
+							dustField={item.metric.field}
+							usePeakData={item.usePeakData}
+						/>
+					</div>
+				))}
+		</div>
+	);
 }
 
 type DayReportJob = {
@@ -949,8 +1105,9 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
+	const trendPageCount = getTrendPageCount(getTrendMetrics(exposuresToRender).length);
 	const pageKeys = getPageKeysForView(view);
-	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "year" ? 1 : 0);
+	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "year" ? 1 + trendPageCount : 0);
 
 	const handlePageReady = useCallback(
 		(pageInfo: CollectedPage) => {
@@ -972,6 +1129,11 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				);
 				const summaryPage = collectedRef.current.get("dust-year-summary")?.spec;
 				if (summaryPage?.kind === "year-summary") orderedPages.unshift(summaryPage);
+				const trendPages = Array.from(
+					{ length: trendPageCount },
+					(_, i) => collectedRef.current.get(`dust-year-trend-${i}`)?.spec,
+				).filter((spec): spec is PdfYearTrendPage => spec != null);
+				orderedPages.splice(summaryPage ? 1 : 0, 0, ...trendPages); // right after the summary page, before per-month pages
 
 				setHasReported(true);
 
@@ -987,7 +1149,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				}
 			}
 		},
-		[expectedCount, exposuresToRender, pageKeys, onPagesReady, onProgress, hasReported, view],
+		[expectedCount, exposuresToRender, pageKeys, onPagesReady, onProgress, hasReported, view, trendPageCount],
 	);
 
 	const handleDayReportsDone = useCallback(
@@ -1022,7 +1184,18 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				// batch size apply across the whole export (e.g. Overview) rather than 3x it.
 				notesQuery.isLoading ? null : (
 					<>
-						<YearSummaryRenderer date={date} userId={userId} onPageReady={handlePageReady} />
+						<YearSummaryRenderer
+							date={date}
+							userId={userId}
+							exposures={exposuresToRender}
+							onPageReady={handlePageReady}
+						/>
+						<YearTrendChartsRenderer
+							exposures={exposuresToRender}
+							date={date}
+							userId={userId}
+							onPageReady={handlePageReady}
+						/>
 						<YearBatchRenderer
 							exposures={exposuresToRender}
 							date={date}

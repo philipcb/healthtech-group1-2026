@@ -21,6 +21,9 @@ const chartConfig = {
 /** Calendar day (Oslo time) as "YYYY-MM-DD" - same key format YearSummaryRenderer uses for registered days. */
 const getDayKey = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Europe/Oslo" });
 
+const MAX_X_TICKS = 12;
+const TICK_STEPS_IN_MONTHS = [1, 2, 3, 6, 12];
+
 export interface YearTrendLineChartProps {
 	data: Array<ExposureDto>;
 	periodStart: TZDate;
@@ -77,15 +80,17 @@ export function YearTrendLineChart({
 	const xMin = periodStart.getTime();
 	const xMax = periodEnd.getTime();
 
-	// TODO (future, multi-year periods): once periods can span >1 year, thin
-	// these ticks (e.g. every 3rd/4th month, or switch to yearly ticks) —
-	// see the comment on TREND_CHART monthly-only assumption in
-	// pdf-chart-renderer.tsx's YearTrendChartsRenderer for where to extend this.
-	const monthTicks = eachMonthOfInterval({ start: periodStart, end: periodEnd }).map((month) => month.getTime());
+	// Every month for a year, every 2nd/3rd/6th/12th for longer periods, so the
+	// axis never gets more than MAX_X_TICKS labels.
+	const months = eachMonthOfInterval({ start: periodStart, end: periodEnd });
+	const tickStep = TICK_STEPS_IN_MONTHS.find((step) => months.length / step <= MAX_X_TICKS) ?? 12;
+	const monthTicks = months.filter((_, index) => index % tickStep === 0).map((month) => month.getTime());
+	// A month name alone is ambiguous once the period crosses into another year.
+	const spansYears = periodStart.getFullYear() !== periodEnd.getFullYear();
 
 	const formatYValue = (value: number) =>
 		formatExposureValue(value, unit, exposure === "dust" ? 1 : 0, exposure === "dust" ? { mg: 4 } : { mg: 3 });
-	const formatXTick = (time: number) => formatDate(new Date(time), "MMM");
+	const formatXTick = (time: number) => formatDate(new Date(time), spansYears ? "MMM yy" : "MMM");
 
 	const dataValues = transformedData.map((point) => point.value);
 

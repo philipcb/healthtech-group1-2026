@@ -26,6 +26,7 @@ import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
 import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { getPeriodMonths, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -35,6 +36,7 @@ import {
 	addWeeks,
 	addYears,
 	eachDayOfInterval,
+	endOfYear,
 	getYear,
 	isToday,
 	startOfMonth,
@@ -43,7 +45,7 @@ import {
 	subMilliseconds,
 } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -114,6 +116,16 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [progress, setProgress] = useState<PdfExportProgress | null>(null); // Drives the progress bar
+
+	// The months the year export covers: the whole selected year. Memoized so the
+	// memoized PdfChartRenderer doesn't see a new object on every render.
+	const yearPeriod = useMemo<PdfPeriod>(
+		() => ({
+			startMonth: startOfYear(localDate, { in: TIMEZONE }),
+			endMonth: endOfYear(localDate, { in: TIMEZONE }),
+		}),
+		[localDate],
+	);
 
 	// Helper function: Calculate date range from selected view/date
 	/**
@@ -326,12 +338,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				titles.push(title);
 			} else if (localView === "year") {
 				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
-				const yearStart = startOfYear(localDate, { in: TIMEZONE });
-				for (let i = 0; i < 12; i++) {
-					const monthDate = addMonths(yearStart, i);
+				for (const monthDate of getPeriodMonths(yearPeriod)) {
 					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
 					const heading = `${exposureName} - ${user.name} - ${monthText}`;
-					// Keeps the year, since a report may later span several. Norwegian month
+					// Keeps the year, since a period can span several. Norwegian month
 					// names are lowercase, so capitalise the first letter for the TOC line.
 					tocEntries.push({
 						label: monthText.charAt(0).toLocaleUpperCase(i18n.language) + monthText.slice(1),
@@ -390,10 +400,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						year: "numeric",
 					})
 				: localView === "year"
-					? `${getYear(localDate)}`
+					? `${yearPeriod.startMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}-${yearPeriod.endMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}`
 					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
-		const fileName = `${fileNameDate}-${user.name}-${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
+		const fileName = `${fileNameDate}_${user.name}_${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
 		const coverPageData = {
 			name: user.name,
 			locationLabel: t(($) => $.profile.location),
@@ -637,10 +647,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			{/* This prevents lag when switching between day/week/month views */}
 			{shouldRenderCharts && (
 				<PdfChartRenderer
-					key={`${exposureType}-${localView}-${localDate.getTime()}`}
+					key={`${exposureType}-${localView}-${localDate.getTime()}-${yearPeriod.startMonth.getTime()}-${yearPeriod.endMonth.getTime()}`}
 					exposureType={exposureType}
 					view={localView}
 					date={localDate}
+					period={yearPeriod}
 					userId={user.id}
 					onPagesReady={handlePagesReady}
 					onProgress={handleProgress}

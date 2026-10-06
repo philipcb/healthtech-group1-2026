@@ -23,7 +23,7 @@ import {
 } from "@/lib/exposures.ts";
 import { getCalendarDays, type PdfCalendarDay } from "@/lib/pdf/calendar-days.ts";
 import { getDayReportKey, getRedDays, type RedDayRow } from "@/lib/pdf/red-days.ts";
-import { getYearRange, getYearSummaryPeriod } from "@/lib/pdf/year-range.ts";
+import { getPeriodMonths, getPeriodRange, getSummaryPeriod, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
@@ -32,7 +32,6 @@ import type { TZDate } from "@date-fns/tz";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
 	addDays,
-	addMonths,
 	differenceInCalendarDays,
 	eachDayOfInterval,
 	endOfMonth,
@@ -40,7 +39,6 @@ import {
 	startOfDay,
 	startOfHour,
 	startOfWeek,
-	startOfYear,
 } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -135,7 +133,10 @@ type DayReportSpec = PdfDayReport;
 interface PdfChartRendererProps {
 	exposureType: "dust" | "noise" | "vibration" | "all";
 	view: PdfView;
+	/** The day, week or month to export. */
 	date: Date;
+	/** The months to export - only the year view uses it. */
+	period: PdfPeriod;
 	userId: string;
 	onPagesReady: (pages: Array<PdfPageSpec>) => void;
 	/** Called whenever a new page or day report comes in - drives the progress bar and stall timeout. */
@@ -190,10 +191,10 @@ function useBatchQueue<T extends { key: string }>(jobs: Array<T>, batchSize: num
 // Which page keys to expect per exposure type, in order, for a given view.
 // Extending this (e.g. adding red-day detail pages) only requires adding
 // keys here — the collection/ordering logic below stays untouched.
-function getPageKeysForView(view: PdfView): Array<string> {
+function getPageKeysForView(view: PdfView, monthCount: number): Array<string> {
 	if (view === "day") return ["day-report"];
 	if (view === "year") {
-		return Array.from({ length: 12 }, (_, i) => [`calendar-${i}`, `redday-${i}`]).flat();
+		return Array.from({ length: monthCount }, (_, i) => [`calendar-${i}`, `redday-${i}`]).flat();
 	}
 	return ["summary"]; // week or month
 }
@@ -666,20 +667,18 @@ type MonthJob = {
  */
 function YearBatchRenderer({
 	exposures,
-	date,
+	period,
 	userId,
 	notes,
 	onPageReady,
 }: {
 	exposures: Array<Exposure>;
-	date: Date;
+	period: PdfPeriod;
 	userId: string;
 	notes: Array<Note>;
 	onPageReady: (page: CollectedPage) => void;
 }) {
-	const tzDate = TIMEZONE(date);
-	const yearStart = startOfYear(tzDate, { in: TIMEZONE });
-	const months = Array.from({ length: 12 }, (_, i) => addMonths(yearStart, i));
+	const months = getPeriodMonths(period);
 
 	const jobs: Array<MonthJob> = exposures.flatMap((exposure) =>
 		months.map((monthDate, monthIndex) => ({
@@ -710,29 +709,28 @@ function YearBatchRenderer({
 	);
 }
 
-/** Fetches the selected year and aggregates all summary metrics before export. */
+/** Fetches the selected period and aggregates all summary metrics before export. */
 function YearSummaryRenderer({
-	date,
+	period,
 	userId,
 	exposures,
 	onPageReady,
 }: {
-	date: Date;
+	period: PdfPeriod;
 	userId: string;
 	exposures: Array<Exposure>;
 	onPageReady: (page: CollectedPage) => void;
 }) {
-	const selectedDate = TIMEZONE(date);
 	const { i18n } = useTranslation();
-	const { periodStart, periodEnd } = getYearSummaryPeriod(selectedDate);
-	const months = Array.from({ length: 12 }, (_, index) => addMonths(periodStart, index));
+	const { periodStart, periodEnd } = getSummaryPeriod(period);
+	const months = getPeriodMonths(period);
 	const dayQueries = useQueries({
 		queries: YEAR_SUMMARY_METRICS.flatMap((metric) =>
 			months.map((month) =>
 				exposureQueryOptions({
 					exposure: metric.exposure,
 					enabled: exposures.includes(metric.exposure) && month <= periodEnd,
-					query: buildExposureQuery(metric.exposure, "day", selectedDate, {
+					query: buildExposureQuery(metric.exposure, "day", periodStart, {
 						field: metric.field,
 						granularity: "day",
 						startTime: month,
@@ -751,7 +749,7 @@ function YearSummaryRenderer({
 			exposureQueryOptions({
 				exposure: metric.exposure,
 				enabled: exposures.includes(metric.exposure),
-				query: buildExposureQuery(metric.exposure, "day", selectedDate, {
+				query: buildExposureQuery(metric.exposure, "day", periodStart, {
 					field: metric.field,
 					granularity: "minute",
 					startTime: periodStart,
@@ -798,7 +796,7 @@ function YearSummaryRenderer({
 					worstMonth:
 						monthRedDays[worstMonthIndex] > 0
 							? months[worstMonthIndex]
-									.toLocaleDateString(i18n.language, { month: "long" })
+									.toLocaleDateString(i18n.language, { month: "long", year: "numeric" })
 									.replace(/^./, (c) => c.toLocaleUpperCase(i18n.language))
 							: "-",
 					registeredDays: `${registeredDays.size} / ${differenceInCalendarDays(periodEnd, periodStart) + 1}`,
@@ -818,17 +816,17 @@ function YearSummaryRenderer({
 /** Fetches the full period's daily series per metric and captures each as an SVG trend chart. */
 function YearTrendChartsRenderer({
 	exposures,
-	date,
+	period,
 	userId,
 	onPageReady,
 }: {
 	exposures: Array<Exposure>;
-	date: Date;
+	period: PdfPeriod;
 	userId: string;
 	onPageReady: (page: CollectedPage) => void;
 }) {
 	const { t } = useTranslation();
-	const { periodStart, periodEnd } = getYearSummaryPeriod(TIMEZONE(date));
+	const { periodStart, periodEnd } = getSummaryPeriod(period);
 	const metrics = getTrendMetrics(exposures);
 
 	const queries = useQueries({
@@ -1084,6 +1082,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 	exposureType,
 	view,
 	date,
+	period,
 	userId,
 	onPagesReady,
 	onProgress,
@@ -1097,16 +1096,16 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 		jobs: Array<DayReportJob>;
 	} | null>(null);
 
-	// One request for the whole year's notes; only the year export needs them.
+	// One request for the whole period's notes; only the year export needs them.
 	const notesQuery = useQuery({
-		...notesRangeQueryOptions({ ...getYearRange(TIMEZONE(date)), userId }),
+		...notesRangeQueryOptions({ ...getPeriodRange(period), userId }),
 		enabled: view === "year",
 	});
 	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 	const trendPageCount = getTrendPageCount(getTrendMetrics(exposuresToRender).length);
-	const pageKeys = getPageKeysForView(view);
+	const pageKeys = getPageKeysForView(view, getPeriodMonths(period).length);
 	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "year" ? 1 + trendPageCount : 0);
 
 	const handlePageReady = useCallback(
@@ -1185,20 +1184,20 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				notesQuery.isLoading ? null : (
 					<>
 						<YearSummaryRenderer
-							date={date}
+							period={period}
 							userId={userId}
 							exposures={exposuresToRender}
 							onPageReady={handlePageReady}
 						/>
 						<YearTrendChartsRenderer
 							exposures={exposuresToRender}
-							date={date}
+							period={period}
 							userId={userId}
 							onPageReady={handlePageReady}
 						/>
 						<YearBatchRenderer
 							exposures={exposuresToRender}
-							date={date}
+							period={period}
 							userId={userId}
 							notes={notes}
 							onPageReady={handlePageReady}

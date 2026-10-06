@@ -87,17 +87,11 @@ export function ShiftExceedanceCard({ exceedance }: { exceedance: ShiftExceedanc
 	);
 }
 
-const valueTextClass: Record<DangerLevel, string> = {
-	safe: "text-safe",
-	warning: "text-warning",
-	danger: "text-danger",
-};
-
 function ExceedanceValue({ level, label, percent }: { level: DangerLevel; label: string; percent: number }) {
 	return (
 		<div className={cn("border-l-4 pl-1.5", dangerlevelStyles[level].border)}>
 			<p className="pb-1 text-neutral-500 text-xs dark:text-zinc-400">{label}</p>
-			<p className={cn("text-2xl tabular-nums leading-6", valueTextClass[level])}>{`${percent}%`}</p>
+			<p className="text-2xl tabular-nums leading-6">{`${percent}%`}</p>
 		</div>
 	);
 }

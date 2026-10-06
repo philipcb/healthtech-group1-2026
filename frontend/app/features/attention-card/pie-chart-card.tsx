@@ -1,13 +1,7 @@
 import { DangerLevelPieChart } from "@/components/danger-level-pie-chart.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card.tsx";
-import {
-	DANGER_LEVEL_SEVERITY,
-	type DangerLevel,
-	DangerLevelSchema,
-	dangerlevelStyles,
-	mapDangerLevelToColor,
-} from "@/lib/danger-levels.ts";
+import { DANGER_LEVEL_SEVERITY, type DangerLevel, DangerLevelSchema, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
 import { ArrowRightIcon } from "lucide-react";
@@ -68,11 +62,7 @@ export const PieChartCard = ({ className, to, label, data, exposureType }: PieCh
 										<p className="pb-1 text-neutral-500 text-xs dark:text-zinc-400">
 											{levelLabels[level]}
 										</p>
-										<p
-											className={`text-2xl tabular-nums leading-6 text-${mapDangerLevelToColor(level)}`}
-										>
-											{data[level]}
-										</p>
+										<p className="text-2xl tabular-nums leading-6">{data[level]}</p>
 									</div>
 								</div>
 							))}

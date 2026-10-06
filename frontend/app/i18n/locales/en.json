@@ -188,6 +188,19 @@
         "title": "Active sensors",
         "error": "Could not load sensor status."
       },
+      "shiftExceedance": {
+        "title": "Shifts above action and limit value",
+        "safe": "Within safe limits",
+        "aboveAction": "Above action value",
+        "ofWhichAboveLimit": "Of which above limit value",
+        "betweenActionAndLimit": "Between action and limit value",
+        "aboveLimit": "Above limit value",
+        "distribution": "{{safe}}% within safe limits, {{action}}% between action and limit value, {{limit}}% above limit value",
+        "shiftsAndPeople": "{{shifts}} shifts · {{people}} people",
+        "tooFewPeople": "Too few people to show",
+        "noShifts": "No measured shifts",
+        "error": "Could not load shift data."
+      },
       "filters": {
         "hall": "Hall",
         "entireYard": "Entire yard",

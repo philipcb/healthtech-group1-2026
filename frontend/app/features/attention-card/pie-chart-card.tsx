@@ -1,6 +1,6 @@
+import { DangerLevelPieChart } from "@/components/danger-level-pie-chart.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card.tsx";
-import { UserStatusPieChart } from "@/components/users-status-pie-chart.tsx";
 import {
 	DANGER_LEVEL_SEVERITY,
 	type DangerLevel,
@@ -24,6 +24,12 @@ export type PieChartCardProps = {
 
 export const PieChartCard = ({ className, to, label, data, exposureType }: PieChartCardProps) => {
 	const { t } = useTranslation();
+
+	const levelLabels: Record<DangerLevel, string> = {
+		safe: t(($) => $.foremanDashboard.overview.statCards.safe.label),
+		warning: t(($) => $.foremanDashboard.overview.statCards.warning.label),
+		danger: t(($) => $.foremanDashboard.overview.statCards.danger.label),
+	};
 
 	const hasData = DangerLevelSchema.options.some((level) => data[level] && data[level] > 0);
 
@@ -60,7 +66,7 @@ export const PieChartCard = ({ className, to, label, data, exposureType }: PieCh
 								<div key={level}>
 									<div className={`${dangerlevelStyles[level].border} border-l-4 pl-1.5`}>
 										<p className="pb-1 text-neutral-500 text-xs dark:text-zinc-400">
-											{t(($) => $.foremanDashboard.overview.statCards[level].label)}
+											{levelLabels[level]}
 										</p>
 										<p
 											className={`text-2xl tabular-nums leading-6 text-${mapDangerLevelToColor(level)}`}
@@ -72,7 +78,7 @@ export const PieChartCard = ({ className, to, label, data, exposureType }: PieCh
 							))}
 					</div>
 					<div className="min-h-0">
-						<UserStatusPieChart data={data} hoverable={true} />
+						<DangerLevelPieChart data={data} labels={levelLabels} hoverable={true} />
 					</div>
 					<CardFooter className="justify-end gap-1 self-end pr-1 text-muted-foreground text-xs">
 						<p>{t(($) => $.interactiveCard.viewDetails)}</p>

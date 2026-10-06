@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge.tsx";
 import { ActiveSensorsCard } from "@/features/medical-team/active-sensors-card.tsx";
 import { getYardForUser } from "@/features/medical-team/medical-team-yards.ts";
+import { ShiftExceedanceSection } from "@/features/medical-team/shift-exceedance-section.tsx";
 import { getPeriodRange, yardFilterParsers } from "@/features/medical-team/yard-filter-parsers.ts";
 import { YardFilters } from "@/features/medical-team/yard-filters.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
@@ -47,6 +48,8 @@ export default function MedicalTeamOverview() {
 			<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<ActiveSensorsCard yard={yard} />
 			</section>
+
+			<ShiftExceedanceSection yard={yard} />
 		</div>
 	);
 }

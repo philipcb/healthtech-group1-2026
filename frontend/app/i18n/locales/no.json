@@ -185,6 +185,19 @@
         "title": "Aktive sensorer",
         "error": "Kunne ikke hente sensorstatus."
       },
+      "shiftExceedance": {
+        "title": "Skift over tiltaks- og grenseverdi",
+        "safe": "Innenfor trygge grenser",
+        "aboveAction": "Over tiltaksverdi",
+        "ofWhichAboveLimit": "Herav over grenseverdi",
+        "betweenActionAndLimit": "Mellom tiltaks- og grenseverdi",
+        "aboveLimit": "Over grenseverdi",
+        "distribution": "{{safe}} % innenfor trygge grenser, {{action}} % mellom tiltaks- og grenseverdi, {{limit}} % over grenseverdi",
+        "shiftsAndPeople": "{{shifts}} skift · {{people}} personer",
+        "tooFewPeople": "For få personer til å vise",
+        "noShifts": "Ingen målte skift",
+        "error": "Kunne ikke hente skiftdata."
+      },
       "filters": {
         "hall": "Hall",
         "entireYard": "Hele verftet",

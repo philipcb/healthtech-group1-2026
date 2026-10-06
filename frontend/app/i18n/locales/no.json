@@ -186,6 +186,11 @@
         "title": "Aktive sensorer",
         "error": "Kunne ikke hente sensorstatus."
       },
+      "activePeople": {
+        "title": "Aktive personer",
+        "tooFewPeople": "For få personer til å vise",
+        "error": "Kunne ikke hente aktive personer."
+      },
       "shiftExceedance": {
         "title": "Skift over tiltaks- og grenseverdi",
         "safe": "Innenfor trygge grenser",

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge.tsx";
+import { ActivePeopleCard } from "@/features/medical-team/active-people-card.tsx";
 import { ActiveSensorsCard } from "@/features/medical-team/active-sensors-card.tsx";
 import { MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-privacy.ts";
 import { getYardForUser } from "@/features/medical-team/medical-team-yards.ts";
@@ -52,6 +53,7 @@ export default function MedicalTeamOverview() {
 
 			<section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<ActiveSensorsCard yard={yard} />
+				<ActivePeopleCard yard={yard} />
 			</section>
 
 			<ShiftExceedanceSection yard={yard} />

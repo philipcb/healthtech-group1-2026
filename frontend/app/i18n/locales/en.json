@@ -189,6 +189,11 @@
         "title": "Active sensors",
         "error": "Could not load sensor status."
       },
+      "activePeople": {
+        "title": "Active people",
+        "tooFewPeople": "Too few people to show",
+        "error": "Could not load active people."
+      },
       "shiftExceedance": {
         "title": "Shifts above action and limit value",
         "safe": "Within safe limits",

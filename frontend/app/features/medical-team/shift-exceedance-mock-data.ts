@@ -47,7 +47,7 @@ const mockByHall: Record<string, Record<Exposure, Record<"month" | "year", HallE
 				peopleAboveAction: { atLeastOnce: 21, atLeastN: 13 },
 			},
 			year: {
-				peopleCount: 30,
+				peopleCount: 34,
 				shifts: { safe: 3420, warning: 1597, danger: 599 },
 				peopleAboveAction: { atLeastOnce: 28, atLeastN: 23 },
 			},
@@ -85,7 +85,7 @@ const mockByHall: Record<string, Record<Exposure, Record<"month" | "year", HallE
 				peopleAboveAction: { atLeastOnce: 18, atLeastN: 12 },
 			},
 			year: {
-				peopleCount: 24,
+				peopleCount: 27,
 				shifts: { safe: 2601, warning: 1114, danger: 418 },
 				peopleAboveAction: { atLeastOnce: 24, atLeastN: 21 },
 			},
@@ -123,7 +123,7 @@ const mockByHall: Record<string, Record<Exposure, Record<"month" | "year", HallE
 				peopleAboveAction: { atLeastOnce: 6, atLeastN: 4 },
 			},
 			year: {
-				peopleCount: 12,
+				peopleCount: 14,
 				shifts: { safe: 1601, warning: 416, danger: 156 },
 				peopleAboveAction: { atLeastOnce: 7, atLeastN: 6 },
 			},

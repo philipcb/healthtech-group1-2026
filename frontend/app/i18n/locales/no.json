@@ -181,6 +181,10 @@
     "yardOverview": {
       "title": "Verftsoversikt",
       "noYardAssigned": "Brukeren din er ikke knyttet til et verft.",
+      "activeSensors": {
+        "title": "Aktive sensorer",
+        "error": "Kunne ikke hente sensorstatus."
+      },
       "filters": {
         "hall": "Hall",
         "entireYard": "Hele verftet",

@@ -1,18 +1,11 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
+import { useQueryStates } from "nuqs";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-
-const periods = ["month", "year"] as const;
-type Period = (typeof periods)[number];
+import { type Period, periods, yardFilterParsers } from "./yard-filter-parsers.ts";
 
 const ENTIRE_YARD = "all";
-
-const yardFilterParsers = {
-	hall: parseAsString,
-	period: parseAsStringLiteral(periods).withDefault("month"),
-};
 
 export function YardFilters({ halls }: { halls: Array<string> }) {
 	const { t } = useTranslation();

@@ -27,7 +27,7 @@ import {
 import type { View } from "./views.ts";
 
 // We have at most 1 data point every minute so we don't need a shorter refetch interval than that
-const DEFAULT_REFETCH_INTERVAL = minutesToMilliseconds(1);
+export const DEFAULT_REFETCH_INTERVAL = minutesToMilliseconds(1);
 
 const fetchAllUsers = async () => {
 	const response = await fetchWithUserId("users");

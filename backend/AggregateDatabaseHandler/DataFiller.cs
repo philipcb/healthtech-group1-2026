@@ -20,30 +20,125 @@ public class DataFiller
 		_insertHandler = new DataInsertHandler(_aggregatedContext);
 	}
 
-	public async Task initAggregatedData()
+	public async Task updateAggregatedDB()
 	{
 		await updateSamples();
 		await _aggregatedContext.SaveChangesAsync();
-	}
-
-	public async Task updateAggregatedData()
-	{
-		await updateSamples();
+		await updateAggregatedDataAsync();
 		await _aggregatedContext.SaveChangesAsync();
 	}
 
-	public async Task updateSamples()
-	{
-		await updateLocationSamples();
-		await updateJobSamples();
-		await updateShiftSamples();
 
+	public async Task updateAggregatedDataAsync()
+	{
 		DateTime now = DateTime.UtcNow;
 		List<Sample> samples = await _aggregatedContext.Samples.ToListAsync();
 		foreach (Sample s in samples)
 		{
+			Console.WriteLine($"Sample {s.SampleType}-({s.SampleQualifier}) : {s.Id} with {s.SampleCount} users ");
 			List<User>? sampleUsers = await _fetchHandler.getUsersBySample(s);
+			await updateDustDataAsync(s.Id, sampleUsers!, now);
+			await updateVibrationDataAsync(s.Id, sampleUsers!, now);
+			await updateNoiseDataAsync(s.Id, sampleUsers!, now);
 		}
+	}
+
+	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
+	{
+		DateTime lowestTime = await _aggregatedContext.VibrationAverages.OrderByDescending(d => d.Time).Where(d => d.SampleId == sampleId).Select(d => d.Time).FirstOrDefaultAsync();
+		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
+		List<TimedData> aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Vibration, null);
+		Console.WriteLine($"Update Vibration averages from {startTime} to {endTime}");
+		List<VibrationAverage> finalAggregatedData = aggregatedData.Select(d => new VibrationAverage{
+			SampleId = sampleId,
+			Time = d.Time,
+			AverageExposure = d.AvgValue
+		}).ToList();
+		await _insertHandler.addDataRange(finalAggregatedData);
+		Console.WriteLine("Done");
+	}
+
+	public async Task updateNoiseDataAsync(Guid sampleId, List<User> users, DateTime endTime)
+	{
+		DateTime lowestTime = await _aggregatedContext.NoiseAverages.OrderByDescending(d => d.Time).Where(d => d.SampleId == sampleId).Select(d => d.Time).FirstOrDefaultAsync();
+		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
+		Console.WriteLine($"Update Noise averages from {startTime} to {endTime}");
+		List<TimedData> aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Noise, null);
+		List<NoiseAverage> finalAggregatedData = aggregatedData.Select(d => new NoiseAverage{
+			SampleId = sampleId,
+			Time = d.Time,
+			AverageLcpk = d.AvgValue,
+			AverageLaeq = (double)d.PeakValue!
+		}).ToList();
+		await _insertHandler.addDataRange(finalAggregatedData);
+		Console.WriteLine("Done");
+	}
+
+	public async Task updateDustDataAsync(Guid sampleId, List<User> users, DateTime endTime)
+	{
+		DateTime lowestTime = await _aggregatedContext.DustAverages.OrderByDescending(d => d.Time).Where(d => d.SampleId == sampleId).Select(d => d.Time).FirstOrDefaultAsync();
+		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
+		Console.WriteLine($"Update Dust averages from {startTime} to {endTime}");
+		List<TimedData> aggregatedDataPm1Stel = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm1_stel);
+		var Pm1StelDico = aggregatedDataPm1Stel.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm25Stel = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm25_stel);
+		var Pm25StelDico = aggregatedDataPm25Stel.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm4Stel = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm4_stel);
+		var Pm4StelDico = aggregatedDataPm4Stel.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm10Stel = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm10_stel);
+		var Pm10StelDico = aggregatedDataPm10Stel.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm1Twa = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm1_twa);
+		var Pm1TwaDico = aggregatedDataPm1Twa.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm25Twa = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm25_twa);
+		var Pm25TwaDico = aggregatedDataPm25Twa.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm4Twa = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm4_twa);
+		var Pm4TwaDico = aggregatedDataPm4Twa.ToDictionary(g => g.Time, g => g.AvgValue);
+		List<TimedData> aggregatedDataPm10Twa = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Dust, Backend.DTOs.Field.Pm10_twa);
+		var Pm10TwaDico = aggregatedDataPm10Twa.ToDictionary(g => g.Time, g => g.AvgValue);
+		
+
+		var dates = aggregatedDataPm1Stel.Select(d => d.Time)
+					.Union(aggregatedDataPm25Stel.Select(d => d.Time))
+					.Union(aggregatedDataPm4Stel.Select(d => d.Time))
+					.Union(aggregatedDataPm10Stel.Select(d => d.Time))
+					.Union(aggregatedDataPm1Twa.Select(d => d.Time))
+					.Union(aggregatedDataPm25Twa.Select(d => d.Time))
+					.Union(aggregatedDataPm4Twa.Select(d => d.Time))
+					.Union(aggregatedDataPm10Twa.Select(d => d.Time))
+					.Distinct().OrderBy(x => x).ToList();
+		
+
+
+		List<DustAverage> finalAggregatedData = new List<DustAverage>();
+		foreach (DateTime date in dates)
+		{
+			finalAggregatedData.Add(new DustAverage
+			{
+				SampleId = sampleId,
+				Time = date,
+				AveragePm1Stel = Pm1StelDico[date],
+				AveragePm25Stel = Pm25StelDico[date],
+				AveragePm4Stel = Pm4StelDico[date],
+				AveragePm10Stel = Pm10StelDico[date],
+				AveragePm1Twa = Pm1TwaDico[date],
+				AveragePm25Twa = Pm25TwaDico[date],
+				AveragePm4Twa = Pm4TwaDico[date],
+				AveragePm10Twa = Pm10TwaDico[date],
+			});
+		} 
+		
+		await _insertHandler.addDataRange(finalAggregatedData);
+		Console.WriteLine("Done");
+	}
+
+
+
+	public async Task updateSamples()
+	{
+		Console.WriteLine("Update samples");
+		await updateLocationSamples();
+		await updateJobSamples();
+		await updateShiftSamples();	
 	}
 
 	public async Task updateLocationSamples()

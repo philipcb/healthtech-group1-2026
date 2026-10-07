@@ -43,15 +43,13 @@ namespace AggregatedDatabaseHandler
 			var AggregatedDbUrl = configuration.GetValue<string>("AGGREGATE_DATABASE_URL");
 			var OperationalDbUrl = configuration.GetValue<string>("DATABASE_URL");
 
-			Console.WriteLine(AggregatedDbUrl);
-			Console.WriteLine(OperationalDbUrl);
 
 			using (var opContext = CreateOperationaldDbContext(OperationalDbUrl!))
 			{
 				using (var aggContext = CreateAggregatedDbContext(AggregatedDbUrl!))
 				{
 					DataFiller dataFiller = new DataFiller(opContext, aggContext);
-					await dataFiller.initAggregatedData();
+					await dataFiller.updateAggregatedDB();
 					Console.WriteLine("yes, succeeded");
 				}
 			}

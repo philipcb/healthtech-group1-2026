@@ -9,6 +9,9 @@ import { eachMonthOfInterval, endOfMonth, startOfMonth } from "date-fns";
  */
 export type PdfPeriod = { startMonth: TZDate; endMonth: TZDate };
 
+/** The longest period that can be exported: 5 years. */
+export const MAX_PERIOD_MONTHS = 60;
+
 /** First and last moment of the period, for queries that fetch all of it at once. */
 export function getPeriodRange({ startMonth, endMonth }: PdfPeriod): { startTime: TZDate; endTime: TZDate } {
 	return {

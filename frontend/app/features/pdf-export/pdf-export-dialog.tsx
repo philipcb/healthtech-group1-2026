@@ -16,6 +16,7 @@ import {
 	type PdfPageSpec,
 	type PdfView,
 } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { MonthRangePicker } from "@/features/pdf-export/month-range-picker.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
@@ -34,18 +35,15 @@ import {
 	addDays,
 	addMonths,
 	addWeeks,
-	addYears,
 	eachDayOfInterval,
-	endOfYear,
-	getYear,
 	isToday,
 	startOfMonth,
 	startOfWeek,
 	startOfYear,
 	subMilliseconds,
 } from "date-fns";
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { CalendarIcon, CalendarRangeIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -86,6 +84,12 @@ function getProgressPercent(progress: PdfExportProgress): number {
  */
 const waitForPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
 
+/** The period the dialog opens with: this year so far. */
+const getDefaultPeriod = (): PdfPeriod => ({
+	startMonth: startOfYear(today(), { in: TIMEZONE }),
+	endMonth: startOfMonth(today(), { in: TIMEZONE }),
+});
+
 /**
  * Props for the PDF Export Dialog
  * @param open - Controls whether the dialog is visible
@@ -117,15 +121,16 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [progress, setProgress] = useState<PdfExportProgress | null>(null); // Drives the progress bar
 
-	// The months the year export covers: the whole selected year. Memoized so the
-	// memoized PdfChartRenderer doesn't see a new object on every render.
-	const yearPeriod = useMemo<PdfPeriod>(
-		() => ({
-			startMonth: startOfYear(localDate, { in: TIMEZONE }),
-			endMonth: endOfYear(localDate, { in: TIMEZONE }),
-		}),
-		[localDate],
-	);
+	// The months the period export covers.
+	const [localPeriod, setLocalPeriod] = useState<PdfPeriod>(getDefaultPeriod);
+
+	// This component stays mounted while the dialog is closed, so reset the period
+	// each time it opens - during render, so the old period never flashes on screen.
+	const [wasOpen, setWasOpen] = useState(open);
+	if (open !== wasOpen) {
+		setWasOpen(open);
+		if (open) setLocalPeriod(getDefaultPeriod());
+	}
 
 	// Helper function: Calculate date range from selected view/date
 	/**
@@ -168,13 +173,6 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			const start = startOfWeek(localDate, { weekStartsOn: 1, in: TIMEZONE });
 			const previous = subMilliseconds(start, 1); // Last millisecond of previous week
 			const next = addWeeks(start, 1, { in: TIMEZONE }); // First day of next week
-			return { previous, next };
-		}
-
-		if (localView === "year") {
-			const start = startOfYear(localDate, { in: TIMEZONE });
-			const previous = subMilliseconds(start, 1);
-			const next = addYears(start, 1, { in: TIMEZONE });
 			return { previous, next };
 		}
 
@@ -302,24 +300,24 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		if (localView === "year") {
 			const summaryIndex = titles.length;
 			tocEntries.push({
-				label: t(($) => $.pdf.yearSummary),
+				label: t(($) => $.pdf.summary),
 				level: 0,
 				pageIndex: summaryIndex,
 			});
-			titles.push(t(($) => $.pdf.yearSummary));
+			titles.push(t(($) => $.pdf.summary));
 
 			// Trend spec 0 is drawn on the summary page itself, so it has no PDF page of its own.
 			// The trends entry therefore starts at the summary page and ends at the last trend spec.
 			const trendPageCount = pages.filter((page) => page.kind === "year-trend").length;
 			if (trendPageCount > 0) {
 				tocEntries.push({
-					label: t(($) => $.pdf.yearTrends),
+					label: t(($) => $.pdf.trends),
 					level: 0,
 					pageIndex: summaryIndex,
 				});
 			}
 			for (let i = 0; i < trendPageCount; i++) {
-				titles.push(i === 0 ? t(($) => $.pdf.yearSummary) : t(($) => $.pdf.yearTrends));
+				titles.push(i === 0 ? t(($) => $.pdf.summary) : t(($) => $.pdf.trends));
 			}
 		}
 
@@ -338,7 +336,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				titles.push(title);
 			} else if (localView === "year") {
 				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
-				for (const monthDate of getPeriodMonths(yearPeriod)) {
+				for (const monthDate of getPeriodMonths(localPeriod)) {
 					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
 					const heading = `${exposureName} - ${user.name} - ${monthText}`;
 					// Keeps the year, since a period can span several. Norwegian month
@@ -400,7 +398,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						year: "numeric",
 					})
 				: localView === "year"
-					? `${yearPeriod.startMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}-${yearPeriod.endMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}`
+					? `${localPeriod.startMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}-${localPeriod.endMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}`
 					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
 		const fileName = `${fileNameDate}_${user.name}_${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
@@ -554,61 +552,58 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								</div>
 							</ToggleGroupItem>
 
-							<ToggleGroupItem value="year" aria-label={t(($) => $.views.year)}>
+							<ToggleGroupItem value="year" aria-label={t(($) => $.pdf.period)}>
 								<div className="flex items-center gap-2">
-									<CalendarIcon className="size-4" />
-									<p className="text-sm">{t(($) => $.views.year)}</p>
+									<CalendarRangeIcon className="size-4" />
+									<p className="text-sm">{t(($) => $.pdf.period)}</p>
 								</div>
 							</ToggleGroupItem>
 						</ToggleGroup>
 					</div>
 
-					{/* Navigation buttons (Previous / Today / Next) */}
-					<div className="grid grid-cols-3 items-center gap-2">
-						<Button
-							title={t(($) => $.viewPicker.previous)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(previous)}
-						>
-							<ChevronLeftIcon className="size-3.5 shrink-0" />
-							<p className="truncate text-xs">{t(($) => $.viewPicker.previous)}</p>
-						</Button>
+					{/* Navigation buttons (Previous / Today / Next) - the period picker has its own year arrows */}
+					{localView !== "year" && (
+						<div className="grid grid-cols-3 items-center gap-2">
+							<Button
+								title={t(($) => $.viewPicker.previous)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(previous)}
+							>
+								<ChevronLeftIcon className="size-3.5 shrink-0" />
+								<p className="truncate text-xs">{t(($) => $.viewPicker.previous)}</p>
+							</Button>
 
-						<Button
-							title={t(($) => $.viewPicker.today)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(today())}
-							disabled={isTodayDate}
-						>
-							<CalendarIcon className="size-3.5 shrink-0" />
-							<p className="truncate text-xs">{t(($) => $.viewPicker.today)}</p>
-						</Button>
+							<Button
+								title={t(($) => $.viewPicker.today)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(today())}
+								disabled={isTodayDate}
+							>
+								<CalendarIcon className="size-3.5 shrink-0" />
+								<p className="truncate text-xs">{t(($) => $.viewPicker.today)}</p>
+							</Button>
 
-						<Button
-							title={t(($) => $.viewPicker.next)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(next)}
-						>
-							<p className="truncate text-xs">{t(($) => $.viewPicker.next)}</p>
-							<ChevronRightIcon className="size-3.5 shrink-0" />
-						</Button>
-					</div>
+							<Button
+								title={t(($) => $.viewPicker.next)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(next)}
+							>
+								<p className="truncate text-xs">{t(($) => $.viewPicker.next)}</p>
+								<ChevronRightIcon className="size-3.5 shrink-0" />
+							</Button>
+						</div>
+					)}
 
-					{/* Calendar (reuses DatePicker from right sidebar) */}
+					{/* Calendar (reuses DatePicker from right sidebar), or the month grid for a period */}
 					<div className="flex justify-center">
 						{localView === "year" ? (
-							<div className="flex flex-col items-center gap-1 py-8">
-								<span className="font-semibold text-4xl tabular-nums">{getYear(localDate)}</span>
-								<p className="text-muted-foreground text-sm">
-									{t(($) => $.layout.selectedYear, { year: getYear(localDate) })}
-								</p>
-							</div>
+							<MonthRangePicker value={localPeriod} onChange={setLocalPeriod} />
 						) : (
 							<DatePicker
 								mode={localView}
@@ -647,11 +642,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			{/* This prevents lag when switching between day/week/month views */}
 			{shouldRenderCharts && (
 				<PdfChartRenderer
-					key={`${exposureType}-${localView}-${localDate.getTime()}-${yearPeriod.startMonth.getTime()}-${yearPeriod.endMonth.getTime()}`}
+					key={`${exposureType}-${localView}-${localDate.getTime()}-${localPeriod.startMonth.getTime()}-${localPeriod.endMonth.getTime()}`}
 					exposureType={exposureType}
 					view={localView}
 					date={localDate}
-					period={yearPeriod}
+					period={localPeriod}
 					userId={user.id}
 					onPagesReady={handlePagesReady}
 					onProgress={handleProgress}

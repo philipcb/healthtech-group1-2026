@@ -52,7 +52,6 @@
     "day": "Day",
     "week": "Week",
     "month": "Month",
-    "year": "Year",
     "selectionText": "You are viewing a {{view}}.",
     "dateSelectionSingle": "You have selected {{date}}.",
     "dateSelectionMultiple": "You have selected {{startDate}} to {{endDate}}."
@@ -86,8 +85,7 @@
     "exportPdfDescription": "Select time period for PDF export",
     "theme": "Theme",
     "language": "Language",
-    "map": "Map",
-    "selectedYear": "Selected year: {{year}}"
+    "map": "Map"
   },
   "live": {
     "timeRange": {
@@ -340,7 +338,12 @@
     "openReport": "Open report",
     "exceeded": "Above limit value",
     "tableOfContents": "Table of contents",
-    "yearSummary": "Year summary",
+    "period": "Period",
+    "periodMonthCount": "{{count}} months",
+    "periodMonthCount_one": "{{count}} month",
+    "periodMonthCount_other": "{{count}} months",
+    "chooseEndMonth": "Choose an end month (up to {{years}} years)",
+    "summary": "Summary",
     "summaryExposure": "Exposure type",
     "summaryRedDays": "Total red days",
     "summaryWorstMonth": "Worst month",
@@ -350,7 +353,7 @@
     "progressCollecting": "Collecting data",
     "progressDayReports": "Creating day reports",
     "progressBuilding": "Building PDF",
-    "yearTrends": "Yearly trends",
+    "trends": "Trends",
     "trendAverageDescription": "Shows the average value per day",
     "trendPeakDescription": "Shows the maximum value per day"
   },

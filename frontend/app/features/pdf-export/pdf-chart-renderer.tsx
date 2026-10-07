@@ -126,9 +126,9 @@ export type PdfExportProgress = {
 	total: number;
 };
 
+/** One page as a renderer reports it: its key in getPageOrder, and how to draw it. */
 interface CollectedPage {
-	exposure: Exposure;
-	page: string;
+	key: string;
 	spec: PdfPageSpec;
 }
 
@@ -191,15 +191,41 @@ function useBatchQueue<T extends { key: string }>(jobs: Array<T>, batchSize: num
 	return { activeJobs, markDone };
 }
 
-// Which page keys to expect per exposure type, in order, for a given view.
-// Extending this (e.g. adding red-day detail pages) only requires adding
-// keys here — the collection/ordering logic below stays untouched.
-function getPageKeysForView(view: PdfView, monthCount: number): Array<string> {
-	if (view === "day") return ["day-report"];
-	if (view === "period") {
-		return Array.from({ length: monthCount }, (_, i) => [`calendar-${i}`, `redday-${i}`]).flat();
-	}
-	return ["summary"]; // week or month
+/**
+ * The key each page is reported under. Renderers report with these and
+ * getPageOrder lists them, so both sides always agree on a page's key
+ */
+const PAGE_KEYS = {
+	/** Day, week and month exports: one page per exposure type. */
+	single: (exposure: Exposure) => `${exposure}`,
+	summary: "period-summary",
+	trend: (index: number) => `period-trend-${index}`,
+	calendar: (exposure: Exposure, monthIndex: number) => `${exposure}-calendar-${monthIndex}`,
+	redDays: (exposure: Exposure, monthIndex: number) => `${exposure}-redday-${monthIndex}`,
+};
+
+/**
+ * Every page key the export reports, in the order the pages go into the PDF.
+ * Collection is finished once all of them are in. A period export's day
+ * reports aren't listed - which days need one is only known once these are in.
+ */
+function getPageOrder(
+	view: PdfView,
+	exposures: Array<Exposure>,
+	monthCount: number,
+	trendPageCount: number,
+): Array<string> {
+	if (view !== "period") return exposures.map((exposure) => PAGE_KEYS.single(exposure));
+	return [
+		PAGE_KEYS.summary,
+		...Array.from({ length: trendPageCount }, (_, i) => PAGE_KEYS.trend(i)),
+		...exposures.flatMap((exposure) =>
+			Array.from({ length: monthCount }, (_, i) => [
+				PAGE_KEYS.calendar(exposure, i),
+				PAGE_KEYS.redDays(exposure, i),
+			]).flat(),
+		),
+	];
 }
 
 /**
@@ -357,7 +383,10 @@ function SingleDayChartRenderer({
 			}
 
 			hasReportedRef.current = true;
-			onPageReady({ exposure, page: "day-report", spec: { kind: "day-report", exposure, date: tzDate, series } });
+			onPageReady({
+				key: PAGE_KEYS.single(exposure),
+				spec: { kind: "day-report", exposure, date: tzDate, series },
+			});
 		};
 
 		captureCharts();
@@ -465,8 +494,7 @@ function WeekGridRenderer({
 		for (const bucket of gridData) dangerLevelByHour.set(startOfHour(bucket.time).getTime(), bucket.dangerLevel);
 
 		onPageReadyRef.current({
-			exposure,
-			page: "summary",
+			key: PAGE_KEYS.single(exposure),
 			spec: {
 				kind: "week-grid",
 				exposure,
@@ -542,8 +570,7 @@ function MonthCalendarRenderer({
 		if (isLoading || hasReportedRef.current) return;
 		hasReportedRef.current = true;
 		onPageReadyRef.current({
-			exposure,
-			page: "summary",
+			key: PAGE_KEYS.single(exposure),
 			spec: {
 				kind: "calendar",
 				exposure,
@@ -629,8 +656,7 @@ function MonthGridPage({
 		const minuteData = minuteQuery.data?.data ?? [];
 
 		onPageReadyRef.current({
-			exposure,
-			page: `calendar-${monthIndex}`,
+			key: PAGE_KEYS.calendar(exposure, monthIndex),
 			spec: {
 				kind: "calendar",
 				exposure,
@@ -645,8 +671,7 @@ function MonthGridPage({
 		});
 
 		onPageReadyRef.current({
-			exposure,
-			page: `redday-${monthIndex}`,
+			key: PAGE_KEYS.redDays(exposure, monthIndex),
 			spec: {
 				kind: "red-days",
 				exposure,
@@ -814,8 +839,7 @@ function PeriodSummaryRenderer({
 		}));
 
 		onPageReady({
-			exposure: "dust",
-			page: "period-summary",
+			key: PAGE_KEYS.summary,
 			spec: { kind: "period-summary", periodStart, periodEnd, rows },
 		});
 	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady, i18n.language, exposures]);
@@ -920,8 +944,7 @@ function PeriodTrendChartsRenderer({
 
 			groups.forEach((group, pageIndex) => {
 				onPageReady({
-					exposure: "dust", // placeholder key - this page isn't tied to one exposure, same pattern as period-summary
-					page: `period-trend-${pageIndex}`,
+					key: PAGE_KEYS.trend(pageIndex),
 					spec: {
 						kind: "period-trend",
 						placement: pageIndex === 0 ? "below-summary" : "full-page",
@@ -1074,15 +1097,11 @@ function DayReportBatchRenderer({
 
 /**
  * Top-level renderer: picks the right per-view renderer above, collects every
- * page it reports via handlePageReady, and calls onPagesReady once the count
- * matches expectedCount (exposure types x pages-per-type for that view).
+ * page it reports via handlePageReady, and calls onPagesReady once every key in
+ * getPageOrder has come in.
  *
- * Pages are assembled back into a FIXED order - exposure types in the order
- * exposureType implies, and within each, getPageKeysForView's order - rather
- * than the order they happened to finish loading in. This matters because
- * pdf-export-dialog.tsx builds its `titles` array in that same fixed order;
- * without this, a page that loads faster than another could end up under
- * the wrong title.
+ * Pages are handed over in getPageOrder's order, not the order they finished
+ * loading in, so the PDF's page order never depends on which query was fastest.
  *
  * Memoized: the dialog re-renders on every progress update, and without this
  * the whole off-screen export tree would re-render with it each time.
@@ -1096,7 +1115,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 	onPagesReady,
 	onProgress,
 }: PdfChartRendererProps) {
-	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
+	const collectedRef = useRef<Map<string, PdfPageSpec>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
 	// Set once a period export's own pages are all in AND it has red days: the day
 	// reports are rendered next, and onPagesReady only fires once they're done.
@@ -1114,38 +1133,29 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 	const trendPageCount = getTrendPageCount(getTrendMetrics(exposuresToRender).length);
-	const pageKeys = getPageKeysForView(view, getPeriodMonths(period).length);
-	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "period" ? 1 + trendPageCount : 0);
+	const pageOrder = getPageOrder(view, exposuresToRender, getPeriodMonths(period).length, trendPageCount);
 
 	const handlePageReady = useCallback(
-		(pageInfo: CollectedPage) => {
+		({ key, spec }: CollectedPage) => {
 			if (hasReported) return;
 
 			// Renderers re-report the same page on re-renders; only a genuinely new page
 			// counts as progress, or a stuck export would keep resetting its stall timer.
 			const countBefore = collectedRef.current.size;
-			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
+			collectedRef.current.set(key, spec);
 			if (collectedRef.current.size > countBefore) {
-				onProgress?.({ step: "collecting", done: collectedRef.current.size, total: expectedCount });
+				onProgress?.({ step: "collecting", done: collectedRef.current.size, total: pageOrder.length });
 			}
 
-			if (collectedRef.current.size === expectedCount) {
-				const orderedPages = exposuresToRender.flatMap((exposure) =>
-					pageKeys
-						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.spec)
-						.filter((spec): spec is PdfPageSpec => spec != null),
-				);
-				const summaryPage = collectedRef.current.get("dust-period-summary")?.spec;
-				if (summaryPage?.kind === "period-summary") orderedPages.unshift(summaryPage);
-				const trendPages = Array.from(
-					{ length: trendPageCount },
-					(_, i) => collectedRef.current.get(`dust-period-trend-${i}`)?.spec,
-				).filter((spec): spec is PdfPeriodTrendPage => spec != null);
-				orderedPages.splice(summaryPage ? 1 : 0, 0, ...trendPages); // right after the summary page, before per-month pages
+			if (collectedRef.current.size === pageOrder.length) {
+				const orderedPages = pageOrder.flatMap((pageKey) => {
+					const page = collectedRef.current.get(pageKey);
+					return page ? [page] : [];
+				});
 
 				setHasReported(true);
 
-				// A period export isn't finished yet if it has red days - each still
+				// A period export isn't fin- each still
 				// needs its day report appended. Everything else is done now.
 				const dayReportJobs = view === "period" ? getDayReportJobs(orderedPages) : [];
 
@@ -1157,7 +1167,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 				}
 			}
 		},
-		[expectedCount, exposuresToRender, pageKeys, onPagesReady, onProgress, hasReported, view, trendPageCount],
+		[pageOrder, onPagesReady, onProgress, hasReported, view],
 	);
 
 	const handleDayReportsDone = useCallback(

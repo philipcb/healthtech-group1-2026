@@ -1,7 +1,7 @@
 import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { drawDayReportPage } from "@/hooks/pdf-day-report.ts";
-import { drawYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
-import { drawYearTrendPage } from "@/hooks/pdf-year-trend-chart.ts";
+import { drawPeriodSummaryPage } from "@/hooks/pdf-period-summary.ts";
+import { drawPeriodTrendPage } from "@/hooks/pdf-period-trend-chart.ts";
 import { getDayReportKey } from "@/lib/pdf/red-days.ts";
 import jsPDF from "jspdf";
 import { useCallback } from "react";
@@ -51,7 +51,7 @@ export const useExportPDF = () => {
 			titles: Array<string>,
 			coverPageData: CoverPageData,
 			labels: PdfLabels & PdfCalendarLabels,
-			/** Only the year export has one; null skips it entirely. */
+			/** Only the period export has one; null skips it entirely. */
 			toc: { title: string; entries: Array<PdfTocEntry> } | null,
 		) => {
 			const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -82,24 +82,24 @@ export const useExportPDF = () => {
 				const page = pages[i];
 				const pagesBefore = pdf.getNumberOfPages();
 
-				if (page.kind === "year-summary") {
+				if (page.kind === "period-summary") {
 					pdf.addPage("a4", pdfOrientation);
 					drawPageTitle(pdf, titles[i]);
-					summaryTableBottom = drawYearSummaryPage(
+					summaryTableBottom = drawPeriodSummaryPage(
 						pdf,
 						page,
 						labels,
 						TITLE_HEIGHT + PAGE_MARGIN + 4,
 						PAGE_MARGIN,
 					);
-				} else if (page.kind === "year-trend") {
+				} else if (page.kind === "period-trend") {
 					if (page.placement === "below-summary") {
 						// Same PDF page as the summary table - no addPage, no title.
-						await drawYearTrendPage(pdf, page, labels, summaryTableBottom + 6, PAGE_MARGIN);
+						await drawPeriodTrendPage(pdf, page, labels, summaryTableBottom + 6, PAGE_MARGIN);
 					} else {
 						pdf.addPage("a4", pdfOrientation);
 						drawPageTitle(pdf, titles[i]);
-						await drawYearTrendPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
+						await drawPeriodTrendPage(pdf, page, labels, TITLE_HEIGHT + PAGE_MARGIN + 4, PAGE_MARGIN);
 					}
 				} else if (page.kind === "calendar") {
 					pdf.addPage("a4", pdfOrientation);

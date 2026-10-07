@@ -1,24 +1,24 @@
 import type jsPDF from "jspdf";
 import { drawChartSvg, drawNoData, drawThresholdLegend, fitChart, type PdfChartSvg } from "./pdf-day-report.ts";
 
-export type PdfYearTrendSeries = {
+export type PdfPeriodTrendSeries = {
 	label: string;
 	/** Short reader hint, e.g. "Shows the average value per day". */
 	description: string;
 	chart: PdfChartSvg;
 };
 
-export type PdfYearTrendPage = {
-	kind: "year-trend";
+export type PdfPeriodTrendPage = {
+	kind: "period-trend";
 	/**
 	 * "below-summary": drawn under the summary table, no new PDF page.
 	 * "full-page": gets its own PDF page.
 	 */
 	placement: "below-summary" | "full-page";
-	series: Array<PdfYearTrendSeries>;
+	series: Array<PdfPeriodTrendSeries>;
 };
 
-export type PdfYearTrendLabels = {
+export type PdfPeriodTrendLabels = {
 	danger: string;
 	warning: string;
 	noData: string;
@@ -32,10 +32,10 @@ const HEADING_TO_CHART_GAP = 14;
 const LEGEND_HEIGHT = 8;
 
 /** Draws 1-2 stacked trend charts, each with a heading and a short description. */
-export async function drawYearTrendPage(
+export async function drawPeriodTrendPage(
 	pdf: jsPDF,
-	page: PdfYearTrendPage,
-	labels: PdfYearTrendLabels,
+	page: PdfPeriodTrendPage,
+	labels: PdfPeriodTrendLabels,
 	startY: number,
 	margin: number,
 ): Promise<void> {

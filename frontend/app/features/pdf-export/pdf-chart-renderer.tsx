@@ -1,10 +1,10 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { YearTrendLineChart } from "@/components/exposure-line-chart/year-trend-line-chart.tsx";
+import { PeriodTrendLineChart } from "@/components/exposure-line-chart/period-trend-line-chart.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import type { PdfWeekGridPage } from "@/hooks/pdf-calendar.ts";
 import { type PdfDayReport, type PdfDaySeries, serializeChartSvg } from "@/hooks/pdf-day-report.ts";
-import type { PdfYearSummaryPage } from "@/hooks/pdf-year-summary.ts";
-import type { PdfYearTrendPage, PdfYearTrendSeries } from "@/hooks/pdf-year-trend-chart.ts";
+import type { PdfPeriodSummaryPage } from "@/hooks/pdf-period-summary.ts";
+import type { PdfPeriodTrendPage, PdfPeriodTrendSeries } from "@/hooks/pdf-period-trend-chart.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { exposureQueryOptions, notesRangeQueryOptions } from "@/lib/api.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
@@ -53,8 +53,8 @@ import { useTranslation } from "react-i18next";
  * Page count and shape depend on the view:
  *  - day: 1 vector-drawn report page per exposure type - SingleDayChartRenderer
  *  - week/month: 1 vector-drawn grid page per exposure type
- *  - year: 2 pages per month per exposure type (a vector calendar, a red-day
- *    table) - MonthGridPage, scheduled by YearBatchRenderer. Then, once those
+ *  - period: 2 pages per month per exposure type (a vector calendar, a red-day
+ *    table) - MonthGridPage, scheduled by PeriodBatchRenderer. Then, once those
  *    are all in, one day report per red day appended at the end - the day
  *    export's own SingleDayChartRenderer, scheduled by DayReportBatchRenderer.
  *
@@ -65,18 +65,18 @@ import { useTranslation } from "react-i18next";
  *
  * Used by: pdf-export-dialog.tsx (renders this when the dialog is exporting)
  */
-export type PdfView = View | "year";
+export type PdfView = View | "period";
 
 /**
  * How the assembler should draw one page.
- *  - "calendar": a vector-drawn calendar page for the month and year exports.
+ *  - "calendar": a vector-drawn calendar page for the month and period exports.
  *  - "red-days": drawn as a real vector table (no image at all), so the
  *    rows stay searchable and can carry links.
  *  - "day-report": one day's report with a Recharts SVG and its hourly grid.
  */
 export type PdfPageSpec =
-	| PdfYearSummaryPage
-	| PdfYearTrendPage
+	| PdfPeriodSummaryPage
+	| PdfPeriodTrendPage
 	| { kind: "week-grid"; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
@@ -88,7 +88,7 @@ export type PdfPageSpec =
 
 type SummaryMetric = { exposure: Exposure; field?: DustField; label: string };
 
-const YEAR_SUMMARY_METRICS: Array<SummaryMetric> = [
+const PERIOD_SUMMARY_METRICS: Array<SummaryMetric> = [
 	{ exposure: "dust", field: "pm1_twa", label: "PM1" },
 	{ exposure: "dust", field: "pm25_twa", label: "PM2.5" },
 	{ exposure: "dust", field: "pm10_twa", label: "PM10" },
@@ -103,10 +103,10 @@ const YEAR_SUMMARY_METRICS: Array<SummaryMetric> = [
 const TREND_CHARTS_PER_PAGE = 2;
 
 function getTrendMetrics(exposures: Array<Exposure>): Array<SummaryMetric> {
-	return YEAR_SUMMARY_METRICS.filter((metric) => exposures.includes(metric.exposure));
+	return PERIOD_SUMMARY_METRICS.filter((metric) => exposures.includes(metric.exposure));
 }
 
-/** Number of year-trend page specs (the one under the table counts as one). */
+/** Number of period-trend page specs (the one under the table counts as one). */
 function getTrendPageCount(chartCount: number): number {
 	return chartCount === 0 ? 0 : 1 + Math.ceil((chartCount - 1) / TREND_CHARTS_PER_PAGE);
 }
@@ -135,7 +135,7 @@ interface PdfChartRendererProps {
 	view: PdfView;
 	/** The day, week or month to export. */
 	date: Date;
-	/** The months to export - only the year view uses it. */
+	/** The months to export - only the period view uses it. */
 	period: PdfPeriod;
 	userId: string;
 	onPagesReady: (pages: Array<PdfPageSpec>) => void;
@@ -144,19 +144,18 @@ interface PdfChartRendererProps {
 }
 
 /**
- * How many month-pages are mounted at once during a year export - across ALL
- * exposure types combined (see YearBatchRenderer), not per type. A month is
+ * How many month-pages are mounted at once during a period export - across ALL
+ * exposure types combined (see PeriodBatchRenderer), not per type. A month is
  * unmounted as soon as it's done, so this is the most that's ever mounted at
  * once regardless of how many months or exposure types the export covers.
  * Without this, "Overview" would mount all 12 months x 3 types = 36 at once.
  */
-const YEAR_BATCH_SIZE = 6;
+const PERIOD_BATCH_SIZE = 6;
 
 /**
- * How many day reports are mounted at once. Separate from YEAR_BATCH_SIZE
- * because each report renders several chart SVGs, where a year month is now
- * pure data. A full Overview year can have 100+ red
- * days, so these must never all mount at once.
+ * How many day reports are mounted at once. Separate from PERIOD_BATCH_SIZE
+ * because each report renders several chart SVGs, where a month is now
+ * pure data.
  */
 const DAY_REPORT_BATCH_SIZE = 3;
 const DUST_FIELD_LABELS: Record<DustField, string> = {
@@ -193,7 +192,7 @@ function useBatchQueue<T extends { key: string }>(jobs: Array<T>, batchSize: num
 // keys here — the collection/ordering logic below stays untouched.
 function getPageKeysForView(view: PdfView, monthCount: number): Array<string> {
 	if (view === "day") return ["day-report"];
-	if (view === "year") {
+	if (view === "period") {
 		return Array.from({ length: monthCount }, (_, i) => [`calendar-${i}`, `redday-${i}`]).flat();
 	}
 	return ["summary"]; // week or month
@@ -660,12 +659,12 @@ type MonthJob = {
 };
 
 /**
- * Year export: schedules every (exposure, month) pair - across ALL exposure
+ * Period export: schedules every (exposure, month) pair - across ALL exposure
  * types together, not per type - as one shared queue, processing
- * YEAR_BATCH_SIZE of them at a time (see the constant's comment for why, and
+ * PERIOD_BATCH_SIZE of them at a time (see the constant's comment for why, and
  * useBatchQueue for how the window advances).
  */
-function YearBatchRenderer({
+function PeriodBatchRenderer({
 	exposures,
 	period,
 	userId,
@@ -689,7 +688,7 @@ function YearBatchRenderer({
 		})),
 	);
 
-	const { activeJobs, markDone } = useBatchQueue(jobs, YEAR_BATCH_SIZE);
+	const { activeJobs, markDone } = useBatchQueue(jobs, PERIOD_BATCH_SIZE);
 
 	return (
 		<>
@@ -710,7 +709,7 @@ function YearBatchRenderer({
 }
 
 /** Fetches the selected period and aggregates all summary metrics before export. */
-function YearSummaryRenderer({
+function PeriodSummaryRenderer({
 	period,
 	userId,
 	exposures,
@@ -725,7 +724,7 @@ function YearSummaryRenderer({
 	const { periodStart, periodEnd } = getSummaryPeriod(period);
 	const months = getPeriodMonths(period);
 	const dayQueries = useQueries({
-		queries: YEAR_SUMMARY_METRICS.flatMap((metric) =>
+		queries: PERIOD_SUMMARY_METRICS.flatMap((metric) =>
 			months.map((month) =>
 				exposureQueryOptions({
 					exposure: metric.exposure,
@@ -745,7 +744,7 @@ function YearSummaryRenderer({
 		),
 	});
 	const averageQueries = useQueries({
-		queries: YEAR_SUMMARY_METRICS.map((metric) =>
+		queries: PERIOD_SUMMARY_METRICS.map((metric) =>
 			exposureQueryOptions({
 				exposure: metric.exposure,
 				enabled: exposures.includes(metric.exposure),
@@ -767,8 +766,8 @@ function YearSummaryRenderer({
 		hasReportedRef.current = true;
 		const rows = exposures.map((exposure) => ({
 			exposure,
-			metrics: YEAR_SUMMARY_METRICS.filter((metric) => metric.exposure === exposure).map((metric) => {
-				const metricIndex = YEAR_SUMMARY_METRICS.indexOf(metric);
+			metrics: PERIOD_SUMMARY_METRICS.filter((metric) => metric.exposure === exposure).map((metric) => {
+				const metricIndex = PERIOD_SUMMARY_METRICS.indexOf(metric);
 				const monthly = months.map(
 					(_month, monthIndex) => dayQueries[metricIndex * months.length + monthIndex].data?.data ?? [],
 				);
@@ -806,15 +805,15 @@ function YearSummaryRenderer({
 
 		onPageReady({
 			exposure: "dust",
-			page: "year-summary",
-			spec: { kind: "year-summary", periodStart, periodEnd, rows },
+			page: "period-summary",
+			spec: { kind: "period-summary", periodStart, periodEnd, rows },
 		});
 	}, [isLoading, dayQueries, averageQueries, months, periodStart, periodEnd, onPageReady, i18n.language, exposures]);
 
 	return null;
 }
 /** Fetches the full period's daily series per metric and captures each as an SVG trend chart. */
-function YearTrendChartsRenderer({
+function PeriodTrendChartsRenderer({
 	exposures,
 	period,
 	userId,
@@ -871,7 +870,7 @@ function YearTrendChartsRenderer({
 
 		const captureCharts = () => {
 			let allReady = true;
-			const capturedSeries: Array<PdfYearTrendSeries> = series.map((item, index) => {
+			const capturedSeries: Array<PdfPeriodTrendSeries> = series.map((item, index) => {
 				const svg = chartRefs.current[index]?.querySelector("svg");
 				if (!svg || svg.getBoundingClientRect().width <= 0 || svg.getBoundingClientRect().height <= 0) {
 					allReady = false;
@@ -904,17 +903,17 @@ function YearTrendChartsRenderer({
 			// Page 0 = the first chart alone (drawn under the summary table).
 			// Remaining charts are grouped TREND_CHARTS_PER_PAGE per page.
 			const [first, ...rest] = capturedSeries;
-			const groups: Array<Array<PdfYearTrendSeries>> = first ? [[first]] : [];
+			const groups: Array<Array<PdfPeriodTrendSeries>> = first ? [[first]] : [];
 			for (let i = 0; i < rest.length; i += TREND_CHARTS_PER_PAGE) {
 				groups.push(rest.slice(i, i + TREND_CHARTS_PER_PAGE));
 			}
 
 			groups.forEach((group, pageIndex) => {
 				onPageReady({
-					exposure: "dust", // placeholder key - this page isn't tied to one exposure, same pattern as year-summary
-					page: `year-trend-${pageIndex}`,
+					exposure: "dust", // placeholder key - this page isn't tied to one exposure, same pattern as period-summary
+					page: `period-trend-${pageIndex}`,
 					spec: {
-						kind: "year-trend",
+						kind: "period-trend",
 						placement: pageIndex === 0 ? "below-summary" : "full-page",
 						series: group,
 					},
@@ -937,7 +936,7 @@ function YearTrendChartsRenderer({
 						}}
 						style={{ width: "1000px", height: "380px" }}
 					>
-						<YearTrendLineChart
+						<PeriodTrendLineChart
 							data={item.data}
 							periodStart={periodStart}
 							periodEnd={periodEnd}
@@ -961,7 +960,7 @@ type DayReportJob = {
 };
 
 /**
- * One day report per red-day row, in the order the year pages already have
+ * One day report per red-day row, in the order the period pages already have
  * them: exposure types in export order, months in order within each, days in
  * order within each month - so no sorting is needed.
  */
@@ -974,7 +973,7 @@ function getDayReportJobs(pages: Array<PdfPageSpec>): Array<DayReportJob> {
 					date: row.date,
 				}))
 			: [],
-	);
+	);	
 }
 
 /**
@@ -1089,24 +1088,24 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 }: PdfChartRendererProps) {
 	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
-	// Set once a year export's own pages are all in AND it has red days: the day
+	// Set once a period export's own pages are all in AND it has red days: the day
 	// reports are rendered next, and onPagesReady only fires once they're done.
 	const [dayReportPhase, setDayReportPhase] = useState<{
-		yearPages: Array<PdfPageSpec>;
+		periodPages: Array<PdfPageSpec>;
 		jobs: Array<DayReportJob>;
 	} | null>(null);
 
-	// One request for the whole period's notes; only the year export needs them.
+	// One request for the whole period's notes; only the period export needs them.
 	const notesQuery = useQuery({
 		...notesRangeQueryOptions({ ...getPeriodRange(period), userId }),
-		enabled: view === "year",
+		enabled: view === "period",
 	});
 	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
 	const trendPageCount = getTrendPageCount(getTrendMetrics(exposuresToRender).length);
 	const pageKeys = getPageKeysForView(view, getPeriodMonths(period).length);
-	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "year" ? 1 + trendPageCount : 0);
+	const expectedCount = exposuresToRender.length * pageKeys.length + (view === "period" ? 1 + trendPageCount : 0);
 
 	const handlePageReady = useCallback(
 		(pageInfo: CollectedPage) => {
@@ -1126,22 +1125,22 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 						.map((pageKey) => collectedRef.current.get(`${exposure}-${pageKey}`)?.spec)
 						.filter((spec): spec is PdfPageSpec => spec != null),
 				);
-				const summaryPage = collectedRef.current.get("dust-year-summary")?.spec;
-				if (summaryPage?.kind === "year-summary") orderedPages.unshift(summaryPage);
+				const summaryPage = collectedRef.current.get("dust-period-summary")?.spec;
+				if (summaryPage?.kind === "period-summary") orderedPages.unshift(summaryPage);
 				const trendPages = Array.from(
 					{ length: trendPageCount },
-					(_, i) => collectedRef.current.get(`dust-year-trend-${i}`)?.spec,
-				).filter((spec): spec is PdfYearTrendPage => spec != null);
+					(_, i) => collectedRef.current.get(`dust-period-trend-${i}`)?.spec,
+				).filter((spec): spec is PdfPeriodTrendPage => spec != null);
 				orderedPages.splice(summaryPage ? 1 : 0, 0, ...trendPages); // right after the summary page, before per-month pages
 
 				setHasReported(true);
 
-				// A year export isn't finished yet if it has red days - each still
+				// A period export isn't finished yet if it has red days - each still
 				// needs its day report appended. Everything else is done now.
-				const dayReportJobs = view === "year" ? getDayReportJobs(orderedPages) : [];
+				const dayReportJobs = view === "period" ? getDayReportJobs(orderedPages) : [];
 
 				if (dayReportJobs.length > 0) {
-					setDayReportPhase({ yearPages: orderedPages, jobs: dayReportJobs });
+					setDayReportPhase({ periodPages: orderedPages, jobs: dayReportJobs });
 					onProgress?.({ step: "dayReports", done: 0, total: dayReportJobs.length });
 				} else {
 					onPagesReady(orderedPages);
@@ -1153,7 +1152,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 
 	const handleDayReportsDone = useCallback(
 		(reports: Array<DayReportSpec>) => {
-			if (dayReportPhase) onPagesReady([...dayReportPhase.yearPages, ...reports]);
+			if (dayReportPhase) onPagesReady([...dayReportPhase.periodPages, ...reports]);
 		},
 		[dayReportPhase, onPagesReady],
 	);
@@ -1177,25 +1176,25 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 						onPageReady={handlePageReady}
 					/>
 				))
-			) : view === "year" ? (
+			) : view === "period" ? (
 				// Hold off until the notes arrive, so getRedDays never runs against an empty list.
-				// One shared YearBatchRenderer, not one per exposure - this is what makes the
+				// One shared PeriodBatchRenderer, not one per exposure - this is what makes the
 				// batch size apply across the whole export (e.g. Overview) rather than 3x it.
 				notesQuery.isLoading ? null : (
 					<>
-						<YearSummaryRenderer
+						<PeriodSummaryRenderer
 							period={period}
 							userId={userId}
 							exposures={exposuresToRender}
 							onPageReady={handlePageReady}
 						/>
-						<YearTrendChartsRenderer
+						<PeriodTrendChartsRenderer
 							exposures={exposuresToRender}
 							period={period}
 							userId={userId}
 							onPageReady={handlePageReady}
 						/>
-						<YearBatchRenderer
+						<PeriodBatchRenderer
 							exposures={exposuresToRender}
 							period={period}
 							userId={userId}

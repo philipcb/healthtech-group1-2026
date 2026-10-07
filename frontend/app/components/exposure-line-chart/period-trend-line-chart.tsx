@@ -18,13 +18,13 @@ const chartConfig = {
 	desktop: { label: "Desktop", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
-/** Calendar day (Oslo time) as "YYYY-MM-DD" - same key format YearSummaryRenderer uses for registered days. */
+/** Calendar day (Oslo time) as "YYYY-MM-DD" - same key format PeriodSummaryRenderer uses for registered days. */
 const getDayKey = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Europe/Oslo" });
 
 const MAX_X_TICKS = 12;
 const TICK_STEPS_IN_MONTHS = [1, 2, 3, 6, 12];
 
-export interface YearTrendLineChartProps {
+export interface PeriodTrendLineChartProps {
 	data: Array<ExposureDto>;
 	periodStart: TZDate;
 	periodEnd: TZDate;
@@ -39,7 +39,7 @@ export interface YearTrendLineChartProps {
 
 /**
  * One line per metric, one point per day, X-axis ticked by month instead of
- * by hour — built specifically for the year/period summary trend charts.
+ * by hour — built specifically for the period summary trend charts.
  *
  * Deliberately NOT a variant of ExposureLineChart: that component's tick
  * logic (buildTicks/CustomXAxisTick) assumes an hour-resolution domain used
@@ -48,7 +48,7 @@ export interface YearTrendLineChartProps {
  * ExposureLineChartGradientStops unchanged, so the visual style (colour-
  * changing line, filled zone area, dashed threshold lines) stays identical.
  */
-export function YearTrendLineChart({
+export function PeriodTrendLineChart({
 	data,
 	periodStart,
 	periodEnd,
@@ -58,7 +58,7 @@ export function YearTrendLineChart({
 	exposure,
 	dustField,
 	usePeakData = false,
-}: YearTrendLineChartProps) {
+}: PeriodTrendLineChartProps) {
 	const id = useId();
 	const { t } = useTranslation();
 	const formatDate = useFormatDate();

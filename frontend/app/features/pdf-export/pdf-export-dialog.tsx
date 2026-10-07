@@ -114,7 +114,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	// NOTE: These are independent from the global date/view state that controls the main page.
 	// The dialog has its own date picker so users can export a different date than what's
 	// currently shown on screen.
-	const [localView, setLocalView] = useState<PdfView>("day"); // "day" | "week" | "month" | "year"
+	const [localView, setLocalView] = useState<PdfView>("day"); // "day" | "week" | "month" | "period"
 	const [localDate, setLocalDate] = useState<TZDate>(today()); // The selected date in dialog
 	const [isExporting, setIsExporting] = useState(false); // Loading state during PDF generation
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
@@ -294,10 +294,10 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 		// Titles follow the page order reported by PdfChartRenderer.
 		const titles: Array<string> = [];
-		// Year exports only. Each entry points at a position in `pages` - at any
+		// Period exports only. Each entry points at a position in `pages` - at any
 		// point below, titles.length is the position the next page will have.
 		const tocEntries: Array<PdfTocEntry> = [];
-		if (localView === "year") {
+		if (localView === "period") {
 			const summaryIndex = titles.length;
 			tocEntries.push({
 				label: t(($) => $.pdf.summary),
@@ -308,7 +308,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 			// Trend spec 0 is drawn on the summary page itself, so it has no PDF page of its own.
 			// The trends entry therefore starts at the summary page and ends at the last trend spec.
-			const trendPageCount = pages.filter((page) => page.kind === "year-trend").length;
+			const trendPageCount = pages.filter((page) => page.kind === "period-trend").length;
 			if (trendPageCount > 0) {
 				tocEntries.push({
 					label: t(($) => $.pdf.trends),
@@ -334,7 +334,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 				});
 				const title = `${exposureName} - ${user.name} - ${dateText}`;
 				titles.push(title);
-			} else if (localView === "year") {
+			} else if (localView === "period") {
 				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
 				for (const monthDate of getPeriodMonths(localPeriod)) {
 					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
@@ -397,7 +397,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						month: "long",
 						year: "numeric",
 					})
-				: localView === "year"
+				: localView === "period"
 					? `${localPeriod.startMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}-${localPeriod.endMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}`
 					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
@@ -431,7 +431,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			note: t(($) => $.pdf.note),
 			noRedDays: t(($) => $.pdf.noRedDays),
 			noData: t(($) => $.common.noDataLive),
-			yearSummary: {
+			periodSummary: {
 				exposure: t(($) => $.pdf.summaryExposure),
 				totalRedDays: t(($) => $.pdf.summaryRedDays),
 				worstMonth: t(($) => $.pdf.summaryWorstMonth),
@@ -470,7 +470,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			titles,
 			coverPageData,
 			labels,
-			localView === "year" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
+			localView === "period" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
 		);
 
 		resetExport();
@@ -552,7 +552,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								</div>
 							</ToggleGroupItem>
 
-							<ToggleGroupItem value="year" aria-label={t(($) => $.pdf.period)}>
+							<ToggleGroupItem value="period" aria-label={t(($) => $.pdf.period)}>
 								<div className="flex items-center gap-2">
 									<CalendarRangeIcon className="size-4" />
 									<p className="text-sm">{t(($) => $.pdf.period)}</p>
@@ -562,7 +562,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					</div>
 
 					{/* Navigation buttons (Previous / Today / Next) - the period picker has its own year arrows */}
-					{localView !== "year" && (
+					{localView !== "period" && (
 						<div className="grid grid-cols-3 items-center gap-2">
 							<Button
 								title={t(($) => $.viewPicker.previous)}
@@ -602,7 +602,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 					{/* Calendar (reuses DatePicker from right sidebar), or the month grid for a period */}
 					<div className="flex justify-center">
-						{localView === "year" ? (
+						{localView === "period" ? (
 							<MonthRangePicker value={localPeriod} onChange={setLocalPeriod} />
 						) : (
 							<DatePicker
@@ -618,8 +618,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 				{exportError && <p className="text-destructive text-sm">{exportError}</p>}
 
-				{/* Progress, year exports only - the only ones long enough to need it */}
-				{isExporting && localView === "year" && progress && (
+				{/* Progress, period exports only - the only ones long enough to need it */}
+				{isExporting && localView === "period" && progress && (
 					<div className="flex flex-col gap-1.5">
 						<Progress value={getProgressPercent(progress)} />
 						<p className="text-muted-foreground text-xs">{progressLabel}</p>

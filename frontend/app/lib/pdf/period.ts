@@ -28,8 +28,8 @@ export function getPeriodMonths(period: PdfPeriod): Array<TZDate> {
 
 /**
  * The summary's actual reporting period: the whole period, clipped at the end
- * to "today" if it isn't over yet. Shared by YearSummaryRenderer and
- * YearTrendChartsRenderer so both use exactly the same period boundary.
+ * to "today" if it isn't over yet. Shared by PeriodSummaryRenderer and
+ * PeriodTrendChartsRenderer so both use exactly the same period boundary.
  */
 export function getSummaryPeriod(period: PdfPeriod): { periodStart: TZDate; periodEnd: TZDate } {
 	const { startTime, endTime } = getPeriodRange(period);

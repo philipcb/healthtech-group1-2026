@@ -21,7 +21,7 @@ export type PdfLabels = {
 	note: string;
 	noRedDays: string;
 	noData: string;
-	yearSummary: {
+	periodSummary: {
 		exposure: string;
 		totalRedDays: string;
 		worstMonth: string;

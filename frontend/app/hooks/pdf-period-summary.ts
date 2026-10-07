@@ -2,7 +2,7 @@ import type { Exposure } from "@/lib/exposures.ts";
 import type { TZDate } from "@date-fns/tz";
 import type jsPDF from "jspdf";
 
-export type PdfYearSummaryMetric = {
+export type PdfPeriodSummaryMetric = {
 	label: string;
 	average: number | null;
 	redDays: string;
@@ -10,20 +10,20 @@ export type PdfYearSummaryMetric = {
 	registeredDays: string;
 };
 
-export type PdfYearSummaryRow = {
+export type PdfPeriodSummaryRow = {
 	exposure: Exposure;
-	metrics: Array<PdfYearSummaryMetric>;
+	metrics: Array<PdfPeriodSummaryMetric>;
 };
 
-export type PdfYearSummaryPage = {
-	kind: "year-summary";
+export type PdfPeriodSummaryPage = {
+	kind: "period-summary";
 	periodStart: TZDate;
 	periodEnd: TZDate;
-	rows: Array<PdfYearSummaryRow>;
+	rows: Array<PdfPeriodSummaryRow>;
 };
 
-export type PdfYearSummaryLabels = {
-	yearSummary: {
+export type PdfPeriodSummaryLabels = {
+	periodSummary: {
 		exposure: string;
 		totalRedDays: string;
 		worstMonth: string;
@@ -34,22 +34,22 @@ export type PdfYearSummaryLabels = {
 	exposureName: (exposure: Exposure) => string;
 };
 
-/** Draws the vector summary table placed before the monthly year-report pages. */
-export function drawYearSummaryPage(
+/** Draws the vector summary table placed before the monthly period-report pages. */
+export function drawPeriodSummaryPage(
 	pdf: jsPDF,
-	page: PdfYearSummaryPage,
-	labels: PdfYearSummaryLabels,
+	page: PdfPeriodSummaryPage,
+	labels: PdfPeriodSummaryLabels,
 	startY: number,
 	margin: number,
 ): number {
 	const pageWidth = pdf.internal.pageSize.getWidth();
 	const tableWidth = pageWidth - margin * 2;
 	const columns = [
-		{ label: labels.yearSummary.exposure, width: tableWidth / 5 },
-		{ label: labels.yearSummary.totalRedDays, width: tableWidth / 5 },
-		{ label: labels.yearSummary.worstMonth, width: tableWidth / 5 },
-		{ label: labels.yearSummary.registeredDays, width: tableWidth / 5 },
-		{ label: labels.yearSummary.averageExposure, width: tableWidth / 5 },
+		{ label: labels.periodSummary.exposure, width: tableWidth / 5 },
+		{ label: labels.periodSummary.totalRedDays, width: tableWidth / 5 },
+		{ label: labels.periodSummary.worstMonth, width: tableWidth / 5 },
+		{ label: labels.periodSummary.registeredDays, width: tableWidth / 5 },
+		{ label: labels.periodSummary.averageExposure, width: tableWidth / 5 },
 	];
 	const rowHeight = 20;
 	const headerHeight = 14;

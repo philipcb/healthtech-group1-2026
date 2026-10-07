@@ -17,17 +17,17 @@ import {
 	type PdfView,
 } from "@/features/pdf-export/pdf-chart-renderer.tsx";
 import { MonthRangePicker } from "@/features/pdf-export/month-range-picker.tsx";
+import { usePdfTitles } from "@/features/pdf-export/use-pdf-titles.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
-import type { PdfTocEntry } from "@/hooks/pdf-table-of-contents.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
-import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
-import { getPeriodMonths, type PdfPeriod } from "@/lib/pdf/period.ts";
+import { exposureUnitByExposure } from "@/lib/exposures.ts";
+import type { PdfPeriod } from "@/lib/pdf/period.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -109,6 +109,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
 	const { user } = useUser(); // Current logged-in user (used in PDF filename)
 	const { exportPagesToPDF } = useExportPDF(); // Function to build the PDF from page specs
+	const buildTitles = usePdfTitles(); // Page titles and TOC, built from the page specs
 
 	// STATE: Local date/view selection for the dialog
 	// NOTE: These are independent from the global date/view state that controls the main page.
@@ -285,109 +286,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			return;
 		}
 
-		// Generate a title for each chart page in the PDF
-		// Calculate exposure types
-		const exposuresToRender = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
+		// Titles and TOC entries, read from the pages in the order they'll be drawn.
+		const { titles, tocEntries } = buildTitles(pages, localView, user.name);
 
-		// Get date range for titles and filename
+		// Date range for the filename
 		const { start, end } = getRangeFromSelection();
-
-		// Titles follow the page order reported by PdfChartRenderer.
-		const titles: Array<string> = [];
-		// Period exports only. Each entry points at a position in `pages` - at any
-		// point below, titles.length is the position the next page will have.
-		const tocEntries: Array<PdfTocEntry> = [];
-		if (localView === "period") {
-			const summaryIndex = titles.length;
-			tocEntries.push({
-				label: t(($) => $.pdf.summary),
-				level: 0,
-				pageIndex: summaryIndex,
-			});
-			titles.push(t(($) => $.pdf.summary));
-
-			// Trend spec 0 is drawn on the summary page itself, so it has no PDF page of its own.
-			// The trends entry therefore starts at the summary page and ends at the last trend spec.
-			const trendPageCount = pages.filter((page) => page.kind === "period-trend").length;
-			if (trendPageCount > 0) {
-				tocEntries.push({
-					label: t(($) => $.pdf.trends),
-					level: 0,
-					pageIndex: summaryIndex,
-				});
-			}
-			for (let i = 0; i < trendPageCount; i++) {
-				titles.push(i === 0 ? t(($) => $.pdf.summary) : t(($) => $.pdf.trends));
-			}
-		}
-
-		for (const exposure of exposuresToRender) {
-			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
-
-			// For day view: use single date
-			// For week/month view: use date range
-			if (localView === "day") {
-				const dateText = localDate.toLocaleDateString(i18n.language, {
-					day: "numeric",
-					month: "long",
-					year: "numeric",
-				});
-				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title);
-			} else if (localView === "period") {
-				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
-				for (const monthDate of getPeriodMonths(localPeriod)) {
-					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
-					const heading = `${exposureName} - ${user.name} - ${monthText}`;
-					// Keeps the year, since a period can span several. Norwegian month
-					// names are lowercase, so capitalise the first letter for the TOC line.
-					tocEntries.push({
-						label: monthText.charAt(0).toLocaleUpperCase(i18n.language) + monthText.slice(1),
-						level: 1,
-						pageIndex: titles.length,
-					});
-					// Each month contributes two pages: the calendar, then its red-day table.
-					titles.push(heading, `${heading} - ${t(($) => $.pdf.redDays)}`);
-				}
-			} else {
-				const dateText = `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
-				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title);
-			}
-		}
-
-		// Day reports are appended after every page above, one title per report -
-		// read from the reports themselves, since their count is only known now.
-		// Also note where each exposure's reports start and end, for the TOC.
-		const dayReportRanges = new Map<Exposure, { first: number; last: number }>();
-		pages.forEach((page, index) => {
-			if (page.kind !== "day-report") return;
-			const dateText = page.date.toLocaleDateString(i18n.language, {
-				day: "numeric",
-				month: "long",
-				year: "numeric",
-			});
-			titles.push(
-				`${t(($) => $.pdf.dayReport)} - ${t(($) => $.exposures[page.exposure])} - ${user.name} - ${dateText}`,
-			);
-			dayReportRanges.set(page.exposure, {
-				first: dayReportRanges.get(page.exposure)?.first ?? index,
-				last: index,
-			});
-		});
-
-		if (dayReportRanges.size > 0) {
-			const [firstRange] = dayReportRanges.values();
-			tocEntries.push({ label: t(($) => $.pdf.dayReports), level: 0, pageIndex: firstRange.first });
-			for (const [exposure, range] of dayReportRanges) {
-				tocEntries.push({
-					label: t(($) => $.exposures[exposure]),
-					level: 1,
-					pageIndex: range.first,
-					lastPageIndex: range.last,
-				});
-			}
-		}
 
 		// Generate filename with date range
 		const fileNameDate =

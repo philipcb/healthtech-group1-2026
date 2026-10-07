@@ -68,7 +68,8 @@ import { useTranslation } from "react-i18next";
 export type PdfView = View | "period";
 
 /**
- * How the assembler should draw one page.
+ * How the assembler should draw one page. Each spec also carries what its
+ * title needs (exposure, month), so titles are built from the pages themselves.
  *  - "calendar": a vector-drawn calendar page for the month and period exports.
  *  - "red-days": drawn as a real vector table (no image at all), so the
  *    rows stay searchable and can carry links.
@@ -77,13 +78,16 @@ export type PdfView = View | "period";
 export type PdfPageSpec =
 	| PdfPeriodSummaryPage
 	| PdfPeriodTrendPage
-	| { kind: "week-grid"; page: PdfWeekGridPage }
+	| { kind: "week-grid"; exposure: Exposure; page: PdfWeekGridPage }
 	| {
 			kind: "calendar";
+			exposure: Exposure;
+			/** Any day in the calendar's month. */
+			month: TZDate;
 			days: Array<PdfCalendarDay>;
 			summary: ReturnType<typeof calculateSummaryCounts>;
 	  }
-	| { kind: "red-days"; exposure: Exposure; rows: Array<RedDayRow> }
+	| { kind: "red-days"; exposure: Exposure; month: TZDate; rows: Array<RedDayRow> }
 	| PdfDayReport;
 
 type SummaryMetric = { exposure: Exposure; field?: DustField; label: string };
@@ -465,6 +469,7 @@ function WeekGridRenderer({
 			page: "summary",
 			spec: {
 				kind: "week-grid",
+				exposure,
 				page: {
 					hours,
 					days: weekDates.map((weekDate) => ({
@@ -541,6 +546,8 @@ function MonthCalendarRenderer({
 			page: "summary",
 			spec: {
 				kind: "calendar",
+				exposure,
+				month: monthDate,
 				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
 				summary: calculateSummaryCounts(summaryData, {
 					exposure,
@@ -626,6 +633,8 @@ function MonthGridPage({
 			page: `calendar-${monthIndex}`,
 			spec: {
 				kind: "calendar",
+				exposure,
+				month: monthDate,
 				days: getCalendarDays(monthDate, mapExposureDataToTimeBucketStatuses(dayData, exposure, false)),
 				summary: calculateSummaryCounts(minuteData, {
 					exposure,
@@ -641,6 +650,7 @@ function MonthGridPage({
 			spec: {
 				kind: "red-days",
 				exposure,
+				month: monthDate,
 				rows: getRedDays({ exposure, dayData, minuteData, notes, granularity }),
 			},
 		});

@@ -178,7 +178,7 @@ function useBatchQueue<T extends { key: string }>(jobs: Array<T>, batchSize: num
 	const markDone = useCallback((key: string) => {
 		setCompletedKeys((prev) => {
 			if (prev.has(key)) return prev;
-			const next = new Set(prev);	
+			const next = new Set(prev);
 			next.add(key);
 			return next;
 		});

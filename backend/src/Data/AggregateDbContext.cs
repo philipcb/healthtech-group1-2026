@@ -24,8 +24,10 @@ public class AggregateDbContext : DbContext
 					table.HasCheckConstraint("CK_Sample_SampleCount_Enough", "\"SampleCount\" >= 5")
 			);
 			entity.HasKey(sample => sample.Id);
-			entity.Property(sample => sample.SampleType).HasConversion<string>();
-			entity.Property(sample => sample.SampleQualifier).HasMaxLength(128).IsRequired();
+			// entity.Property(sample => sample.SampleType).HasConversion<string>();
+			entity.Property(sample => sample.LocationQualifier).HasMaxLength(128);
+			// entity.Property(sample => sample.SampleQualifier).HasMaxLength(128).IsRequired(); 
+			entity.Property(sample => sample.JobQualifier).HasMaxLength(128);
 		});
 
 		modelBuilder.Entity<NoiseAverage>(entity =>

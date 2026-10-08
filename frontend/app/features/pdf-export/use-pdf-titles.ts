@@ -1,4 +1,4 @@
-import type { PdfPageSpec, PdfView } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import type { PdfPageSpec, PdfView } from "@/features/pdf-export/pdf-page-spec.ts";
 import type { PdfTocEntry } from "@/hooks/pdf-table-of-contents.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import type { Exposure } from "@/lib/exposures.ts";

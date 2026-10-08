@@ -1,4 +1,4 @@
-import type { PdfPageSpec } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import type { PdfPageSpec } from "@/features/pdf-export/pdf-page-spec.ts";
 import { drawDayReportPage } from "@/hooks/pdf-day-report.ts";
 import { drawPeriodSummaryPage } from "@/hooks/pdf-period-summary.ts";
 import { drawPeriodTrendPage } from "@/hooks/pdf-period-trend-chart.ts";

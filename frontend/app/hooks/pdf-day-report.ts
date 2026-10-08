@@ -267,7 +267,13 @@ export async function drawDayReportPage(
 }
 
 /** Fits an SVG inside a layout box without changing its aspect ratio. */
-function fitChart(chart: PdfChartSvg, x: number, y: number, maxWidth: number, maxHeight: number): PdfChartLayout {
+export function fitChart(
+	chart: PdfChartSvg,
+	x: number,
+	y: number,
+	maxWidth: number,
+	maxHeight: number,
+): PdfChartLayout {
 	const scale = Math.min(maxWidth / Math.max(chart.width, 1), maxHeight / Math.max(chart.height, 1));
 	const width = chart.width * scale;
 	const height = chart.height * scale;
@@ -275,7 +281,7 @@ function fitChart(chart: PdfChartSvg, x: number, y: number, maxWidth: number, ma
 }
 
 /** Adds the detached SVG to the current PDF page as vector content. */
-async function drawChartSvg(pdf: jsPDF, chart: PdfChartSvg, layout: PdfChartLayout): Promise<void> {
+export async function drawChartSvg(pdf: jsPDF, chart: PdfChartSvg, layout: PdfChartLayout): Promise<void> {
 	if (chart.width <= 0 || chart.height <= 0) return;
 	// Lazy loading keeps Vite from loading svg2pdf while the operator route starts.
 	const { svg2pdf } = await import("svg2pdf.js");
@@ -283,7 +289,7 @@ async function drawChartSvg(pdf: jsPDF, chart: PdfChartSvg, layout: PdfChartLayo
 }
 
 /** Places a localized message over the chart area when its series has no points. */
-function drawNoData(pdf: jsPDF, label: string, layout: PdfChartLayout): void {
+export function drawNoData(pdf: jsPDF, label: string, layout: PdfChartLayout): void {
 	pdf.setFont("helvetica", "normal");
 	pdf.setFontSize(7);
 	pdf.setTextColor(80, 80, 80);
@@ -291,7 +297,7 @@ function drawNoData(pdf: jsPDF, label: string, layout: PdfChartLayout): void {
 }
 
 /** Draws the danger and warning threshold samples below a chart. */
-function drawThresholdLegend(pdf: jsPDF, x: number, y: number, danger: string, warning: string): void {
+export function drawThresholdLegend(pdf: jsPDF, x: number, y: number, danger: string, warning: string): void {
 	pdf.setFont("helvetica", "normal");
 	pdf.setFontSize(5.5);
 	pdf.setTextColor(45, 55, 65);

@@ -49,7 +49,6 @@
     "day": "Dag",
     "week": "Uke",
     "month": "Måned",
-    "year": "År",
     "selectionText": "Du blir vist en {{view}}.",
     "dateSelectionSingle": "Du har valgt {{date}}.",
     "dateSelectionMultiple": "Du har valgt {{startDate}} til {{endDate}}."
@@ -83,8 +82,7 @@
     "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
     "theme": "Fargetema",
     "language": "Språk",
-    "map": "Kart",
-    "selectedYear": "Valgt år: {{year}}"
+    "map": "Kart"
   },
   "live": {
     "timeRange": {
@@ -333,14 +331,27 @@
     "noRedDays": "Ingen røde dager denne måneden.",
     "date": "Dato",
     "note": "Notat",
-    "dayReport": "Dagsrapport",
     "openReport": "Åpne rapport",
     "exceeded": "Over grenseverdi",
     "tableOfContents": "Innholdsfortegnelse",
+    "period": "Periode",
+    "periodMonthCount": "{{count}} måneder",
+    "periodMonthCount_one": "{{count}} måned",
+    "periodMonthCount_other": "{{count}} måneder",
+    "chooseEndMonth": "Velg sluttmåned (opptil {{years}} år)",
+    "summary": "Oppsummering",
+    "summaryExposure": "Eksponeringstype",
+    "summaryRedDays": "Totalt antall røde dager",
+    "summaryWorstMonth": "Verste måned",
+    "summaryRegisteredDays": "Registrerte dager",
+    "summaryAverage": "Gjennomsnittlig eksponering",
     "dayReports": "Dagsrapporter",
     "progressCollecting": "Henter data",
     "progressDayReports": "Lager dagsrapporter",
-    "progressBuilding": "Bygger PDF"
+    "progressBuilding": "Bygger PDF",
+    "trends": "Trender",
+    "trendAverageDescription": "Viser gjennomsnittlig verdi per dag",
+    "trendPeakDescription": "Viser maksimal verdi per dag"
   },
   "limitExplanation": {
     "actionValue": {

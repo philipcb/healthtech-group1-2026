@@ -1,7 +1,7 @@
 import type jsPDF from "jspdf";
 
 /**
- * One line in the year report's table of contents, as built by the export
+ * One line in the period report's table of contents, as built by the export
  * dialog. Positions are indices into the exported `pages` list, not PDF page
  * numbers: the dialog knows which page is which month, but only the assembler
  * knows where each one actually lands in the PDF.

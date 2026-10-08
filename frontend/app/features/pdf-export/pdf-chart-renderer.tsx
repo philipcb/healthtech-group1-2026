@@ -1,6 +1,6 @@
 import type { CollectedPage, PdfExportProgress, PdfPageSpec, PdfView } from "@/features/pdf-export/pdf-page-spec.ts";
 import { DayReportBatchRenderer, type DayReportJob } from "@/features/pdf-export/renderers/day-report-renderer.tsx";
-import { MonthCalendarRenderer } from "@/features/pdf-export/renderers/month-calendar-renderer";
+import { MonthCalendarRenderer } from "@/features/pdf-export/renderers/month-calendar-renderer.tsx";
 import { getPageOrder } from "@/features/pdf-export/renderers/page-keys.ts";
 import { getTrendMetrics, getTrendPageCount } from "@/features/pdf-export/renderers/period-metrics.ts";
 import { PeriodBatchRenderer } from "@/features/pdf-export/renderers/period-month-renderer.tsx";

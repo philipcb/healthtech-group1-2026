@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Backend;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 
 public class DataFiller
@@ -35,7 +37,7 @@ public class DataFiller
 		List<Sample> samples = await _aggregatedContext.Samples.ToListAsync();
 		foreach (Sample s in samples)
 		{
-			Console.WriteLine($"Sample {s.SampleType}-({s.SampleQualifier}) : {s.Id} with {s.SampleCount} users ");
+			Console.WriteLine($"Sample {s.LocationQualifier}-({s.JobQualifier}) : {s.Id} with {s.SampleCount} users ");
 			List<User>? sampleUsers = await _fetchHandler.getUsersBySample(s);
 			await updateDustDataAsync(s.Id, sampleUsers!, now);
 			await updateVibrationDataAsync(s.Id, sampleUsers!, now);
@@ -133,56 +135,91 @@ public class DataFiller
 
 
 
-	public async Task updateSamples()
+	public async Task<Sample?> createSample(String Site , String? LocationQualifier, String? JobQualifier)
 	{
-		Console.WriteLine("Update samples");
-		await updateLocationSamples();
-		await updateJobSamples();
-		await updateShiftSamples();	
+		List<User>? sampleUsers = await _fetchHandler.getUserBySiteAndQualifiers(
+			Site,
+			LocationQualifier,
+			JobQualifier
+		);
+		if (!sampleUsers.IsNullOrEmpty())
+		{
+			Sample newSample = new Sample
+			{
+				Id = Guid.NewGuid(),
+				SampleCount = sampleUsers!.Count,
+				Site = Site,
+				LocationQualifier = LocationQualifier,
+				JobQualifier = JobQualifier,
+			};
+			return newSample;
+		}
+		return null;
 	}
 
-	public async Task updateLocationSamples()
+	const String notSpecifiedKey = "NotSpecified";
+
+	public async Task updateSamples()
 	{
 		List<Location> allLocations = (await _fetchHandler.getAllLocations()).Distinct().ToList();
-		HashSet<Guid> existingLocationSamplesId = (
-			await _aggregatedContext
-				.Set<Sample>()
-				.Select(sample => sample.SampleQualifier)
-				.ToListAsync()
-		)
-			.Select(Guid.Parse)
-			.ToHashSet();
+		List<String> allSites = allLocations.Select(l => l.Site).Distinct().ToList();
+		List<String?> allJobs = (await _fetchHandler.getAllJobs()).Distinct().ToList();
+		
+		//It is possible to select no jobs
+		allJobs.Add(null);
+		allJobs.Distinct();
+		List<Sample> currentSamples = await _aggregatedContext.Samples.ToListAsync();
+		Dictionary<String, HashSet<String>> existingSamples = new Dictionary<String, HashSet<string>>();
+		//fill dico in a way to be able to detect every combinaison of jobs and locations already in db
+		foreach (Sample s in currentSamples)
+		{
+			String locationKey = s.LocationQualifier ?? notSpecifiedKey;
+			String jobKey = s.JobQualifier ?? notSpecifiedKey;
+			if (!existingSamples.ContainsKey(locationKey))
+			{
+				existingSamples.Add(locationKey, new HashSet<string>());
+			}
+			existingSamples[locationKey].Add(jobKey);
+		}
 
-		List<Sample> locationSample = [];
+		List<Sample> allSamples = [];
 		foreach (Location location in allLocations)
 		{
-			if (!existingLocationSamplesId.Contains(location.Id))
+			foreach (String? job in allJobs)
 			{
-				List<User>? sampleUsers = await _fetchHandler.getUserBySiteAndQualifier(
-					location.Site,
-					location.Id.ToString(),
-					SampleType.ByLocation
-				);
-
-				if (!sampleUsers.IsNullOrEmpty())
+				String locationKey = location.Id.ToString();
+				String? JobKey = job ?? notSpecifiedKey;
+				//If this combinaison of location and job isn't already in db
+				if (!existingSamples.ContainsKey(locationKey) || (existingSamples.ContainsKey(locationKey) && !existingSamples[locationKey].Contains(JobKey)))
 				{
-					Sample newLocationSample = new Sample
+					Sample? potentialSample = await createSample(location.Site, locationKey, job);
+					if (potentialSample != null)
 					{
-						Id = Guid.NewGuid(),
-						SampleCount = sampleUsers!.Count,
-						Site = location.Site,
-						SampleType = SampleType.ByLocation,
-						SampleQualifier = location.Id.ToString(),
-					};
-					locationSample.Add(newLocationSample);
+						allSamples.Add(potentialSample);
+					}				
+				}
+			}
+		}
+		//If location isn't specified, we still have samples for jobs on different site
+		foreach (String site in allSites)
+		{
+			foreach (String? job in allJobs)
+			{
+				String locationKey = notSpecifiedKey;
+				String? JobKey = job ?? notSpecifiedKey;
+				//If this combinaison of location and job isn't already in db
+				if (!existingSamples.ContainsKey(locationKey) || (existingSamples.ContainsKey(locationKey) && !existingSamples[locationKey].Contains(JobKey)))
+				{
+					Sample? potentialSample = await createSample(site, null, job);
+					if (potentialSample != null)
+					{
+						allSamples.Add(potentialSample);
+					}				
 				}
 			}
 		}
 
-		await _insertHandler.addSamples(locationSample);
+		await _insertHandler.addSamples(allSamples);
 	}
 
-	public async Task updateJobSamples() { }
-
-	public async Task updateShiftSamples() { }
 }

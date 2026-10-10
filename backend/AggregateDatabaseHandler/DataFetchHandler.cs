@@ -13,28 +13,28 @@ public class DataFetchHandler(AppDbContext _context)
 		return await _context.Location.ToListAsync<Location>();
 	}
 
-	public async Task<List<User>?> getUserBySiteAndQualifier(
+	public async Task<List<String?>> getAllJobs()
+	{
+		return await _context.User.Select(u => u.JobDescription).ToListAsync();
+	}
+
+	public async Task<List<User>?> getUserBySiteAndQualifiers(
 		String site,
-		String qualifier,
-		SampleType type
+		String? locationQualifier,
+		String? jobQualifier
 	)
 	{
-		List<User> users = [];
-		switch (type)
+		List<User> users = await _context.User.Where(u => u.Role == UserRole.Operator && u.Location != null && u.Location.Site.Equals(site)).ToListAsync();
+		
+		
+		if (locationQualifier != null)
 		{
-			case SampleType.ByLocation:
-				users = (await _context.User.ToListAsync())
-					.Where(u =>
-						(u.Role == UserRole.Operator)
-						&& (u.Location!.Id == Guid.Parse(qualifier))
-						&& u.Location.Site.Equals(site)
-					)
-					.ToList();
-				break;
-
-			default:
-				break;
+			users = users.Where(u => u.Location!.Id == Guid.Parse(locationQualifier)).ToList();
 		}
+		if (jobQualifier != null)
+		{	
+			users = users.Where(u => u.JobDescription != null && u.JobDescription.Equals(jobQualifier)).ToList();
+		}			
 
 		if (users.Count < 5)
 		{
@@ -45,10 +45,10 @@ public class DataFetchHandler(AppDbContext _context)
 
 	public async Task<List<User>?> getUsersBySample(Sample sample)
 	{
-		return await getUserBySiteAndQualifier(
+		return await getUserBySiteAndQualifiers(
 			sample.Site,
-			sample.SampleQualifier,
-			sample.SampleType
+			sample.LocationQualifier,
+			sample.JobQualifier
 		);
 	}
 

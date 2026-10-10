@@ -23,24 +23,22 @@ echo "------create login database"
 docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -c "CREATE USER "$LOGIN_USER" WITH PASSWORD '$LOGIN_PASSWORD'" 
 docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -c "CREATE DATABASE "$LOGIN_DB" OWNER "$LOGIN_USER"" 
 echo "------database and user created"
-
-echo "------create aggregate database"
-docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -c "CREATE USER "$AGGREGATE_USER" WITH PASSWORD '$AGGREGATE_PASSWORD'" 
-docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -c "CREATE DATABASE "$AGGREGATE_DB" OWNER "$AGGREGATE_USER"" 
-echo "------database and user created"
 #Migrations
 cd ./backend
 
 echo "------start migrations"
 dotnet ef database update --project src --context AppDbContext
 dotnet ef database update --project src --context LoginDbContext
-dotnet ef database update --project src --context AggregateDbContext
 echo "------migrations succeeded"
 
 #put initial values for exposure
 echo "------start seeding"
 docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
+dotnet run --project AggregateDatabaseHandler
+
 echo "------seeding succeeded"
+
+
 
 cd ..
 

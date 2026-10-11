@@ -334,7 +334,6 @@
         },
         "scale": {
           "title": "Bars and colors",
-          "fixed": "Each bar has a fixed scale per exposure, from 0 to 1.5 × the limit value. The same value therefore always gives the same bar, whichever other groups are shown. Values above the scale fill the whole bar, and the actual value is shown next to it.",
           "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
         },
         "thresholds": {

@@ -331,7 +331,6 @@
         },
         "scale": {
           "title": "Stolpene og fargene",
-          "fixed": "Hver stolpe har en fast skala per eksponering, fra 0 til 1,5 × grenseverdien. Samme verdi gir derfor alltid samme stolpe, uansett hvilke andre grupper som vises. Verdier over skalaen fyller hele stolpen, og den faktiske verdien står ved siden av.",
           "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
         },
         "thresholds": {

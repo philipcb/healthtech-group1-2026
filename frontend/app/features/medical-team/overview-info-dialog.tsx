@@ -49,9 +49,6 @@ export function OverviewInfoDialog() {
 				<section className="flex flex-col gap-1.5 text-sm">
 					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.scale.title)}</h3>
 					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.scale.fixed)}
-					</p>
-					<p className="text-muted-foreground">
 						{t(($) => $.medicalTeamDashboard.overview.info.scale.colors)}
 					</p>
 				</section>

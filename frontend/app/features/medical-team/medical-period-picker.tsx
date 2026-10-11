@@ -1,14 +1,19 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { getMonthLabel, monthKeys, type PeriodSelection } from "@/features/medical-team/medical-team-period.ts";
+import {
+	getMonthLabel,
+	getSelectableYears,
+	medicalPeriods,
+	monthKeys,
+	type PeriodSelection,
+} from "@/features/medical-team/medical-team-period.ts";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection }) {
 	const { t } = useTranslation();
 	const { period, setPeriod, month, setMonth, year, setYear } = selection;
-	const currentYear = new Date().getFullYear();
-	const years = Array.from({ length: 5 }, (_, index) => currentYear - index);
+	const years = getSelectableYears();
 
 	return (
 		<div className="flex flex-wrap items-center gap-3">
@@ -18,7 +23,8 @@ export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection 
 				value={period}
 				variant="outline"
 				onValueChange={(value: string) => {
-					if (value === "month" || value === "year") setPeriod(value);
+					const selectedPeriod = medicalPeriods.find((candidate) => candidate === value);
+					if (selectedPeriod) setPeriod(selectedPeriod);
 				}}
 			>
 				<ToggleGroupItem value="month">{t(($) => $.medicalTeamDashboard.period.month)}</ToggleGroupItem>

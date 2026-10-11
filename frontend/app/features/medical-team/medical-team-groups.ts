@@ -1,75 +1,45 @@
 import type { TranslateFn } from "@/i18n/config.ts";
-import type { Exposure } from "@/lib/exposures.ts";
-import { useState } from "react";
+import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
+import { formatExposureValue } from "@/lib/utils.ts";
 
-export type MedicalPeriod = "month" | "year";
-
-export type ExposureAverage = {
-	average: number;
-	unit: string;
-	percentOfActionValue: number;
-};
-
-export type PeriodAggregate = {
-	peopleCount: number;
-	averageTimeAboveActionPercent: number;
-	averageValues: Record<Exposure, ExposureAverage>;
-};
-
-export type MedicalGroupAggregate = {
-	id: string;
-	site: string;
-	hall: string;
-	occupation: string;
-	periods: Record<MedicalPeriod, PeriodAggregate>;
-};
-
-/** Groups with fewer people than this are never shown to the medical team */
+/** Groups with fewer people than this are never returned to the medical team */
 export const MIN_GROUP_SIZE = 5;
 
-/** Filter value that matches every hall or occupation */
-export const ALL_FILTER_VALUE = "all";
+/**
+ * The existing action and limit values each exposure's bar is drawn against. They apply to a single person's exposure,
+ * while the cards show group averages, so the colors place the group average on that scale rather than assess every
+ * person in the group. How comparable each exposure's value is to its thresholds:
+ * - dust: the PM1 TWA thresholds (7.5 / 15) have no documented source or unit in the project, so the comparison needs a
+ *   professional assessment.
+ * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
+ *   the measurement basis isn't the same and needs a professional assessment.
+ * - vibration: 100 / 400 points apply to a person's daily points, the same basis as the value (average daily points per
+ *   person), as long as the equipment's points follow the HSE points system, which the supplier hasn't confirmed.
+ */
+export const thresholdByExposure: Record<Exposure, Threshold> = {
+	dust: getThreshold("dust", "pm1_twa"),
+	noise: getThreshold("noise"),
+	vibration: getThreshold("vibration"),
+};
 
-/** Groups at the site that are large enough to be shown for the selected period */
-export function getPrivacySafeGroups(
-	groups: Array<MedicalGroupAggregate>,
-	site: string,
-	period: MedicalPeriod,
-): Array<MedicalGroupAggregate> {
-	return groups.filter((group) => group.site === site && group.periods[period].peopleCount >= MIN_GROUP_SIZE);
+/** A group average without its unit, rounded the same way everywhere it's shown */
+export function formatGroupNumber(value: number, unit: ExposureUnit, fractionDigits = unit === "ug" ? 0 : 1) {
+	return formatExposureValue(value, unit, fractionDigits);
 }
 
-export function filterGroups(
-	groups: Array<MedicalGroupAggregate>,
-	{ hall, occupation }: { hall: string; occupation: string },
-): Array<MedicalGroupAggregate> {
-	return groups.filter(
-		(group) =>
-			(hall === ALL_FILTER_VALUE || group.hall === hall) &&
-			(occupation === ALL_FILTER_VALUE || group.occupation === occupation),
-	);
+/** Points are written in lowercase, like the other units in the medical team's sentences */
+export function getGroupUnitLabel(unit: ExposureUnit, t: TranslateFn) {
+	return unit === "points" ? t(($) => $.medicalTeamDashboard.pointsUnit) : t(($) => $.exposures.units[unit]);
 }
 
-/** Hall and occupation filters for the given groups, plus the groups that match them */
-export function useGroupFilters(groups: Array<MedicalGroupAggregate>) {
-	const [hall, setHall] = useState(ALL_FILTER_VALUE);
-	const [occupation, setOccupation] = useState(ALL_FILTER_VALUE);
-
-	return {
-		hall,
-		setHall,
-		occupation,
-		setOccupation,
-		halls: [...new Set(groups.map((group) => group.hall))],
-		occupations: [...new Set(groups.map((group) => group.occupation))],
-		visibleGroups: filterGroups(groups, { hall, occupation }),
-	};
+/** A group average with its unit */
+export function formatGroupValue(value: number, unit: ExposureUnit, t: TranslateFn) {
+	return `${formatGroupNumber(value, unit)} ${getGroupUnitLabel(unit, t)}`;
 }
 
-export function getHallLabel(hall: string, t: TranslateFn) {
-	return hall === "M-hallen"
-		? t(($) => $.medicalTeamDashboard.halls.mHall)
-		: t(($) => $.medicalTeamDashboard.halls.hall2);
+export function getGroupName({ hall, occupation }: { hall: string; occupation: string }, t: TranslateFn) {
+	return `${hall} · ${getOccupationLabel(occupation, t)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {

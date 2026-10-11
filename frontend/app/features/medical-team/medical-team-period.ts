@@ -1,6 +1,7 @@
-import type { MedicalPeriod } from "@/features/medical-team/medical-team-groups.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
-import { useState } from "react";
+
+export const medicalPeriods = ["month", "year"] as const;
+export type MedicalPeriod = (typeof medicalPeriods)[number];
 
 export const monthKeys = [
 	"january",
@@ -27,12 +28,10 @@ export type PeriodSelection = {
 	setYear: (year: number) => void;
 };
 
-export function usePeriodSelection(): PeriodSelection {
-	const [period, setPeriod] = useState<MedicalPeriod>("month");
-	const [month, setMonth] = useState(() => new Date().getMonth());
-	const [year, setYear] = useState(() => new Date().getFullYear());
-
-	return { period, setPeriod, month, setMonth, year, setYear };
+/** The current year and the four before it, newest first */
+export function getSelectableYears(): Array<number> {
+	const currentYear = new Date().getFullYear();
+	return Array.from({ length: 5 }, (_, index) => currentYear - index);
 }
 
 export function getMonthLabel(month: number, t: TranslateFn) {

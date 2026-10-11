@@ -312,11 +312,6 @@
       "electrician": "Electrician",
       "fitter": "Fitter"
     },
-    "exposures": {
-      "dust": "Dust",
-      "noise": "Noise",
-      "vibration": "Vibration"
-    },
     "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
     "groupsTitle": "Group overview",
     "averageTimeAboveAction": "Average time above action value",

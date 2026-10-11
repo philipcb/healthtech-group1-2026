@@ -309,11 +309,6 @@
       "electrician": "Elektriker",
       "fitter": "Industrirørlegger"
     },
-    "exposures": {
-      "dust": "Støv",
-      "noise": "Støy",
-      "vibration": "Vibrasjon"
-    },
     "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
     "groupsTitle": "Gruppeoversikt",
     "averageTimeAboveAction": "Gjennomsnittlig tid over tiltaksverdi",

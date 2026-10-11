@@ -1,29 +1,5 @@
+import type { MedicalGroupAggregate } from "@/features/medical-team/medical-team-groups.ts";
 import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
-import type { Exposure } from "@/lib/exposures.ts";
-
-export const MIN_GROUP_SIZE = 5;
-
-export type MedicalPeriod = "month" | "year";
-
-type ExposureAverage = {
-	average: number;
-	unit: string;
-	percentOfActionValue: number;
-};
-
-type PeriodAggregate = {
-	peopleCount: number;
-	averageTimeAboveActionPercent: number;
-	averageValues: Record<Exposure, ExposureAverage>;
-};
-
-export type MedicalGroupAggregate = {
-	id: string;
-	site: string;
-	hall: string;
-	occupation: string;
-	periods: Record<MedicalPeriod, PeriodAggregate>;
-};
 
 export const medicalGroupAggregates: Array<MedicalGroupAggregate> = [
 	{

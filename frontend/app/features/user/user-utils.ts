@@ -25,6 +25,30 @@ export const DEFAULT_USER: User = {
 	},
 };
 
+export const MEDICAL_TEAM_DEMO_USER_ID = "33333333-3333-3333-3333-333333333333" as const;
+export const MEDICAL_TEAM_DEMO_SITE = "Aker Solutions Verdal" as const;
+
+export const MEDICAL_TEAM_DEMO_USER: User = {
+	...DEFAULT_USER,
+	id: MEDICAL_TEAM_DEMO_USER_ID,
+	name: "Mia Medisin",
+	email: "mia.medisin@aker.com",
+	role: "medicalTeam",
+	jobDescription: "Bedriftslege",
+	location: {
+		...DEFAULT_USER.location,
+		latitude: 63.7933,
+		longitude: 11.4817,
+		region: "Trøndelag",
+		city: "Verdal",
+		site: MEDICAL_TEAM_DEMO_SITE,
+	},
+};
+
+export const DEMO_FALLBACK_USERS: Partial<Record<User["role"], User>> = {
+	medicalTeam: MEDICAL_TEAM_DEMO_USER,
+};
+
 export function getStoredUser(): User {
 	try {
 		const stored = localStorage.getItem(USER_STORAGE_KEY);

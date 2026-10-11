@@ -258,7 +258,8 @@
   "user": {
     "role": {
       "operator": "Operatør",
-      "foreman": "Formann"
+      "foreman": "Formann",
+      "medicalTeam": "Medisinsk team"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },
@@ -267,6 +268,63 @@
     "navigate": {
       "toRegister": "Gå til registreringssiden"
     }
+  },
+  "medicalTeamDashboard": {
+    "title": "Medisinsk team",
+    "description": "Anonymisert oversikt over eksponering på arbeidsplassen.",
+    "period": {
+      "label": "Tidsperiode",
+      "month": "Måned",
+      "year": "År",
+      "selectYear": "Velg år"
+    },
+    "months": {
+      "january": "Januar",
+      "february": "Februar",
+      "march": "Mars",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Desember"
+    },
+    "filters": {
+      "title": "Filtrer grupper",
+      "hall": "Bygg",
+      "allHalls": "Alle bygg",
+      "occupation": "Yrke",
+      "allOccupations": "Alle yrker"
+    },
+    "halls": {
+      "mHall": "M-hallen",
+      "hall2": "Hall 2"
+    },
+    "occupations": {
+      "welder": "Sveiser",
+      "technician": "Tekniker",
+      "electrician": "Elektriker",
+      "fitter": "Industrirørlegger"
+    },
+    "exposures": {
+      "dust": "Støv",
+      "noise": "Støy",
+      "vibration": "Vibrasjon"
+    },
+    "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
+    "groupsTitle": "Gruppeoversikt",
+    "averageTimeAboveAction": "Gjennomsnittlig tid over tiltaksverdi",
+    "averageExposureTitle": "Gjennomsnittlig eksponering sammenlignet med tiltaksverdi",
+    "average": "Gjennomsnitt",
+    "ofActionValue": "av tiltaksverdi",
+    "empty": {
+      "title": "Ingen grupper å vise",
+      "description": "Prøv et annet bygg eller yrke. Små grupper skjules for å beskytte personvernet."
+    },
+    "demoDataNotice": "Viste verdier er syntetiske eksempeldata. Faktiske aggregerte målinger kobles til når API-et er tilgjengelig."
   },
   "select": {
     "all": "Velg alle",

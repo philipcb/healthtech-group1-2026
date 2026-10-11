@@ -261,7 +261,8 @@
   "user": {
     "role": {
       "operator": "Operator",
-      "foreman": "Foreman"
+      "foreman": "Foreman",
+      "medicalTeam": "Medical team"
     },
     "searchPlaceholder": "Search users..."
   },
@@ -270,6 +271,63 @@
     "navigate": {
       "toRegister": "Go to register page"
     }
+  },
+  "medicalTeamDashboard": {
+    "title": "Medical team",
+    "description": "An anonymized overview of workplace exposure.",
+    "period": {
+      "label": "Time period",
+      "month": "Month",
+      "year": "Year",
+      "selectYear": "Select year"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "filters": {
+      "title": "Filter groups",
+      "hall": "Building",
+      "allHalls": "All buildings",
+      "occupation": "Occupation",
+      "allOccupations": "All occupations"
+    },
+    "halls": {
+      "mHall": "M Hall",
+      "hall2": "Hall 2"
+    },
+    "occupations": {
+      "welder": "Welder",
+      "technician": "Technician",
+      "electrician": "Electrician",
+      "fitter": "Fitter"
+    },
+    "exposures": {
+      "dust": "Dust",
+      "noise": "Noise",
+      "vibration": "Vibration"
+    },
+    "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
+    "groupsTitle": "Group overview",
+    "averageTimeAboveAction": "Average time above action value",
+    "averageExposureTitle": "Average exposure compared with action value",
+    "average": "Average",
+    "ofActionValue": "of action value",
+    "empty": {
+      "title": "No groups to display",
+      "description": "Try another building or occupation. Small groups are hidden to protect privacy."
+    },
+    "demoDataNotice": "Values shown are synthetic demo data. Actual aggregated measurements will be connected when the API is available."
   },
   "select": {
     "all": "Select all",

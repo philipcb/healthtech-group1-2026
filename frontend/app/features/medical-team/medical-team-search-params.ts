@@ -3,7 +3,7 @@ import {
 	medicalPeriods,
 	type PeriodSelection,
 } from "@/features/medical-team/medical-team-period.ts";
-import { type Exposure, parseAsExposure } from "@/lib/exposures.ts";
+import { type DustField, defaultDustField, type Exposure, parseAsDustField, parseAsExposure } from "@/lib/exposures.ts";
 import { createParser, parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 
 /** The URL shows months as 1-12, while `Date` and the rest of the code use 0-11 */
@@ -20,6 +20,8 @@ const today = new Date();
 const searchParams = {
 	/** The exposure shown in a group's details */
 	exposure: parseAsExposure.withDefault("dust"),
+	/** The dust fraction shown in a group's details. The overview always shows PM1. Same name as in the operator's pages. */
+	dustField: parseAsDustField.withDefault(defaultDustField),
 	/**
 	 * The exposure the overview sorts by. Kept apart from `exposure`, so opening another exposure from a group card
 	 * doesn't change the overview's sorting when going back.
@@ -50,6 +52,8 @@ export function useMedicalTeamSearchParams() {
 	return {
 		exposure: params.exposure,
 		setExposure: (exposure: Exposure) => void setParams({ exposure }),
+		dustField: params.dustField,
+		setDustField: (dustField: DustField) => void setParams({ dustField }),
 		sort: params.sort,
 		setSort: (sort: Exposure) => void setParams({ sort }),
 		hall: params.hall,

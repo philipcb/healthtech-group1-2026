@@ -308,7 +308,7 @@
     "exposureLabel": "Exposure type",
     "pointsUnit": "points",
     "metrics": {
-      "dust": "Average PM1 concentration (TWA)",
+      "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
       "vibration": "Average daily vibration points per person in the period"
     },
@@ -361,6 +361,7 @@
       "back": "Back to the overview",
       "eyebrow": "Group",
       "fallbackTitle": "Group",
+      "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
       "noPeriodAverage": "No value for the period",
       "trendTitle": "Development in the period",
@@ -381,6 +382,7 @@
         "tooFewPeople": "The group has too few people for data to be shown."
       },
       "noData": "No data for the selected period.",
+      "noDustFieldData": "No {{dustField}} data for the selected period.",
       "allSuppressed": "All values in the period are hidden because too few people contributed.",
       "error": "Could not load the group."
     }

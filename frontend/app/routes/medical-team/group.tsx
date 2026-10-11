@@ -1,3 +1,4 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -9,7 +10,7 @@ import { formatGroupValue, getGroupName, getGroupUnitLabel } from "@/features/me
 import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
 import { type GroupTrendResponse, groupTrendQueryOptions } from "@/features/medical-team/medical-team-queries.ts";
 import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,10 +20,18 @@ import type { Route } from "./+types/group";
 export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 	const { t } = useTranslation();
 	const { search } = useLocation();
-	const { exposure, setExposure, periodSelection } = useMedicalTeamSearchParams();
+	const { exposure, setExposure, dustField, setDustField, periodSelection } = useMedicalTeamSearchParams();
 	const { period, month, year } = periodSelection;
 	const { data, isPending, isError } = useQuery(
-		groupTrendQueryOptions({ groupId: params.groupId, exposure, period, month, year }),
+		groupTrendQueryOptions({
+			groupId: params.groupId,
+			exposure,
+			// Only dust has fractions, so other exposures share one cache entry whichever fraction is selected
+			dustField: exposure === "dust" ? dustField : undefined,
+			period,
+			month,
+			year,
+		}),
 	);
 
 	return (
@@ -54,11 +63,20 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 				</header>
 			</div>
 
-			<MedicalExposureToggle
-				label={t(($) => $.medicalTeamDashboard.exposureLabel)}
-				value={exposure}
-				onValueChange={setExposure}
-			/>
+			<div className="flex flex-col gap-3">
+				<MedicalExposureToggle
+					label={t(($) => $.medicalTeamDashboard.exposureLabel)}
+					value={exposure}
+					onValueChange={setExposure}
+				/>
+				{exposure === "dust" && (
+					<DustFieldTabs
+						value={dustField}
+						onValueChange={setDustField}
+						ariaLabel={t(($) => $.medicalTeamDashboard.group.dustFieldLabel)}
+					/>
+				)}
+			</div>
 
 			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
 
@@ -69,7 +87,7 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			) : data.status === "unavailable" ? (
 				<EmptyState title={t(($) => $.medicalTeamDashboard.group.unavailable[data.reason])} />
 			) : (
-				<GroupDetails trend={data} exposure={exposure} />
+				<GroupDetails trend={data} exposure={exposure} dustField={dustField} />
 			)}
 		</div>
 	);
@@ -78,12 +96,19 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 function GroupDetails({
 	trend,
 	exposure,
+	dustField,
 }: {
 	trend: Extract<GroupTrendResponse, { status: "ok" }>;
 	exposure: Exposure;
+	/** Only used for dust */
+	dustField: DustField;
 }) {
 	const { t } = useTranslation();
-	const metricLabel = t(($) => $.medicalTeamDashboard.metrics[exposure]);
+	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
+	const metricLabel =
+		exposure === "dust"
+			? t(($) => $.medicalTeamDashboard.metrics.dust, { dustField: dustFieldLabel })
+			: t(($) => $.medicalTeamDashboard.metrics[exposure]);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -112,7 +137,13 @@ function GroupDetails({
 					</p>
 				</div>
 				{trend.points.length === 0 ? (
-					<EmptyState title={t(($) => $.medicalTeamDashboard.group.noData)} />
+					<EmptyState
+						title={
+							exposure === "dust"
+								? t(($) => $.medicalTeamDashboard.group.noDustFieldData, { dustField: dustFieldLabel })
+								: t(($) => $.medicalTeamDashboard.group.noData)
+						}
+					/>
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.medicalTeamDashboard.group.allSuppressed)} />
 				) : (

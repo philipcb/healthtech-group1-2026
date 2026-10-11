@@ -1,6 +1,6 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ExposureSlider } from "@/components/exposure-slider.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { DustExposureLineChartCard } from "@/features/exposure-line-chart-card/dust-exposure-line-chart-card.tsx";
 import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
@@ -18,7 +18,6 @@ import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-q
 import {
 	type DustField,
 	defaultDustField,
-	dustFields,
 	type Exposure,
 	parseAsDustField,
 	parseAsExposureUnit,
@@ -108,15 +107,7 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 
 	return (
 		<div className="flex flex-col gap-4 lg:max-w-4xl">
-			<Tabs value={dustField} onValueChange={(value) => setDustField(value as DustField)}>
-				<TabsList>
-					{dustFields.map((field) => (
-						<TabsTrigger key={field} value={field}>
-							{t(($) => $.exposures.dustFields[field])}
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</Tabs>
+			<DustFieldTabs value={dustField} onValueChange={setDustField} />
 
 			<ExposureChartCard
 				isLoading={isLoading}

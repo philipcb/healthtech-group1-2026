@@ -13,7 +13,7 @@ import {
 } from "@/features/medical-team/vibration-aggregation.ts";
 import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
 import { today } from "@/lib/date.ts";
-import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import {
 	eachDayOfInterval,
 	endOfMonth,
@@ -30,7 +30,8 @@ import seedrandom from "seedrandom";
 /*
  * Synthetic stand-in for the aggregate API. The overview and a group's details are served from the same data, so they
  * always agree:
- * - dust and noise: one group value per working day, generated from the group's baseline
+ * - dust and noise: one group value per working day, generated from the group's baseline. Dust is PM1, and a group's
+ *   details can also show PM2.5 and PM10 from synthetic demo baselines, see `syntheticDustBaselines`.
  * - vibration: tool sessions per person and day, aggregated with the rules in `vibration-aggregation.ts`
  */
 
@@ -40,6 +41,9 @@ import seedrandom from "seedrandom";
  * doesn't store yet.
  */
 type ComparableExposure = Extract<Exposure, "dust" | "noise">;
+
+/** Dust fractions besides PM1, which only a group's details show */
+type SyntheticDustField = Exclude<DustField, "pm1_twa">;
 
 type MockGroup = {
 	id: string;
@@ -55,6 +59,12 @@ type MockGroup = {
 	 * used to generate sessions that show the planned aggregation.
 	 */
 	syntheticVibrationPointsPerDay: number;
+	/**
+	 * Synthetic demo baselines for PM2.5 and PM10, not measurements. Chosen by hand so the fractions can be compared
+	 * visually, and set so they normally follow PM1 ≤ PM2.5 ≤ PM10, which isn't guaranteed for real measurements. PM1
+	 * stays `baseline.dust`.
+	 */
+	syntheticDustBaselines: Record<SyntheticDustField, number>;
 };
 
 const mockGroups: Array<MockGroup> = [
@@ -66,6 +76,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 12,
 		baseline: { dust: 142, noise: 82 },
 		syntheticVibrationPointsPerDay: 46,
+		syntheticDustBaselines: { pm25_twa: 158, pm10_twa: 205 },
 	},
 	{
 		id: "hall-1-technician",
@@ -75,6 +86,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 8,
 		baseline: { dust: 96, noise: 76 },
 		syntheticVibrationPointsPerDay: 31,
+		syntheticDustBaselines: { pm25_twa: 112, pm10_twa: 168 },
 	},
 	{
 		id: "hall-1-electrician",
@@ -84,6 +96,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 6,
 		baseline: { dust: 74, noise: 73 },
 		syntheticVibrationPointsPerDay: 18,
+		syntheticDustBaselines: { pm25_twa: 86, pm10_twa: 131 },
 	},
 	{
 		id: "hall-2-welder",
@@ -93,6 +106,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 10,
 		baseline: { dust: 171, noise: 84 },
 		syntheticVibrationPointsPerDay: 52,
+		syntheticDustBaselines: { pm25_twa: 189, pm10_twa: 244 },
 	},
 	{
 		id: "hall-2-technician",
@@ -102,6 +116,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 9,
 		baseline: { dust: 117, noise: 78 },
 		syntheticVibrationPointsPerDay: 27,
+		syntheticDustBaselines: { pm25_twa: 136, pm10_twa: 197 },
 	},
 	{
 		id: "hall-2-fitter",
@@ -111,6 +126,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 7,
 		baseline: { dust: 133, noise: 81 },
 		syntheticVibrationPointsPerDay: 39,
+		syntheticDustBaselines: { pm25_twa: 152, pm10_twa: 226 },
 	},
 	{
 		// Too small to be shown, so the backend leaves it out of every response
@@ -121,6 +137,7 @@ const mockGroups: Array<MockGroup> = [
 		peopleCount: 3,
 		baseline: { dust: 88, noise: 75 },
 		syntheticVibrationPointsPerDay: 22,
+		syntheticDustBaselines: { pm25_twa: 101, pm10_twa: 149 },
 	},
 ];
 
@@ -203,7 +220,12 @@ export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<G
 		};
 	}
 
-	const days = getSyntheticDays(group, { ...request, exposure });
+	const dustField = request.dustField ?? defaultDustField;
+	// PM2.5 and PM10 are synthetic demo series with their own baselines, generated the same way as PM1
+	const days =
+		exposure === "dust" && dustField !== "pm1_twa"
+			? getSyntheticDays(group, { ...request, exposure }, group.syntheticDustBaselines[dustField])
+			: getSyntheticDays(group, { ...request, exposure });
 
 	return {
 		status: "ok",
@@ -278,15 +300,19 @@ function getWorkingDays({ period, year, month }: PeriodSelectionRequest): Array<
 	return eachDayOfInterval({ start: from, end: to }).filter((date) => !isWeekend(date));
 }
 
-/** One value per working day with data in the requested period, from the data start up to today */
+/**
+ * One value per working day with data in the requested period, from the data start up to today. A dust fraction's
+ * baseline can be given instead of PM1's, and keeps the same seed, so every fraction varies and is hidden on the same days.
+ */
 function getSyntheticDays(
 	group: MockGroup,
 	{ exposure, ...period }: PeriodRequest & { exposure: ComparableExposure },
+	baseline = group.baseline[exposure],
 ): Array<SyntheticDay> {
 	return getWorkingDays(period).map((date) => {
 		// Seeded per day, so a day has the same value in every view
 		const random = seedrandom(`${group.id}:${exposure}:${formatDate(date, "yyyy-MM-dd")}`);
-		const value = dailyVariation[exposure](group.baseline[exposure], random());
+		const value = dailyVariation[exposure](baseline, random());
 		const suppressedShare = date.getMonth() === 6 ? SUPPRESSED_JULY_DAY_SHARE : SUPPRESSED_DAY_SHARE;
 
 		return { date, value, isSuppressed: random() < suppressedShare };

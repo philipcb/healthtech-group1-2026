@@ -305,7 +305,7 @@
     "exposureLabel": "Eksponeringstype",
     "pointsUnit": "poeng",
     "metrics": {
-      "dust": "Gjennomsnittlig PM1-konsentrasjon (TWA)",
+      "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
       "vibration": "Gjennomsnittlig daglig vibrasjonspoengsum per person i perioden"
     },
@@ -358,6 +358,7 @@
       "back": "Tilbake til oversikten",
       "eyebrow": "Gruppe",
       "fallbackTitle": "Gruppe",
+      "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
       "noPeriodAverage": "Ingen verdi for perioden",
       "trendTitle": "Utvikling i perioden",
@@ -378,6 +379,7 @@
         "tooFewPeople": "Gruppen har for få personer til at data kan vises."
       },
       "noData": "Ingen data for valgt periode.",
+      "noDustFieldData": "Ingen {{dustField}}-data for valgt periode.",
       "allSuppressed": "Alle verdier i perioden er skjult fordi for få personer bidro.",
       "error": "Kunne ikke hente gruppen."
     }

@@ -1,6 +1,6 @@
 import { fetchMockGroupSummaries, fetchMockGroupTrend } from "@/features/medical-team/medical-team-mock-data.ts";
 import type { MedicalPeriod } from "@/features/medical-team/medical-team-period.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import { queryOptions } from "@tanstack/react-query";
 import { minutesToMilliseconds } from "date-fns";
 
@@ -10,7 +10,8 @@ import { minutesToMilliseconds } from "date-fns";
  *
  * What each exposure's value is, and where it comes from in the aggregate database (branch
  * `24-epic-create-an-anonymous-database-duplicate`):
- * - dust: the group's average PM1 TWA, `DustAverage.AveragePm1Twa`
+ * - dust: the group's average PM1 TWA, `DustAverage.AveragePm1Twa`. A group's details can ask for PM2.5 or PM10 instead
+ *   (`AveragePm25Twa`, `AveragePm10Twa`).
  * - noise: the group's average LAeq, stored in `NoiseAverage.AverageLcpk`, because the two noise columns are filled in
  *   swapped. It's an arithmetic average of decibels, which underestimates the energy average.
  * - vibration: points, aggregated the way the backend is planned to (see `vibration-aggregation.ts`): each person's
@@ -60,7 +61,11 @@ export type GroupSummaryResponse = {
 	groups: Array<GroupSummary>;
 };
 
-export type GroupTrendRequest = PeriodRequest & { groupId: string };
+export type GroupTrendRequest = PeriodRequest & {
+	groupId: string;
+	/** The dust fraction to show, only used for dust. Defaults to PM1 TWA, the fraction the overview shows. */
+	dustField?: DustField;
+};
 
 /** Daily points for a month, monthly points for a year */
 export type GroupTrendGranularity = "day" | "month";

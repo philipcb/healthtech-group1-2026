@@ -271,7 +271,7 @@
   },
   "medicalTeamDashboard": {
     "title": "Medisinsk team",
-    "description": "Anonymisert oversikt over eksponering på arbeidsplassen.",
+    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
     "period": {
       "label": "Tidsperiode",
       "month": "Måned",
@@ -293,15 +293,8 @@
       "december": "Desember"
     },
     "filters": {
-      "title": "Filtrer grupper",
       "hall": "Bygg",
-      "allHalls": "Alle bygg",
-      "occupation": "Yrke",
-      "allOccupations": "Alle yrker"
-    },
-    "halls": {
-      "mHall": "M-hallen",
-      "hall2": "Hall 2"
+      "allHalls": "Alle bygg"
     },
     "occupations": {
       "welder": "Sveiser",
@@ -309,17 +302,85 @@
       "electrician": "Elektriker",
       "fitter": "Industrirørlegger"
     },
-    "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
-    "groupsTitle": "Gruppeoversikt",
-    "averageTimeAboveAction": "Gjennomsnittlig tid over tiltaksverdi",
-    "averageExposureTitle": "Gjennomsnittlig eksponering sammenlignet med tiltaksverdi",
-    "average": "Gjennomsnitt",
-    "ofActionValue": "av tiltaksverdi",
-    "empty": {
-      "title": "Ingen grupper å vise",
-      "description": "Prøv et annet bygg eller yrke. Små grupper skjules for å beskytte personvernet."
+    "exposureLabel": "Eksponeringstype",
+    "pointsUnit": "poeng",
+    "metrics": {
+      "dust": "Gjennomsnittlig PM1-konsentrasjon (TWA)",
+      "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
+      "vibration": "Gjennomsnittlig daglig vibrasjonspoengsum per person i perioden"
     },
-    "demoDataNotice": "Viste verdier er syntetiske eksempeldata. Faktiske aggregerte målinger kobles til når API-et er tilgjengelig."
+    "metricsShort": {
+      "dust": "PM1 TWA",
+      "noise": "LAeq",
+      "vibration": "Snitt per person og dag"
+    },
+    "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
+    "overview": {
+      "heading": "Grupper",
+      "sortLabel": "Sorter grupper etter",
+      "belowActionValue": "Under tiltaksverdi",
+      "aggregationNotice": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere.",
+      "info": {
+        "trigger": "Slik leser du oversikten",
+        "title": "Slik leser du oversikten",
+        "description": "Hva gruppeverdiene betyr, hvordan gruppene er sortert, og hva stolpene og fargene viser.",
+        "groupData": {
+          "title": "Gruppedata og sortering",
+          "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson.",
+          "sorting": "Gruppene er sortert etter gjennomsnittlig eksponering, høyest først. Dette er ikke en risikorangering, fordi gjennomsnitt ikke viser variasjonen i en gruppe."
+        },
+        "scale": {
+          "title": "Stolpene og fargene",
+          "fixed": "Hver stolpe har en fast skala per eksponering, fra 0 til 1,5 × grenseverdien. Samme verdi gir derfor alltid samme stolpe, uansett hvilke andre grupper som vises. Verdier over skalaen fyller hele stolpen, og den faktiske verdien står ved siden av.",
+          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
+        },
+        "thresholds": {
+          "title": "Tiltaks- og grenseverdier"
+        },
+        "caveats": {
+          "title": "Ikke faglig validert ennå",
+          "individual": "Tersklene gjelder eksponering for enkeltpersoner, mens oversikten viser gruppesnitt.",
+          "dust": "Støv: Tersklene for PM1 TWA har ingen dokumentert kilde eller enhet i prosjektet, så sammenligningen er ikke faglig avklart.",
+          "noise": "Støy: Tersklene gjelder daglig eksponering for én person (LEX,8h), mens verdien er et aritmetisk snitt av LAeq. Målegrunnlaget er derfor ikke det samme.",
+          "vibration": "Vibrasjon: Tersklene og verdien er begge daglige poeng per person, men det er ikke bekreftet at utstyrets poeng følger HSE-poengsystemet."
+        }
+      },
+      "noValue": "Ingen verdi",
+      "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
+      "noGroups": {
+        "title": "Ingen grupper å vise",
+        "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
+      },
+      "noData": "Ingen data for valgt periode.",
+      "error": "Kunne ikke hente gruppene."
+    },
+    "group": {
+      "back": "Tilbake til oversikten",
+      "eyebrow": "Gruppe",
+      "fallbackTitle": "Gruppe",
+      "periodAverage": "Snitt i perioden",
+      "noPeriodAverage": "Ingen verdi for perioden",
+      "trendTitle": "Utvikling i perioden",
+      "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
+      "granularity": {
+        "day": "Ett punkt per arbeidsdag",
+        "month": "Ett punkt per måned"
+      },
+      "vibrationGranularity": {
+        "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen",
+        "month": "Ett punkt per måned: gjennomsnittet av hver persons gjennomsnittlige dagsverdi i måneden"
+      },
+      "gapsNotice": "Brudd i linjen betyr at det ikke finnes målinger, eller at verdien er skjult fordi for få personer bidro.",
+      "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
+      "suppressed": "Skjult fordi for få personer bidro",
+      "unavailable": {
+        "noSuchGroup": "Gruppen finnes ikke.",
+        "tooFewPeople": "Gruppen har for få personer til at data kan vises."
+      },
+      "noData": "Ingen data for valgt periode.",
+      "allSuppressed": "Alle verdier i perioden er skjult fordi for få personer bidro.",
+      "error": "Kunne ikke hente gruppen."
+    }
   },
   "select": {
     "all": "Velg alle",

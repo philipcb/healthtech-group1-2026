@@ -274,7 +274,7 @@
   },
   "medicalTeamDashboard": {
     "title": "Medical team",
-    "description": "An anonymized overview of workplace exposure.",
+    "description": "An anonymized overview of workplace exposure, per building and occupation.",
     "period": {
       "label": "Time period",
       "month": "Month",
@@ -296,15 +296,8 @@
       "december": "December"
     },
     "filters": {
-      "title": "Filter groups",
       "hall": "Building",
-      "allHalls": "All buildings",
-      "occupation": "Occupation",
-      "allOccupations": "All occupations"
-    },
-    "halls": {
-      "mHall": "M Hall",
-      "hall2": "Hall 2"
+      "allHalls": "All buildings"
     },
     "occupations": {
       "welder": "Welder",
@@ -312,17 +305,85 @@
       "electrician": "Electrician",
       "fitter": "Fitter"
     },
-    "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
-    "groupsTitle": "Group overview",
-    "averageTimeAboveAction": "Average time above action value",
-    "averageExposureTitle": "Average exposure compared with action value",
-    "average": "Average",
-    "ofActionValue": "of action value",
-    "empty": {
-      "title": "No groups to display",
-      "description": "Try another building or occupation. Small groups are hidden to protect privacy."
+    "exposureLabel": "Exposure type",
+    "pointsUnit": "points",
+    "metrics": {
+      "dust": "Average PM1 concentration (TWA)",
+      "noise": "Average sound level (LAeq, arithmetic average)",
+      "vibration": "Average daily vibration points per person in the period"
     },
-    "demoDataNotice": "Values shown are synthetic demo data. Actual aggregated measurements will be connected when the API is available."
+    "metricsShort": {
+      "dust": "PM1 TWA",
+      "noise": "LAeq",
+      "vibration": "Average per person and day"
+    },
+    "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
+    "overview": {
+      "heading": "Groups",
+      "sortLabel": "Sort groups by",
+      "belowActionValue": "Below action value",
+      "aggregationNotice": "Exposure values are aggregated at group level. Individual exposure may vary.",
+      "info": {
+        "trigger": "How to read the overview",
+        "title": "How to read the overview",
+        "description": "What the group values mean, how the groups are sorted, and what the bars and colors show.",
+        "groupData": {
+          "title": "Group data and sorting",
+          "aggregation": "Exposure values are aggregated at group level. Individual exposure may vary, so the group average may not represent any individual.",
+          "sorting": "Groups are sorted by average exposure, highest first. This is not a risk ranking, as averages do not show variation within a group."
+        },
+        "scale": {
+          "title": "Bars and colors",
+          "fixed": "Each bar has a fixed scale per exposure, from 0 to 1.5 × the limit value. The same value therefore always gives the same bar, whichever other groups are shown. Values above the scale fill the whole bar, and the actual value is shown next to it.",
+          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
+        },
+        "thresholds": {
+          "title": "Action and limit values"
+        },
+        "caveats": {
+          "title": "Not professionally validated yet",
+          "individual": "The thresholds apply to a single person's exposure, while the overview shows group averages.",
+          "dust": "Dust: The PM1 TWA thresholds have no documented source or unit in the project, so the comparison hasn't been professionally clarified.",
+          "noise": "Noise: The thresholds apply to one person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq. The measurement basis is therefore not the same.",
+          "vibration": "Vibration: The thresholds and the value are both daily points per person, but it hasn't been confirmed that the equipment's points follow the HSE points system."
+        }
+      },
+      "noValue": "No value",
+      "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
+      "noGroups": {
+        "title": "No groups to display",
+        "description": "Groups with too few people are not shown, to protect privacy."
+      },
+      "noData": "No data for the selected period.",
+      "error": "Could not load the groups."
+    },
+    "group": {
+      "back": "Back to the overview",
+      "eyebrow": "Group",
+      "fallbackTitle": "Group",
+      "periodAverage": "Average for the period",
+      "noPeriodAverage": "No value for the period",
+      "trendTitle": "Development in the period",
+      "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
+      "granularity": {
+        "day": "One point per working day",
+        "month": "One point per month"
+      },
+      "vibrationGranularity": {
+        "day": "One point per working day: the average of each person's points that day",
+        "month": "One point per month: the average of each person's average daily value in the month"
+      },
+      "gapsNotice": "A gap in the line means there are no measurements, or that the value is hidden because too few people contributed.",
+      "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",
+      "suppressed": "Hidden because too few people contributed",
+      "unavailable": {
+        "noSuchGroup": "The group doesn't exist.",
+        "tooFewPeople": "The group has too few people for data to be shown."
+      },
+      "noData": "No data for the selected period.",
+      "allSuppressed": "All values in the period are hidden because too few people contributed.",
+      "error": "Could not load the group."
+    }
   },
   "select": {
     "all": "Select all",

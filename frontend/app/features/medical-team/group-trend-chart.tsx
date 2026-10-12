@@ -1,31 +1,38 @@
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
 import { formatGroupNumber, formatGroupValue } from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupTrendGranularity, GroupTrendPoint } from "@/features/medical-team/medical-team-queries.ts";
+import type { GroupTrendPoint } from "@/features/medical-team/medical-team-queries.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
-import { parseISO } from "date-fns";
+import { differenceInCalendarDays, eachMonthOfInterval, max, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Dot, Line, LineChart, XAxis, YAxis } from "recharts";
 
 /** Keeps the line off the top and bottom edges, since group averages rarely start at zero */
 const Y_AXIS_PADDING = 0.1;
+/** Longer periods, like a year, get one tick per month instead of per day */
+const MAX_DAYS_WITH_DAY_TICKS = 62;
+/** With more points than this, only points without a neighbour get a dot, since they'd otherwise not show at all */
+const MAX_POINTS_WITH_DOTS = 31;
 
 type ChartRow = {
-	time: string;
-	label: string;
+	timestamp: number;
 	tooltipLabel: string;
 	value: number | null;
 };
 
 type GroupTrendChartProps = {
+	/** One point per day with measurements, up to a whole year */
 	points: Array<GroupTrendPoint>;
-	granularity: GroupTrendGranularity;
 	unit: ExposureUnit;
 	label: string;
 };
 
-/** One aggregated line for the selected group, without danger levels, since those only apply to individuals */
-export function GroupTrendChart({ points, granularity, unit, label }: GroupTrendChartProps) {
+/**
+ * One aggregated line for the selected group, without danger levels, since those only apply to individuals. Every
+ * daily value is drawn as is. Days without measurements, like weekends, are left out, so the line joins the nearest
+ * days on either side, while days hidden for privacy (`null`) break it.
+ */
+export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 	const { t } = useTranslation();
 	const formatDate = useFormatDate();
 	const chartConfig = { value: { label, color: "var(--chart-1)" } };
@@ -33,20 +40,29 @@ export function GroupTrendChart({ points, granularity, unit, label }: GroupTrend
 	const rows: Array<ChartRow> = points.map((point) => {
 		const date = parseISO(point.time);
 
-		return {
-			time: point.time,
-			label: formatDate(date, granularity === "day" ? "dd.MM" : "LLL"),
-			tooltipLabel: formatDate(date, granularity === "day" ? "EEEE d. MMMM yyyy" : "LLLL yyyy"),
-			value: point.value,
-		};
+		return { timestamp: date.getTime(), tooltipLabel: formatDate(date, "EEEE d. MMMM yyyy"), value: point.value };
 	});
+
+	const firstDay = rows[0]?.timestamp ?? 0;
+	const lastDay = rows.at(-1)?.timestamp ?? 0;
+	const showsMonths = differenceInCalendarDays(lastDay, firstDay) > MAX_DAYS_WITH_DAY_TICKS;
+	// The first month's tick is moved to the first day with data, so it isn't left off the axis
+	const ticks = showsMonths
+		? eachMonthOfInterval({ start: firstDay, end: lastDay }).map((month) => max([month, firstDay]).getTime())
+		: rows.map((row) => row.timestamp);
+	const showsEveryDot = rows.length <= MAX_POINTS_WITH_DOTS;
 
 	return (
 		<ChartContainer config={chartConfig} className="aspect-auto h-64 w-full sm:h-72">
 			<LineChart accessibilityLayer={true} data={rows} margin={{ left: 4, right: 12, top: 8 }}>
 				<CartesianGrid vertical={false} />
 				<XAxis
-					dataKey="label"
+					dataKey="timestamp"
+					type="number"
+					scale="time"
+					domain={["dataMin", "dataMax"]}
+					ticks={ticks}
+					tickFormatter={(timestamp: number) => formatDate(timestamp, showsMonths ? "LLL" : "dd.MM")}
 					tickLine={false}
 					axisLine={false}
 					tickMargin={8}
@@ -95,10 +111,16 @@ export function GroupTrendChart({ points, granularity, unit, label }: GroupTrend
 				/>
 				<Line
 					dataKey="value"
-					type="monotone"
+					// Straight lines between days, since a curve would suggest values between them that weren't measured
+					type="linear"
 					stroke="var(--color-value)"
-					strokeWidth={2}
-					dot={{ r: 2, fill: "var(--color-value)" }}
+					strokeWidth={1.5}
+					strokeLinejoin="round"
+					dot={({ cx, cy, index }) =>
+						showsEveryDot || isIsolated(rows, index) ? (
+							<Dot key={index} cx={cx} cy={cy} r={2} fill="var(--color-value)" />
+						) : null
+					}
 					activeDot={{ r: 4 }}
 					connectNulls={false}
 					isAnimationActive={false}
@@ -106,4 +128,9 @@ export function GroupTrendChart({ points, granularity, unit, label }: GroupTrend
 			</LineChart>
 		</ChartContainer>
 	);
+}
+
+/** A value without a value on either side, which the line can't connect to anything */
+function isIsolated(rows: Array<ChartRow>, index: number) {
+	return rows[index]?.value != null && rows[index - 1]?.value == null && rows[index + 1]?.value == null;
 }

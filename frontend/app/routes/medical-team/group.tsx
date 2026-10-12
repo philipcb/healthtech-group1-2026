@@ -147,12 +147,7 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.medicalTeamDashboard.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart
-						points={trend.points}
-						granularity={trend.granularity}
-						unit={trend.unit}
-						label={metricLabel}
-					/>
+					<GroupTrendChart points={trend.points} unit={trend.unit} label={metricLabel} />
 				)}
 				<ul className="list-disc space-y-1 pl-4 text-muted-foreground text-xs">
 					<li>{t(($) => $.medicalTeamDashboard.group.gapsNotice)}</li>

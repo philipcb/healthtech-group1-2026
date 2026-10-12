@@ -366,12 +366,10 @@
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "One point per working day",
-        "month": "One point per month"
+        "day": "One point per working day"
       },
       "vibrationGranularity": {
-        "day": "One point per working day: the average of each person's points that day",
-        "month": "One point per month: the average of each person's average daily value in the month"
+        "day": "One point per working day: the average of each person's points that day"
       },
       "gapsNotice": "A gap in the line means there are no measurements, or that the value is hidden because too few people contributed.",
       "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",

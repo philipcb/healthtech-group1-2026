@@ -67,11 +67,14 @@ export type GroupTrendRequest = PeriodRequest & {
 	dustField?: DustField;
 };
 
-/** Daily points for a month, monthly points for a year */
-export type GroupTrendGranularity = "day" | "month";
+/**
+ * One point per day, for both a month and a year, so short variations aren't averaged away. Kept as a field, so other
+ * buckets can be added later without changing the response's shape.
+ */
+export type GroupTrendGranularity = "day";
 
 export type GroupTrendPoint = {
-	/** Local date the bucket starts on, as `yyyy-MM-dd` */
+	/** Local date of the day, as `yyyy-MM-dd` */
 	time: string;
 	/**
 	 * The group's average for the bucket. `null` means the backend hid the value because too few people contributed

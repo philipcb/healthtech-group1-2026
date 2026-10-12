@@ -15,6 +15,7 @@ import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
 import { today } from "@/lib/date.ts";
 import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import {
+	differenceInCalendarDays,
 	eachDayOfInterval,
 	endOfMonth,
 	endOfYear,
@@ -22,7 +23,6 @@ import {
 	isWeekend,
 	max,
 	min,
-	startOfMonth,
 	startOfYear,
 } from "date-fns";
 import seedrandom from "seedrandom";
@@ -30,9 +30,13 @@ import seedrandom from "seedrandom";
 /*
  * Synthetic stand-in for the aggregate API. The overview and a group's details are served from the same data, so they
  * always agree:
- * - dust and noise: one group value per working day, generated from the group's baseline. Dust is PM1, and a group's
+ * - dust and noise: one group value per working day, generated from the group's baseline with synthetic variation that
+ *   develops over a few weeks, see `getSyntheticDays`. Dust is PM1, and a group's
  *   details can also show PM2.5 and PM10 from synthetic demo baselines, see `syntheticDustBaselines`.
  * - vibration: tool sessions per person and day, aggregated with the rules in `vibration-aggregation.ts`
+ *
+ * A trend has one point per working day, for both a month and a year. Weekends have no measurements, so they're left
+ * out rather than filled in.
  */
 
 /**
@@ -149,7 +153,18 @@ const SUPPRESSED_DAY_SHARE = 0.06;
 /** Most people are on summer holiday in July, so most days that month are hidden */
 const SUPPRESSED_JULY_DAY_SHARE = 0.7;
 
-/** How much a day's average varies around the group's baseline */
+/**
+ * Synthetic variation that develops over time, not a model of how real exposure varies. A day's draw follows two slow
+ * waves, plus a smaller share of the day's own random draw, so the trend is easier to follow than with independent
+ * days. Lengths in calendar days, chosen so the waves don't line up with months.
+ */
+const WAVE_PERIOD_DAYS = [13, 29];
+/** How far the waves move a day's draw, in the draw's 0-1 units */
+const WAVE_AMPLITUDE = 0.35;
+/** How much of a day's own random draw is kept, so single days still stand out */
+const DAILY_DRAW_SHARE = 0.4;
+
+/** How much a day's average varies around the group's baseline, linear in the day's draw */
 const dailyVariation: Record<ComparableExposure, (baseline: number, random: number) => number> = {
 	// Decibels are logarithmic, so the variation is a few dB rather than a percentage
 	noise: (baseline, random) => baseline + (random - 0.5) * 6,
@@ -203,19 +218,18 @@ export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<G
 		return { status: "unavailable", reason: "tooFewPeople" };
 	}
 
-	const isYear = request.period === "year";
 	const exposure = request.exposure;
 
 	if (exposure === "vibration") {
 		const sessions = getMockVibrationSessions(group.id, request);
-		const trend = getGroupAverageDailyPointsTrend(sessions, isYear ? "month" : "day", MIN_GROUP_SIZE);
+		const trend = getGroupAverageDailyPointsTrend(sessions, "day", MIN_GROUP_SIZE);
 
 		return {
 			status: "ok",
 			group: { hall: group.hall, occupation: group.occupation },
 			unit: exposureUnitByExposure.vibration,
 			average: roundVibration(getGroupAverageDailyPoints(sessions, MIN_GROUP_SIZE)),
-			granularity: isYear ? "month" : "day",
+			granularity: "day",
 			points: trend.map((point) => ({ time: point.time, value: roundVibration(point.value) })),
 		};
 	}
@@ -232,8 +246,8 @@ export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<G
 		group: { hall: group.hall, occupation: group.occupation },
 		unit: exposureUnitByExposure[exposure],
 		average: getPeriodAverage(days, exposure),
-		granularity: isYear ? "month" : "day",
-		points: isYear ? toMonthlyPoints(days, exposure) : toDailyPoints(days, exposure),
+		granularity: "day",
+		points: toDailyPoints(days, exposure),
 	};
 }
 
@@ -303,20 +317,60 @@ function getWorkingDays({ period, year, month }: PeriodSelectionRequest): Array<
 /**
  * One value per working day with data in the requested period, from the data start up to today. A dust fraction's
  * baseline can be given instead of PM1's, and keeps the same seed, so every fraction varies and is hidden on the same days.
+ *
+ * The waves and the day's own draw are shifted so a month's draws keep the average of its independent daily draws.
+ * Since a day's value is linear in its draw, every month and year keeps the same average as with independent days.
  */
 function getSyntheticDays(
 	group: MockGroup,
 	{ exposure, ...period }: PeriodRequest & { exposure: ComparableExposure },
 	baseline = group.baseline[exposure],
 ): Array<SyntheticDay> {
+	const seed = `${group.id}:${exposure}`;
+	const monthAverages = new Map<string, { draw: number; wave: number }>();
+
 	return getWorkingDays(period).map((date) => {
 		// Seeded per day, so a day has the same value in every view
-		const random = seedrandom(`${group.id}:${exposure}:${formatDate(date, "yyyy-MM-dd")}`);
-		const value = dailyVariation[exposure](baseline, random());
+		const random = seedrandom(`${seed}:${formatDate(date, "yyyy-MM-dd")}`);
+		const draw = random();
 		const suppressedShare = date.getMonth() === 6 ? SUPPRESSED_JULY_DAY_SHARE : SUPPRESSED_DAY_SHARE;
+		const isSuppressed = random() < suppressedShare;
 
-		return { date, value, isSuppressed: random() < suppressedShare };
+		const monthKey = formatDate(date, "yyyy-MM");
+		const month = monthAverages.get(monthKey) ?? getMonthAverages(seed, date);
+		monthAverages.set(monthKey, month);
+		const coherentDraw =
+			month.draw + WAVE_AMPLITUDE * (getWave(seed, date) - month.wave) + DAILY_DRAW_SHARE * (draw - month.draw);
+
+		return { date, value: dailyVariation[exposure](baseline, coherentDraw), isSuppressed };
 	});
+}
+
+/**
+ * The average daily draw and wave over the working days in the date's month that have data, the same days as the
+ * month's average. Until the month is over, its days shift slightly as days are added, the way its average does.
+ */
+function getMonthAverages(seed: string, date: Date) {
+	const days = getWorkingDays({ period: "month", year: date.getFullYear(), month: date.getMonth() });
+	const average = (values: Array<number>) => values.reduce((sum, value) => sum + value, 0) / values.length;
+
+	return {
+		draw: average(days.map((day) => seedrandom(`${seed}:${formatDate(day, "yyyy-MM-dd")}`)())),
+		wave: average(days.map((day) => getWave(seed, day))),
+	};
+}
+
+/** Between -1 and 1, with phases seeded per group and exposure, so groups don't rise and fall together */
+function getWave(seed: string, date: Date) {
+	const random = seedrandom(`${seed}:wave`);
+	const day = differenceInCalendarDays(date, DATA_START);
+
+	return (
+		WAVE_PERIOD_DAYS.reduce(
+			(sum, period) => sum + Math.sin((2 * Math.PI * day) / period + random() * 2 * Math.PI),
+			0,
+		) / WAVE_PERIOD_DAYS.length
+	);
 }
 
 /**
@@ -336,17 +390,6 @@ function toDailyPoints(days: Array<SyntheticDay>, exposure: ComparableExposure):
 		time: formatDate(day.date, "yyyy-MM-dd"),
 		value: day.isSuppressed ? null : round(day.value, exposure),
 	}));
-}
-
-function toMonthlyPoints(days: Array<SyntheticDay>, exposure: ComparableExposure): Array<GroupTrendPoint> {
-	const daysByMonth = new Map<string, Array<SyntheticDay>>();
-
-	for (const day of days) {
-		const key = formatDate(startOfMonth(day.date), "yyyy-MM-dd");
-		daysByMonth.set(key, [...(daysByMonth.get(key) ?? []), day]);
-	}
-
-	return Array.from(daysByMonth, ([time, monthDays]) => ({ time, value: getPeriodAverage(monthDays, exposure) }));
 }
 
 function round(value: number, exposure: ComparableExposure) {

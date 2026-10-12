@@ -363,12 +363,10 @@
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "Ett punkt per arbeidsdag",
-        "month": "Ett punkt per måned"
+        "day": "Ett punkt per arbeidsdag"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen",
-        "month": "Ett punkt per måned: gjennomsnittet av hver persons gjennomsnittlige dagsverdi i måneden"
+        "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen"
       },
       "gapsNotice": "Brudd i linjen betyr at det ikke finnes målinger, eller at verdien er skjult fordi for få personer bidro.",
       "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",

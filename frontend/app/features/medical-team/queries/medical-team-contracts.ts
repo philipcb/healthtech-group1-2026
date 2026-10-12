@@ -14,9 +14,9 @@ import { z } from "zod";
  * - dust: average PM1 TWA, `DustAverage.AveragePm1Twa`, or PM2.5/PM10 in a group's details.
  * - noise: average LAeq, stored in `NoiseAverage.AverageLcpk` since the noise columns are swapped. An arithmetic
  *   average of decibels, which underestimates the energy average.
- * - vibration: daily points per person, averaged per person and then over the people, see `vibration-aggregation.ts`.
- *   Needs new data, since only average points per tool session are stored. Never converted to m/s² or A(8), since how
- *   the equipment calculates points isn't documented.
+ * - vibration: each person's points summed per day, averaged per person, then averaged over the people. Needs new
+ *   data, since only average points per tool session are stored. Never converted to m/s² or A(8), since how the
+ *   equipment calculates points isn't documented. The mock's values are synthetic group values.
  *
  * Every value is an unweighted average of each person's average, never one person's value. Daily and period
  * aggregates, hiding small groups and access control all need a new endpoint.

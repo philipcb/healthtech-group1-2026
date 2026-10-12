@@ -417,7 +417,7 @@
       "vibrationGranularity": {
         "day": "One point per working day: the average of each person's points that day"
       },
-      "gapsNotice": "A gap in the line means there are no measurements, or that the value is hidden because too few people contributed.",
+      "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
       "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",
       "suppressed": "Hidden because too few people contributed",
       "unavailable": {

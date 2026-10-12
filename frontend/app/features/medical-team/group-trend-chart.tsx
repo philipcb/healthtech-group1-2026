@@ -11,7 +11,7 @@ import { CartesianGrid, Dot, Line, LineChart, XAxis, YAxis } from "recharts";
 const Y_AXIS_PADDING = 0.1;
 /** Longer periods, like a year, get one tick per month instead of per day */
 const MAX_DAYS_WITH_DAY_TICKS = 62;
-/** With more points than this, only points without a neighbour get a dot, since they'd otherwise not show at all */
+/** With more points than this, a lone value is the only point that gets a dot, since it would otherwise not show at all */
 const MAX_POINTS_WITH_DOTS = 31;
 
 type ChartRow = {
@@ -29,8 +29,8 @@ type GroupTrendChartProps = {
 
 /**
  * One aggregated line for the selected group, without danger levels, since those only apply to individuals. Every
- * daily value is drawn as is. Days without measurements, like weekends, are left out, so the line joins the nearest
- * days on either side, while days hidden for privacy (`null`) break it.
+ * daily value is drawn as is. Days without measurements, like weekends, are left out, and days hidden for privacy
+ * (`null`) are skipped, so the line joins the nearest shown days on either side without any value made up between them.
  */
 export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 	const { t } = useTranslation();
@@ -51,6 +51,8 @@ export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 		? eachMonthOfInterval({ start: firstDay, end: lastDay }).map((month) => max([month, firstDay]).getTime())
 		: rows.map((row) => row.timestamp);
 	const showsEveryDot = rows.length <= MAX_POINTS_WITH_DOTS;
+	// The line skips hidden days, so a value only lacks a line to join when it's the only one
+	const hasLoneValue = rows.filter((row) => row.value !== null).length === 1;
 
 	return (
 		<ChartContainer config={chartConfig} className="aspect-auto h-64 w-full sm:h-72">
@@ -117,20 +119,15 @@ export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 					strokeWidth={1.5}
 					strokeLinejoin="round"
 					dot={({ cx, cy, index }) =>
-						showsEveryDot || isIsolated(rows, index) ? (
+						showsEveryDot || (hasLoneValue && rows[index]?.value !== null) ? (
 							<Dot key={index} cx={cx} cy={cy} r={2} fill="var(--color-value)" />
 						) : null
 					}
 					activeDot={{ r: 4 }}
-					connectNulls={false}
+					connectNulls={true}
 					isAnimationActive={false}
 				/>
 			</LineChart>
 		</ChartContainer>
 	);
-}
-
-/** A value without a value on either side, which the line can't connect to anything */
-function isIsolated(rows: Array<ChartRow>, index: number) {
-	return rows[index]?.value != null && rows[index - 1]?.value == null && rows[index + 1]?.value == null;
 }

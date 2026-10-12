@@ -8,14 +8,13 @@ import { HallList } from "@/features/medical-team/hall-list.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
 import { type ExposureFilter, getShownExposures } from "@/features/medical-team/medical-team-groups.ts";
 import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
-import {
-	type GroupSummary,
-	type GroupSummaryRequest,
-	groupSummariesQueryOptions,
-	hallSummariesQueryOptions,
-} from "@/features/medical-team/medical-team-queries.ts";
 import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
 import { OverviewInfoDialog } from "@/features/medical-team/overview-info-dialog.tsx";
+import type { GroupSummary, GroupSummaryRequest } from "@/features/medical-team/queries/medical-team-contracts.ts";
+import {
+	groupSummariesQueryOptions,
+	hallSummariesQueryOptions,
+} from "@/features/medical-team/queries/medical-team-queries.ts";
 import { ThresholdBarLegend } from "@/features/medical-team/threshold-bar.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useQuery } from "@tanstack/react-query";

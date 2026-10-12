@@ -14,13 +14,15 @@ import {
 	getHallName,
 } from "@/features/medical-team/medical-team-groups.ts";
 import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
+import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
+import type {
+	GroupSummaryRequest,
+	GroupTrendResponse,
+} from "@/features/medical-team/queries/medical-team-contracts.ts";
 import {
 	exposureKpisQueryOptions,
-	type GroupSummaryRequest,
-	type GroupTrendResponse,
 	groupTrendQueryOptions,
-} from "@/features/medical-team/medical-team-queries.ts";
-import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
+} from "@/features/medical-team/queries/medical-team-queries.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";

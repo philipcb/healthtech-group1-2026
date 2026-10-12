@@ -321,7 +321,7 @@
     "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
     "kpi": {
       "titles": {
-        "dust": "Share of STEL periods above threshold",
+        "dust": "Share of measurement periods above threshold",
         "noise": "Time above threshold per workday",
         "vibration": "Share of workdays above threshold"
       },
@@ -329,11 +329,12 @@
       "aboveLimit": "Above limit value ({{threshold}})",
       "values": {
         "minutesPerWorkday": "{{value}} min per workday",
-        "percentOfStelPeriods": "{{value}} of periods",
+        "percentOfMeasurementPeriods": "{{value}} of periods",
         "percentOfWorkdays": "{{value}} of workdays"
       },
       "noData": "No key figures for the selected period.",
       "suppressed": "The key figure is hidden because too few people contributed.",
+      "unavailable": "This key figure isn't available yet.",
       "error": "Could not load the key figures."
     },
     "overview": {
@@ -380,7 +381,7 @@
         "kpis": {
           "title": "Key figures (synthetic examples)",
           "description": "The details for an occupation group or a building show how much of the exposure is above the action value and the limit value. Every exposure has its own key figure, since the thresholds have different reference periods:",
-          "dust": "Dust: share of valid 15-minute STEL periods above the threshold, not TWA, which applies to a whole shift.",
+          "dust": "Dust: share of valid measurement periods above the threshold. How long a measurement period is, and whether the sensor's STEL field is a 15-minute average, hasn't been confirmed by the supplier.",
           "noise": "Noise: average measured time above the threshold per workday. Requires measurements with a short time resolution, not hourly averages.",
           "vibration": "Vibration: share of workdays where the daily dose was above the threshold. The dose is points per day and can't be turned into time.",
           "demo": "The figures are made-up examples for now, to show the design. They aren't calculated from measurements."

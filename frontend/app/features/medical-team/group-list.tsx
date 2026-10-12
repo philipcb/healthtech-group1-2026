@@ -9,7 +9,7 @@ import {
 	getShownExposures,
 	thresholdByExposure,
 } from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupSummary, GroupSummaryResponse } from "@/features/medical-team/medical-team-queries.ts";
+import type { GroupSummary, GroupSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
 import { ThresholdBar } from "@/features/medical-team/threshold-bar.tsx";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";

@@ -1,6 +1,6 @@
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
 import { formatGroupNumber, formatGroupValue } from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupTrendPoint } from "@/features/medical-team/medical-team-queries.ts";
+import type { GroupTrendPoint } from "@/features/medical-team/queries/medical-team-contracts.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import { differenceInCalendarDays, eachMonthOfInterval, max, parseISO } from "date-fns";

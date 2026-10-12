@@ -5,7 +5,7 @@ import {
 	getHallName,
 	getShownExposures,
 } from "@/features/medical-team/medical-team-groups.ts";
-import type { HallSummary, HallSummaryResponse } from "@/features/medical-team/medical-team-queries.ts";
+import type { HallSummary, HallSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
 import { Factory } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

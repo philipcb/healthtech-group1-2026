@@ -58,7 +58,7 @@ export function getGroupName({ hall, occupation }: { hall: string; occupation: s
 }
 
 /** Highest first, with missing values last. `0` when they're the same, so the caller decides the order. */
-export function compareAverages(averageA: number | null, averageB: number | null) {
+function compareAverages(averageA: number | null, averageB: number | null) {
 	if (averageA === averageB) {
 		return 0;
 	}
@@ -98,7 +98,10 @@ export function getOccupationLabel(occupation: string, t: TranslateFn) {
 			return t(($) => $.medicalTeamDashboard.occupations.technician);
 		case "Electrician":
 			return t(($) => $.medicalTeamDashboard.occupations.electrician);
-		default:
+		case "Fitter":
 			return t(($) => $.medicalTeamDashboard.occupations.fitter);
+		// An occupation without a translation is shown as it is, rather than labelled as another occupation
+		default:
+			return occupation;
 	}
 }

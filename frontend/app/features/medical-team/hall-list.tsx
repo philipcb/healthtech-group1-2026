@@ -1,4 +1,3 @@
-import { SummaryCard } from "@/features/medical-team/group-list.tsx";
 import {
 	compareByExposureFilter,
 	type ExposureFilter,
@@ -6,6 +5,7 @@ import {
 	getShownExposures,
 } from "@/features/medical-team/medical-team-groups.ts";
 import type { HallSummary, HallSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
+import { SummaryCard } from "@/features/medical-team/summary-card.tsx";
 import { Factory } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

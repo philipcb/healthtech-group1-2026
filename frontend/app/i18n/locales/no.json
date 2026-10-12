@@ -319,8 +319,10 @@
     "overview": {
       "heading": "Grupper",
       "hallsHeading": "Bygg",
-      "sortLabel": "Sorter grupper etter",
-      "sortHallsLabel": "Sorter bygg etter",
+      "exposureFilter": {
+        "label": "Vis eksponering",
+        "all": "Alle"
+      },
       "level": {
         "label": "Visning",
         "occupation": "Per yrkesgruppe",
@@ -335,7 +337,7 @@
         "groupData": {
           "title": "Gruppedata og sortering",
           "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson.",
-          "sorting": "Gruppene er sortert etter gjennomsnittlig eksponering, høyest først. Dette er ikke en risikorangering, fordi gjennomsnitt ikke viser variasjonen i en gruppe."
+          "sorting": "Velg én eksponeringstype for å vise bare den på hvert kort. Kortene sorteres da etter gjennomsnittet for den eksponeringen, høyest først, og kort uten verdi kommer sist. Med «Alle» vises alle eksponeringstypene, og kortene sorteres etter navn, fordi verdier for ulike eksponeringer ikke kan sammenlignes. Sorteringen er ikke en risikorangering, fordi gjennomsnitt ikke viser variasjonen i en gruppe."
         },
         "scale": {
           "title": "Stolpene og fargene",

@@ -10,7 +10,7 @@ export function MedicalExposureToggle({
 	value,
 	onValueChange,
 }: {
-	/** Visible label, since the toggle picks the exposure to show on one page and the sorting on another */
+	/** Visible label, naming what the exposure is picked for */
 	label: string;
 	value: Exposure;
 	onValueChange: (exposure: Exposure) => void;

@@ -1,5 +1,5 @@
 import type { TranslateFn } from "@/i18n/config.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import { type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 
@@ -12,6 +12,14 @@ export const MIN_GROUP_SIZE = 5;
  */
 export const groupLevels = ["occupation", "hall"] as const;
 export type GroupLevel = (typeof groupLevels)[number];
+
+/** Which exposures the overview's cards show: every exposure, or only one, which the cards are then sorted by */
+export const exposureFilters = ["all", ...exposures] as const;
+export type ExposureFilter = (typeof exposureFilters)[number];
+
+export function getShownExposures(filter: ExposureFilter): ReadonlyArray<Exposure> {
+	return filter === "all" ? exposures : [filter];
+}
 
 /**
  * The existing action and limit values each exposure's bar is drawn against. They apply to a single person's exposure,
@@ -64,6 +72,18 @@ export function compareAverages(averageA: number | null, averageB: number | null
 	}
 
 	return averageB - averageA;
+}
+
+/**
+ * Compares the filter's exposure, highest first with missing values last. With every exposure shown, there's no single
+ * value to compare, since different exposures' averages can't be compared, so it's `0` and the caller orders by name.
+ */
+export function compareByExposureFilter(
+	averagesA: Record<Exposure, number | null>,
+	averagesB: Record<Exposure, number | null>,
+	filter: ExposureFilter,
+) {
+	return filter === "all" ? 0 : compareAverages(averagesA[filter], averagesB[filter]);
 }
 
 export function getHallName(hall: string, t: TranslateFn) {

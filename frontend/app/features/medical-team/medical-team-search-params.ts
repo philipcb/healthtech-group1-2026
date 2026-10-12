@@ -1,4 +1,9 @@
-import { type GroupLevel, groupLevels } from "@/features/medical-team/medical-team-groups.ts";
+import {
+	type ExposureFilter,
+	exposureFilters,
+	type GroupLevel,
+	groupLevels,
+} from "@/features/medical-team/medical-team-groups.ts";
 import {
 	getSelectableYears,
 	medicalPeriods,
@@ -24,10 +29,10 @@ const searchParams = {
 	/** The dust fraction shown in a group's details. The overview always shows PM1. Same name as in the operator's pages. */
 	dustField: parseAsDustField.withDefault(defaultDustField),
 	/**
-	 * The exposure the overview sorts by. Kept apart from `exposure`, so opening another exposure from a group card
-	 * doesn't change the overview's sorting when going back.
+	 * The exposures the overview's cards show, and sort by when only one is shown. Kept apart from `exposure`, so
+	 * opening an exposure's details from a card doesn't change the overview's filter when going back.
 	 */
-	sort: parseAsExposure.withDefault("dust"),
+	exposureFilter: parseAsStringLiteral(exposureFilters).withDefault("all"),
 	period: parseAsStringLiteral(medicalPeriods).withDefault("month"),
 	month: parseAsMonth.withDefault(today.getMonth()),
 	year: parseAsNumberLiteral(getSelectableYears()).withDefault(today.getFullYear()),
@@ -57,8 +62,8 @@ export function useMedicalTeamSearchParams() {
 		setExposure: (exposure: Exposure) => void setParams({ exposure }),
 		dustField: params.dustField,
 		setDustField: (dustField: DustField) => void setParams({ dustField }),
-		sort: params.sort,
-		setSort: (sort: Exposure) => void setParams({ sort }),
+		exposureFilter: params.exposureFilter,
+		setExposureFilter: (exposureFilter: ExposureFilter) => void setParams({ exposureFilter }),
 		hall: params.hall,
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,

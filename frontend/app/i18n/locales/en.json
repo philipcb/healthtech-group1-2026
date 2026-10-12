@@ -322,8 +322,10 @@
     "overview": {
       "heading": "Groups",
       "hallsHeading": "Buildings",
-      "sortLabel": "Sort groups by",
-      "sortHallsLabel": "Sort buildings by",
+      "exposureFilter": {
+        "label": "Show exposure",
+        "all": "All"
+      },
       "level": {
         "label": "View",
         "occupation": "Per occupation",
@@ -338,7 +340,7 @@
         "groupData": {
           "title": "Group data and sorting",
           "aggregation": "Exposure values are aggregated at group level. Individual exposure may vary, so the group average may not represent any individual.",
-          "sorting": "Groups are sorted by average exposure, highest first. This is not a risk ranking, as averages do not show variation within a group."
+          "sorting": "Pick one exposure to show only that exposure on every card. The cards are then sorted by their average for it, highest first, with cards without a value last. With “All”, every exposure is shown and the cards are sorted by name, since values for different exposures can't be compared. The sorting is not a risk ranking, as averages do not show variation within a group."
         },
         "scale": {
           "title": "Bars and colors",

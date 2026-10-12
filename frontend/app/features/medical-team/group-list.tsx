@@ -1,16 +1,18 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import {
-	compareAverages,
+	compareByExposureFilter,
+	type ExposureFilter,
 	formatGroupValue,
 	getGroupName,
 	getOccupationLabel,
+	getShownExposures,
 	thresholdByExposure,
 } from "@/features/medical-team/medical-team-groups.ts";
 import type { GroupSummary, GroupSummaryResponse } from "@/features/medical-team/medical-team-queries.ts";
 import { ThresholdBar } from "@/features/medical-team/threshold-bar.tsx";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
-import { type Exposure, exposures } from "@/lib/exposures.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { ChevronRight, Factory } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,17 +21,17 @@ import { href, Link, useLocation } from "react-router";
 type GroupListProps = {
 	groups: Array<GroupSummary>;
 	units: GroupSummaryResponse["units"];
-	/** Groups are sorted by their average for this exposure, highest first */
-	sort: Exposure;
+	/** The exposures every card shows. With one exposure, groups are sorted by their average for it, highest first. */
+	filter: ExposureFilter;
 };
 
 /**
  * One card per group, sorted by the selected exposure. Sorting helps decide where to look closer, it's not a risk
  * ranking: an average says nothing about the spread within a group.
  */
-export function GroupList({ groups, units, sort }: GroupListProps) {
+export function GroupList({ groups, units, filter }: GroupListProps) {
 	const { t } = useTranslation();
-	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, sort));
+	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, filter));
 
 	return (
 		<ul className="grid gap-4 xl:grid-cols-2">
@@ -49,6 +51,7 @@ export function GroupList({ groups, units, sort }: GroupListProps) {
 						name={getGroupName(group, t)}
 						averages={group.averages}
 						units={units}
+						shownExposures={getShownExposures(filter)}
 					/>
 				</li>
 			))}
@@ -56,13 +59,14 @@ export function GroupList({ groups, units, sort }: GroupListProps) {
 	);
 }
 
-/** A group's or a whole hall's averages for every exposure, each linking to its details */
+/** A group's or a whole hall's averages for the shown exposures, each linking to its details */
 export function SummaryCard({
 	header,
 	groupId,
 	name,
 	averages,
 	units,
+	shownExposures,
 }: {
 	header: ReactNode;
 	groupId: string;
@@ -70,12 +74,13 @@ export function SummaryCard({
 	name: string;
 	averages: GroupSummary["averages"];
 	units: GroupSummaryResponse["units"];
+	shownExposures: ReadonlyArray<Exposure>;
 }) {
 	return (
 		<Card variant="labeled" className="h-full rounded-lg">
 			<div className="border-b px-4 py-3">{header}</div>
 			<ul className="flex flex-col gap-1 p-2">
-				{exposures.map((exposure) => (
+				{shownExposures.map((exposure) => (
 					<li key={exposure}>
 						<ExposureLink
 							groupId={groupId}
@@ -151,9 +156,9 @@ function ExposureLink({
 	);
 }
 
-function compareGroups(a: GroupSummary, b: GroupSummary, sort: Exposure) {
+function compareGroups(a: GroupSummary, b: GroupSummary, filter: ExposureFilter) {
 	return (
-		compareAverages(a.averages[sort], b.averages[sort]) ||
+		compareByExposureFilter(a.averages, b.averages, filter) ||
 		a.hall.localeCompare(b.hall) ||
 		a.occupation.localeCompare(b.occupation)
 	);

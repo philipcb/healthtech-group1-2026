@@ -5,6 +5,8 @@ import type {
 	GroupTrendPoint,
 	GroupTrendRequest,
 	GroupTrendResponse,
+	HallSummary,
+	HallSummaryResponse,
 } from "@/features/medical-team/medical-team-queries.ts";
 import {
 	getGroupAverageDailyPoints,
@@ -34,6 +36,7 @@ import seedrandom from "seedrandom";
  *   develops over a few weeks, see `getSyntheticDays`. Dust is PM1, and a group's
  *   details can also show PM2.5 and PM10 from synthetic demo baselines, see `syntheticDustBaselines`.
  * - vibration: tool sessions per person and day, aggregated with the rules in `vibration-aggregation.ts`
+ * - whole halls: a demo only, calculated from the people in all of the hall's groups, see `mockHalls`
  *
  * A trend has one point per working day, for both a month and a year. Weekends have no measurements, so they're left
  * out rather than filled in.
@@ -145,6 +148,21 @@ const mockGroups: Array<MockGroup> = [
 	},
 ];
 
+type MockHall = {
+	id: string;
+	site: string;
+	hall: string;
+};
+
+/**
+ * Whole halls, demo only, see `HallSummary`. A hall's people are the people in all of its groups, the groups too small
+ * to be returned included. Real halls would also include operators without an occupation, who aren't in any group.
+ */
+const mockHalls: Array<MockHall> = [
+	{ id: "hall-1", site: MEDICAL_TEAM_DEMO_SITE, hall: "M-hallen" },
+	{ id: "hall-2", site: MEDICAL_TEAM_DEMO_SITE, hall: "Hall 2" },
+];
+
 /** The synthetic data starts here, so earlier periods show the empty state */
 const DATA_START = new Date(2025, 0, 1);
 
@@ -207,7 +225,39 @@ export async function fetchMockGroupSummaries(request: GroupSummaryRequest): Pro
 	return { units: exposureUnitByExposure, groups };
 }
 
+/** Demo only, see `HallSummary` */
+export async function fetchMockHallSummaries(request: GroupSummaryRequest): Promise<HallSummaryResponse> {
+	const halls = mockHalls
+		.filter((hall) => hall.site === request.site)
+		.map((hall): HallSummary => {
+			// Uses the same days and average as the hall's trend, so the hall's value matches its details
+			const getAverage = (exposure: ComparableExposure) =>
+				getPeriodAverage(getHallDays(hall, { ...request, exposure }), exposure);
+
+			return {
+				groupId: hall.id,
+				hall: hall.hall,
+				averages: {
+					dust: getAverage("dust"),
+					noise: getAverage("noise"),
+					vibration: roundVibration(
+						getGroupAverageDailyPoints(getHallVibrationSessions(hall, request), MIN_GROUP_SIZE),
+					),
+				},
+			};
+		});
+
+	return { units: exposureUnitByExposure, halls };
+}
+
+/** A group's trend, or a whole hall's, which is demo only, see `HallSummary` */
 export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<GroupTrendResponse> {
+	const hall = mockHalls.find((candidate) => candidate.id === request.groupId);
+
+	if (hall) {
+		return getMockHallTrend(hall, request);
+	}
+
 	const group = mockGroups.find((candidate) => candidate.id === request.groupId);
 
 	if (!group) {
@@ -226,7 +276,7 @@ export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<G
 
 		return {
 			status: "ok",
-			group: { hall: group.hall, occupation: group.occupation },
+			group: { level: "occupation", hall: group.hall, occupation: group.occupation },
 			unit: exposureUnitByExposure.vibration,
 			average: roundVibration(getGroupAverageDailyPoints(sessions, MIN_GROUP_SIZE)),
 			granularity: "day",
@@ -234,21 +284,92 @@ export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<G
 		};
 	}
 
-	const dustField = request.dustField ?? defaultDustField;
-	// PM2.5 and PM10 are synthetic demo series with their own baselines, generated the same way as PM1
-	const days =
-		exposure === "dust" && dustField !== "pm1_twa"
-			? getSyntheticDays(group, { ...request, exposure }, group.syntheticDustBaselines[dustField])
-			: getSyntheticDays(group, { ...request, exposure });
+	const days = getGroupDays(group, { ...request, exposure }, request.dustField ?? defaultDustField);
 
 	return {
 		status: "ok",
-		group: { hall: group.hall, occupation: group.occupation },
+		group: { level: "occupation", hall: group.hall, occupation: group.occupation },
 		unit: exposureUnitByExposure[exposure],
 		average: getPeriodAverage(days, exposure),
 		granularity: "day",
 		points: toDailyPoints(days, exposure),
 	};
+}
+
+function getMockHallTrend(hall: MockHall, request: GroupTrendRequest): GroupTrendResponse {
+	const exposure = request.exposure;
+
+	if (exposure === "vibration") {
+		const sessions = getHallVibrationSessions(hall, request);
+		const trend = getGroupAverageDailyPointsTrend(sessions, "day", MIN_GROUP_SIZE);
+
+		return {
+			status: "ok",
+			group: { level: "hall", hall: hall.hall },
+			unit: exposureUnitByExposure.vibration,
+			average: roundVibration(getGroupAverageDailyPoints(sessions, MIN_GROUP_SIZE)),
+			granularity: "day",
+			points: trend.map((point) => ({ time: point.time, value: roundVibration(point.value) })),
+		};
+	}
+
+	const days = getHallDays(hall, { ...request, exposure }, request.dustField ?? defaultDustField);
+
+	return {
+		status: "ok",
+		group: { level: "hall", hall: hall.hall },
+		unit: exposureUnitByExposure[exposure],
+		average: getPeriodAverage(days, exposure),
+		granularity: "day",
+		points: toDailyPoints(days, exposure),
+	};
+}
+
+/** Every group in the hall, the groups too small to be returned included */
+function getHallGroups(hall: MockHall) {
+	return mockGroups.filter((group) => group.site === hall.site && group.hall === hall.hall);
+}
+
+/**
+ * The hall's value per working day, where every person in the hall weighs the same, never the average of its groups'
+ * averages. The synthetic data has one value per group and day rather than per person, so this assumes every person
+ * contributes on every working day. A real backend has to average each person's own values instead.
+ */
+function getHallDays(
+	hall: MockHall,
+	request: PeriodRequest & { exposure: ComparableExposure },
+	dustField: DustField = defaultDustField,
+): Array<SyntheticDay> {
+	const groups = getHallGroups(hall).map((group) => ({
+		peopleCount: group.peopleCount,
+		days: getGroupDays(group, request, dustField),
+	}));
+	const peopleCount = sumOf(groups.map((group) => group.peopleCount));
+
+	// Every group has a value on every working day in the period, so their days line up
+	return (groups[0]?.days ?? []).map((day, index) => ({
+		date: day.date,
+		value: sumOf(groups.map((group) => group.peopleCount * group.days[index].value)) / peopleCount,
+		// The mock only shows how the view looks, so none of a hall's days are hidden, see `HallSummary`
+		isSuppressed: false,
+	}));
+}
+
+/** Every person in the hall, so the hall follows the same rules as a group, see `vibration-aggregation.ts` */
+function getHallVibrationSessions(hall: MockHall, period: PeriodSelectionRequest): Array<VibrationSession> {
+	return getHallGroups(hall).flatMap((group) => getMockVibrationSessions(group.id, period));
+}
+
+/** A group's days for the dust fraction, PM1 unless another fraction is given */
+function getGroupDays(
+	group: MockGroup,
+	request: PeriodRequest & { exposure: ComparableExposure },
+	dustField: DustField,
+): Array<SyntheticDay> {
+	// PM2.5 and PM10 are synthetic demo series with their own baselines, generated the same way as PM1
+	return request.exposure === "dust" && dustField !== "pm1_twa"
+		? getSyntheticDays(group, request, group.syntheticDustBaselines[dustField])
+		: getSyntheticDays(group, request);
 }
 
 /**
@@ -398,4 +519,8 @@ function round(value: number, exposure: ComparableExposure) {
 
 function roundVibration(value: number | null) {
 	return value === null ? null : Number(value.toFixed(1));
+}
+
+function sumOf(values: Array<number>) {
+	return values.reduce((total, value) => total + value, 0);
 }

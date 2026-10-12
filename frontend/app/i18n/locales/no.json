@@ -304,6 +304,7 @@
     },
     "exposureLabel": "Eksponeringstype",
     "pointsUnit": "poeng",
+    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
@@ -317,7 +318,14 @@
     "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
     "overview": {
       "heading": "Grupper",
+      "hallsHeading": "Bygg",
       "sortLabel": "Sorter grupper etter",
+      "sortHallsLabel": "Sorter bygg etter",
+      "level": {
+        "label": "Visning",
+        "occupation": "Per yrkesgruppe",
+        "hall": "Hele bygget"
+      },
       "belowActionValue": "Under tiltaksverdi",
       "aggregationNotice": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere.",
       "info": {
@@ -342,6 +350,10 @@
           "dust": "Støv: Tersklene for PM1 TWA har ingen dokumentert kilde eller enhet i prosjektet, så sammenligningen er ikke faglig avklart.",
           "noise": "Støy: Tersklene gjelder daglig eksponering for én person (LEX,8h), mens verdien er et aritmetisk snitt av LAeq. Målegrunnlaget er derfor ikke det samme.",
           "vibration": "Vibrasjon: Tersklene og verdien er begge daglige poeng per person, men det er ikke bekreftet at utstyrets poeng følger HSE-poengsystemet."
+        },
+        "halls": {
+          "title": "Hele bygget",
+          "aggregation": "I visningen «Hele bygget» teller hver person i bygget likt, også personer i yrkesgrupper som er for små til å vises. Verdien er derfor ikke gjennomsnittet av yrkesgruppenes kort."
         }
       },
       "noValue": "Ingen verdi",
@@ -350,12 +362,18 @@
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
+      "noHalls": {
+        "title": "Ingen bygg å vise",
+        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
+      },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene."
+      "error": "Kunne ikke hente gruppene.",
+      "hallsError": "Kunne ikke hente byggene."
     },
     "group": {
       "back": "Tilbake til oversikten",
       "eyebrow": "Gruppe",
+      "hallEyebrow": "Bygg",
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",

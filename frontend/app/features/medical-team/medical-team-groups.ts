@@ -7,6 +7,13 @@ import { formatExposureValue } from "@/lib/utils.ts";
 export const MIN_GROUP_SIZE = 5;
 
 /**
+ * What the overview shows a card for: a hall and occupation, or a whole hall. Whole halls are demo only, see
+ * `HallSummary`.
+ */
+export const groupLevels = ["occupation", "hall"] as const;
+export type GroupLevel = (typeof groupLevels)[number];
+
+/**
  * The existing action and limit values each exposure's bar is drawn against. They apply to a single person's exposure,
  * while the cards show group averages, so the colors place the group average on that scale rather than assess every
  * person in the group. How comparable each exposure's value is to its thresholds:
@@ -40,6 +47,27 @@ export function formatGroupValue(value: number, unit: ExposureUnit, t: Translate
 
 export function getGroupName({ hall, occupation }: { hall: string; occupation: string }, t: TranslateFn) {
 	return `${hall} · ${getOccupationLabel(occupation, t)}`;
+}
+
+/** Highest first, with missing values last. `0` when they're the same, so the caller decides the order. */
+export function compareAverages(averageA: number | null, averageB: number | null) {
+	if (averageA === averageB) {
+		return 0;
+	}
+
+	if (averageA === null) {
+		return 1;
+	}
+
+	if (averageB === null) {
+		return -1;
+	}
+
+	return averageB - averageA;
+}
+
+export function getHallName(hall: string, t: TranslateFn) {
+	return `${hall} · ${t(($) => $.medicalTeamDashboard.wholeHall)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {

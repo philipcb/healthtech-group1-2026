@@ -1,0 +1,46 @@
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
+import { type GroupLevel, groupLevels } from "@/features/medical-team/medical-team-groups.ts";
+import { Factory, UsersRound } from "lucide-react";
+import { useId } from "react";
+import { useTranslation } from "react-i18next";
+
+/** Picks what the overview shows a card for. Whole halls are demo only, see `HallSummary`. */
+export function GroupLevelToggle({
+	value,
+	onValueChange,
+}: {
+	value: GroupLevel;
+	onValueChange: (level: GroupLevel) => void;
+}) {
+	const { t } = useTranslation();
+	const labelId = useId();
+
+	return (
+		<div className="flex flex-col gap-1.5">
+			<p id={labelId} className="font-medium text-sm">
+				{t(($) => $.medicalTeamDashboard.overview.level.label)}
+			</p>
+			<ToggleGroup
+				aria-labelledby={labelId}
+				type="single"
+				value={value}
+				variant="outline"
+				onValueChange={(selected: string) => {
+					const level = groupLevels.find((candidate) => candidate === selected);
+					if (level) onValueChange(level);
+				}}
+			>
+				<ToggleGroupItem value="hall" className="px-2 lg:px-3">
+					<Factory aria-hidden="true" className="size-4" />
+					<span className="text-xs lg:text-sm">{t(($) => $.medicalTeamDashboard.overview.level.hall)}</span>
+				</ToggleGroupItem>
+				<ToggleGroupItem value="occupation" className="px-2 lg:px-3">
+					<UsersRound aria-hidden="true" className="size-4" />
+					<span className="text-xs lg:text-sm">
+						{t(($) => $.medicalTeamDashboard.overview.level.occupation)}
+					</span>
+				</ToggleGroupItem>
+			</ToggleGroup>
+		</div>
+	);
+}

@@ -115,6 +115,13 @@ export function OverviewInfoDialog() {
 						<li>{t(($) => $.medicalTeamDashboard.overview.info.caveats.vibration)}</li>
 					</ul>
 				</section>
+
+				<section className="flex flex-col gap-1.5 text-sm">
+					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.halls.title)}</h3>
+					<p className="text-muted-foreground">
+						{t(($) => $.medicalTeamDashboard.overview.info.halls.aggregation)}
+					</p>
+				</section>
 			</DialogContent>
 		</Dialog>
 	);

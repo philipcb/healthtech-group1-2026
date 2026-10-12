@@ -6,7 +6,12 @@ import { EmptyState } from "@/features/medical-team/empty-state.tsx";
 import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
 import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
-import { formatGroupValue, getGroupName, getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
+import {
+	formatGroupValue,
+	getGroupName,
+	getGroupUnitLabel,
+	getHallName,
+} from "@/features/medical-team/medical-team-groups.ts";
 import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
 import { type GroupTrendResponse, groupTrendQueryOptions } from "@/features/medical-team/medical-team-queries.ts";
 import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
@@ -33,6 +38,8 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			year,
 		}),
 	);
+	// A group, or a whole hall
+	const group = data?.status === "ok" ? data.group : null;
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-7">
@@ -47,15 +54,19 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
-							{t(($) => $.medicalTeamDashboard.group.eyebrow)}
+							{group?.level === "hall"
+								? t(($) => $.medicalTeamDashboard.group.hallEyebrow)
+								: t(($) => $.medicalTeamDashboard.group.eyebrow)}
 						</p>
 						{isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{data?.status === "ok"
-									? getGroupName(data.group, t)
-									: t(($) => $.medicalTeamDashboard.group.fallbackTitle)}
+								{group === null
+									? t(($) => $.medicalTeamDashboard.group.fallbackTitle)
+									: group.level === "hall"
+										? getHallName(group.hall, t)
+										: getGroupName(group, t)}
 							</h1>
 						)}
 					</div>

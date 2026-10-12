@@ -1,3 +1,4 @@
+import { type GroupLevel, groupLevels } from "@/features/medical-team/medical-team-groups.ts";
 import {
 	getSelectableYears,
 	medicalPeriods,
@@ -31,6 +32,8 @@ const searchParams = {
 	month: parseAsMonth.withDefault(today.getMonth()),
 	year: parseAsNumberLiteral(getSelectableYears()).withDefault(today.getFullYear()),
 	hall: parseAsString,
+	/** What the overview shows a card for. Defaults to a hall and occupation, so existing links keep their meaning. */
+	level: parseAsStringLiteral(groupLevels).withDefault("occupation"),
 };
 
 /**
@@ -58,6 +61,8 @@ export function useMedicalTeamSearchParams() {
 		setSort: (sort: Exposure) => void setParams({ sort }),
 		hall: params.hall,
 		setHall: (hall: string | null) => void setParams({ hall }),
+		level: params.level,
+		setLevel: (level: GroupLevel) => void setParams({ level }),
 		periodSelection,
 	};
 }

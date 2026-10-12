@@ -1,6 +1,7 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import {
+	compareAverages,
 	formatGroupValue,
 	getGroupName,
 	getOccupationLabel,
@@ -11,6 +12,7 @@ import { ThresholdBar } from "@/features/medical-team/threshold-bar.tsx";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
 import { ChevronRight, Factory } from "lucide-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { href, Link, useLocation } from "react-router";
 
@@ -26,35 +28,62 @@ type GroupListProps = {
  * ranking: an average says nothing about the spread within a group.
  */
 export function GroupList({ groups, units, sort }: GroupListProps) {
+	const { t } = useTranslation();
 	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, sort));
 
 	return (
 		<ul className="grid gap-4 xl:grid-cols-2">
 			{sortedGroups.map((group) => (
 				<li key={group.groupId}>
-					<GroupCard group={group} units={units} />
+					<SummaryCard
+						header={
+							<>
+								<p className="flex items-center gap-2 text-muted-foreground text-xs">
+									<Factory aria-hidden="true" className="size-3.5" />
+									{group.hall}
+								</p>
+								<h3 className="mt-1 font-semibold">{getOccupationLabel(group.occupation, t)}</h3>
+							</>
+						}
+						groupId={group.groupId}
+						name={getGroupName(group, t)}
+						averages={group.averages}
+						units={units}
+					/>
 				</li>
 			))}
 		</ul>
 	);
 }
 
-function GroupCard({ group, units }: { group: GroupSummary; units: GroupSummaryResponse["units"] }) {
-	const { t } = useTranslation();
-
+/** A group's or a whole hall's averages for every exposure, each linking to its details */
+export function SummaryCard({
+	header,
+	groupId,
+	name,
+	averages,
+	units,
+}: {
+	header: ReactNode;
+	groupId: string;
+	/** Read by screen readers in every row's link */
+	name: string;
+	averages: GroupSummary["averages"];
+	units: GroupSummaryResponse["units"];
+}) {
 	return (
 		<Card variant="labeled" className="h-full rounded-lg">
-			<div className="border-b px-4 py-3">
-				<p className="flex items-center gap-2 text-muted-foreground text-xs">
-					<Factory aria-hidden="true" className="size-3.5" />
-					{group.hall}
-				</p>
-				<h3 className="mt-1 font-semibold">{getOccupationLabel(group.occupation, t)}</h3>
-			</div>
+			<div className="border-b px-4 py-3">{header}</div>
 			<ul className="flex flex-col gap-1 p-2">
 				{exposures.map((exposure) => (
 					<li key={exposure}>
-						<ExposureLink group={group} exposure={exposure} unit={units[exposure]} />
+						<ExposureLink
+							groupId={groupId}
+							name={name}
+							average={averages[exposure]}
+							exposure={exposure}
+							unit={units[exposure]}
+						/>
 					</li>
 				))}
 			</ul>
@@ -62,20 +91,23 @@ function GroupCard({ group, units }: { group: GroupSummary; units: GroupSummaryR
 	);
 }
 
-/** The whole row, value and bar included, is one link to the group's details for this exposure */
+/** The whole row, value and bar included, is one link to the details for this exposure */
 function ExposureLink({
-	group,
+	groupId,
+	name,
+	average,
 	exposure,
 	unit,
 }: {
-	group: GroupSummary;
+	groupId: string;
+	name: string;
+	average: number | null;
 	exposure: Exposure;
 	unit: GroupSummaryResponse["units"][Exposure];
 }) {
 	const { t } = useTranslation();
 	const { search } = useLocation();
 
-	const average = group.averages[exposure];
 	const value =
 		average === null ? t(($) => $.medicalTeamDashboard.overview.noValue) : formatGroupValue(average, unit, t);
 	const threshold = thresholdByExposure[exposure];
@@ -90,12 +122,12 @@ function ExposureLink({
 	return (
 		<Link
 			to={{
-				pathname: href("/medical-team/groups/:groupId", { groupId: group.groupId }),
+				pathname: href("/medical-team/groups/:groupId", { groupId }),
 				search: `?${searchParams}`,
 			}}
 			aria-label={t(($) => $.medicalTeamDashboard.overview.openDetails, {
 				exposure: t(($) => $.exposures[exposure]),
-				group: getGroupName(group, t),
+				group: name,
 				value: levelLabel ? `${value}, ${levelLabel.toLowerCase()}` : value,
 			})}
 			className="flex flex-col gap-1.5 rounded-md p-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -120,20 +152,9 @@ function ExposureLink({
 }
 
 function compareGroups(a: GroupSummary, b: GroupSummary, sort: Exposure) {
-	const averageA = a.averages[sort];
-	const averageB = b.averages[sort];
-
-	if (averageA === averageB) {
-		return a.hall.localeCompare(b.hall) || a.occupation.localeCompare(b.occupation);
-	}
-
-	if (averageA === null) {
-		return 1;
-	}
-
-	if (averageB === null) {
-		return -1;
-	}
-
-	return averageB - averageA;
+	return (
+		compareAverages(a.averages[sort], b.averages[sort]) ||
+		a.hall.localeCompare(b.hall) ||
+		a.occupation.localeCompare(b.occupation)
+	);
 }

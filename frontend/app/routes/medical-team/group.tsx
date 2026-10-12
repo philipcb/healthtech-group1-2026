@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/medical-team/empty-state.tsx";
+import { ExposureKpiPanel } from "@/features/medical-team/exposure-kpi-panel.tsx";
 import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
 import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
@@ -13,8 +14,14 @@ import {
 	getHallName,
 } from "@/features/medical-team/medical-team-groups.ts";
 import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
-import { type GroupTrendResponse, groupTrendQueryOptions } from "@/features/medical-team/medical-team-queries.ts";
+import {
+	exposureKpisQueryOptions,
+	type GroupSummaryRequest,
+	type GroupTrendResponse,
+	groupTrendQueryOptions,
+} from "@/features/medical-team/medical-team-queries.ts";
 import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
+import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -24,6 +31,7 @@ import type { Route } from "./+types/group";
 
 export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 	const { t } = useTranslation();
+	const { user } = useUser();
 	const { search } = useLocation();
 	const { exposure, setExposure, dustField, setDustField, periodSelection } = useMedicalTeamSearchParams();
 	const { period, month, year } = periodSelection;
@@ -98,7 +106,13 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			) : data.status === "unavailable" ? (
 				<EmptyState title={t(($) => $.medicalTeamDashboard.group.unavailable[data.reason])} />
 			) : (
-				<GroupDetails trend={data} exposure={exposure} dustField={dustField} />
+				<GroupDetails
+					trend={data}
+					groupId={params.groupId}
+					exposure={exposure}
+					dustField={dustField}
+					request={{ site: user.location.site, period, month, year }}
+				/>
 			)}
 		</div>
 	);
@@ -106,15 +120,22 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 
 function GroupDetails({
 	trend,
+	groupId,
 	exposure,
 	dustField,
+	request,
 }: {
 	trend: Extract<GroupTrendResponse, { status: "ok" }>;
+	groupId: string;
 	exposure: Exposure;
 	/** Only used for dust */
 	dustField: DustField;
+	/** The site and period the KPIs are fetched for */
+	request: GroupSummaryRequest;
 }) {
 	const { t } = useTranslation();
+	// The trend tells whether this is a group or a whole hall, which decides which KPIs to fetch
+	const kpiQuery = useQuery(exposureKpisQueryOptions({ ...request, level: trend.group.level }));
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const metricLabel =
 		exposure === "dust"
@@ -132,6 +153,8 @@ function GroupDetails({
 				</p>
 				<p className="text-muted-foreground text-xs">{metricLabel}</p>
 			</Card>
+
+			<ExposureKpiPanel kpiQuery={kpiQuery} groupId={groupId} exposure={exposure} />
 
 			<Card className="gap-3">
 				<div className="space-y-1">

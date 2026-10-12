@@ -1,5 +1,6 @@
 import type { GroupLevel } from "@/features/medical-team/medical-team-groups.ts";
 import {
+	fetchMockExposureKpis,
 	fetchMockGroupSummaries,
 	fetchMockGroupTrend,
 	fetchMockHallSummaries,
@@ -136,6 +137,60 @@ export type GroupTrendResponse =
 			reason: "noSuchGroup" | "tooFewPeople";
 	  };
 
+/**
+ * How much of a group's or a hall's exposure is above the action and limit values, one KPI per exposure. Every
+ * exposure has its own KPI, since their thresholds have different reference periods:
+ * - dust: share of the valid 15-minute STEL periods where PM1 STEL was above the threshold. Not based on TWA, whose
+ *   reference period is a whole shift.
+ * - noise: average measured time per workday where the short-term LAeq was above the threshold. Needs the raw
+ *   measurements, since an hourly average doesn't tell how long within the hour the level was above it.
+ * - vibration: share of workdays where the daily points were above the threshold. Points are a daily dose, so they
+ *   can't be turned into a duration.
+ *
+ * Only served as synthetic examples for now, see `isSynthetic`. What a backend has to deliver is described in
+ * `MEDICAL_TEAM_KPIS.md`.
+ */
+export type ExposureKpiType =
+	| "dustStelPeriodsAboveThreshold"
+	| "noiseMinutesAboveThresholdPerWorkday"
+	| "vibrationWorkdaysAboveThreshold";
+
+/** Percentages are 0-100 */
+export type ExposureKpiUnit = "percentOfStelPeriods" | "minutesPerWorkday" | "percentOfWorkdays";
+
+export type ExposureKpi = {
+	type: ExposureKpiType;
+	exposure: Exposure;
+	/** The period the KPI covers, the same as requested */
+	period: Pick<PeriodRequest, "period" | "year" | "month">;
+	/** The thresholds the KPI compares with, in the exposure's unit */
+	thresholds: { action: number; limit: number; unit: ExposureUnit };
+	/** `true` for the mock's made-up examples, which aren't calculated from any measurements */
+	isSynthetic: boolean;
+	result:
+		| {
+				status: "ok";
+				unit: ExposureKpiUnit;
+				aboveAction: number;
+				aboveLimit: number;
+				/**
+				 * The valid measurement periods or workdays the KPI is based on, summed over the people, so a small basis
+				 * can be told apart from a large one
+				 */
+				basis: { count: number; unit: "stelPeriods" | "personWorkdays" };
+		  }
+		| { status: "noData" }
+		/** The backend hid the result because too few people contributed */
+		| { status: "suppressed" };
+};
+
+export type ExposureKpiRequest = GroupSummaryRequest & { level: GroupLevel };
+
+export type ExposureKpiResponse = {
+	/** The groups or halls of the requested level, by the same `groupId` as their summaries */
+	groups: Array<{ groupId: string; kpis: Record<Exposure, ExposureKpi> }>;
+};
+
 export function groupSummariesQueryOptions(request: GroupSummaryRequest) {
 	return queryOptions({
 		queryKey: ["medicalTeam", "groupSummaries", request],
@@ -150,6 +205,16 @@ export function hallSummariesQueryOptions(request: GroupSummaryRequest) {
 	return queryOptions({
 		queryKey: ["medicalTeam", "hallSummaries", request],
 		queryFn: () => fetchMockHallSummaries(request),
+		staleTime: minutesToMilliseconds(10),
+	});
+}
+
+/** Synthetic examples only, see `ExposureKpi` */
+export function exposureKpisQueryOptions(request: ExposureKpiRequest) {
+	return queryOptions({
+		queryKey: ["medicalTeam", "exposureKpis", request],
+		// TODO: Fetch from the aggregate API once it delivers what `MEDICAL_TEAM_KPIS.md` describes
+		queryFn: () => fetchMockExposureKpis(request),
 		staleTime: minutesToMilliseconds(10),
 	});
 }

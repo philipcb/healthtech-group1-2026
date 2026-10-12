@@ -1,5 +1,10 @@
 import { MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
 import type {
+	ExposureKpi,
+	ExposureKpiRequest,
+	ExposureKpiResponse,
+	ExposureKpiType,
+	ExposureKpiUnit,
 	GroupSummaryRequest,
 	GroupSummaryResponse,
 	GroupTrendPoint,
@@ -37,6 +42,7 @@ import seedrandom from "seedrandom";
  *   details can also show PM2.5 and PM10 from synthetic demo baselines, see `syntheticDustBaselines`.
  * - vibration: tool sessions per person and day, aggregated with the rules in `vibration-aggregation.ts`
  * - whole halls: a demo only, calculated from the people in all of the hall's groups, see `mockHalls`
+ * - KPIs: made-up examples that aren't calculated from anything above, see `fetchMockExposureKpis`
  *
  * A trend has one point per working day, for both a month and a year. Weekends have no measurements, so they're left
  * out rather than filled in.
@@ -358,6 +364,143 @@ function getHallDays(
 /** Every person in the hall, so the hall follows the same rules as a group, see `vibration-aggregation.ts` */
 function getHallVibrationSessions(hall: MockHall, period: PeriodSelectionRequest): Array<VibrationSession> {
 	return getHallGroups(hall).flatMap((group) => getMockVibrationSessions(group.id, period));
+}
+
+/**
+ * Configurable thresholds for the synthetic KPI examples, in each exposure's unit. Dust's are PM1 STEL's, since its KPI
+ * is based on STEL periods.
+ */
+const syntheticKpiThresholds: Record<Exposure, { action: number; limit: number }> = {
+	dust: { action: 7.5, limit: 15 },
+	noise: { action: 80, limit: 85 },
+	vibration: { action: 100, limit: 400 },
+};
+
+/**
+ * Made-up ranges the synthetic KPI examples are drawn from, not derived from any measurements or from the synthetic
+ * averages. `limitShare` is the result above the limit value as a share of the result above the action value, so it's
+ * never larger.
+ */
+const syntheticKpiRanges: Record<
+	Exposure,
+	{ type: ExposureKpiType; unit: ExposureKpiUnit; aboveAction: [number, number]; limitShare: [number, number] }
+> = {
+	dust: {
+		type: "dustStelPeriodsAboveThreshold",
+		unit: "percentOfStelPeriods",
+		aboveAction: [4, 45],
+		limitShare: [0.1, 0.45],
+	},
+	noise: {
+		type: "noiseMinutesAboveThresholdPerWorkday",
+		unit: "minutesPerWorkday",
+		aboveAction: [10, 120],
+		limitShare: [0.15, 0.5],
+	},
+	vibration: {
+		type: "vibrationWorkdaysAboveThreshold",
+		unit: "percentOfWorkdays",
+		aboveAction: [2, 40],
+		limitShare: [0, 0.2],
+	},
+};
+
+/** Synthetic examples of results the backend hides because too few people contributed */
+const syntheticSuppressedKpis = new Set(["hall-1-electrician:vibration"]);
+
+/** Share of a group's people that are measured on a working day, for the synthetic basis */
+const SYNTHETIC_MEASURED_SHARE: [number, number] = [0.7, 0.95];
+/** 15-minute STEL periods in a workday of 7.5 measured hours, and the share of them that are valid */
+const STEL_PERIODS_PER_WORKDAY = 30;
+const SYNTHETIC_VALID_STEL_SHARE: [number, number] = [0.8, 0.95];
+
+/**
+ * Made-up KPI examples per group or hall, exposure and period, see `ExposureKpi`. Nothing is calculated from
+ * measurements, the synthetic averages or hourly aggregates: the values are drawn from `syntheticKpiRanges`.
+ */
+export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promise<ExposureKpiResponse> {
+	const subjects =
+		request.level === "hall"
+			? mockHalls
+					.filter((hall) => hall.site === request.site)
+					.map((hall) => ({
+						id: hall.id,
+						level: request.level,
+						peopleCount: sumOf(getHallGroups(hall).map((group) => group.peopleCount)),
+					}))
+			: mockGroups
+					.filter((group) => group.site === request.site && group.peopleCount >= MIN_GROUP_SIZE)
+					.map((group) => ({ id: group.id, level: request.level, peopleCount: group.peopleCount }));
+	const workingDayCount = getWorkingDays(request).length;
+
+	return {
+		groups: subjects.map((subject) => ({
+			groupId: subject.id,
+			kpis: {
+				dust: getSyntheticKpi(subject, "dust", request, workingDayCount),
+				noise: getSyntheticKpi(subject, "noise", request, workingDayCount),
+				vibration: getSyntheticKpi(subject, "vibration", request, workingDayCount),
+			},
+		})),
+	};
+}
+
+function getSyntheticKpi(
+	subject: { id: string; level: ExposureKpiRequest["level"]; peopleCount: number },
+	exposure: Exposure,
+	request: ExposureKpiRequest,
+	workingDayCount: number,
+): ExposureKpi {
+	const { type, unit, aboveAction, limitShare } = syntheticKpiRanges[exposure];
+	const kpi = {
+		type,
+		exposure,
+		period: { period: request.period, year: request.year, month: request.month },
+		thresholds: { ...syntheticKpiThresholds[exposure], unit: exposureUnitByExposure[exposure] },
+		isSynthetic: true,
+	};
+
+	if (workingDayCount === 0) {
+		return { ...kpi, result: { status: "noData" } };
+	}
+
+	// Most people are on summer holiday in July, so a group's July is hidden, while a hall still has enough people
+	const isJulyForGroup = subject.level === "occupation" && request.period === "month" && request.month === 6;
+
+	if (isJulyForGroup || syntheticSuppressedKpis.has(`${subject.id}:${exposure}`)) {
+		return { ...kpi, result: { status: "suppressed" } };
+	}
+
+	// Seeded per group, exposure and period, so a KPI is the same every time it's shown
+	const random = seedrandom(`${subject.id}:kpi:${exposure}:${request.period}:${request.year}:${request.month}`);
+	const draw = ([low, high]: [number, number]) => low + random() * (high - low);
+	const resultAboveAction = draw(aboveAction);
+	const resultAboveLimit = resultAboveAction * draw(limitShare);
+	const personWorkdays = workingDayCount * subject.peopleCount * draw(SYNTHETIC_MEASURED_SHARE);
+
+	return {
+		...kpi,
+		result: {
+			status: "ok",
+			unit,
+			aboveAction: Math.round(resultAboveAction),
+			aboveLimit: Math.round(resultAboveLimit),
+			// Rounded to tens, like a backend is proposed to, so the basis doesn't give away exact counts
+			basis:
+				exposure === "dust"
+					? {
+							count: roundToTens(
+								personWorkdays * STEL_PERIODS_PER_WORKDAY * draw(SYNTHETIC_VALID_STEL_SHARE),
+							),
+							unit: "stelPeriods",
+						}
+					: { count: roundToTens(personWorkdays), unit: "personWorkdays" },
+		},
+	};
+}
+
+function roundToTens(value: number) {
+	return Math.max(10, Math.round(value / 10) * 10);
 }
 
 /** A group's days for the dust fraction, PM1 unless another fraction is given */

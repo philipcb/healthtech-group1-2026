@@ -316,6 +316,23 @@
       "vibration": "Snitt per person og dag"
     },
     "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
+    "kpi": {
+      "titles": {
+        "dust": "Andel STEL-perioder over terskel",
+        "noise": "Tid over terskel per arbeidsdag",
+        "vibration": "Andel arbeidsdager over terskel"
+      },
+      "aboveAction": "Over tiltaksverdi ({{threshold}})",
+      "aboveLimit": "Over grenseverdi ({{threshold}})",
+      "values": {
+        "minutesPerWorkday": "{{value}} min per arbeidsdag",
+        "percentOfStelPeriods": "{{value}} av periodene",
+        "percentOfWorkdays": "{{value}} av arbeidsdagene"
+      },
+      "noData": "Ingen nøkkeltall for valgt periode.",
+      "suppressed": "Nøkkeltallet er skjult fordi for få personer bidro.",
+      "error": "Kunne ikke hente nøkkeltallene."
+    },
     "overview": {
       "heading": "Grupper",
       "hallsHeading": "Bygg",
@@ -356,6 +373,14 @@
         "halls": {
           "title": "Hele bygget",
           "aggregation": "I visningen «Hele bygget» teller hver person i bygget likt, også personer i yrkesgrupper som er for små til å vises. Verdien er derfor ikke gjennomsnittet av yrkesgruppenes kort."
+        },
+        "kpis": {
+          "title": "Nøkkeltall (syntetiske eksempler)",
+          "description": "På detaljsiden for en yrkesgruppe eller et bygg vises hvor mye av eksponeringen som ligger over tiltaksverdien og grenseverdien. Hver eksponeringstype har sitt eget nøkkeltall, fordi tersklene har ulike referanseperioder:",
+          "dust": "Støv: andel gyldige 15-minutters STEL-perioder over terskelen, ikke TWA, som gjelder et helt skift.",
+          "noise": "Støy: gjennomsnittlig målt tid over terskelen per arbeidsdag. Krever målinger med kort tidsoppløsning, ikke timesnitt.",
+          "vibration": "Vibrasjon: andel arbeidsdager der den daglige dosen var over terskelen. Dosen er poeng per dag og kan ikke gjøres om til tid.",
+          "demo": "Tallene er foreløpig oppdiktede eksempler for å vise utformingen. De er ikke beregnet fra målinger."
         }
       },
       "noValue": "Ingen verdi",

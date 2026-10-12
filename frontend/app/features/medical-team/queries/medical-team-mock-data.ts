@@ -1,23 +1,22 @@
 import { MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
-import type {
-	ExposureKpi,
-	ExposureKpiRequest,
-	ExposureKpiResponse,
-	ExposureKpiType,
-	ExposureKpiUnit,
-	GroupSummaryRequest,
-	GroupSummaryResponse,
-	GroupTrendPoint,
-	GroupTrendRequest,
-	GroupTrendResponse,
-	HallSummary,
-	HallSummaryResponse,
-} from "@/features/medical-team/medical-team-queries.ts";
+import {
+	type ExposureKpiRequest,
+	type ExposureKpiResponse,
+	type ExposureKpiResult,
+	type GroupSummaryRequest,
+	type GroupSummaryResponse,
+	type GroupTrendPoint,
+	type GroupTrendRequest,
+	type GroupTrendResponse,
+	type HallSummary,
+	type HallSummaryResponse,
+	kpiUnitByExposure,
+} from "@/features/medical-team/queries/medical-team-contracts.ts";
 import {
 	getGroupAverageDailyPoints,
 	getGroupAverageDailyPointsTrend,
 	type VibrationSession,
-} from "@/features/medical-team/vibration-aggregation.ts";
+} from "@/features/medical-team/queries/vibration-aggregation.ts";
 import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
 import { today } from "@/lib/date.ts";
 import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
@@ -35,27 +34,20 @@ import {
 import seedrandom from "seedrandom";
 
 /*
- * Synthetic stand-in for the aggregate API. The overview and a group's details are served from the same data, so they
- * always agree:
- * - dust and noise: one group value per working day, generated from the group's baseline with synthetic variation that
- *   develops over a few weeks, see `getSyntheticDays`. Dust is PM1, and a group's
- *   details can also show PM2.5 and PM10 from synthetic demo baselines, see `syntheticDustBaselines`.
- * - vibration: tool sessions per person and day, aggregated with the rules in `vibration-aggregation.ts`
- * - whole halls: a demo only, calculated from the people in all of the hall's groups, see `mockHalls`
- * - KPIs: made-up examples that aren't calculated from anything above, see `fetchMockExposureKpis`
+ * Synthetic stand-in for the aggregate API. The overview and the details use the same data, so they always agree:
+ * - dust and noise: one value per group and working day, varying around the group's baseline, see `getSyntheticDays`.
+ *   PM2.5 and PM10 use synthetic demo baselines.
+ * - vibration: tool sessions per person and day, aggregated with `vibration-aggregation.ts`
+ * - whole halls: demo only, calculated from the people in all of the hall's groups
+ * - KPIs: made-up examples, not calculated from anything above
  *
- * A trend has one point per working day, for both a month and a year. Weekends have no measurements, so they're left
- * out rather than filled in.
+ * Weekends have no measurements, so they're left out rather than filled in.
  */
 
-/**
- * Exposures with a single group value per bucket, based on fields the aggregate database already stores. Vibration is
- * aggregated from each person's daily points instead, see `vibration-aggregation.ts`, which the aggregate database
- * doesn't store yet.
- */
+/** Exposures with one group value per day. Vibration is aggregated from each person's daily points instead. */
 type ComparableExposure = Extract<Exposure, "dust" | "noise">;
 
-/** Dust fractions besides PM1, which only a group's details show */
+/** Only shown in a group's details */
 type SyntheticDustField = Exclude<DustField, "pm1_twa">;
 
 type MockGroup = {
@@ -67,16 +59,9 @@ type MockGroup = {
 	peopleCount: number;
 	/** The level the group's daily averages vary around */
 	baseline: Record<ComparableExposure, number>;
-	/**
-	 * Typical daily vibration points for a person in the group. Synthetic, not derived from any vibration data, and only
-	 * used to generate sessions that show the planned aggregation.
-	 */
+	/** Typical daily points per person. Made up, only used to generate sessions for the planned aggregation. */
 	syntheticVibrationPointsPerDay: number;
-	/**
-	 * Synthetic demo baselines for PM2.5 and PM10, not measurements. Chosen by hand so the fractions can be compared
-	 * visually, and set so they normally follow PM1 ≤ PM2.5 ≤ PM10, which isn't guaranteed for real measurements. PM1
-	 * stays `baseline.dust`.
-	 */
+	/** Made-up PM2.5 and PM10 baselines, set so PM1 ≤ PM2.5 ≤ PM10, which real measurements don't guarantee */
 	syntheticDustBaselines: Record<SyntheticDustField, number>;
 };
 
@@ -161,8 +146,8 @@ type MockHall = {
 };
 
 /**
- * Whole halls, demo only, see `HallSummary`. A hall's people are the people in all of its groups, the groups too small
- * to be returned included. Real halls would also include operators without an occupation, who aren't in any group.
+ * Demo only. A hall's people are everyone in its groups, the small groups included. Real halls would also include
+ * operators without an occupation.
  */
 const mockHalls: Array<MockHall> = [
 	{ id: "hall-1", site: MEDICAL_TEAM_DEMO_SITE, hall: "M-hallen" },
@@ -178,9 +163,8 @@ const SUPPRESSED_DAY_SHARE = 0.06;
 const SUPPRESSED_JULY_DAY_SHARE = 0.7;
 
 /**
- * Synthetic variation that develops over time, not a model of how real exposure varies. A day's draw follows two slow
- * waves, plus a smaller share of the day's own random draw, so the trend is easier to follow than with independent
- * days. Lengths in calendar days, chosen so the waves don't line up with months.
+ * Made-up variation that develops over weeks, not a model of real exposure: two slow waves plus some of the day's own
+ * draw. Lengths in calendar days, chosen so the waves don't line up with months.
  */
 const WAVE_PERIOD_DAYS = [13, 29];
 /** How far the waves move a day's draw, in the draw's 0-1 units */
@@ -256,7 +240,7 @@ export async function fetchMockHallSummaries(request: GroupSummaryRequest): Prom
 	return { units: exposureUnitByExposure, halls };
 }
 
-/** A group's trend, or a whole hall's, which is demo only, see `HallSummary` */
+/** A group's trend, or a whole hall's, which is demo only */
 export async function fetchMockGroupTrend(request: GroupTrendRequest): Promise<GroupTrendResponse> {
 	const hall = mockHalls.find((candidate) => candidate.id === request.groupId);
 
@@ -337,9 +321,8 @@ function getHallGroups(hall: MockHall) {
 }
 
 /**
- * The hall's value per working day, where every person in the hall weighs the same, never the average of its groups'
- * averages. The synthetic data has one value per group and day rather than per person, so this assumes every person
- * contributes on every working day. A real backend has to average each person's own values instead.
+ * The hall's daily value, where every person weighs the same, never the average of the groups' averages. Assumes
+ * everyone contributes every working day, since the synthetic data has one value per group and day, not per person.
  */
 function getHallDays(
 	hall: MockHall,
@@ -356,19 +339,19 @@ function getHallDays(
 	return (groups[0]?.days ?? []).map((day, index) => ({
 		date: day.date,
 		value: sumOf(groups.map((group) => group.peopleCount * group.days[index].value)) / peopleCount,
-		// The mock only shows how the view looks, so none of a hall's days are hidden, see `HallSummary`
+		// No privacy rules in the demo, so none of a hall's days are hidden
 		isSuppressed: false,
 	}));
 }
 
-/** Every person in the hall, so the hall follows the same rules as a group, see `vibration-aggregation.ts` */
+/** Every person in the hall, so the hall follows the same rules as a group */
 function getHallVibrationSessions(hall: MockHall, period: PeriodSelectionRequest): Array<VibrationSession> {
 	return getHallGroups(hall).flatMap((group) => getMockVibrationSessions(group.id, period));
 }
 
 /**
- * Configurable thresholds for the synthetic KPI examples, in each exposure's unit. Dust's are PM1 STEL's, since its KPI
- * is based on STEL periods.
+ * Configurable thresholds for the KPI examples. Dust's are the project's PM1 STEL values, which have no confirmed
+ * source.
  */
 const syntheticKpiThresholds: Record<Exposure, { action: number; limit: number }> = {
 	dust: { action: 7.5, limit: 15 },
@@ -377,133 +360,82 @@ const syntheticKpiThresholds: Record<Exposure, { action: number; limit: number }
 };
 
 /**
- * Made-up ranges the synthetic KPI examples are drawn from, not derived from any measurements or from the synthetic
- * averages. `limitShare` is the result above the limit value as a share of the result above the action value, so it's
- * never larger.
+ * Made-up ranges for the KPI examples. `limitShare` is the result above the limit value as a share of the one above the
+ * action value.
  */
-const syntheticKpiRanges: Record<
-	Exposure,
-	{ type: ExposureKpiType; unit: ExposureKpiUnit; aboveAction: [number, number]; limitShare: [number, number] }
-> = {
-	dust: {
-		type: "dustStelPeriodsAboveThreshold",
-		unit: "percentOfStelPeriods",
-		aboveAction: [4, 45],
-		limitShare: [0.1, 0.45],
-	},
-	noise: {
-		type: "noiseMinutesAboveThresholdPerWorkday",
-		unit: "minutesPerWorkday",
-		aboveAction: [10, 120],
-		limitShare: [0.15, 0.5],
-	},
-	vibration: {
-		type: "vibrationWorkdaysAboveThreshold",
-		unit: "percentOfWorkdays",
-		aboveAction: [2, 40],
-		limitShare: [0, 0.2],
-	},
+const syntheticKpiRanges: Record<Exposure, { aboveAction: [number, number]; limitShare: [number, number] }> = {
+	dust: { aboveAction: [4, 45], limitShare: [0.1, 0.45] },
+	noise: { aboveAction: [10, 120], limitShare: [0.15, 0.5] },
+	vibration: { aboveAction: [2, 40], limitShare: [0, 0.2] },
 };
 
 /** Synthetic examples of results the backend hides because too few people contributed */
 const syntheticSuppressedKpis = new Set(["hall-1-electrician:vibration"]);
 
-/** Share of a group's people that are measured on a working day, for the synthetic basis */
-const SYNTHETIC_MEASURED_SHARE: [number, number] = [0.7, 0.95];
-/** 15-minute STEL periods in a workday of 7.5 measured hours, and the share of them that are valid */
-const STEL_PERIODS_PER_WORKDAY = 30;
-const SYNTHETIC_VALID_STEL_SHARE: [number, number] = [0.8, 0.95];
-
-/**
- * Made-up KPI examples per group or hall, exposure and period, see `ExposureKpi`. Nothing is calculated from
- * measurements, the synthetic averages or hourly aggregates: the values are drawn from `syntheticKpiRanges`.
- */
+/** Made-up KPI examples drawn from `syntheticKpiRanges`, not calculated from measurements or hourly aggregates */
 export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promise<ExposureKpiResponse> {
-	const subjects =
+	const groupIds =
 		request.level === "hall"
-			? mockHalls
-					.filter((hall) => hall.site === request.site)
-					.map((hall) => ({
-						id: hall.id,
-						level: request.level,
-						peopleCount: sumOf(getHallGroups(hall).map((group) => group.peopleCount)),
-					}))
+			? mockHalls.filter((hall) => hall.site === request.site).map((hall) => hall.id)
 			: mockGroups
 					.filter((group) => group.site === request.site && group.peopleCount >= MIN_GROUP_SIZE)
-					.map((group) => ({ id: group.id, level: request.level, peopleCount: group.peopleCount }));
+					.map((group) => group.id);
 	const workingDayCount = getWorkingDays(request).length;
+	const getThresholds = (exposure: Exposure) => ({
+		...syntheticKpiThresholds[exposure],
+		unit: exposureUnitByExposure[exposure],
+	});
 
 	return {
-		groups: subjects.map((subject) => ({
-			groupId: subject.id,
+		period: { period: request.period, year: request.year, month: request.month },
+		thresholds: {
+			dust: getThresholds("dust"),
+			noise: getThresholds("noise"),
+			vibration: getThresholds("vibration"),
+		},
+		groups: groupIds.map((groupId) => ({
+			groupId,
 			kpis: {
-				dust: getSyntheticKpi(subject, "dust", request, workingDayCount),
-				noise: getSyntheticKpi(subject, "noise", request, workingDayCount),
-				vibration: getSyntheticKpi(subject, "vibration", request, workingDayCount),
+				dust: getSyntheticKpiResult(groupId, "dust", request, workingDayCount),
+				noise: getSyntheticKpiResult(groupId, "noise", request, workingDayCount),
+				vibration: getSyntheticKpiResult(groupId, "vibration", request, workingDayCount),
 			},
 		})),
 	};
 }
 
-function getSyntheticKpi(
-	subject: { id: string; level: ExposureKpiRequest["level"]; peopleCount: number },
+function getSyntheticKpiResult(
+	groupId: string,
 	exposure: Exposure,
 	request: ExposureKpiRequest,
 	workingDayCount: number,
-): ExposureKpi {
-	const { type, unit, aboveAction, limitShare } = syntheticKpiRanges[exposure];
-	const kpi = {
-		type,
-		exposure,
-		period: { period: request.period, year: request.year, month: request.month },
-		thresholds: { ...syntheticKpiThresholds[exposure], unit: exposureUnitByExposure[exposure] },
-		isSynthetic: true,
-	};
-
+): ExposureKpiResult {
 	if (workingDayCount === 0) {
-		return { ...kpi, result: { status: "noData" } };
+		return { status: "noData" };
 	}
 
 	// Most people are on summer holiday in July, so a group's July is hidden, while a hall still has enough people
-	const isJulyForGroup = subject.level === "occupation" && request.period === "month" && request.month === 6;
+	const isJulyForGroup = request.level === "occupation" && request.period === "month" && request.month === 6;
 
-	if (isJulyForGroup || syntheticSuppressedKpis.has(`${subject.id}:${exposure}`)) {
-		return { ...kpi, result: { status: "suppressed" } };
+	if (isJulyForGroup || syntheticSuppressedKpis.has(`${groupId}:${exposure}`)) {
+		return { status: "suppressed" };
 	}
 
 	// Seeded per group, exposure and period, so a KPI is the same every time it's shown
-	const random = seedrandom(`${subject.id}:kpi:${exposure}:${request.period}:${request.year}:${request.month}`);
+	const random = seedrandom(`${groupId}:kpi:${exposure}:${request.period}:${request.year}:${request.month}`);
 	const draw = ([low, high]: [number, number]) => low + random() * (high - low);
+	const { aboveAction, limitShare } = syntheticKpiRanges[exposure];
 	const resultAboveAction = draw(aboveAction);
 	const resultAboveLimit = resultAboveAction * draw(limitShare);
-	const personWorkdays = workingDayCount * subject.peopleCount * draw(SYNTHETIC_MEASURED_SHARE);
 
 	return {
-		...kpi,
-		result: {
-			status: "ok",
-			unit,
-			aboveAction: Math.round(resultAboveAction),
-			aboveLimit: Math.round(resultAboveLimit),
-			// Rounded to tens, like a backend is proposed to, so the basis doesn't give away exact counts
-			basis:
-				exposure === "dust"
-					? {
-							count: roundToTens(
-								personWorkdays * STEL_PERIODS_PER_WORKDAY * draw(SYNTHETIC_VALID_STEL_SHARE),
-							),
-							unit: "stelPeriods",
-						}
-					: { count: roundToTens(personWorkdays), unit: "personWorkdays" },
-		},
+		status: "ok",
+		unit: kpiUnitByExposure[exposure],
+		aboveAction: Math.round(resultAboveAction),
+		aboveLimit: Math.round(resultAboveLimit),
 	};
 }
 
-function roundToTens(value: number) {
-	return Math.max(10, Math.round(value / 10) * 10);
-}
-
-/** A group's days for the dust fraction, PM1 unless another fraction is given */
 function getGroupDays(
 	group: MockGroup,
 	request: PeriodRequest & { exposure: ComparableExposure },
@@ -516,8 +448,8 @@ function getGroupDays(
 }
 
 /**
- * Synthetic tool sessions for every person in a group, on the working days in the period. People differ in level and
- * in how often they're registered, a day can have several sessions, and some registered days are worth 0 points.
+ * Made-up tool sessions per person and working day. People differ in level and in how often they're registered, and
+ * some registered days are worth 0 points.
  */
 function getMockVibrationSessions(groupId: string, period: PeriodSelectionRequest): Array<VibrationSession> {
 	const group = mockGroups.find((candidate) => candidate.id === groupId);
@@ -579,11 +511,8 @@ function getWorkingDays({ period, year, month }: PeriodSelectionRequest): Array<
 }
 
 /**
- * One value per working day with data in the requested period, from the data start up to today. A dust fraction's
- * baseline can be given instead of PM1's, and keeps the same seed, so every fraction varies and is hidden on the same days.
- *
- * The waves and the day's own draw are shifted so a month's draws keep the average of its independent daily draws.
- * Since a day's value is linear in its draw, every month and year keeps the same average as with independent days.
+ * One value per working day with data. Every dust fraction keeps the same seed, so they vary and are hidden on the same
+ * days. The draws are shifted so every month and year keeps the average of independent daily draws.
  */
 function getSyntheticDays(
 	group: MockGroup,
@@ -610,10 +539,7 @@ function getSyntheticDays(
 	});
 }
 
-/**
- * The average daily draw and wave over the working days in the date's month that have data, the same days as the
- * month's average. Until the month is over, its days shift slightly as days are added, the way its average does.
- */
+/** The average draw and wave over the month's working days with data, which shift slightly until the month is over */
 function getMonthAverages(seed: string, date: Date) {
 	const days = getWorkingDays({ period: "month", year: date.getFullYear(), month: date.getMonth() });
 	const average = (values: Array<number>) => values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -638,8 +564,8 @@ function getWave(seed: string, date: Date) {
 }
 
 /**
- * The period average includes hidden days, since a whole period has enough people contributing, even when a single
- * day doesn't. This is an assumption the backend would have to make explicit.
+ * Includes hidden days, since a whole period has enough people contributing even when a single day doesn't. An
+ * assumption the backend would have to make explicit.
  */
 function getPeriodAverage(days: Array<SyntheticDay>, exposure: ComparableExposure): number | null {
 	if (days.length === 0) {

@@ -1,19 +1,17 @@
 /*
- * How vibration is planned to be aggregated to a group, independent of where the sessions come from:
+ * How vibration is planned to be aggregated to a group:
+ * 1. Each person's sessions are summed per day.
+ * 2. Each person's daily points are averaged over the days they have registrations for.
+ * 3. The group's value is the average of the person averages, so every person weighs the same.
  *
- * 1. Every tool session's points are added up per person and day, giving each person's daily points.
- * 2. Each person's daily points are averaged over the days in the period they have registrations for.
- * 3. The group's value is the average of those person averages, so every person weighs the same, however many days
- *    they have registrations for.
- *
- * A day without any session is missing data and is left out, while a day with sessions worth 0 points is an explicit 0.
- * Points are never converted to m/s² or A(8), since how the equipment calculates them isn't documented.
+ * A day without sessions is missing data and left out, while sessions worth 0 points are an explicit 0. Points are
+ * never converted to m/s² or A(8), since how the equipment calculates them isn't documented.
  */
 
 export type VibrationSession = {
 	/** Only used to group sessions, never shown */
 	personId: string;
-	/** Local date of the working day, as `yyyy-MM-dd` */
+	/** Local date, as `yyyy-MM-dd` */
 	date: string;
 	points: number;
 };
@@ -27,7 +25,6 @@ export type VibrationTrendPoint = {
 	value: number | null;
 };
 
-/** Adds up every session per person and day */
 export function sumSessionsPerPersonDay(sessions: Array<VibrationSession>): Array<PersonDay> {
 	const pointsByPersonDay = new Map<string, PersonDay>();
 
@@ -45,7 +42,7 @@ export function sumSessionsPerPersonDay(sessions: Array<VibrationSession>): Arra
 	return Array.from(pointsByPersonDay.values());
 }
 
-/** Each person's average daily points, over the days they have registrations for */
+/** Over the days each person has registrations for */
 export function averageDailyPointsPerPerson(personDays: Array<PersonDay>): Map<string, number> {
 	const daysByPerson = new Map<string, Array<number>>();
 
@@ -62,10 +59,7 @@ export function averageDailyPointsPerPerson(personDays: Array<PersonDay>): Map<s
 	return new Map(Array.from(daysByPerson, ([personId, days]) => [personId, average(days)]));
 }
 
-/**
- * The group's average of each person's average daily points. `null` when fewer than `minPeople` people have
- * registrations, since the value would then come too close to a single person's.
- */
+/** `null` with fewer than `minPeople` people, since the value would come too close to a single person's */
 export function getGroupAverageDailyPoints(sessions: Array<VibrationSession>, minPeople: number): number | null {
 	const personAverages = Array.from(averageDailyPointsPerPerson(sumSessionsPerPersonDay(sessions)).values());
 
@@ -76,10 +70,7 @@ export function getGroupAverageDailyPoints(sessions: Array<VibrationSession>, mi
 	return average(personAverages);
 }
 
-/**
- * One point per day or month, each calculated with the same rules as the period's value, using only the sessions in
- * that bucket. Buckets without sessions are left out.
- */
+/** One point per day or month, with the same rules as the period's value. Buckets without sessions are left out. */
 export function getGroupAverageDailyPointsTrend(
 	sessions: Array<VibrationSession>,
 	granularity: "day" | "month",

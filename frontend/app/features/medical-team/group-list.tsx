@@ -26,7 +26,7 @@ export function GroupList({ groups, units, filter }: GroupListProps) {
 	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, filter));
 
 	return (
-		<ul className="grid gap-4 xl:grid-cols-2">
+		<ul className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 			{sortedGroups.map((group) => (
 				<li key={group.groupId}>
 					<SummaryCard

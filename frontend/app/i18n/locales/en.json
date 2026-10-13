@@ -297,7 +297,11 @@
     },
     "filters": {
       "hall": "Building",
-      "allHalls": "All buildings"
+      "allHalls": "All buildings",
+      "title": "Filters",
+      "description": "Changes apply right away.",
+      "reset": "Reset",
+      "save": "Save"
     },
     "occupations": {
       "welder": "Welder",
@@ -350,7 +354,7 @@
         "hall": "Whole building"
       },
       "belowActionValue": "Below action value",
-      "aggregationNotice": "Exposure values are aggregated at group level. Individual exposure may vary.",
+      "aggregationNotice": "Values are group averages. Individual exposure may vary.",
       "info": {
         "trigger": "Overview guide",
         "title": "Overview guide",

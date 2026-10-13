@@ -29,7 +29,7 @@ export function SummaryCard({
 }) {
 	return (
 		<Card variant="labeled" className="h-full rounded-lg">
-			<div className="border-b px-4 py-3">{header}</div>
+			<div className="border-b px-4 py-2 sm:py-3">{header}</div>
 			<ul className="flex flex-col gap-1 p-2">
 				{shownExposures.map((exposure) => (
 					<li key={exposure}>
@@ -88,15 +88,17 @@ function ExposureLink({
 			})}
 			className="flex flex-col gap-1.5 rounded-md p-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 		>
-			<span className="flex items-center justify-between gap-3 text-sm">
-				<span className="flex min-w-0 items-center gap-2">
+			{/* On narrow cards the value wraps below the exposure, so the row never gets wider than the card */}
+			<span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+				<span className="flex min-w-0 grow items-center gap-2">
 					<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
 					<span className="font-medium">{t(($) => $.exposures[exposure])}</span>
-					<span className="truncate text-muted-foreground text-xs">
+					{/* Without a width of its own, it only fills the space left over and never makes the value wrap */}
+					<span className="w-0 grow truncate text-muted-foreground text-xs">
 						{t(($) => $.medicalTeamDashboard.metricsShort[exposure])}
 					</span>
 				</span>
-				<span className="flex shrink-0 items-center gap-1 tabular-nums">
+				<span className="ml-auto flex shrink-0 items-center gap-1 tabular-nums">
 					{levelLabel && <span className="mr-1 text-muted-foreground text-xs">{levelLabel}</span>}
 					{value}
 					<ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />

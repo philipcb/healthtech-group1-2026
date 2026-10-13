@@ -16,7 +16,7 @@ export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection 
 	const years = getSelectableYears();
 
 	return (
-		<div className="flex flex-wrap items-center gap-3">
+		<div className="flex flex-wrap items-center gap-2">
 			<ToggleGroup
 				aria-label={t(($) => $.medicalTeamDashboard.period.label)}
 				type="single"
@@ -30,20 +30,26 @@ export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection 
 				<ToggleGroupItem value="month">{t(($) => $.medicalTeamDashboard.period.month)}</ToggleGroupItem>
 				<ToggleGroupItem value="year">{t(($) => $.medicalTeamDashboard.period.year)}</ToggleGroupItem>
 			</ToggleGroup>
-			{period === "month" && (
+			{/* The selects wrap together, so a narrow screen gets them on one row below the toggle instead of a lone year */}
+			<div className="flex grow gap-2">
+				{period === "month" && (
+					<PeriodSelect
+						label={t(($) => $.medicalTeamDashboard.period.month)}
+						value={month}
+						options={monthKeys.map((_, index) => ({ value: index, label: getMonthLabel(index, t) }))}
+						onValueChange={setMonth}
+					/>
+				)}
 				<PeriodSelect
-					label={t(($) => $.medicalTeamDashboard.period.month)}
-					value={month}
-					options={monthKeys.map((_, index) => ({ value: index, label: getMonthLabel(index, t) }))}
-					onValueChange={setMonth}
+					label={t(($) => $.medicalTeamDashboard.period.selectYear)}
+					value={year}
+					options={years.map((selectableYear) => ({
+						value: selectableYear,
+						label: selectableYear.toString(),
+					}))}
+					onValueChange={setYear}
 				/>
-			)}
-			<PeriodSelect
-				label={t(($) => $.medicalTeamDashboard.period.selectYear)}
-				value={year}
-				options={years.map((selectableYear) => ({ value: selectableYear, label: selectableYear.toString() }))}
-				onValueChange={setYear}
-			/>
+			</div>
 		</div>
 	);
 }
@@ -68,7 +74,7 @@ function PeriodSelect({
 				{label}
 			</label>
 			<Select value={value.toString()} onValueChange={(selected) => onValueChange(Number(selected))}>
-				<SelectTrigger id={id} className="bg-background">
+				<SelectTrigger id={id} className="grow bg-background">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>

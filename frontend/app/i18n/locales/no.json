@@ -294,7 +294,11 @@
     },
     "filters": {
       "hall": "Bygg",
-      "allHalls": "Alle bygg"
+      "allHalls": "Alle bygg",
+      "title": "Filtre",
+      "description": "Valgene gjelder med en gang.",
+      "reset": "Nullstill",
+      "save": "Lagre"
     },
     "occupations": {
       "welder": "Sveiser",
@@ -347,7 +351,7 @@
         "hall": "Hele bygget"
       },
       "belowActionValue": "Under tiltaksverdi",
-      "aggregationNotice": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere.",
+      "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
       "info": {
         "trigger": "Oversiktsguide",
         "title": "Oversiktsguide",

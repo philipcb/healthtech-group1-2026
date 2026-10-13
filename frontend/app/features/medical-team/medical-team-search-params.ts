@@ -46,7 +46,9 @@ const searchParams = {
  * when navigating back.
  */
 export function useMedicalTeamSearchParams() {
-	const [params, setParams] = useQueryStates(searchParams);
+	// Not shallow, so React Router sees every change, and links built from its location, like going back from a group's
+	// details or opening them from the overview, keep the current selection
+	const [params, setParams] = useQueryStates(searchParams, { shallow: false });
 
 	const periodSelection: PeriodSelection = {
 		period: params.period,
@@ -68,6 +70,12 @@ export function useMedicalTeamSearchParams() {
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,
 		setLevel: (level: GroupLevel) => void setParams({ level }),
+		/** Sets every overview filter back to its default in one update, leaving the details' exposure as it is */
+		resetOverviewFilters: () =>
+			void setParams({ period: null, month: null, year: null, exposureFilter: null, level: null, hall: null }),
+		/** Sets every filter on a group's details back to its default in one update, leaving the overview's as they are */
+		resetGroupFilters: () =>
+			void setParams({ period: null, month: null, year: null, exposure: null, dustField: null }),
 		periodSelection,
 	};
 }

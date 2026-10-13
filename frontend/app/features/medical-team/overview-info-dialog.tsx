@@ -50,7 +50,8 @@ export function OverviewInfoDialog() {
 					</p>
 				</section>
 
-				<section className="flex flex-col gap-2 text-sm">
+				{/* `min-w-0` keeps the table from widening the dialog past the screen, so a too wide table scrolls itself */}
+				<section className="flex min-w-0 flex-col gap-2 text-sm">
 					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.thresholds.title)}</h3>
 					<dl className="flex flex-col gap-2">
 						<div>

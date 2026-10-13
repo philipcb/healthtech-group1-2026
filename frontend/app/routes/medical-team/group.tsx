@@ -6,6 +6,7 @@ import { EmptyState } from "@/features/medical-team/empty-state.tsx";
 import { ExposureKpiPanel } from "@/features/medical-team/exposure-kpi-panel.tsx";
 import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
 import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
+import { MedicalFilterDialog } from "@/features/medical-team/medical-filter-dialog.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
 import {
 	formatGroupValue,
@@ -35,7 +36,8 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 	const { t } = useTranslation();
 	const { user } = useUser();
 	const { search } = useLocation();
-	const { exposure, setExposure, dustField, setDustField, periodSelection } = useMedicalTeamSearchParams();
+	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
+		useMedicalTeamSearchParams();
 	const { period, month, year } = periodSelection;
 	const { data, isPending, isError } = useQuery(
 		groupTrendQueryOptions({
@@ -50,6 +52,23 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 	);
 	// A group, or a whole hall
 	const group = data?.status === "ok" ? data.group : null;
+
+	const exposurePickers = (
+		<>
+			<MedicalExposureToggle
+				label={t(($) => $.medicalTeamDashboard.exposureLabel)}
+				value={exposure}
+				onValueChange={setExposure}
+			/>
+			{exposure === "dust" && (
+				<DustFieldTabs
+					value={dustField}
+					onValueChange={setDustField}
+					ariaLabel={t(($) => $.medicalTeamDashboard.group.dustFieldLabel)}
+				/>
+			)}
+		</>
+	);
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-7">
@@ -80,24 +99,20 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 							</h1>
 						)}
 					</div>
-					<MedicalPeriodPicker selection={periodSelection} />
+					<div className="hidden sm:block">
+						<MedicalPeriodPicker selection={periodSelection} />
+					</div>
 				</header>
 			</div>
 
-			<div className="flex flex-col gap-3">
-				<MedicalExposureToggle
-					label={t(($) => $.medicalTeamDashboard.exposureLabel)}
-					value={exposure}
-					onValueChange={setExposure}
-				/>
-				{exposure === "dust" && (
-					<DustFieldTabs
-						value={dustField}
-						onValueChange={setDustField}
-						ariaLabel={t(($) => $.medicalTeamDashboard.group.dustFieldLabel)}
-					/>
-				)}
-			</div>
+			{/*
+			  Phones get every filter, the period included, in one dialog, the same as the overview. The period still shows
+			  in the notice below, so it isn't repeated next to the button. From `sm` up, the filters are shown inline.
+			*/}
+			<MedicalFilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
+				{exposurePickers}
+			</MedicalFilterDialog>
+			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
 			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
 

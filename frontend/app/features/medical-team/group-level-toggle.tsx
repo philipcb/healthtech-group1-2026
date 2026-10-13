@@ -25,16 +25,17 @@ export function GroupLevelToggle({
 				type="single"
 				value={value}
 				variant="outline"
+				className="w-full sm:w-fit"
 				onValueChange={(selected: string) => {
 					const level = groupLevels.find((candidate) => candidate === selected);
 					if (level) onValueChange(level);
 				}}
 			>
-				<ToggleGroupItem value="hall" className="px-2 lg:px-3">
+				<ToggleGroupItem value="hall" className="grow px-2 sm:grow-0 lg:px-3">
 					<Factory aria-hidden="true" className="size-4" />
 					<span className="text-xs lg:text-sm">{t(($) => $.medicalTeamDashboard.overview.level.hall)}</span>
 				</ToggleGroupItem>
-				<ToggleGroupItem value="occupation" className="px-2 lg:px-3">
+				<ToggleGroupItem value="occupation" className="grow px-2 sm:grow-0 lg:px-3">
 					<UsersRound aria-hidden="true" className="size-4" />
 					<span className="text-xs lg:text-sm">
 						{t(($) => $.medicalTeamDashboard.overview.level.occupation)}

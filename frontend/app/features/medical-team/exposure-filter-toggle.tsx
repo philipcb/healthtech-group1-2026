@@ -26,18 +26,19 @@ export function ExposureFilterToggle({
 				type="single"
 				value={value}
 				variant="outline"
+				className="w-full sm:w-fit"
 				onValueChange={(selected: string) => {
 					const filter = exposureFilters.find((candidate) => candidate === selected);
 					if (filter) onValueChange(filter);
 				}}
 			>
-				<ToggleGroupItem value="all" className="px-2 lg:px-3">
+				<ToggleGroupItem value="all" className="grow px-2 sm:grow-0 lg:px-3">
 					<span className="text-xs lg:text-sm">
 						{t(($) => $.medicalTeamDashboard.overview.exposureFilter.all)}
 					</span>
 				</ToggleGroupItem>
 				{exposures.map((exposure) => (
-					<ToggleGroupItem key={exposure} value={exposure} className="px-2 lg:px-3">
+					<ToggleGroupItem key={exposure} value={exposure} className="grow px-2 sm:grow-0 lg:px-3">
 						<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
 						<span className="text-xs lg:text-sm">{t(($) => $.exposures[exposure])}</span>
 					</ToggleGroupItem>

@@ -24,7 +24,7 @@ export function HallList({ halls, units, filter }: HallListProps) {
 	);
 
 	return (
-		<ul className="grid gap-4 xl:grid-cols-2">
+		<ul className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 			{sortedHalls.map((hall) => (
 				<li key={hall.groupId}>
 					<SummaryCard

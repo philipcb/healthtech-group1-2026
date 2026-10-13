@@ -6,9 +6,9 @@ import { GroupList } from "@/features/medical-team/group-list.tsx";
 import { HallFilter } from "@/features/medical-team/hall-filter.tsx";
 import { HallList } from "@/features/medical-team/hall-list.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
-import { type ExposureFilter, getShownExposures } from "@/features/medical-team/medical-team-groups.ts";
-import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
+import { type ExposureFilter, getShownExposures, MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
 import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
+import { OverviewFilterDialog } from "@/features/medical-team/overview-filter-dialog.tsx";
 import { OverviewInfoDialog } from "@/features/medical-team/overview-info-dialog.tsx";
 import type { GroupSummary, GroupSummaryRequest } from "@/features/medical-team/queries/medical-team-contracts.ts";
 import {
@@ -18,7 +18,7 @@ import {
 import { ThresholdBarLegend } from "@/features/medical-team/threshold-bar.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { InfoIcon, MapPin } from "lucide-react";
+import { MapPin, ShieldCheck } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -36,10 +36,11 @@ export default function MedicalTeamOverview() {
 	const halls = [...new Set(data?.groups.map((group) => group.hall))];
 	const selectedHall = hall !== null && halls.includes(hall) ? hall : null;
 
+	// Tighter on phones, so the first group's values show without scrolling
 	return (
-		<div className="flex w-full min-w-0 flex-col gap-7">
+		<div className="flex w-full min-w-0 flex-col gap-5 sm:gap-7">
 			<header className="flex flex-col gap-4 border-b pb-5 md:flex-row md:items-end md:justify-between">
-				<div className="space-y-2">
+				<div className="space-y-1 sm:space-y-2">
 					<p className="flex items-center gap-2 text-muted-foreground text-sm">
 						<MapPin aria-hidden="true" className="size-4" />
 						{user.location.site}
@@ -49,18 +50,23 @@ export default function MedicalTeamOverview() {
 						{t(($) => $.medicalTeamDashboard.description)}
 					</p>
 				</div>
-				<MedicalPeriodPicker selection={periodSelection} />
+				<div className="hidden sm:block">
+					<MedicalPeriodPicker selection={periodSelection} />
+				</div>
 			</header>
 
-			<div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-				<div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+			{/*
+			  Phones get every filter, the period included, in one dialog, so the results come first. From `sm` up, the
+			  filters are shown inline. The dialog's controls only mount while it's open.
+			*/}
+			<OverviewFilterDialog halls={halls} selectedHall={selectedHall} className="sm:hidden" />
+			<div className="hidden flex-wrap items-end justify-between gap-4 sm:flex">
+				<div className="flex flex-wrap items-end gap-4">
 					<GroupLevelToggle value={level} onValueChange={setLevel} />
 					<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} />
 				</div>
 				<HallFilter halls={halls} value={hall} onValueChange={setHall} />
 			</div>
-
-			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
 
 			<section aria-labelledby={headingId} className="flex flex-col gap-3">
 				<div className="space-y-1">
@@ -72,9 +78,13 @@ export default function MedicalTeamOverview() {
 						</h2>
 						<OverviewInfoDialog />
 					</div>
+					{/* The period isn't repeated here, since the period picker, or the filter summary on phones, shows it */}
 					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
-						<InfoIcon aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-						{t(($) => $.medicalTeamDashboard.overview.aggregationNotice)}
+						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+						<span>
+							{t(($) => $.medicalTeamDashboard.overview.aggregationNotice)}{" "}
+							{t(($) => $.medicalTeamDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
+						</span>
 					</p>
 					<ThresholdBarLegend />
 				</div>

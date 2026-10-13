@@ -349,13 +349,12 @@
       "belowActionValue": "Under tiltaksverdi",
       "aggregationNotice": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere.",
       "info": {
-        "trigger": "Slik leser du oversikten",
-        "title": "Slik leser du oversikten",
-        "description": "Hva gruppeverdiene betyr, hvordan gruppene er sortert, og hva stolpene og fargene viser.",
+        "trigger": "Oversiktsguide",
+        "title": "Oversiktsguide",
+        "description": "Hva gruppeverdiene betyr, og hva stolpene og fargene viser.",
         "groupData": {
-          "title": "Gruppedata og sortering",
-          "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson.",
-          "sorting": "Velg én eksponeringstype for å vise bare den på hvert kort. Kortene sorteres da etter gjennomsnittet for den eksponeringen, høyest først, og kort uten verdi kommer sist. Med «Alle» vises alle eksponeringstypene, og kortene sorteres etter navn, fordi verdier for ulike eksponeringer ikke kan sammenlignes. Sorteringen er ikke en risikorangering, fordi gjennomsnitt ikke viser variasjonen i en gruppe."
+          "title": "Gruppedata",
+          "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
         },
         "scale": {
           "title": "Stolpene og fargene",
@@ -363,25 +362,6 @@
         },
         "thresholds": {
           "title": "Tiltaks- og grenseverdier"
-        },
-        "caveats": {
-          "title": "Ikke faglig validert ennå",
-          "individual": "Tersklene gjelder eksponering for enkeltpersoner, mens oversikten viser gruppesnitt.",
-          "dust": "Støv: Tersklene for PM1 TWA har ingen dokumentert kilde eller enhet i prosjektet, så sammenligningen er ikke faglig avklart.",
-          "noise": "Støy: Tersklene gjelder daglig eksponering for én person (LEX,8h), mens verdien er et aritmetisk snitt av LAeq. Målegrunnlaget er derfor ikke det samme.",
-          "vibration": "Vibrasjon: Tersklene og verdien er begge daglige poeng per person, men det er ikke bekreftet at utstyrets poeng følger HSE-poengsystemet."
-        },
-        "halls": {
-          "title": "Hele bygget",
-          "aggregation": "I visningen «Hele bygget» teller hver person i bygget likt, også personer i yrkesgrupper som er for små til å vises. Verdien er derfor ikke gjennomsnittet av yrkesgruppenes kort."
-        },
-        "kpis": {
-          "title": "Nøkkeltall (syntetiske eksempler)",
-          "description": "På detaljsiden for en yrkesgruppe eller et bygg vises hvor mye av eksponeringen som ligger over tiltaksverdien og grenseverdien. Hver eksponeringstype har sitt eget nøkkeltall, fordi tersklene har ulike referanseperioder:",
-          "dust": "Støv: andel gyldige måleperioder over terskelen. Hvor lang en måleperiode er, og om sensorens STEL-felt er et 15-minutters snitt, er ikke bekreftet av leverandøren.",
-          "noise": "Støy: gjennomsnittlig målt tid over terskelen per arbeidsdag. Krever målinger med kort tidsoppløsning, ikke timesnitt.",
-          "vibration": "Vibrasjon: andel arbeidsdager der den daglige dosen var over terskelen. Dosen er poeng per dag og kan ikke gjøres om til tid.",
-          "demo": "Tallene er foreløpig oppdiktede eksempler for å vise utformingen. De er ikke beregnet fra målinger."
         }
       },
       "noValue": "Ingen verdi",

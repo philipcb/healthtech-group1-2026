@@ -352,13 +352,12 @@
       "belowActionValue": "Below action value",
       "aggregationNotice": "Exposure values are aggregated at group level. Individual exposure may vary.",
       "info": {
-        "trigger": "How to read the overview",
-        "title": "How to read the overview",
-        "description": "What the group values mean, how the groups are sorted, and what the bars and colors show.",
+        "trigger": "Overview guide",
+        "title": "Overview guide",
+        "description": "What the group values mean, and what the bars and colors show.",
         "groupData": {
-          "title": "Group data and sorting",
-          "aggregation": "Exposure values are aggregated at group level. Individual exposure may vary, so the group average may not represent any individual.",
-          "sorting": "Pick one exposure to show only that exposure on every card. The cards are then sorted by their average for it, highest first, with cards without a value last. With “All”, every exposure is shown and the cards are sorted by name, since values for different exposures can't be compared. The sorting is not a risk ranking, as averages do not show variation within a group."
+          "title": "Group data",
+          "aggregation": "Exposure values are aggregated at group level. Individual exposure may vary, so the group average may not represent any individual."
         },
         "scale": {
           "title": "Bars and colors",
@@ -366,25 +365,6 @@
         },
         "thresholds": {
           "title": "Action and limit values"
-        },
-        "caveats": {
-          "title": "Not professionally validated yet",
-          "individual": "The thresholds apply to a single person's exposure, while the overview shows group averages.",
-          "dust": "Dust: The PM1 TWA thresholds have no documented source or unit in the project, so the comparison hasn't been professionally clarified.",
-          "noise": "Noise: The thresholds apply to one person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq. The measurement basis is therefore not the same.",
-          "vibration": "Vibration: The thresholds and the value are both daily points per person, but it hasn't been confirmed that the equipment's points follow the HSE points system."
-        },
-        "halls": {
-          "title": "Whole building",
-          "aggregation": "In the “Whole building” view, every person in the building counts the same, including people in occupation groups too small to be shown. The value is therefore not the average of the occupation groups' cards."
-        },
-        "kpis": {
-          "title": "Key figures (synthetic examples)",
-          "description": "The details for an occupation group or a building show how much of the exposure is above the action value and the limit value. Every exposure has its own key figure, since the thresholds have different reference periods:",
-          "dust": "Dust: share of valid measurement periods above the threshold. How long a measurement period is, and whether the sensor's STEL field is a 15-minute average, hasn't been confirmed by the supplier.",
-          "noise": "Noise: average measured time above the threshold per workday. Requires measurements with a short time resolution, not hourly averages.",
-          "vibration": "Vibration: share of workdays where the daily dose was above the threshold. The dose is points per day and can't be turned into time.",
-          "demo": "The figures are made-up examples for now, to show the design. They aren't calculated from measurements."
         }
       },
       "noValue": "No value",

@@ -41,9 +41,6 @@ export function OverviewInfoDialog() {
 					<p className="text-muted-foreground">
 						{t(($) => $.medicalTeamDashboard.overview.info.groupData.aggregation)}
 					</p>
-					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.groupData.sorting)}
-					</p>
 				</section>
 
 				<section className="flex flex-col gap-1.5 text-sm">
@@ -104,36 +101,6 @@ export function OverviewInfoDialog() {
 							})}
 						</TableBody>
 					</Table>
-				</section>
-
-				<section className="flex flex-col gap-1.5 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.caveats.title)}</h3>
-					<ul className="flex list-disc flex-col gap-1 pl-4 text-muted-foreground text-xs">
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.caveats.individual)}</li>
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.caveats.dust)}</li>
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.caveats.noise)}</li>
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.caveats.vibration)}</li>
-					</ul>
-				</section>
-
-				<section className="flex flex-col gap-1.5 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.halls.title)}</h3>
-					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.halls.aggregation)}
-					</p>
-				</section>
-
-				<section className="flex flex-col gap-1.5 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.kpis.title)}</h3>
-					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.kpis.description)}
-					</p>
-					<ul className="flex list-disc flex-col gap-1 pl-4 text-muted-foreground text-xs">
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.kpis.dust)}</li>
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.kpis.noise)}</li>
-						<li>{t(($) => $.medicalTeamDashboard.overview.info.kpis.vibration)}</li>
-					</ul>
-					<p className="text-muted-foreground">{t(($) => $.medicalTeamDashboard.overview.info.kpis.demo)}</p>
 				</section>
 			</DialogContent>
 		</Dialog>

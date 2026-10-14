@@ -75,6 +75,8 @@ builder.Services.AddScoped<ValidateFieldForExposureTypeFilter>();
 builder.Services.AddScoped<INoteDataService, NoteDataService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserStatusService, UserStatusService>();
+builder.Services.AddScoped<IAggregateExposureDataService, AggregateExposureDataService>();
+
 
 var app = builder.Build();
 

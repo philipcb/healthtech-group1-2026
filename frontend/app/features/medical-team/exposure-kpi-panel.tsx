@@ -1,11 +1,11 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { MedicalStatisticCard } from "@/features/medical-team/medical-statistic-card.tsx";
 import { getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
 import type {
 	ExposureKpiResponse,
 	ExposureKpiResult,
 	ExposureKpiThresholds,
 } from "@/features/medical-team/queries/medical-team-contracts.ts";
+import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -77,16 +77,17 @@ function KpiResult({
 						value: percentFormat.format(value / 100),
 					});
 
+	// No indicator color, since a group's share above a threshold isn't a danger level
 	return (
 		<>
-			<MedicalStatisticCard
+			<StatisticCardLayout
 				label={t(($) => $.lineChart.warning)}
 				value={formatResult(result.aboveAction)}
 				caption={t(($) => $.medicalTeamDashboard.kpi.actionValue, {
 					threshold: formatThreshold(thresholds.action),
 				})}
 			/>
-			<MedicalStatisticCard
+			<StatisticCardLayout
 				label={t(($) => $.lineChart.danger)}
 				value={formatResult(result.aboveLimit)}
 				caption={t(($) => $.medicalTeamDashboard.kpi.limitValue, {

@@ -8,7 +8,6 @@ import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
 import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
 import { MedicalFilterDialog } from "@/features/medical-team/medical-filter-dialog.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
-import { MedicalStatisticCard } from "@/features/medical-team/medical-statistic-card.tsx";
 import {
 	formatGroupValue,
 	getGroupName,
@@ -25,6 +24,7 @@ import {
 	exposureKpisQueryOptions,
 	groupTrendQueryOptions,
 } from "@/features/medical-team/queries/medical-team-queries.ts";
+import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
@@ -198,9 +198,13 @@ function GroupDetails({
 				</ul>
 			</Card>
 
-			{/* Below the trend, laid out like the operator's and foreman's statistics: one per row on phones, three from `md` up */}
+			{/*
+			  Below the trend, laid out like the operator's and foreman's statistics: one per row on phones, three from `md`
+			  up. Without their share of the limit value or danger colors, since a group average can't be compared directly
+			  with individual thresholds, and not collapsible, so the metric, like the dust fraction, always shows.
+			*/}
 			<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
-				<MedicalStatisticCard
+				<StatisticCardLayout
 					label={t(($) => $.medicalTeamDashboard.group.periodAverage)}
 					value={
 						trend.average === null

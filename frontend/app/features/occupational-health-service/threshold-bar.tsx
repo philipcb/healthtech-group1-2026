@@ -1,5 +1,6 @@
+import { ThresholdLegendLine } from "@/components/exposure-line-chart/threshold-legend.tsx";
 import { dangerlevelStyles } from "@/lib/danger-levels.ts";
-import type { Threshold } from "@/lib/thresholds.ts";
+import { getThresholdStrokeDasharray, type Threshold } from "@/lib/thresholds.ts";
 import { cn } from "@/lib/utils.ts";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,7 +47,10 @@ export function ThresholdBar({ value, threshold }: { value: number | null; thres
 	);
 }
 
-/** Explains the bar's colors with words, so they don't rely on color alone */
+/**
+ * Explains the colors with words and the operator page's line patterns, so they don't rely on color alone. Above the
+ * action and limit values use the threshold lines' dashes, and below the action value is solid.
+ */
 export function ThresholdBarLegend() {
 	const { t } = useTranslation();
 	const labels = {
@@ -59,9 +63,10 @@ export function ThresholdBarLegend() {
 		<ul className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
 			{(["safe", "warning", "danger"] as const).map((level) => (
 				<li key={level} className="flex items-center gap-1.5">
-					<span
-						aria-hidden="true"
-						className={cn("size-2.5 shrink-0 rounded-sm", dangerlevelStyles[level].bg)}
+					<ThresholdLegendLine
+						label={labels[level]}
+						color={dangerlevelStyles[level].color}
+						strokeDasharray={level === "safe" ? undefined : getThresholdStrokeDasharray(level)}
 					/>
 					{labels[level]}
 				</li>

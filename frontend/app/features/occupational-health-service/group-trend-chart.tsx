@@ -1,5 +1,6 @@
 import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
+import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
 import {
 	formatGroupNumber,
@@ -46,9 +47,9 @@ type GroupTrendChartProps = {
 };
 
 /**
- * One aggregated line for the selected group, styled like the operator's trend chart. The colors only place each
- * daily average on the overview's scale, and aren't an assessment of the group, so there are no threshold lines. Every
- * daily value is drawn as is. Days without measurements, like weekends, are left out, and days hidden for privacy
+ * One aggregated line for the selected group, styled like the operator's trend chart, with the same threshold lines at
+ * the action and limit values. The colors and lines only place each daily average on the overview's scale, and aren't
+ * an assessment of the group. Every daily value is drawn as is. Days without measurements, like weekends, are left out, and days hidden for privacy
  * (`null`) are skipped, so the line joins the nearest shown days on either side without any value made up between them.
  */
 export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendChartProps) {
@@ -75,9 +76,11 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 	// The line skips hidden days, so a value only lacks a line to join when it's the only one
 	const hasLoneValue = values.length === 1;
 
-	// Zoomed to the values, and worked out here, since the area under the line fills down to the axis' bottom
-	const yMin = Math.min(...values) * (1 - Y_AXIS_PADDING);
-	const yMax = Math.max(...values) * (1 + Y_AXIS_PADDING);
+	// Zoomed to the values and the threshold lines, and worked out here, since the area under the line fills down to
+	// the axis' bottom
+	const scaleValues = threshold === null ? values : [...values, threshold.warning, threshold.danger];
+	const yMin = Math.min(...scaleValues) * (1 - Y_AXIS_PADDING);
+	const yMax = Math.max(...scaleValues) * (1 + Y_AXIS_PADDING);
 
 	const getColor = (value: number) =>
 		threshold === null
@@ -215,6 +218,13 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 					connectNulls={true}
 					isAnimationActive={false}
 				/>
+
+				{threshold !== null && (
+					<>
+						<ThresholdLine y={threshold.warning} dangerLevel="warning" />
+						<ThresholdLine y={threshold.danger} dangerLevel="danger" />
+					</>
+				)}
 			</ComposedChart>
 		</ChartContainer>
 	);

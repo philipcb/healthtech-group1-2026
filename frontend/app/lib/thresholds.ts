@@ -26,6 +26,8 @@ const thresholds: Record<Exposure, Threshold> = {
 	},
 };
 
+// TODO: Verify the TWA thresholds with the customer, including their unit and reference period (such as 8 hours). They
+// have no documented source, and the TWA values are the same as STEL's here, which isn't to be assumed in production.
 const dustThresholdOverrides: Partial<Record<ExposureTypeField, Threshold>> = {
 	pm1_stel: {
 		warning: 7.5,

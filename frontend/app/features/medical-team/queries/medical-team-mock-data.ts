@@ -15,6 +15,7 @@ import {
 import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
 import { today } from "@/lib/date.ts";
 import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { getThreshold } from "@/lib/thresholds.ts";
 import {
 	differenceInCalendarDays,
 	eachDayOfInterval,
@@ -286,27 +287,29 @@ function getHallDays(
 	}));
 }
 
-/**
- * Dust's KPI is calculated from each person's 8-hour TWA, but neither the sensor's TWA values nor TWA thresholds for
- * any fraction are documented, see `MEDICAL_TEAM_KPIS.md`. So, like the backend should, it's `unavailable` for every
- * fraction, without thresholds, rather than made-up numbers.
+/*
+ * Demo only: dust's KPI examples follow the existing definition, the share of workdays with the person's 8-hour TWA
+ * above the threshold, for the requested fraction. Neither the sensor's TWA values nor TWA thresholds are documented
+ * yet, see `MEDICAL_TEAM_KPIS.md`, so they only show the UI and say nothing about real exposure. Until the customer has
+ * confirmed both, the backend should return dust as `unavailable`.
  */
-type ExposureWithKpiExamples = Exclude<Exposure, "dust">;
 
-/** Configurable thresholds for the KPI examples */
-const syntheticKpiThresholds: Record<ExposureWithKpiExamples, { action: number; limit: number }> = {
-	noise: { action: 80, limit: 85 },
-	vibration: { action: 100, limit: 400 },
-};
+/**
+ * The project's thresholds for each exposure, and for dust the requested fraction's. Dust's still have to be verified
+ * with the customer, see `thresholds.ts`.
+ */
+function getSyntheticKpiThresholds(exposure: Exposure, dustField: DustField) {
+	const threshold = getThreshold(exposure, exposure === "dust" ? dustField : undefined);
+
+	return { action: threshold.warning, limit: threshold.danger, unit: exposureUnitByExposure[exposure] };
+}
 
 /**
  * Made-up ranges for the KPI examples. `limitShare` is the result above the limit value as a share of the one above the
  * action value.
  */
-const syntheticKpiRanges: Record<
-	ExposureWithKpiExamples,
-	{ aboveAction: [number, number]; limitShare: [number, number] }
-> = {
+const syntheticKpiRanges: Record<Exposure, { aboveAction: [number, number]; limitShare: [number, number] }> = {
+	dust: { aboveAction: [4, 45], limitShare: [0.1, 0.45] },
 	noise: { aboveAction: [10, 120], limitShare: [0.15, 0.5] },
 	vibration: { aboveAction: [2, 40], limitShare: [0, 0.2] },
 };
@@ -323,24 +326,21 @@ export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promis
 					.filter((group) => group.site === request.site && group.peopleCount >= MIN_GROUP_SIZE)
 					.map((group) => group.id);
 	const workingDayCount = getWorkingDays(request).length;
-	const getThresholds = (exposure: ExposureWithKpiExamples) => ({
-		...syntheticKpiThresholds[exposure],
-		unit: exposureUnitByExposure[exposure],
-	});
+	const dustField = request.dustField ?? defaultDustField;
 
 	return {
 		period: { period: request.period, year: request.year, month: request.month },
 		thresholds: {
-			dust: null,
-			noise: getThresholds("noise"),
-			vibration: getThresholds("vibration"),
+			dust: getSyntheticKpiThresholds("dust", dustField),
+			noise: getSyntheticKpiThresholds("noise", dustField),
+			vibration: getSyntheticKpiThresholds("vibration", dustField),
 		},
 		groups: groupIds.map((groupId) => ({
 			groupId,
 			kpis: {
-				dust: { status: "unavailable" },
-				noise: getSyntheticKpiResult(groupId, "noise", request, workingDayCount),
-				vibration: getSyntheticKpiResult(groupId, "vibration", request, workingDayCount),
+				dust: getSyntheticKpiResult(groupId, "dust", request, workingDayCount, dustField),
+				noise: getSyntheticKpiResult(groupId, "noise", request, workingDayCount, dustField),
+				vibration: getSyntheticKpiResult(groupId, "vibration", request, workingDayCount, dustField),
 			},
 		})),
 	};
@@ -348,9 +348,10 @@ export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promis
 
 function getSyntheticKpiResult(
 	groupId: string,
-	exposure: ExposureWithKpiExamples,
+	exposure: Exposure,
 	request: ExposureKpiRequest,
 	workingDayCount: number,
+	dustField: DustField,
 ): ExposureKpiResult {
 	if (workingDayCount === 0) {
 		return { status: "noData" };
@@ -363,8 +364,9 @@ function getSyntheticKpiResult(
 		return { status: "suppressed" };
 	}
 
-	// Seeded per group, exposure and period, so a KPI is the same every time it's shown
-	const random = seedrandom(`${groupId}:kpi:${exposure}:${request.period}:${request.year}:${request.month}`);
+	// Seeded per group, exposure (and dust fraction) and period, so a KPI is the same every time it's shown
+	const exposureKey = exposure === "dust" ? `${exposure}:${dustField}` : exposure;
+	const random = seedrandom(`${groupId}:kpi:${exposureKey}:${request.period}:${request.year}:${request.month}`);
 	const draw = ([low, high]: [number, number]) => low + random() * (high - low);
 	const { aboveAction, limitShare } = syntheticKpiRanges[exposure];
 	const resultAboveAction = draw(aboveAction);

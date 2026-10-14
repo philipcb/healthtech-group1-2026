@@ -161,7 +161,8 @@ export type GroupTrendResponse = z.infer<typeof GroupTrendResponseSchema>;
 /**
  * Each exposure's KPI unit, which also says what was calculated. Percentages are 0-100.
  * - dust: share of workdays with the person's 8-hour TWA for the requested fraction above that fraction's threshold.
- *   Neither the sensor's TWA values nor TWA thresholds are documented yet, so it's `unavailable` until they are.
+ *   Neither the sensor's TWA values nor TWA thresholds are documented yet, so the backend should return it as
+ *   `unavailable` until they are. The mock shows demo values meanwhile.
  * - noise: average measured minutes per workday with a sound level above the threshold.
  * - vibration: share of workdays with daily points above the threshold. Points are a daily dose, never a duration.
  */

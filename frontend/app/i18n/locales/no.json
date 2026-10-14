@@ -324,7 +324,7 @@
       "actionValue": "Tiltaksverdi: {{threshold}}",
       "limitValue": "Grenseverdi: {{threshold}}",
       "values": {
-        "minutesPerWorkday": "{{value}} min per arbeidsdag",
+        "percentOfWorkingTime": "{{value}} av arbeidstiden",
         "percentOfWorkdays": "{{value}} av arbeidsdagene"
       },
       "noData": "Ingen nøkkeltall for valgt periode.",

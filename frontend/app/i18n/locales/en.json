@@ -327,7 +327,7 @@
       "actionValue": "Action value: {{threshold}}",
       "limitValue": "Limit value: {{threshold}}",
       "values": {
-        "minutesPerWorkday": "{{value}} min per workday",
+        "percentOfWorkingTime": "{{value}} of working time",
         "percentOfWorkdays": "{{value}} of workdays"
       },
       "noData": "No key figures for the selected period.",

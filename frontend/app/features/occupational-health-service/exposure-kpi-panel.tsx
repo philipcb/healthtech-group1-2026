@@ -8,7 +8,11 @@ import type {
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { hoursToMinutes } from "date-fns";
 import { useTranslation } from "react-i18next";
+
+/** Minutes above a threshold are shown as a share of a standard 8-hour workday, not of the workdays in the period */
+const WORKDAY_MINUTES = hoursToMinutes(8);
 
 type ExposureKpiPanelProps = {
 	/** Fetched for the selected dust fraction, so dust's KPI belongs to the same fraction as the trend */
@@ -68,12 +72,17 @@ function KpiResult({
 	const locale = i18n.language === "no" ? "nb-NO" : "en-US";
 	const numberFormat = new Intl.NumberFormat(locale);
 	const percentFormat = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+	const workdayPercentFormat = new Intl.NumberFormat(locale, {
+		style: "percent",
+		minimumFractionDigits: 1,
+		maximumFractionDigits: 1,
+	});
 
 	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(thresholds.unit, t)}`;
 	const formatResult = (value: number) =>
 		result.unit === "minutesPerWorkday"
-			? t(($) => $.occupationalHealthServiceDashboard.kpi.values.minutesPerWorkday, {
-					value: numberFormat.format(value),
+			? t(($) => $.occupationalHealthServiceDashboard.kpi.values.percentOfWorkingTime, {
+					value: workdayPercentFormat.format(value / WORKDAY_MINUTES),
 				})
 			: t(($) => $.occupationalHealthServiceDashboard.kpi.values.percentOfWorkdays, {
 					value: percentFormat.format(value / 100),

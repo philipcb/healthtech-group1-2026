@@ -34,7 +34,7 @@ export function NavTabs({ variant = "header" }: NavTabsProps) {
 				isFloating
 					? [
 							// Fills the nav's gutters up to a comfortable cap; overflow-x only kicks in if labels can't fit.
-							"pointer-events-auto h-16 w-full max-w-xl overflow-x-auto px-1.5 [scrollbar-width:none]",
+							"pointer-events-auto h-14 w-full max-w-xl overflow-x-auto px-1.5 [scrollbar-width:none] min-[360px]:h-16",
 							// Near-opaque fallback keeps labels readable where backdrop-filter is unsupported.
 							"border border-border/60 bg-background/95 shadow-lg ring-1 ring-black/5 dark:ring-white/5",
 							"supports-[backdrop-filter]:bg-background/70 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150",

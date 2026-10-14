@@ -1,10 +1,10 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
+import { getGroupUnitLabel } from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import type {
 	ExposureKpiResponse,
 	ExposureKpiResult,
 	ExposureKpiThresholds,
-} from "@/features/medical-team/queries/medical-team-contracts.ts";
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { UseQueryResult } from "@tanstack/react-query";
@@ -34,24 +34,24 @@ export function ExposureKpiPanel({ kpiQuery, groupId, exposure }: ExposureKpiPan
 	}
 
 	if (kpiQuery.isError) {
-		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.error)} />;
+		return <KpiMessage message={t(($) => $.occupationalHealthServiceDashboard.kpi.error)} />;
 	}
 
 	const result = kpiQuery.data.groups.find((group) => group.groupId === groupId)?.kpis[exposure];
 
 	if (!result || result.status === "noData") {
-		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.noData)} />;
+		return <KpiMessage message={t(($) => $.occupationalHealthServiceDashboard.kpi.noData)} />;
 	}
 
 	if (result.status === "suppressed") {
-		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.suppressed)} />;
+		return <KpiMessage message={t(($) => $.occupationalHealthServiceDashboard.kpi.suppressed)} />;
 	}
 
 	const thresholds = kpiQuery.data.thresholds[exposure];
 
 	// The contract never has a result without thresholds, but a result is never shown without what it was compared with
 	if (result.status === "unavailable" || thresholds === null) {
-		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.unavailable)} />;
+		return <KpiMessage message={t(($) => $.occupationalHealthServiceDashboard.kpi.unavailable)} />;
 	}
 
 	return <KpiResult thresholds={thresholds} result={result} />;
@@ -72,8 +72,10 @@ function KpiResult({
 	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(thresholds.unit, t)}`;
 	const formatResult = (value: number) =>
 		result.unit === "minutesPerWorkday"
-			? t(($) => $.medicalTeamDashboard.kpi.values.minutesPerWorkday, { value: numberFormat.format(value) })
-			: t(($) => $.medicalTeamDashboard.kpi.values.percentOfWorkdays, {
+			? t(($) => $.occupationalHealthServiceDashboard.kpi.values.minutesPerWorkday, {
+					value: numberFormat.format(value),
+				})
+			: t(($) => $.occupationalHealthServiceDashboard.kpi.values.percentOfWorkdays, {
 					value: percentFormat.format(value / 100),
 				});
 
@@ -83,14 +85,14 @@ function KpiResult({
 			<StatisticCardLayout
 				label={t(($) => $.lineChart.warning)}
 				value={formatResult(result.aboveAction)}
-				caption={t(($) => $.medicalTeamDashboard.kpi.actionValue, {
+				caption={t(($) => $.occupationalHealthServiceDashboard.kpi.actionValue, {
 					threshold: formatThreshold(thresholds.action),
 				})}
 			/>
 			<StatisticCardLayout
 				label={t(($) => $.lineChart.danger)}
 				value={formatResult(result.aboveLimit)}
-				caption={t(($) => $.medicalTeamDashboard.kpi.limitValue, {
+				caption={t(($) => $.occupationalHealthServiceDashboard.kpi.limitValue, {
 					threshold: formatThreshold(thresholds.limit),
 				})}
 			/>

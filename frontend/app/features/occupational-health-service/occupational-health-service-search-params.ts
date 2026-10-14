@@ -3,12 +3,12 @@ import {
 	exposureFilters,
 	type GroupLevel,
 	groupLevels,
-} from "@/features/medical-team/medical-team-groups.ts";
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import {
 	getSelectableYears,
-	medicalPeriods,
+	occupationalHealthServicePeriods,
 	type PeriodSelection,
-} from "@/features/medical-team/medical-team-period.ts";
+} from "@/features/occupational-health-service/occupational-health-service-period.ts";
 import { type DustField, defaultDustField, type Exposure, parseAsDustField, parseAsExposure } from "@/lib/exposures.ts";
 import { createParser, parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 
@@ -33,7 +33,7 @@ const searchParams = {
 	 * opening an exposure's details from a card doesn't change the overview's filter when going back.
 	 */
 	exposureFilter: parseAsStringLiteral(exposureFilters).withDefault("all"),
-	period: parseAsStringLiteral(medicalPeriods).withDefault("month"),
+	period: parseAsStringLiteral(occupationalHealthServicePeriods).withDefault("month"),
 	month: parseAsMonth.withDefault(today.getMonth()),
 	year: parseAsNumberLiteral(getSelectableYears()).withDefault(today.getFullYear()),
 	hall: parseAsString,
@@ -42,10 +42,10 @@ const searchParams = {
 };
 
 /**
- * The medical team's selection, kept in the URL so it's shared between the overview and a group's details, and kept
- * when navigating back.
+ * The occupational health service's selection, kept in the URL so it's shared between the overview and a group's
+ * details, and kept when navigating back.
  */
-export function useMedicalTeamSearchParams() {
+export function useOccupationalHealthServiceSearchParams() {
 	// Not shallow, so React Router sees every change, and links built from its location, like going back from a group's
 	// details or opening them from the overview, keep the current selection
 	const [params, setParams] = useQueryStates(searchParams, { shallow: false });

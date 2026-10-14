@@ -1,4 +1,4 @@
-import { MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
+import { MIN_GROUP_SIZE } from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import {
 	type ExposureKpiRequest,
 	type ExposureKpiResponse,
@@ -11,8 +11,8 @@ import {
 	type HallSummary,
 	type HallSummaryResponse,
 	kpiUnitByExposure,
-} from "@/features/medical-team/queries/medical-team-contracts.ts";
-import { MEDICAL_TEAM_DEMO_SITE } from "@/features/user/user-utils.ts";
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
+import { OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE } from "@/features/user/user-utils.ts";
 import { today } from "@/lib/date.ts";
 import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
@@ -59,7 +59,7 @@ type MockGroup = {
 const mockGroups: Array<MockGroup> = [
 	{
 		id: "hall-1-welder",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "M-hallen",
 		occupation: "Welder",
 		peopleCount: 12,
@@ -68,7 +68,7 @@ const mockGroups: Array<MockGroup> = [
 	},
 	{
 		id: "hall-1-technician",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "M-hallen",
 		occupation: "Technician",
 		peopleCount: 8,
@@ -77,7 +77,7 @@ const mockGroups: Array<MockGroup> = [
 	},
 	{
 		id: "hall-1-electrician",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "M-hallen",
 		occupation: "Electrician",
 		peopleCount: 6,
@@ -86,7 +86,7 @@ const mockGroups: Array<MockGroup> = [
 	},
 	{
 		id: "hall-2-welder",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "Hall 2",
 		occupation: "Welder",
 		peopleCount: 10,
@@ -95,7 +95,7 @@ const mockGroups: Array<MockGroup> = [
 	},
 	{
 		id: "hall-2-technician",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "Hall 2",
 		occupation: "Technician",
 		peopleCount: 9,
@@ -104,7 +104,7 @@ const mockGroups: Array<MockGroup> = [
 	},
 	{
 		id: "hall-2-fitter",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "Hall 2",
 		occupation: "Fitter",
 		peopleCount: 7,
@@ -114,7 +114,7 @@ const mockGroups: Array<MockGroup> = [
 	{
 		// Too small to be shown, so the backend leaves it out of every response
 		id: "hall-2-electrician",
-		site: MEDICAL_TEAM_DEMO_SITE,
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
 		hall: "Hall 2",
 		occupation: "Electrician",
 		peopleCount: 3,
@@ -134,8 +134,8 @@ type MockHall = {
  * operators without an occupation.
  */
 const mockHalls: Array<MockHall> = [
-	{ id: "hall-1", site: MEDICAL_TEAM_DEMO_SITE, hall: "M-hallen" },
-	{ id: "hall-2", site: MEDICAL_TEAM_DEMO_SITE, hall: "Hall 2" },
+	{ id: "hall-1", site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE, hall: "M-hallen" },
+	{ id: "hall-2", site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE, hall: "Hall 2" },
 ];
 
 /** The synthetic data starts here, so earlier periods show the empty state */
@@ -290,7 +290,7 @@ function getHallDays(
 /*
  * Demo only: dust's KPI examples follow the existing definition, the share of workdays with the person's 8-hour TWA
  * above the threshold, for the requested fraction. Neither the sensor's TWA values nor TWA thresholds are documented
- * yet, see `MEDICAL_TEAM_KPIS.md`, so they only show the UI and say nothing about real exposure. Until the customer has
+ * yet, see `OCCUPATIONAL_HEALTH_SERVICE_KPIS.md`, so they only show the UI and say nothing about real exposure. Until the customer has
  * confirmed both, the backend should return dust as `unavailable`.
  */
 

@@ -259,7 +259,7 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "medicalTeam": "Medisinsk team"
+      "occupationalHealthService": "Bedriftshelsetjeneste"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },
@@ -269,8 +269,8 @@
       "toRegister": "Gå til registreringssiden"
     }
   },
-  "medicalTeamDashboard": {
-    "title": "Medisinsk team",
+  "occupationalHealthServiceDashboard": {
+    "title": "Bedriftshelsetjenesten",
     "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
     "period": {
       "label": "Tidsperiode",

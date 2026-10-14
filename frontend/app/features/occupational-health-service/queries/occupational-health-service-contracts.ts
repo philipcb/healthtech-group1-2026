@@ -1,10 +1,13 @@
-import type { GroupLevel } from "@/features/medical-team/medical-team-groups.ts";
-import { type MedicalPeriod, medicalPeriods } from "@/features/medical-team/medical-team-period.ts";
+import type { GroupLevel } from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import {
+	type OccupationalHealthServicePeriod,
+	occupationalHealthServicePeriods,
+} from "@/features/occupational-health-service/occupational-health-service-period.ts";
 import { type DustField, type Exposure, exposures, exposureUnitByExposure, exposureUnits } from "@/lib/exposures.ts";
 import { z } from "zod";
 
 /*
- * Contracts for the medical team's aggregated data: Zod schemas for the responses and plain types for the requests,
+ * Contracts for the occupational health service's aggregated data: Zod schemas for the responses and plain types for the requests,
  * like `lib/dto`. Every response comes from synthetic mock data for now.
  *
  * Parsing only checks the shape. Hiding small groups, protecting against subtracting overlapping groups and access
@@ -24,7 +27,7 @@ import { z } from "zod";
 
 type PeriodRequest = {
 	exposure: Exposure;
-	period: MedicalPeriod;
+	period: OccupationalHealthServicePeriod;
 	year: number;
 	/** Zero-based month, only used for the month period */
 	month: number;
@@ -154,7 +157,7 @@ export const GroupTrendResponseSchema = z.discriminatedUnion("status", [
 export type GroupTrendResponse = z.infer<typeof GroupTrendResponseSchema>;
 
 /*
- * Exposure KPIs: how much was above the action and limit values in a period. `MEDICAL_TEAM_KPIS.md` describes what each
+ * Exposure KPIs: how much was above the action and limit values in a period. `OCCUPATIONAL_HEALTH_SERVICE_KPIS.md` describes what each
  * KPI means and what isn't confirmed. Parsing only checks that the values are possible, it's no privacy control.
  */
 
@@ -225,7 +228,7 @@ export type ExposureKpiResult = z.infer<typeof ExposureKpiResultSchema>;
 
 /** Same as requested. `month` is zero-based and only used for a month. */
 export const ExposureKpiPeriodSchema = z.object({
-	period: z.enum(medicalPeriods),
+	period: z.enum(occupationalHealthServicePeriods),
 	year: z.int(),
 	month: z.int().min(0).max(11),
 });

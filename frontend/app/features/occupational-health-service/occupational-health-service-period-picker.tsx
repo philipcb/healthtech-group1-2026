@@ -3,14 +3,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
 	getMonthLabel,
 	getSelectableYears,
-	medicalPeriods,
 	monthKeys,
+	occupationalHealthServicePeriods,
 	type PeriodSelection,
-} from "@/features/medical-team/medical-team-period.ts";
+} from "@/features/occupational-health-service/occupational-health-service-period.ts";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection }) {
+export function OccupationalHealthServicePeriodPicker({ selection }: { selection: PeriodSelection }) {
 	const { t } = useTranslation();
 	const { period, setPeriod, month, setMonth, year, setYear } = selection;
 	const years = getSelectableYears();
@@ -18,30 +18,34 @@ export function MedicalPeriodPicker({ selection }: { selection: PeriodSelection 
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<ToggleGroup
-				aria-label={t(($) => $.medicalTeamDashboard.period.label)}
+				aria-label={t(($) => $.occupationalHealthServiceDashboard.period.label)}
 				type="single"
 				value={period}
 				variant="outline"
 				onValueChange={(value: string) => {
-					const selectedPeriod = medicalPeriods.find((candidate) => candidate === value);
+					const selectedPeriod = occupationalHealthServicePeriods.find((candidate) => candidate === value);
 					if (selectedPeriod) setPeriod(selectedPeriod);
 				}}
 			>
-				<ToggleGroupItem value="month">{t(($) => $.medicalTeamDashboard.period.month)}</ToggleGroupItem>
-				<ToggleGroupItem value="year">{t(($) => $.medicalTeamDashboard.period.year)}</ToggleGroupItem>
+				<ToggleGroupItem value="month">
+					{t(($) => $.occupationalHealthServiceDashboard.period.month)}
+				</ToggleGroupItem>
+				<ToggleGroupItem value="year">
+					{t(($) => $.occupationalHealthServiceDashboard.period.year)}
+				</ToggleGroupItem>
 			</ToggleGroup>
 			{/* The selects wrap together, so a narrow screen gets them on one row below the toggle instead of a lone year */}
 			<div className="flex grow gap-2">
 				{period === "month" && (
 					<PeriodSelect
-						label={t(($) => $.medicalTeamDashboard.period.month)}
+						label={t(($) => $.occupationalHealthServiceDashboard.period.month)}
 						value={month}
 						options={monthKeys.map((_, index) => ({ value: index, label: getMonthLabel(index, t) }))}
 						onValueChange={setMonth}
 					/>
 				)}
 				<PeriodSelect
-					label={t(($) => $.medicalTeamDashboard.period.selectYear)}
+					label={t(($) => $.occupationalHealthServiceDashboard.period.selectYear)}
 					value={year}
 					options={years.map((selectableYear) => ({
 						value: selectableYear,

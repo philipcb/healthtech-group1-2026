@@ -1,6 +1,9 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { type ExposureFilter, exposureFilters } from "@/features/medical-team/medical-team-groups.ts";
+import {
+	type ExposureFilter,
+	exposureFilters,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import { exposures } from "@/lib/exposures.ts";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +22,7 @@ export function ExposureFilterToggle({
 	return (
 		<div className="flex flex-col gap-1.5">
 			<p id={labelId} className="font-medium text-sm">
-				{t(($) => $.medicalTeamDashboard.overview.exposureFilter.label)}
+				{t(($) => $.occupationalHealthServiceDashboard.overview.exposureFilter.label)}
 			</p>
 			<ToggleGroup
 				aria-labelledby={labelId}
@@ -34,7 +37,7 @@ export function ExposureFilterToggle({
 			>
 				<ToggleGroupItem value="all" className="grow px-2 sm:grow-0 lg:px-3">
 					<span className="text-xs lg:text-sm">
-						{t(($) => $.medicalTeamDashboard.overview.exposureFilter.all)}
+						{t(($) => $.occupationalHealthServiceDashboard.overview.exposureFilter.all)}
 					</span>
 				</ToggleGroupItem>
 				{exposures.map((exposure) => (

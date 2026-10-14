@@ -1,33 +1,40 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { EmptyState } from "@/features/medical-team/empty-state.tsx";
-import { ExposureFilterToggle } from "@/features/medical-team/exposure-filter-toggle.tsx";
-import { GroupLevelToggle } from "@/features/medical-team/group-level-toggle.tsx";
-import { GroupList } from "@/features/medical-team/group-list.tsx";
-import { HallFilter } from "@/features/medical-team/hall-filter.tsx";
-import { HallList } from "@/features/medical-team/hall-list.tsx";
-import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
-import { type ExposureFilter, getShownExposures, MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
-import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
-import { OverviewFilterDialog } from "@/features/medical-team/overview-filter-dialog.tsx";
-import { OverviewInfoDialog } from "@/features/medical-team/overview-info-dialog.tsx";
-import type { GroupSummary, GroupSummaryRequest } from "@/features/medical-team/queries/medical-team-contracts.ts";
+import { EmptyState } from "@/features/occupational-health-service/empty-state.tsx";
+import { ExposureFilterToggle } from "@/features/occupational-health-service/exposure-filter-toggle.tsx";
+import { GroupLevelToggle } from "@/features/occupational-health-service/group-level-toggle.tsx";
+import { GroupList } from "@/features/occupational-health-service/group-list.tsx";
+import { HallFilter } from "@/features/occupational-health-service/hall-filter.tsx";
+import { HallList } from "@/features/occupational-health-service/hall-list.tsx";
+import {
+	type ExposureFilter,
+	getShownExposures,
+	MIN_GROUP_SIZE,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import { OccupationalHealthServicePeriodPicker } from "@/features/occupational-health-service/occupational-health-service-period-picker.tsx";
+import { useOccupationalHealthServiceSearchParams } from "@/features/occupational-health-service/occupational-health-service-search-params.ts";
+import { OverviewFilterDialog } from "@/features/occupational-health-service/overview-filter-dialog.tsx";
+import { OverviewInfoDialog } from "@/features/occupational-health-service/overview-info-dialog.tsx";
+import type {
+	GroupSummary,
+	GroupSummaryRequest,
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import {
 	groupSummariesQueryOptions,
 	hallSummariesQueryOptions,
-} from "@/features/medical-team/queries/medical-team-queries.ts";
-import { ThresholdBarLegend } from "@/features/medical-team/threshold-bar.tsx";
+} from "@/features/occupational-health-service/queries/occupational-health-service-queries.ts";
+import { ThresholdBarLegend } from "@/features/occupational-health-service/threshold-bar.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-export default function MedicalTeamOverview() {
+export default function OccupationalHealthServiceOverview() {
 	const { t } = useTranslation();
 	const { user } = useUser();
 	const headingId = useId();
 	const { exposureFilter, setExposureFilter, hall, setHall, level, setLevel, periodSelection } =
-		useMedicalTeamSearchParams();
+		useOccupationalHealthServiceSearchParams();
 	const { period, month, year } = periodSelection;
 	const request: GroupSummaryRequest = { site: user.location.site, period, month, year };
 	// The groups decide which halls can be picked in both views, so the filter stays the same when switching
@@ -45,13 +52,13 @@ export default function MedicalTeamOverview() {
 						<MapPin aria-hidden="true" className="size-4" />
 						{user.location.site}
 					</p>
-					<h1 className="font-medium text-2xl">{t(($) => $.medicalTeamDashboard.title)}</h1>
+					<h1 className="font-medium text-2xl">{t(($) => $.occupationalHealthServiceDashboard.title)}</h1>
 					<p className="max-w-prose text-muted-foreground text-sm">
-						{t(($) => $.medicalTeamDashboard.description)}
+						{t(($) => $.occupationalHealthServiceDashboard.description)}
 					</p>
 				</div>
 				<div className="hidden sm:block">
-					<MedicalPeriodPicker selection={periodSelection} />
+					<OccupationalHealthServicePeriodPicker selection={periodSelection} />
 				</div>
 			</header>
 
@@ -73,8 +80,8 @@ export default function MedicalTeamOverview() {
 					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
 						<h2 id={headingId} className="font-semibold">
 							{level === "hall"
-								? t(($) => $.medicalTeamDashboard.overview.hallsHeading)
-								: t(($) => $.medicalTeamDashboard.overview.heading)}
+								? t(($) => $.occupationalHealthServiceDashboard.overview.hallsHeading)
+								: t(($) => $.occupationalHealthServiceDashboard.overview.heading)}
 						</h2>
 						<OverviewInfoDialog />
 					</div>
@@ -82,8 +89,8 @@ export default function MedicalTeamOverview() {
 					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
 						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />
 						<span>
-							{t(($) => $.medicalTeamDashboard.overview.aggregationNotice)}{" "}
-							{t(($) => $.medicalTeamDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
+							{t(($) => $.occupationalHealthServiceDashboard.overview.aggregationNotice)}{" "}
+							{t(($) => $.occupationalHealthServiceDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
 						</span>
 					</p>
 					<ThresholdBarLegend />
@@ -114,14 +121,14 @@ function GroupResults({ request, hall, filter }: ResultsProps) {
 	return isPending ? (
 		<Skeleton className="h-64 w-full" />
 	) : isError ? (
-		<EmptyState title={t(($) => $.medicalTeamDashboard.overview.error)} />
+		<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.overview.error)} />
 	) : groups.length === 0 ? (
 		<EmptyState
-			title={t(($) => $.medicalTeamDashboard.overview.noGroups.title)}
-			description={t(($) => $.medicalTeamDashboard.overview.noGroups.description)}
+			title={t(($) => $.occupationalHealthServiceDashboard.overview.noGroups.title)}
+			description={t(($) => $.occupationalHealthServiceDashboard.overview.noGroups.description)}
 		/>
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
-		<EmptyState title={t(($) => $.medicalTeamDashboard.overview.noData)} />
+		<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.overview.noData)} />
 	) : (
 		<GroupList groups={groups} units={data.units} filter={filter} />
 	);
@@ -136,14 +143,14 @@ function HallResults({ request, hall, filter }: ResultsProps) {
 	return isPending ? (
 		<Skeleton className="h-64 w-full" />
 	) : isError ? (
-		<EmptyState title={t(($) => $.medicalTeamDashboard.overview.hallsError)} />
+		<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.overview.hallsError)} />
 	) : halls.length === 0 ? (
 		<EmptyState
-			title={t(($) => $.medicalTeamDashboard.overview.noHalls.title)}
-			description={t(($) => $.medicalTeamDashboard.overview.noHalls.description)}
+			title={t(($) => $.occupationalHealthServiceDashboard.overview.noHalls.title)}
+			description={t(($) => $.occupationalHealthServiceDashboard.overview.noHalls.description)}
 		/>
 	) : halls.every((summary) => hasNoValues(summary.averages, filter)) ? (
-		<EmptyState title={t(($) => $.medicalTeamDashboard.overview.noData)} />
+		<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.overview.noData)} />
 	) : (
 		<HallList halls={halls} units={data.units} filter={filter} />
 	);

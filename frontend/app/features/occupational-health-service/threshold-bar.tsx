@@ -50,7 +50,7 @@ export function ThresholdBar({ value, threshold }: { value: number | null; thres
 export function ThresholdBarLegend() {
 	const { t } = useTranslation();
 	const labels = {
-		safe: t(($) => $.medicalTeamDashboard.overview.belowActionValue),
+		safe: t(($) => $.occupationalHealthServiceDashboard.overview.belowActionValue),
 		warning: t(($) => $.lineChart.warning),
 		danger: t(($) => $.lineChart.danger),
 	};

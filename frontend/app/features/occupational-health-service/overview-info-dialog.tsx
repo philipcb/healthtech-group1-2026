@@ -9,7 +9,10 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.tsx";
-import { getGroupUnitLabel, thresholdByExposure } from "@/features/medical-team/medical-team-groups.ts";
+import {
+	getGroupUnitLabel,
+	thresholdByExposure,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import { type Exposure, exposures, exposureUnitByExposure } from "@/lib/exposures.ts";
 import { InfoIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -26,33 +29,41 @@ export function OverviewInfoDialog() {
 			<DialogTrigger asChild={true}>
 				<Button variant="ghost" size="sm" className="-mr-2 text-muted-foreground">
 					<InfoIcon aria-hidden="true" />
-					{t(($) => $.medicalTeamDashboard.overview.info.trigger)}
+					{t(($) => $.occupationalHealthServiceDashboard.overview.info.trigger)}
 				</Button>
 			</DialogTrigger>
 
 			<DialogContent className="max-h-[90dvh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>{t(($) => $.medicalTeamDashboard.overview.info.title)}</DialogTitle>
-					<DialogDescription>{t(($) => $.medicalTeamDashboard.overview.info.description)}</DialogDescription>
+					<DialogTitle>{t(($) => $.occupationalHealthServiceDashboard.overview.info.title)}</DialogTitle>
+					<DialogDescription>
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.description)}
+					</DialogDescription>
 				</DialogHeader>
 
 				<section className="flex flex-col gap-1.5 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.groupData.title)}</h3>
+					<h3 className="font-medium">
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.groupData.title)}
+					</h3>
 					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.groupData.aggregation)}
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.groupData.aggregation)}
 					</p>
 				</section>
 
 				<section className="flex flex-col gap-1.5 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.scale.title)}</h3>
+					<h3 className="font-medium">
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.scale.title)}
+					</h3>
 					<p className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.overview.info.scale.colors)}
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.scale.colors)}
 					</p>
 				</section>
 
 				{/* `min-w-0` keeps the table from widening the dialog past the screen, so a too wide table scrolls itself */}
 				<section className="flex min-w-0 flex-col gap-2 text-sm">
-					<h3 className="font-medium">{t(($) => $.medicalTeamDashboard.overview.info.thresholds.title)}</h3>
+					<h3 className="font-medium">
+						{t(($) => $.occupationalHealthServiceDashboard.overview.info.thresholds.title)}
+					</h3>
 					<dl className="flex flex-col gap-2">
 						<div>
 							<dt className="font-medium">{t(($) => $.limitExplanation.actionValue.label)}</dt>
@@ -70,7 +81,7 @@ export function OverviewInfoDialog() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t(($) => $.medicalTeamDashboard.exposureLabel)}</TableHead>
+								<TableHead>{t(($) => $.occupationalHealthServiceDashboard.exposureLabel)}</TableHead>
 								<TableHead className="text-right">
 									{t(($) => $.limitExplanation.actionValue.label)}
 								</TableHead>

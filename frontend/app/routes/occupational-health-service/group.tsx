@@ -2,30 +2,30 @@ import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { EmptyState } from "@/features/medical-team/empty-state.tsx";
-import { ExposureKpiPanel } from "@/features/medical-team/exposure-kpi-panel.tsx";
-import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
-import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
-import { MedicalFilterDialog } from "@/features/medical-team/medical-filter-dialog.tsx";
-import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
+import { EmptyState } from "@/features/occupational-health-service/empty-state.tsx";
+import { ExposureKpiPanel } from "@/features/occupational-health-service/exposure-kpi-panel.tsx";
+import { GroupTrendChart } from "@/features/occupational-health-service/group-trend-chart.tsx";
+import { OccupationalHealthServiceExposureToggle } from "@/features/occupational-health-service/occupational-health-service-exposure-toggle.tsx";
+import { OccupationalHealthServiceFilterDialog } from "@/features/occupational-health-service/occupational-health-service-filter-dialog.tsx";
 import {
 	formatGroupValue,
 	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getHallName,
-} from "@/features/medical-team/medical-team-groups.ts";
-import { PeriodAndPrivacyNotice } from "@/features/medical-team/medical-team-notices.tsx";
-import { useMedicalTeamSearchParams } from "@/features/medical-team/medical-team-search-params.ts";
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import { PeriodAndPrivacyNotice } from "@/features/occupational-health-service/occupational-health-service-notices.tsx";
+import { OccupationalHealthServicePeriodPicker } from "@/features/occupational-health-service/occupational-health-service-period-picker.tsx";
+import { useOccupationalHealthServiceSearchParams } from "@/features/occupational-health-service/occupational-health-service-search-params.ts";
 import type {
 	GroupSummaryRequest,
 	GroupTrendResponse,
-} from "@/features/medical-team/queries/medical-team-contracts.ts";
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import {
 	exposureKpisQueryOptions,
 	groupTrendQueryOptions,
-} from "@/features/medical-team/queries/medical-team-queries.ts";
-import { ThresholdBarLegend } from "@/features/medical-team/threshold-bar.tsx";
+} from "@/features/occupational-health-service/queries/occupational-health-service-queries.ts";
+import { ThresholdBarLegend } from "@/features/occupational-health-service/threshold-bar.tsx";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
@@ -37,12 +37,12 @@ import { useTranslation } from "react-i18next";
 import { href, Link, useLocation } from "react-router";
 import type { Route } from "./+types/group";
 
-export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
+export default function OccupationalHealthServiceGroup({ params }: Route.ComponentProps) {
 	const { t } = useTranslation();
 	const { user } = useUser();
 	const { search } = useLocation();
 	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
-		useMedicalTeamSearchParams();
+		useOccupationalHealthServiceSearchParams();
 	const { period, month, year } = periodSelection;
 	const { data, isPending, isError } = useQuery(
 		groupTrendQueryOptions({
@@ -60,8 +60,8 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 
 	const exposurePickers = (
 		<>
-			<MedicalExposureToggle
-				label={t(($) => $.medicalTeamDashboard.exposureLabel)}
+			<OccupationalHealthServiceExposureToggle
+				label={t(($) => $.occupationalHealthServiceDashboard.exposureLabel)}
 				value={exposure}
 				onValueChange={setExposure}
 			/>
@@ -69,7 +69,7 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 				<DustFieldTabs
 					value={dustField}
 					onValueChange={setDustField}
-					ariaLabel={t(($) => $.medicalTeamDashboard.group.dustFieldLabel)}
+					ariaLabel={t(($) => $.occupationalHealthServiceDashboard.group.dustFieldLabel)}
 				/>
 			)}
 		</>
@@ -80,24 +80,24 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			<div className="flex flex-col gap-4 border-b pb-5">
 				<Button asChild={true} variant="ghost" size="sm" className="-ml-2 w-fit">
 					{/* Keeps the selection, so the overview shows the same exposure and period */}
-					<Link to={{ pathname: href("/medical-team"), search }}>
+					<Link to={{ pathname: href("/occupational-health-service"), search }}>
 						<ArrowLeft aria-hidden="true" className="size-4" />
-						{t(($) => $.medicalTeamDashboard.group.back)}
+						{t(($) => $.occupationalHealthServiceDashboard.group.back)}
 					</Link>
 				</Button>
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
 							{group?.level === "hall"
-								? t(($) => $.medicalTeamDashboard.group.hallEyebrow)
-								: t(($) => $.medicalTeamDashboard.group.eyebrow)}
+								? t(($) => $.occupationalHealthServiceDashboard.group.hallEyebrow)
+								: t(($) => $.occupationalHealthServiceDashboard.group.eyebrow)}
 						</p>
 						{isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
 								{group === null
-									? t(($) => $.medicalTeamDashboard.group.fallbackTitle)
+									? t(($) => $.occupationalHealthServiceDashboard.group.fallbackTitle)
 									: group.level === "hall"
 										? getHallName(group.hall, t)
 										: getGroupName(group, t)}
@@ -105,7 +105,7 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 						)}
 					</div>
 					<div className="hidden sm:block">
-						<MedicalPeriodPicker selection={periodSelection} />
+						<OccupationalHealthServicePeriodPicker selection={periodSelection} />
 					</div>
 				</header>
 			</div>
@@ -114,9 +114,13 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			  Phones get every filter, the period included, in one dialog, the same as the overview. The period still shows
 			  in the notice below, so it isn't repeated next to the button. From `sm` up, the filters are shown inline.
 			*/}
-			<MedicalFilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
+			<OccupationalHealthServiceFilterDialog
+				periodSelection={periodSelection}
+				onReset={resetGroupFilters}
+				className="sm:hidden"
+			>
 				{exposurePickers}
-			</MedicalFilterDialog>
+			</OccupationalHealthServiceFilterDialog>
 			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
 			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
@@ -124,9 +128,9 @@ export default function MedicalTeamGroup({ params }: Route.ComponentProps) {
 			{isPending ? (
 				<Skeleton className="h-96 w-full" />
 			) : isError ? (
-				<EmptyState title={t(($) => $.medicalTeamDashboard.group.error)} />
+				<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.group.error)} />
 			) : data.status === "unavailable" ? (
-				<EmptyState title={t(($) => $.medicalTeamDashboard.group.unavailable[data.reason])} />
+				<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.group.unavailable[data.reason])} />
 			) : (
 				<GroupDetails
 					trend={data}
@@ -162,8 +166,8 @@ function GroupDetails({
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const metricLabel =
 		exposure === "dust"
-			? t(($) => $.medicalTeamDashboard.metrics.dust, { dustField: dustFieldLabel })
-			: t(($) => $.medicalTeamDashboard.metrics[exposure]);
+			? t(($) => $.occupationalHealthServiceDashboard.metrics.dust, { dustField: dustFieldLabel })
+			: t(($) => $.occupationalHealthServiceDashboard.metrics[exposure]);
 	// The same rule as the overview's bars. Its colors are explained by the legend below the trend, whenever it's colored.
 	const threshold = getGroupThreshold(exposure, dustField);
 	const isColored = trend.points.some((point) => point.value !== null);
@@ -173,15 +177,25 @@ function GroupDetails({
 			{/* Spans the whole screen width below `lg`, the same as the operator's and foreman's charts */}
 			<Card className={cn("relative w-full gap-3", MOBILE_BREAKOUT_CARD_CLASSNAME)}>
 				<div className="space-y-1">
-					<h2 className="font-semibold">{t(($) => $.medicalTeamDashboard.group.trendTitle)}</h2>
+					<h2 className="font-semibold">{t(($) => $.occupationalHealthServiceDashboard.group.trendTitle)}</h2>
 					<p className="text-muted-foreground text-xs">
-						{t(($) => $.medicalTeamDashboard.group.unitAndGranularity, {
+						{t(($) => $.occupationalHealthServiceDashboard.group.unitAndGranularity, {
 							unit: getGroupUnitLabel(trend.unit, t),
 							// Vibration explains what each point averages, since it's an average of per-person averages
 							granularity:
 								exposure === "vibration"
-									? t(($) => $.medicalTeamDashboard.group.vibrationGranularity[trend.granularity])
-									: t(($) => $.medicalTeamDashboard.group.granularity[trend.granularity]),
+									? t(
+											($) =>
+												$.occupationalHealthServiceDashboard.group.vibrationGranularity[
+													trend.granularity
+												],
+										)
+									: t(
+											($) =>
+												$.occupationalHealthServiceDashboard.group.granularity[
+													trend.granularity
+												],
+										),
 						})}
 					</p>
 				</div>
@@ -189,12 +203,14 @@ function GroupDetails({
 					<EmptyState
 						title={
 							exposure === "dust"
-								? t(($) => $.medicalTeamDashboard.group.noDustFieldData, { dustField: dustFieldLabel })
-								: t(($) => $.medicalTeamDashboard.group.noData)
+								? t(($) => $.occupationalHealthServiceDashboard.group.noDustFieldData, {
+										dustField: dustFieldLabel,
+									})
+								: t(($) => $.occupationalHealthServiceDashboard.group.noData)
 						}
 					/>
 				) : trend.points.every((point) => point.value === null) ? (
-					<EmptyState title={t(($) => $.medicalTeamDashboard.group.allSuppressed)} />
+					<EmptyState title={t(($) => $.occupationalHealthServiceDashboard.group.allSuppressed)} />
 				) : (
 					<GroupTrendChart
 						points={trend.points}
@@ -213,10 +229,10 @@ function GroupDetails({
 			*/}
 			<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
 				<StatisticCardLayout
-					label={t(($) => $.medicalTeamDashboard.group.periodAverage)}
+					label={t(($) => $.occupationalHealthServiceDashboard.group.periodAverage)}
 					value={
 						trend.average === null
-							? t(($) => $.medicalTeamDashboard.group.noPeriodAverage)
+							? t(($) => $.occupationalHealthServiceDashboard.group.noPeriodAverage)
 							: formatGroupValue(trend.average, trend.unit, t)
 					}
 					caption={metricLabel}

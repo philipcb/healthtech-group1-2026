@@ -3,7 +3,7 @@ import { type DustField, type Exposure, type ExposureUnit, exposures } from "@/l
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 
-/** Groups with fewer people than this are never returned to the medical team */
+/** Groups with fewer people than this are never returned to the occupational health service */
 export const MIN_GROUP_SIZE = 5;
 
 /**
@@ -52,9 +52,11 @@ export function formatGroupNumber(value: number, unit: ExposureUnit, fractionDig
 	return formatExposureValue(value, unit, fractionDigits);
 }
 
-/** Points are written in lowercase, like the other units in the medical team's sentences */
+/** Points are written in lowercase, like the other units in the occupational health service's sentences */
 export function getGroupUnitLabel(unit: ExposureUnit, t: TranslateFn) {
-	return unit === "points" ? t(($) => $.medicalTeamDashboard.pointsUnit) : t(($) => $.exposures.units[unit]);
+	return unit === "points"
+		? t(($) => $.occupationalHealthServiceDashboard.pointsUnit)
+		: t(($) => $.exposures.units[unit]);
 }
 
 /** A group average with its unit */
@@ -96,19 +98,19 @@ export function compareByExposureFilter(
 }
 
 export function getHallName(hall: string, t: TranslateFn) {
-	return `${hall} · ${t(($) => $.medicalTeamDashboard.wholeHall)}`;
+	return `${hall} · ${t(($) => $.occupationalHealthServiceDashboard.wholeHall)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {
 	switch (occupation) {
 		case "Welder":
-			return t(($) => $.medicalTeamDashboard.occupations.welder);
+			return t(($) => $.occupationalHealthServiceDashboard.occupations.welder);
 		case "Technician":
-			return t(($) => $.medicalTeamDashboard.occupations.technician);
+			return t(($) => $.occupationalHealthServiceDashboard.occupations.technician);
 		case "Electrician":
-			return t(($) => $.medicalTeamDashboard.occupations.electrician);
+			return t(($) => $.occupationalHealthServiceDashboard.occupations.electrician);
 		case "Fitter":
-			return t(($) => $.medicalTeamDashboard.occupations.fitter);
+			return t(($) => $.occupationalHealthServiceDashboard.occupations.fitter);
 		// An occupation without a translation is shown as it is, rather than labelled as another occupation
 		default:
 			return occupation;

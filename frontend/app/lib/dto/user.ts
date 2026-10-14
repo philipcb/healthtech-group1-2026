@@ -2,14 +2,14 @@ import { tzDateSchema } from "@/lib/date.ts";
 import { z } from "zod";
 import { DangerLevelSchema } from "../danger-levels.ts";
 
-export const UserRoleSchema = z.enum(["operator", "foreman", "medicalTeam"]);
+export const UserRoleSchema = z.enum(["operator", "foreman", "occupationalHealthService"]);
 
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
 export const UserRole = {
 	Operator: "operator",
 	Foreman: "foreman",
-	MedicalTeam: "medicalTeam",
+	OccupationalHealthService: "occupationalHealthService",
 } as const satisfies Record<string, UserRole>;
 
 export const LocationSchema = z.object({

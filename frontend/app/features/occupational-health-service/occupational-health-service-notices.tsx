@@ -1,5 +1,8 @@
-import { MIN_GROUP_SIZE } from "@/features/medical-team/medical-team-groups.ts";
-import { getPeriodLabel, type PeriodSelection } from "@/features/medical-team/medical-team-period.ts";
+import { MIN_GROUP_SIZE } from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import {
+	getPeriodLabel,
+	type PeriodSelection,
+} from "@/features/occupational-health-service/occupational-health-service-period.ts";
 import { CalendarDays, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +21,7 @@ export function PeriodAndPrivacyNotice({
 			</div>
 			<p className="flex items-center gap-1.5 text-muted-foreground text-xs">
 				<ShieldCheck aria-hidden="true" className="size-4 shrink-0" />
-				{t(($) => $.medicalTeamDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
+				{t(($) => $.occupationalHealthServiceDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
 			</p>
 		</div>
 	);

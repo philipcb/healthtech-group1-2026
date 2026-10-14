@@ -20,8 +20,8 @@ export default function Page() {
 			return;
 		}
 
-		if (user.role === UserRole.MedicalTeam) {
-			navigate("/medical-team/");
+		if (user.role === UserRole.OccupationalHealthService) {
+			navigate("/occupational-health-service/");
 			return;
 		}
 

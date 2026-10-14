@@ -1,5 +1,8 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { type GroupLevel, groupLevels } from "@/features/medical-team/medical-team-groups.ts";
+import {
+	type GroupLevel,
+	groupLevels,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import { Factory, UsersRound } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,7 +21,7 @@ export function GroupLevelToggle({
 	return (
 		<div className="flex flex-col gap-1.5">
 			<p id={labelId} className="font-medium text-sm">
-				{t(($) => $.medicalTeamDashboard.overview.level.label)}
+				{t(($) => $.occupationalHealthServiceDashboard.overview.level.label)}
 			</p>
 			<ToggleGroup
 				aria-labelledby={labelId}
@@ -33,12 +36,14 @@ export function GroupLevelToggle({
 			>
 				<ToggleGroupItem value="hall" className="grow px-2 sm:grow-0 lg:px-3">
 					<Factory aria-hidden="true" className="size-4" />
-					<span className="text-xs lg:text-sm">{t(($) => $.medicalTeamDashboard.overview.level.hall)}</span>
+					<span className="text-xs lg:text-sm">
+						{t(($) => $.occupationalHealthServiceDashboard.overview.level.hall)}
+					</span>
 				</ToggleGroupItem>
 				<ToggleGroupItem value="occupation" className="grow px-2 sm:grow-0 lg:px-3">
 					<UsersRound aria-hidden="true" className="size-4" />
 					<span className="text-xs lg:text-sm">
-						{t(($) => $.medicalTeamDashboard.overview.level.occupation)}
+						{t(($) => $.occupationalHealthServiceDashboard.overview.level.occupation)}
 					</span>
 				</ToggleGroupItem>
 			</ToggleGroup>

@@ -1,8 +1,12 @@
 import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
-import { formatGroupNumber, formatGroupValue, getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupTrendPoint } from "@/features/medical-team/queries/medical-team-contracts.ts";
+import {
+	formatGroupNumber,
+	formatGroupValue,
+	getGroupUnitLabel,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import type { GroupTrendPoint } from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
@@ -129,7 +133,7 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 								<div className="mb-1 font-medium">{row.tooltipLabel}</div>
 								{row.value === null ? (
 									<div className="text-muted-foreground">
-										{t(($) => $.medicalTeamDashboard.group.suppressed)}
+										{t(($) => $.occupationalHealthServiceDashboard.group.suppressed)}
 									</div>
 								) : (
 									<div className="flex items-center justify-between gap-4">

@@ -41,8 +41,8 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 			];
 		}
 
-		case "medicalTeam": {
-			return [{ to: href("/medical-team"), label: t(($) => $.layout.home) }];
+		case "occupationalHealthService": {
+			return [{ to: href("/occupational-health-service"), label: t(($) => $.layout.home) }];
 		}
 
 		default: {

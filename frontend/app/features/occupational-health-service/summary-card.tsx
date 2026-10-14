@@ -1,8 +1,14 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
-import { formatGroupValue, thresholdByExposure } from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupSummary, GroupSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
-import { ThresholdBar } from "@/features/medical-team/threshold-bar.tsx";
+import {
+	formatGroupValue,
+	thresholdByExposure,
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import type {
+	GroupSummary,
+	GroupSummaryResponse,
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
+import { ThresholdBar } from "@/features/occupational-health-service/threshold-bar.tsx";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { ChevronRight } from "lucide-react";
@@ -65,7 +71,9 @@ function ExposureLink({
 	const { search } = useLocation();
 
 	const value =
-		average === null ? t(($) => $.medicalTeamDashboard.overview.noValue) : formatGroupValue(average, unit, t);
+		average === null
+			? t(($) => $.occupationalHealthServiceDashboard.overview.noValue)
+			: formatGroupValue(average, unit, t);
 	const threshold = thresholdByExposure[exposure];
 	const level = average === null ? null : getDangerLevel(average, threshold.warning, threshold.danger);
 	// The level is also written out, so it isn't only shown by the bar's colors
@@ -78,10 +86,10 @@ function ExposureLink({
 	return (
 		<Link
 			to={{
-				pathname: href("/medical-team/groups/:groupId", { groupId }),
+				pathname: href("/occupational-health-service/groups/:groupId", { groupId }),
 				search: `?${searchParams}`,
 			}}
-			aria-label={t(($) => $.medicalTeamDashboard.overview.openDetails, {
+			aria-label={t(($) => $.occupationalHealthServiceDashboard.overview.openDetails, {
 				exposure: t(($) => $.exposures[exposure]),
 				group: name,
 				value: levelLabel ? `${value}, ${levelLabel.toLowerCase()}` : value,
@@ -95,7 +103,7 @@ function ExposureLink({
 					<span className="font-medium">{t(($) => $.exposures[exposure])}</span>
 					{/* Without a width of its own, it only fills the space left over and never makes the value wrap */}
 					<span className="w-0 grow truncate text-muted-foreground text-xs">
-						{t(($) => $.medicalTeamDashboard.metricsShort[exposure])}
+						{t(($) => $.occupationalHealthServiceDashboard.metricsShort[exposure])}
 					</span>
 				</span>
 				<span className="ml-auto flex shrink-0 items-center gap-1 tabular-nums">

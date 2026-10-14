@@ -1,7 +1,7 @@
 import type { TranslateFn } from "@/i18n/config.ts";
 
-export const medicalPeriods = ["month", "year"] as const;
-export type MedicalPeriod = (typeof medicalPeriods)[number];
+export const occupationalHealthServicePeriods = ["month", "year"] as const;
+export type OccupationalHealthServicePeriod = (typeof occupationalHealthServicePeriods)[number];
 
 export const monthKeys = [
 	"january",
@@ -19,8 +19,8 @@ export const monthKeys = [
 ] as const;
 
 export type PeriodSelection = {
-	period: MedicalPeriod;
-	setPeriod: (period: MedicalPeriod) => void;
+	period: OccupationalHealthServicePeriod;
+	setPeriod: (period: OccupationalHealthServicePeriod) => void;
 	/** Zero-based month index, as returned by `Date#getMonth` */
 	month: number;
 	setMonth: (month: number) => void;
@@ -35,7 +35,7 @@ export function getSelectableYears(): Array<number> {
 }
 
 export function getMonthLabel(month: number, t: TranslateFn) {
-	return t(($) => $.medicalTeamDashboard.months[monthKeys[month]]);
+	return t(($) => $.occupationalHealthServiceDashboard.months[monthKeys[month]]);
 }
 
 export function getPeriodLabel(

@@ -262,7 +262,7 @@
     "role": {
       "operator": "Operator",
       "foreman": "Foreman",
-      "medicalTeam": "Medical team"
+      "occupationalHealthService": "Occupational Health Service"
     },
     "searchPlaceholder": "Search users..."
   },
@@ -272,8 +272,8 @@
       "toRegister": "Go to register page"
     }
   },
-  "medicalTeamDashboard": {
-    "title": "Medical team",
+  "occupationalHealthServiceDashboard": {
+    "title": "Occupational Health Service",
     "description": "An anonymized overview of workplace exposure, per building and occupation.",
     "period": {
       "label": "Time period",

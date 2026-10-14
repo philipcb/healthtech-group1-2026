@@ -24,14 +24,16 @@ export function HallFilter({
 		<div className="flex flex-col gap-1.5">
 			<label className="flex items-center gap-2 font-medium text-sm" htmlFor={id}>
 				<Factory aria-hidden="true" className="size-4 text-muted-foreground" />
-				{t(($) => $.medicalTeamDashboard.filters.hall)}
+				{t(($) => $.occupationalHealthServiceDashboard.filters.hall)}
 			</label>
 			<Select value={selected} onValueChange={(hall) => onValueChange(hall === ALL_HALLS ? null : hall)}>
 				<SelectTrigger id={id} className="w-full bg-background sm:w-60">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value={ALL_HALLS}>{t(($) => $.medicalTeamDashboard.filters.allHalls)}</SelectItem>
+					<SelectItem value={ALL_HALLS}>
+						{t(($) => $.occupationalHealthServiceDashboard.filters.allHalls)}
+					</SelectItem>
 					{halls.map((hall) => (
 						<SelectItem key={hall} value={hall}>
 							{hall}

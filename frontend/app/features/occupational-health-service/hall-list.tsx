@@ -3,9 +3,12 @@ import {
 	type ExposureFilter,
 	getHallName,
 	getShownExposures,
-} from "@/features/medical-team/medical-team-groups.ts";
-import type { HallSummary, HallSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
-import { SummaryCard } from "@/features/medical-team/summary-card.tsx";
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import type {
+	HallSummary,
+	HallSummaryResponse,
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
+import { SummaryCard } from "@/features/occupational-health-service/summary-card.tsx";
 import { Factory } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -35,7 +38,7 @@ export function HallList({ halls, units, filter }: HallListProps) {
 									{hall.hall}
 								</h3>
 								<p className="mt-1 text-muted-foreground text-xs">
-									{t(($) => $.medicalTeamDashboard.wholeHall)}
+									{t(($) => $.occupationalHealthServiceDashboard.wholeHall)}
 								</p>
 							</>
 						}

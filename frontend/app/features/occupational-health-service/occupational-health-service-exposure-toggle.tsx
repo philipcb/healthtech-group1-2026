@@ -5,7 +5,7 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 /** Picks one exposure at a time */
-export function MedicalExposureToggle({
+export function OccupationalHealthServiceExposureToggle({
 	label,
 	value,
 	onValueChange,

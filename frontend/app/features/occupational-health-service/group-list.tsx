@@ -4,9 +4,12 @@ import {
 	getGroupName,
 	getOccupationLabel,
 	getShownExposures,
-} from "@/features/medical-team/medical-team-groups.ts";
-import type { GroupSummary, GroupSummaryResponse } from "@/features/medical-team/queries/medical-team-contracts.ts";
-import { SummaryCard } from "@/features/medical-team/summary-card.tsx";
+} from "@/features/occupational-health-service/occupational-health-service-groups.ts";
+import type {
+	GroupSummary,
+	GroupSummaryResponse,
+} from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
+import { SummaryCard } from "@/features/occupational-health-service/summary-card.tsx";
 import { Factory } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

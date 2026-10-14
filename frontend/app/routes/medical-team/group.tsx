@@ -8,6 +8,7 @@ import { GroupTrendChart } from "@/features/medical-team/group-trend-chart.tsx";
 import { MedicalExposureToggle } from "@/features/medical-team/medical-exposure-toggle.tsx";
 import { MedicalFilterDialog } from "@/features/medical-team/medical-filter-dialog.tsx";
 import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-picker.tsx";
+import { MedicalStatisticCard } from "@/features/medical-team/medical-statistic-card.tsx";
 import {
 	formatGroupValue,
 	getGroupName,
@@ -26,6 +27,8 @@ import {
 } from "@/features/medical-team/queries/medical-team-queries.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
+import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { cn } from "@/lib/utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -161,19 +164,8 @@ function GroupDetails({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Card>
-				<p className="text-muted-foreground text-sm">{t(($) => $.medicalTeamDashboard.group.periodAverage)}</p>
-				<p className="font-semibold text-3xl tabular-nums">
-					{trend.average === null
-						? t(($) => $.medicalTeamDashboard.group.noPeriodAverage)
-						: formatGroupValue(trend.average, trend.unit, t)}
-				</p>
-				<p className="text-muted-foreground text-xs">{metricLabel}</p>
-			</Card>
-
-			<ExposureKpiPanel kpiQuery={kpiQuery} groupId={groupId} exposure={exposure} />
-
-			<Card className="gap-3">
+			{/* Spans the whole screen width below `lg`, the same as the operator's and foreman's charts */}
+			<Card className={cn("relative w-full gap-3", MOBILE_BREAKOUT_CARD_CLASSNAME)}>
 				<div className="space-y-1">
 					<h2 className="font-semibold">{t(($) => $.medicalTeamDashboard.group.trendTitle)}</h2>
 					<p className="text-muted-foreground text-xs">
@@ -205,6 +197,20 @@ function GroupDetails({
 					<li>{t(($) => $.medicalTeamDashboard.group.comparisonNotice)}</li>
 				</ul>
 			</Card>
+
+			{/* Below the trend, laid out like the operator's and foreman's statistics: one per row on phones, three from `md` up */}
+			<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
+				<MedicalStatisticCard
+					label={t(($) => $.medicalTeamDashboard.group.periodAverage)}
+					value={
+						trend.average === null
+							? t(($) => $.medicalTeamDashboard.group.noPeriodAverage)
+							: formatGroupValue(trend.average, trend.unit, t)
+					}
+					caption={metricLabel}
+				/>
+				<ExposureKpiPanel kpiQuery={kpiQuery} groupId={groupId} exposure={exposure} />
+			</div>
 		</div>
 	);
 }

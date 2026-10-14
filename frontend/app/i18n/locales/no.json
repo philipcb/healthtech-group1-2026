@@ -297,7 +297,7 @@
       "allHalls": "Alle bygg",
       "title": "Filtre",
       "description": "Valgene gjelder med en gang.",
-      "reset": "Nullstill",
+      "close": "Lukk",
       "save": "Lagre"
     },
     "occupations": {
@@ -321,13 +321,8 @@
     },
     "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
     "kpi": {
-      "titles": {
-        "dust": "Andel måleperioder over terskel",
-        "noise": "Tid over terskel per arbeidsdag",
-        "vibration": "Andel arbeidsdager over terskel"
-      },
-      "aboveAction": "Over tiltaksverdi ({{threshold}})",
-      "aboveLimit": "Over grenseverdi ({{threshold}})",
+      "actionValue": "Tiltaksverdi: {{threshold}}",
+      "limitValue": "Grenseverdi: {{threshold}}",
       "values": {
         "minutesPerWorkday": "{{value}} min per arbeidsdag",
         "percentOfMeasurementPeriods": "{{value}} av periodene",

@@ -20,7 +20,7 @@ type MedicalFilterDialogProps = {
 	periodSelection: PeriodSelection;
 	/** Shows the period next to the button, for pages that don't show it anywhere else on phones */
 	showsPeriod?: boolean;
-	/** Sets the page's filters back to their defaults */
+	/** Sets the page's filters back to their defaults, when the dialog is closed with its close button */
 	onReset: () => void;
 	/** The page's own filters, shown below the period */
 	children: ReactNode;
@@ -67,9 +67,12 @@ export function MedicalFilterDialog({
 					{children}
 
 					<DialogFooter>
-						<Button variant="outline" onClick={onReset}>
-							{t(($) => $.medicalTeamDashboard.filters.reset)}
-						</Button>
+						{/* Resets the filters and closes, unlike the X in the corner, which keeps them */}
+						<DialogClose asChild={true}>
+							<Button variant="outline" onClick={onReset}>
+								{t(($) => $.medicalTeamDashboard.filters.close)}
+							</Button>
+						</DialogClose>
 						{/* Only closes, since every change is already applied */}
 						<DialogClose asChild={true}>
 							<Button>{t(($) => $.medicalTeamDashboard.filters.save)}</Button>

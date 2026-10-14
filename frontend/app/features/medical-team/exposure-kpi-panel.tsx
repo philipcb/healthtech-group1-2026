@@ -1,9 +1,7 @@
-import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { MedicalStatisticCard } from "@/features/medical-team/medical-statistic-card.tsx";
 import { getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
-import { getPeriodLabel } from "@/features/medical-team/medical-team-period.ts";
 import type {
-	ExposureKpiPeriod,
 	ExposureKpiResponse,
 	ExposureKpiResult,
 	ExposureKpiThresholds,
@@ -18,12 +16,20 @@ type ExposureKpiPanelProps = {
 	exposure: Exposure;
 };
 
-/** A group's or a hall's KPI for one exposure on its details: how much is above the action and limit values */
+/**
+ * A group's or a hall's KPI for one exposure on its details: how much is above the action and limit values. Two cards,
+ * or one message in their place, meant to sit in the same grid as the period's average.
+ */
 export function ExposureKpiPanel({ kpiQuery, groupId, exposure }: ExposureKpiPanelProps) {
 	const { t } = useTranslation();
 
 	if (kpiQuery.isPending) {
-		return <Skeleton className="h-40 w-full" />;
+		return (
+			<>
+				<Skeleton className="h-14 rounded-xl md:h-26.25" />
+				<Skeleton className="h-14 rounded-xl md:h-26.25" />
+			</>
+		);
 	}
 
 	if (kpiQuery.isError) {
@@ -44,24 +50,13 @@ export function ExposureKpiPanel({ kpiQuery, groupId, exposure }: ExposureKpiPan
 		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.unavailable)} />;
 	}
 
-	return (
-		<KpiResult
-			exposure={exposure}
-			period={kpiQuery.data.period}
-			thresholds={kpiQuery.data.thresholds[exposure]}
-			result={result}
-		/>
-	);
+	return <KpiResult thresholds={kpiQuery.data.thresholds[exposure]} result={result} />;
 }
 
 function KpiResult({
-	exposure,
-	period,
 	thresholds,
 	result,
 }: {
-	exposure: Exposure;
-	period: ExposureKpiPeriod;
 	thresholds: ExposureKpiThresholds;
 	result: Extract<ExposureKpiResult, { status: "ok" }>;
 }) {
@@ -83,34 +78,26 @@ function KpiResult({
 					});
 
 	return (
-		<Card className="gap-3">
-			<div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-				<h2 className="font-semibold">{t(($) => $.medicalTeamDashboard.kpi.titles[exposure])}</h2>
-				<p className="text-muted-foreground text-sm">{getPeriodLabel(period, t)}</p>
-			</div>
-			<dl className="flex flex-col gap-1.5 text-sm">
-				<div className="flex flex-wrap items-baseline justify-between gap-x-3">
-					<dt className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.kpi.aboveAction, {
-							threshold: formatThreshold(thresholds.action),
-						})}
-					</dt>
-					<dd className="font-semibold tabular-nums">{formatResult(result.aboveAction)}</dd>
-				</div>
-				<div className="flex flex-wrap items-baseline justify-between gap-x-3">
-					<dt className="text-muted-foreground">
-						{t(($) => $.medicalTeamDashboard.kpi.aboveLimit, {
-							threshold: formatThreshold(thresholds.limit),
-						})}
-					</dt>
-					<dd className="font-semibold tabular-nums">{formatResult(result.aboveLimit)}</dd>
-				</div>
-			</dl>
-		</Card>
+		<>
+			<MedicalStatisticCard
+				label={t(($) => $.lineChart.warning)}
+				value={formatResult(result.aboveAction)}
+				caption={t(($) => $.medicalTeamDashboard.kpi.actionValue, {
+					threshold: formatThreshold(thresholds.action),
+				})}
+			/>
+			<MedicalStatisticCard
+				label={t(($) => $.lineChart.danger)}
+				value={formatResult(result.aboveLimit)}
+				caption={t(($) => $.medicalTeamDashboard.kpi.limitValue, {
+					threshold: formatThreshold(thresholds.limit),
+				})}
+			/>
+		</>
 	);
 }
 
-/** Why there's no KPI to show, kept small so it doesn't outweigh the period's average and trend */
+/** Why there's no KPI to show, in place of both cards, kept small so it doesn't outweigh the period's average and trend */
 function KpiMessage({ message }: { message: string }) {
-	return <p className="rounded-xl border border-dashed p-4 text-muted-foreground text-sm">{message}</p>;
+	return <p className="rounded-xl border border-dashed p-4 text-muted-foreground text-sm md:col-span-2">{message}</p>;
 }

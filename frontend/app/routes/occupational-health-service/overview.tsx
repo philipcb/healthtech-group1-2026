@@ -22,7 +22,7 @@ import {
 	groupSummariesQueryOptions,
 	hallSummariesQueryOptions,
 } from "@/features/occupational-health-service/queries/occupational-health-service-queries.ts";
-import { ThresholdBarLegend } from "@/features/occupational-health-service/threshold-bar.tsx";
+import { DangerLevelBadgeLegend } from "@/features/occupational-health-service/threshold-bar.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, ShieldCheck } from "lucide-react";
@@ -93,7 +93,7 @@ export default function OccupationalHealthServiceOverview() {
 							{t(($) => $.occupationalHealthServiceDashboard.privacyNotice, { count: MIN_GROUP_SIZE })}
 						</span>
 					</p>
-					<ThresholdBarLegend />
+					<DangerLevelBadgeLegend />
 				</div>
 
 				{level === "hall" ? (

@@ -356,7 +356,7 @@
         },
         "scale": {
           "title": "Stolpene og fargene",
-          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
+          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
         },
         "thresholds": {
           "title": "Tiltaks- og grenseverdier"

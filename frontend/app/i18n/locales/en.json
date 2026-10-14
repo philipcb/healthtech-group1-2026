@@ -359,7 +359,7 @@
         },
         "scale": {
           "title": "Bars and colors",
-          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
+          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The dots next to the value say the same without color: one dot below the action value, two above it, and three above the limit value. The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
         },
         "thresholds": {
           "title": "Action and limit values"

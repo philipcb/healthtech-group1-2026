@@ -1,5 +1,6 @@
+import { DangerLevelDots } from "@/components/danger-level-dots.tsx";
 import { ThresholdLegendLine } from "@/components/exposure-line-chart/threshold-legend.tsx";
-import { dangerlevelStyles } from "@/lib/danger-levels.ts";
+import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { getThresholdStrokeDasharray, type Threshold } from "@/lib/thresholds.ts";
 import { cn } from "@/lib/utils.ts";
 import type { CSSProperties } from "react";
@@ -35,15 +36,53 @@ export function ThresholdBar({ value, threshold }: { value: number | null; thres
 					style={{ "--part-width": toPercent(part.width) } as CSSProperties}
 				/>
 			))}
-			{/* Marks the action and limit values on the scale */}
+			{/* Marks the action and limit values on the scale, wide and dark enough to see in grayscale */}
 			{[threshold.warning, threshold.danger].map((mark) => (
 				<span
 					key={mark}
-					className="absolute inset-y-0 left-(--mark-position) w-px bg-foreground/40"
+					className="absolute inset-y-0 left-(--mark-position) w-0.5 -translate-x-1/2 bg-foreground/70"
 					style={{ "--mark-position": toPercent(mark) } as CSSProperties}
 				/>
 			))}
 		</span>
+	);
+}
+
+/**
+ * The level as one, two or three dots in a circle, the same badge as the operator's limit explanation, so it doesn't
+ * rely on color alone
+ */
+export function DangerLevelBadge({ dangerLevel }: { dangerLevel: DangerLevel }) {
+	const { border, bgSubtle } = dangerlevelStyles[dangerLevel];
+
+	return (
+		<span
+			aria-hidden="true"
+			className={cn("flex size-5 shrink-0 items-center justify-center rounded-full border", border, bgSubtle)}
+		>
+			<DangerLevelDots dangerLevel={dangerLevel} size="sm" />
+		</span>
+	);
+}
+
+/** Explains the overview's dot badges with words, in the same order as the bar's colors */
+export function DangerLevelBadgeLegend() {
+	const { t } = useTranslation();
+	const labels = {
+		safe: t(($) => $.occupationalHealthServiceDashboard.overview.belowActionValue),
+		warning: t(($) => $.lineChart.warning),
+		danger: t(($) => $.lineChart.danger),
+	};
+
+	return (
+		<ul className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+			{(["safe", "warning", "danger"] as const).map((level) => (
+				<li key={level} className="flex items-center gap-1.5">
+					<DangerLevelBadge dangerLevel={level} />
+					{labels[level]}
+				</li>
+			))}
+		</ul>
 	);
 }
 

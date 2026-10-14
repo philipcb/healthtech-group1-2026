@@ -8,7 +8,7 @@ import type {
 	GroupSummary,
 	GroupSummaryResponse,
 } from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
-import { ThresholdBar } from "@/features/occupational-health-service/threshold-bar.tsx";
+import { DangerLevelBadge, ThresholdBar } from "@/features/occupational-health-service/threshold-bar.tsx";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { ChevronRight } from "lucide-react";
@@ -76,7 +76,8 @@ function ExposureLink({
 			: formatGroupValue(average, unit, t);
 	const threshold = thresholdByExposure[exposure];
 	const level = average === null ? null : getDangerLevel(average, threshold.warning, threshold.danger);
-	// The level is also written out, so it isn't only shown by the bar's colors
+	// The level is also written out and shown as dots, so it isn't only shown by the bar's colors. Without a value there's
+	// no level, so a missing value never looks like a safe one.
 	const levelLabel = level === "warning" || level === "danger" ? t(($) => $.lineChart[level]) : null;
 
 	// Keeps every other selection, so the details show the same period and going back restores the overview
@@ -107,6 +108,7 @@ function ExposureLink({
 					</span>
 				</span>
 				<span className="ml-auto flex shrink-0 items-center gap-1 tabular-nums">
+					{level && <DangerLevelBadge dangerLevel={level} />}
 					{levelLabel && <span className="mr-1 text-muted-foreground text-xs">{levelLabel}</span>}
 					{value}
 					<ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />

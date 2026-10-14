@@ -1,3 +1,5 @@
+import { CollapsedYAxisTick } from "@/components/exposure-line-chart/collapsed-y-axis-tick.tsx";
+import { COLLAPSED_Y_AXIS_WIDTH } from "@/components/exposure-line-chart/collapsed-y-axis-width.ts";
 import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
@@ -9,13 +11,14 @@ import {
 } from "@/features/occupational-health-service/occupational-health-service-groups.ts";
 import type { GroupTrendPoint } from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
 import { differenceInCalendarDays, eachMonthOfInterval, max, parseISO } from "date-fns";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis, type YAxisTickContentProps } from "recharts";
 
 /** Keeps the line off the top and bottom edges, since group averages rarely start at zero */
 const Y_AXIS_PADDING = 0.1;
@@ -56,6 +59,9 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 	const { t } = useTranslation();
 	const formatDate = useFormatDate();
 	const gradientId = useId();
+	// The card spans the whole screen below `lg`, so the axis collapses into the plot like the operator's and foreman's
+	// charts. The unit is left out there, since the card's subtitle already names it.
+	const isMobile = useIsMobile();
 	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
 	const rows: Array<ChartRow> = points.map((point) => {
@@ -82,6 +88,8 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 	const yMin = Math.min(...scaleValues) * (1 - Y_AXIS_PADDING);
 	const yMax = Math.max(...scaleValues) * (1 + Y_AXIS_PADDING);
 
+	const formatYValue = (value: number) => formatGroupNumber(value, unit, value < 10 ? 1 : 0);
+
 	const getColor = (value: number) =>
 		threshold === null
 			? NEUTRAL_COLOR
@@ -106,21 +114,34 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 					tick={{ className: "text-sm", fill: "var(--color-muted-foreground)" }}
 				/>
 				<YAxis
-					width={Y_AXIS_WIDTH}
+					width={isMobile ? COLLAPSED_Y_AXIS_WIDTH : Y_AXIS_WIDTH}
 					tickLine={false}
 					axisLine={false}
-					tick={{ className: "text-sm", fill: "var(--color-muted-foreground)" }}
+					tick={
+						isMobile
+							? (tickProps: YAxisTickContentProps) => (
+									<CollapsedYAxisTick
+										y={tickProps.y}
+										label={formatYValue(Number(tickProps.payload.value))}
+									/>
+								)
+							: { className: "text-sm", fill: "var(--color-muted-foreground)" }
+					}
 					domain={[yMin, yMax]}
-					tickFormatter={(value: number) => formatGroupNumber(value, unit, value < 10 ? 1 : 0)}
+					tickFormatter={formatYValue}
 					// The unit along the axis, so the zoomed scale is read in the right unit
-					label={{
-						value: getGroupUnitLabel(unit, t),
-						position: "inside",
-						dx: -32,
-						angle: -90,
-						className: "text-base",
-						fill: "var(--color-muted-foreground)",
-					}}
+					label={
+						isMobile
+							? undefined
+							: {
+									value: getGroupUnitLabel(unit, t),
+									position: "inside",
+									dx: -32,
+									angle: -90,
+									className: "text-base",
+									fill: "var(--color-muted-foreground)",
+								}
+					}
 				/>
 				<ChartTooltip
 					cursor={false}

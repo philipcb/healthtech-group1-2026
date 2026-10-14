@@ -325,7 +325,6 @@
       "limitValue": "Grenseverdi: {{threshold}}",
       "values": {
         "minutesPerWorkday": "{{value}} min per arbeidsdag",
-        "percentOfMeasurementPeriods": "{{value}} av periodene",
         "percentOfWorkdays": "{{value}} av arbeidsdagene"
       },
       "noData": "Ingen nøkkeltall for valgt periode.",
@@ -394,6 +393,7 @@
         "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen"
       },
       "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
+      "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
       "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
       "suppressed": "Skjult fordi for få personer bidro",
       "unavailable": {

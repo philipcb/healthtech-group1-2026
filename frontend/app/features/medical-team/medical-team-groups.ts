@@ -1,5 +1,5 @@
 import type { TranslateFn } from "@/i18n/config.ts";
-import { type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
+import { type DustField, type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 
@@ -37,6 +37,15 @@ export const thresholdByExposure: Record<Exposure, Threshold> = {
 	noise: getThreshold("noise"),
 	vibration: getThreshold("vibration"),
 };
+
+/**
+ * The thresholds a group's trend is colored against, the same as the overview's bars for PM1, noise and vibration, so
+ * both give the same picture. Dust uses the selected fraction's thresholds, like the operator's charts, which have no
+ * documented source either, see above.
+ */
+export function getGroupThreshold(exposure: Exposure, dustField: DustField): Threshold {
+	return exposure === "dust" ? getThreshold("dust", dustField) : thresholdByExposure[exposure];
+}
 
 /** A group average without its unit, rounded the same way everywhere it's shown */
 export function formatGroupNumber(value: number, unit: ExposureUnit, fractionDigits = unit === "ug" ? 0 : 1) {

@@ -11,6 +11,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 type ExposureKpiPanelProps = {
+	/** Fetched for the selected dust fraction, so dust's KPI belongs to the same fraction as the trend */
 	kpiQuery: UseQueryResult<ExposureKpiResponse>;
 	groupId: string;
 	exposure: Exposure;
@@ -46,11 +47,14 @@ export function ExposureKpiPanel({ kpiQuery, groupId, exposure }: ExposureKpiPan
 		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.suppressed)} />;
 	}
 
-	if (result.status === "unavailable") {
+	const thresholds = kpiQuery.data.thresholds[exposure];
+
+	// The contract never has a result without thresholds, but a result is never shown without what it was compared with
+	if (result.status === "unavailable" || thresholds === null) {
 		return <KpiMessage message={t(($) => $.medicalTeamDashboard.kpi.unavailable)} />;
 	}
 
-	return <KpiResult thresholds={kpiQuery.data.thresholds[exposure]} result={result} />;
+	return <KpiResult thresholds={thresholds} result={result} />;
 }
 
 function KpiResult({
@@ -69,13 +73,9 @@ function KpiResult({
 	const formatResult = (value: number) =>
 		result.unit === "minutesPerWorkday"
 			? t(($) => $.medicalTeamDashboard.kpi.values.minutesPerWorkday, { value: numberFormat.format(value) })
-			: result.unit === "percentOfMeasurementPeriods"
-				? t(($) => $.medicalTeamDashboard.kpi.values.percentOfMeasurementPeriods, {
-						value: percentFormat.format(value / 100),
-					})
-				: t(($) => $.medicalTeamDashboard.kpi.values.percentOfWorkdays, {
-						value: percentFormat.format(value / 100),
-					});
+			: t(($) => $.medicalTeamDashboard.kpi.values.percentOfWorkdays, {
+					value: percentFormat.format(value / 100),
+				});
 
 	// No indicator color, since a group's share above a threshold isn't a danger level
 	return (

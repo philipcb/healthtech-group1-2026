@@ -287,11 +287,14 @@ function getHallDays(
 }
 
 /**
- * Configurable thresholds for the KPI examples. Dust's are the project's PM1 STEL values, which have no confirmed
- * source.
+ * Dust's KPI is calculated from each person's 8-hour TWA, but neither the sensor's TWA values nor TWA thresholds for
+ * any fraction are documented, see `MEDICAL_TEAM_KPIS.md`. So, like the backend should, it's `unavailable` for every
+ * fraction, without thresholds, rather than made-up numbers.
  */
-const syntheticKpiThresholds: Record<Exposure, { action: number; limit: number }> = {
-	dust: { action: 7.5, limit: 15 },
+type ExposureWithKpiExamples = Exclude<Exposure, "dust">;
+
+/** Configurable thresholds for the KPI examples */
+const syntheticKpiThresholds: Record<ExposureWithKpiExamples, { action: number; limit: number }> = {
 	noise: { action: 80, limit: 85 },
 	vibration: { action: 100, limit: 400 },
 };
@@ -300,8 +303,10 @@ const syntheticKpiThresholds: Record<Exposure, { action: number; limit: number }
  * Made-up ranges for the KPI examples. `limitShare` is the result above the limit value as a share of the one above the
  * action value.
  */
-const syntheticKpiRanges: Record<Exposure, { aboveAction: [number, number]; limitShare: [number, number] }> = {
-	dust: { aboveAction: [4, 45], limitShare: [0.1, 0.45] },
+const syntheticKpiRanges: Record<
+	ExposureWithKpiExamples,
+	{ aboveAction: [number, number]; limitShare: [number, number] }
+> = {
 	noise: { aboveAction: [10, 120], limitShare: [0.15, 0.5] },
 	vibration: { aboveAction: [2, 40], limitShare: [0, 0.2] },
 };
@@ -318,7 +323,7 @@ export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promis
 					.filter((group) => group.site === request.site && group.peopleCount >= MIN_GROUP_SIZE)
 					.map((group) => group.id);
 	const workingDayCount = getWorkingDays(request).length;
-	const getThresholds = (exposure: Exposure) => ({
+	const getThresholds = (exposure: ExposureWithKpiExamples) => ({
 		...syntheticKpiThresholds[exposure],
 		unit: exposureUnitByExposure[exposure],
 	});
@@ -326,14 +331,14 @@ export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promis
 	return {
 		period: { period: request.period, year: request.year, month: request.month },
 		thresholds: {
-			dust: getThresholds("dust"),
+			dust: null,
 			noise: getThresholds("noise"),
 			vibration: getThresholds("vibration"),
 		},
 		groups: groupIds.map((groupId) => ({
 			groupId,
 			kpis: {
-				dust: getSyntheticKpiResult(groupId, "dust", request, workingDayCount),
+				dust: { status: "unavailable" },
 				noise: getSyntheticKpiResult(groupId, "noise", request, workingDayCount),
 				vibration: getSyntheticKpiResult(groupId, "vibration", request, workingDayCount),
 			},
@@ -343,7 +348,7 @@ export async function fetchMockExposureKpis(request: ExposureKpiRequest): Promis
 
 function getSyntheticKpiResult(
 	groupId: string,
-	exposure: Exposure,
+	exposure: ExposureWithKpiExamples,
 	request: ExposureKpiRequest,
 	workingDayCount: number,
 ): ExposureKpiResult {

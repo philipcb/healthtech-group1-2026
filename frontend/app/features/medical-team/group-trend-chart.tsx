@@ -1,11 +1,16 @@
+import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
+import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
-import { formatGroupNumber, formatGroupValue } from "@/features/medical-team/medical-team-groups.ts";
+import { formatGroupNumber, formatGroupValue, getGroupUnitLabel } from "@/features/medical-team/medical-team-groups.ts";
 import type { GroupTrendPoint } from "@/features/medical-team/queries/medical-team-contracts.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
+import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
+import type { Threshold } from "@/lib/thresholds.ts";
 import { differenceInCalendarDays, eachMonthOfInterval, max, parseISO } from "date-fns";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { CartesianGrid, Dot, Line, LineChart, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis } from "recharts";
 
 /** Keeps the line off the top and bottom edges, since group averages rarely start at zero */
 const Y_AXIS_PADDING = 0.1;
@@ -13,6 +18,10 @@ const Y_AXIS_PADDING = 0.1;
 const MAX_DAYS_WITH_DAY_TICKS = 62;
 /** With more points than this, a lone value is the only point that gets a dot, since it would otherwise not show at all */
 const MAX_POINTS_WITH_DOTS = 31;
+/** Room for the ticks and the unit along the axis, the same as the operator's trend chart */
+const Y_AXIS_WIDTH = 60;
+/** For a trend without thresholds to color it against */
+const NEUTRAL_COLOR = "var(--chart-1)";
 
 type ChartRow = {
 	timestamp: number;
@@ -25,17 +34,24 @@ type GroupTrendChartProps = {
 	points: Array<GroupTrendPoint>;
 	unit: ExposureUnit;
 	label: string;
+	/**
+	 * The thresholds the line is colored against, the same as the overview's bars, see `getGroupThreshold`. `null`
+	 * keeps it one neutral color.
+	 */
+	threshold: Threshold | null;
 };
 
 /**
- * One aggregated line for the selected group, without danger levels, since those only apply to individuals. Every
+ * One aggregated line for the selected group, styled like the operator's trend chart. The colors only place each
+ * daily average on the overview's scale, and aren't an assessment of the group, so there are no threshold lines. Every
  * daily value is drawn as is. Days without measurements, like weekends, are left out, and days hidden for privacy
  * (`null`) are skipped, so the line joins the nearest shown days on either side without any value made up between them.
  */
-export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
+export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendChartProps) {
 	const { t } = useTranslation();
 	const formatDate = useFormatDate();
-	const chartConfig = { value: { label, color: "var(--chart-1)" } };
+	const gradientId = useId();
+	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
 	const rows: Array<ChartRow> = points.map((point) => {
 		const date = parseISO(point.time);
@@ -51,13 +67,23 @@ export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 		? eachMonthOfInterval({ start: firstDay, end: lastDay }).map((month) => max([month, firstDay]).getTime())
 		: rows.map((row) => row.timestamp);
 	const showsEveryDot = rows.length <= MAX_POINTS_WITH_DOTS;
+	const values = rows.flatMap((row) => (row.value === null ? [] : [row.value]));
 	// The line skips hidden days, so a value only lacks a line to join when it's the only one
-	const hasLoneValue = rows.filter((row) => row.value !== null).length === 1;
+	const hasLoneValue = values.length === 1;
+
+	// Zoomed to the values, and worked out here, since the area under the line fills down to the axis' bottom
+	const yMin = Math.min(...values) * (1 - Y_AXIS_PADDING);
+	const yMax = Math.max(...values) * (1 + Y_AXIS_PADDING);
+
+	const getColor = (value: number) =>
+		threshold === null
+			? NEUTRAL_COLOR
+			: dangerlevelStyles[getDangerLevel(value, threshold.warning, threshold.danger)].color;
 
 	return (
 		<ChartContainer config={chartConfig} className="aspect-auto h-64 w-full sm:h-72">
-			<LineChart accessibilityLayer={true} data={rows} margin={{ left: 4, right: 12, top: 8 }}>
-				<CartesianGrid vertical={false} />
+			<ComposedChart accessibilityLayer={true} data={rows} margin={{ left: 12, right: 12, top: 8 }}>
+				<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
 				<XAxis
 					dataKey="timestamp"
 					type="number"
@@ -70,18 +96,24 @@ export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 					tickMargin={8}
 					interval="preserveStartEnd"
 					minTickGap={16}
-					fontSize={11}
+					tick={{ className: "text-sm", fill: "var(--color-muted-foreground)" }}
 				/>
 				<YAxis
-					width={44}
+					width={Y_AXIS_WIDTH}
 					tickLine={false}
 					axisLine={false}
-					fontSize={11}
-					domain={[
-						(dataMin: number) => dataMin * (1 - Y_AXIS_PADDING),
-						(dataMax: number) => dataMax * (1 + Y_AXIS_PADDING),
-					]}
+					tick={{ className: "text-sm", fill: "var(--color-muted-foreground)" }}
+					domain={[yMin, yMax]}
 					tickFormatter={(value: number) => formatGroupNumber(value, unit, value < 10 ? 1 : 0)}
+					// The unit along the axis, so the zoomed scale is read in the right unit
+					label={{
+						value: getGroupUnitLabel(unit, t),
+						position: "inside",
+						dx: -32,
+						angle: -90,
+						className: "text-base",
+						fill: "var(--color-muted-foreground)",
+					}}
 				/>
 				<ChartTooltip
 					cursor={false}
@@ -111,23 +143,75 @@ export function GroupTrendChart({ points, unit, label }: GroupTrendChartProps) {
 						);
 					}}
 				/>
+
+				{/* The same gradients and fade as the operator's trend chart */}
+				<defs>
+					{threshold !== null && (
+						<>
+							<linearGradient id={`${gradientId}-line`} x1="0" y1="0" x2="0" y2="1">
+								<ExposureLineChartGradientStops
+									values={values}
+									warningThreshold={threshold.warning}
+									dangerThreshold={threshold.danger}
+								/>
+							</linearGradient>
+							<linearGradient id={`${gradientId}-area`} x1="0" y1="0" x2="0" y2="1">
+								<ExposureLineChartGradientStops
+									values={[yMin, Math.max(...values)]}
+									warningThreshold={threshold.warning}
+									dangerThreshold={threshold.danger}
+								/>
+							</linearGradient>
+						</>
+					)}
+					<linearGradient id={`${gradientId}-fade-gradient`} x1="0" y1="0" x2="0" y2="1">
+						<stop offset="0%" stopColor="white" stopOpacity={1} />
+						<stop offset="50%" stopColor="white" stopOpacity={1} />
+						<stop offset="100%" stopColor="white" stopOpacity={0} />
+					</linearGradient>
+					<mask id={`${gradientId}-fade-mask`}>
+						<rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientId}-fade-gradient)`} />
+					</mask>
+				</defs>
+
+				<Area
+					dataKey="value"
+					type="linear"
+					fill={threshold === null ? NEUTRAL_COLOR : `url(#${gradientId}-area)`}
+					stroke="none"
+					baseValue={yMin}
+					fillOpacity={0.25}
+					mask={`url(#${gradientId}-fade-mask)`}
+					connectNulls={true}
+					isAnimationActive={false}
+					tooltipType="none"
+				/>
 				<Line
 					dataKey="value"
 					// Straight lines between days, since a curve would suggest values between them that weren't measured
 					type="linear"
-					stroke="var(--color-value)"
-					strokeWidth={1.5}
+					stroke={threshold === null ? NEUTRAL_COLOR : `url(#${gradientId}-line)`}
+					strokeWidth={3}
 					strokeLinejoin="round"
-					dot={({ cx, cy, index }) =>
-						showsEveryDot || (hasLoneValue && rows[index]?.value !== null) ? (
-							<Dot key={index} cx={cx} cy={cy} r={2} fill="var(--color-value)" />
-						) : null
+					// A marker on every day with a value, colored like the line at that value
+					dot={({ cx, cy, index }) => {
+						const value = rows[index]?.value ?? null;
+
+						return value !== null && (showsEveryDot || hasLoneValue) ? (
+							<Dot key={index} cx={cx} cy={cy} r={3} fill={getColor(value)} />
+						) : null;
+					}}
+					activeDot={
+						threshold === null
+							? { r: 5, fill: NEUTRAL_COLOR, stroke: "none" }
+							: (props) => (
+									<ExposureDot {...props} warning={threshold.warning} danger={threshold.danger} />
+								)
 					}
-					activeDot={{ r: 4 }}
 					connectNulls={true}
 					isAnimationActive={false}
 				/>
-			</LineChart>
+			</ComposedChart>
 		</ChartContainer>
 	);
 }

@@ -11,6 +11,7 @@ import { MedicalPeriodPicker } from "@/features/medical-team/medical-period-pick
 import {
 	formatGroupValue,
 	getGroupName,
+	getGroupThreshold,
 	getGroupUnitLabel,
 	getHallName,
 } from "@/features/medical-team/medical-team-groups.ts";
@@ -24,6 +25,7 @@ import {
 	exposureKpisQueryOptions,
 	groupTrendQueryOptions,
 } from "@/features/medical-team/queries/medical-team-queries.ts";
+import { ThresholdBarLegend } from "@/features/medical-team/threshold-bar.tsx";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
@@ -155,12 +157,16 @@ function GroupDetails({
 }) {
 	const { t } = useTranslation();
 	// The trend tells whether this is a group or a whole hall, which decides which KPIs to fetch
-	const kpiQuery = useQuery(exposureKpisQueryOptions({ ...request, level: trend.group.level }));
+	// For the selected dust fraction, so dust's KPI belongs to the same fraction as the trend and average
+	const kpiQuery = useQuery(exposureKpisQueryOptions({ ...request, level: trend.group.level, dustField }));
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const metricLabel =
 		exposure === "dust"
 			? t(($) => $.medicalTeamDashboard.metrics.dust, { dustField: dustFieldLabel })
 			: t(($) => $.medicalTeamDashboard.metrics[exposure]);
+	// The same rule as the overview's bars. Its colors are explained by the legend below the trend, whenever it's colored.
+	const threshold = getGroupThreshold(exposure, dustField);
+	const isColored = trend.points.some((point) => point.value !== null);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -190,12 +196,14 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.medicalTeamDashboard.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart points={trend.points} unit={trend.unit} label={metricLabel} />
+					<GroupTrendChart
+						points={trend.points}
+						unit={trend.unit}
+						label={metricLabel}
+						threshold={threshold}
+					/>
 				)}
-				<ul className="list-disc space-y-1 pl-4 text-muted-foreground text-xs">
-					<li>{t(($) => $.medicalTeamDashboard.group.gapsNotice)}</li>
-					<li>{t(($) => $.medicalTeamDashboard.group.comparisonNotice)}</li>
-				</ul>
+				{isColored && <ThresholdBarLegend />}
 			</Card>
 
 			{/*

@@ -42,7 +42,11 @@ export type GroupTrendRequest = PeriodRequest & {
 	dustField?: DustField;
 };
 
-export type ExposureKpiRequest = GroupSummaryRequest & { level: GroupLevel };
+export type ExposureKpiRequest = GroupSummaryRequest & {
+	level: GroupLevel;
+	/** The dust fraction dust's KPI is calculated for, with that fraction's thresholds. Defaults to PM1 TWA. */
+	dustField?: DustField;
+};
 
 /** Shared by groups and halls */
 export const ExposureUnitsSchema = z.object({
@@ -156,13 +160,13 @@ export type GroupTrendResponse = z.infer<typeof GroupTrendResponseSchema>;
 
 /**
  * Each exposure's KPI unit, which also says what was calculated. Percentages are 0-100.
- * - dust: share of valid measurement periods above the threshold. The period's length, assumed to be the sensor's STEL
- *   window, isn't confirmed by the supplier.
+ * - dust: share of workdays with the person's 8-hour TWA for the requested fraction above that fraction's threshold.
+ *   Neither the sensor's TWA values nor TWA thresholds are documented yet, so it's `unavailable` until they are.
  * - noise: average measured minutes per workday with a sound level above the threshold.
  * - vibration: share of workdays with daily points above the threshold. Points are a daily dose, never a duration.
  */
 export const kpiUnitByExposure = {
-	dust: "percentOfMeasurementPeriods",
+	dust: "percentOfWorkdays",
 	noise: "minutesPerWorkday",
 	vibration: "percentOfWorkdays",
 } as const satisfies Record<Exposure, string>;
@@ -173,7 +177,6 @@ export type ExposureKpiUnit = z.infer<typeof ExposureKpiUnitSchema>;
 const MINUTES_PER_DAY = 24 * 60;
 
 const maxValueByUnit: Record<ExposureKpiUnit, number> = {
-	percentOfMeasurementPeriods: 100,
 	minutesPerWorkday: MINUTES_PER_DAY,
 	percentOfWorkdays: 100,
 };
@@ -231,11 +234,14 @@ export type ExposureKpiPeriod = z.infer<typeof ExposureKpiPeriodSchema>;
 export const ExposureKpiResponseSchema = z
 	.object({
 		period: ExposureKpiPeriodSchema,
-		/** The same for every group, so they're only sent once */
+		/**
+		 * The same for every group, so they're only sent once. `null` when there's no documented threshold for what the
+		 * KPI is calculated from, and every group's KPI for that exposure is then `unavailable`.
+		 */
 		thresholds: z.object({
-			dust: ExposureKpiThresholdsSchema,
-			noise: ExposureKpiThresholdsSchema,
-			vibration: ExposureKpiThresholdsSchema,
+			dust: ExposureKpiThresholdsSchema.nullable(),
+			noise: ExposureKpiThresholdsSchema.nullable(),
+			vibration: ExposureKpiThresholdsSchema.nullable(),
 		} satisfies Record<Exposure, unknown>),
 		/** The requested level's groups or halls, by the same `groupId` as their summaries */
 		groups: z
@@ -252,7 +258,9 @@ export const ExposureKpiResponseSchema = z
 	// Checks that depend on which exposure a value belongs to, or compare groups
 	.superRefine((response, context) => {
 		for (const exposure of exposures) {
-			if (response.thresholds[exposure].unit !== exposureUnitByExposure[exposure]) {
+			const thresholds = response.thresholds[exposure];
+
+			if (thresholds !== null && thresholds.unit !== exposureUnitByExposure[exposure]) {
 				context.addIssue({
 					code: "custom",
 					message: `Expected the unit ${exposureUnitByExposure[exposure]}`,
@@ -270,6 +278,15 @@ export const ExposureKpiResponseSchema = z
 						code: "custom",
 						message: `Expected the unit ${kpiUnitByExposure[exposure]}`,
 						path: ["groups", index, "kpis", exposure, "unit"],
+					});
+				}
+
+				// A result can only be shown with the thresholds it was compared with
+				if (result.status === "ok" && response.thresholds[exposure] === null) {
+					context.addIssue({
+						code: "custom",
+						message: "A result needs its exposure's thresholds",
+						path: ["groups", index, "kpis", exposure],
 					});
 				}
 			}

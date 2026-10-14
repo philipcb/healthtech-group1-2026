@@ -328,7 +328,6 @@
       "limitValue": "Limit value: {{threshold}}",
       "values": {
         "minutesPerWorkday": "{{value}} min per workday",
-        "percentOfMeasurementPeriods": "{{value}} of periods",
         "percentOfWorkdays": "{{value}} of workdays"
       },
       "noData": "No key figures for the selected period.",
@@ -397,6 +396,7 @@
         "day": "One point per working day: the average of each person's points that day"
       },
       "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
+      "colorsNotice": "The line colors show where the group average lies compared to a single person's action value ({{action}}) and limit value ({{limit}}) for the selected exposure and, for dust, the selected fraction. They aren't a professional assessment of the group.",
       "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",
       "suppressed": "Hidden because too few people contributed",
       "unavailable": {

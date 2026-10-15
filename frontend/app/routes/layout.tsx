@@ -35,12 +35,13 @@ export default function Layout() {
 					  after <main> inside a min-height flex column, since sticky only pins once its
 					  normal flow position would otherwise sit below the target offset. This nav
 					  renders before <main>, so `fixed` is the correct tool here, not a shortcut.
+					  The nav itself is click-through so only the floating pill blocks taps on the page beneath.
 					*/}
-					<nav className="fixed inset-x-0 bottom-0 z-40 flex list-none items-center justify-center border-t bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
-						<NavTabs />
+					<nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex list-none items-center justify-center px-[clamp(0.75rem,4vw,1.5rem)] pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+						<NavTabs variant="floating" />
 					</nav>
 
-					<main className="mx-5 mt-5 mb-24 items-center justify-center lg:mb-5">
+					<main className="mx-5 mt-5 mb-[calc(6rem+env(safe-area-inset-bottom))] items-center justify-center lg:mb-5">
 						<Outlet />
 					</main>
 				</div>

@@ -1,13 +1,13 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { DustExposureLineChartCard } from "@/features/exposure-line-chart-card/dust-exposure-line-chart-card.tsx";
 import { ExposureChartView } from "@/features/exposure-line-chart-card/exposure-chart-view.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
-import { type DustField, defaultDustField, dustFields, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
+import { type DustField, defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
 import { useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
 export function DustExposureChartSection() {
-	const { t, i18n } = useTranslation();
+	const { i18n } = useTranslation();
 
 	const [dustField, setDustField] = useQueryState<DustField>(
 		"dustField",
@@ -22,15 +22,7 @@ export function DustExposureChartSection() {
 
 	return (
 		<div className="flex flex-1 flex-col gap-4">
-			<Tabs value={dustField} onValueChange={(value) => setDustField(value as DustField)}>
-				<TabsList>
-					{dustFields.map((field) => (
-						<TabsTrigger key={field} value={field}>
-							{t(($) => $.exposures.dustFields[field])}
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</Tabs>
+			<DustFieldTabs value={dustField} onValueChange={setDustField} />
 
 			<ExposureChartView
 				isLoading={isLoading}

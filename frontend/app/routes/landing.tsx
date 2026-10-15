@@ -20,6 +20,11 @@ export default function Page() {
 			return;
 		}
 
+		if (user.role === UserRole.OccupationalHealthService) {
+			navigate("/occupational-health-service/");
+			return;
+		}
+
 		setError(new Error(`Unknown user role "${user.role}"`));
 	}, [user, navigate]);
 

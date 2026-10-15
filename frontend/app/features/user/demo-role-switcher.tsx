@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { DEMO_FALLBACK_USERS } from "@/features/user/user-utils.ts";
 import { type User, UserRoleSchema } from "@/lib/dto/user.ts";
 import { cn, userRoleToString } from "@/lib/utils.ts";
 import type { ComponentProps, ReactNode } from "react";
@@ -21,7 +22,7 @@ export const DemoRoleSwitcher = ({ users, onSelect, activeRole, size, className,
 		<div className={cn("rounded-lg bg-yellow-100 p-2 dark:bg-amber-950", className)}>
 			<h3 className="font-semibold text-sm text-zinc-600 dark:text-zinc-300">{"DEMO"}</h3>
 
-			<div className="mt-2 flex gap-2.5">
+			<div className="mt-2 grid grid-cols-2 gap-2.5">
 				{users && users.length > 0 ? (
 					Object.keys(UserRoleSchema.enum).map((role) => {
 						const roleValue = role as User["role"];
@@ -38,7 +39,8 @@ export const DemoRoleSwitcher = ({ users, onSelect, activeRole, size, className,
 									isActive && "bg-amber-300 dark:bg-amber-800",
 								)}
 								onClick={() => {
-									const userWithRole = users.find((u) => u.role === roleValue);
+									const userWithRole =
+										users.find((u) => u.role === roleValue) ?? DEMO_FALLBACK_USERS[roleValue];
 									if (userWithRole) {
 										onSelect(userWithRole);
 									}

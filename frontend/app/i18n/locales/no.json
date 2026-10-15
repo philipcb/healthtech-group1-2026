@@ -256,7 +256,8 @@
   "user": {
     "role": {
       "operator": "Operatør",
-      "foreman": "Formann"
+      "foreman": "Formann",
+      "occupationalHealthService": "Bedriftshelsetjeneste"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },
@@ -264,6 +265,153 @@
     "currentRole": "Nåværende rolle:",
     "navigate": {
       "toRegister": "Gå til registreringssiden"
+    }
+  },
+  "occupationalHealthServiceDashboard": {
+    "title": "Bedriftshelsetjenesten",
+    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
+    "map": {
+      "title": "Områdekart",
+      "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
+      "buildings": "Bygg",
+      "selectedBuilding": "Valgt bygg",
+      "peopleWorkingHere": "{{count}} personer jobber her",
+      "occupations": "Yrkesgrupper",
+      "selectBuilding": "Velg et bygg på kartet for å se en anonym oversikt.",
+      "error": "Kunne ikke hente byggoversikten."
+    },
+    "period": {
+      "label": "Tidsperiode",
+      "month": "Måned",
+      "year": "År",
+      "selectYear": "Velg år"
+    },
+    "months": {
+      "january": "Januar",
+      "february": "Februar",
+      "march": "Mars",
+      "april": "April",
+      "may": "Mai",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "August",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Desember"
+    },
+    "filters": {
+      "hall": "Bygg",
+      "allHalls": "Alle bygg",
+      "title": "Filtre",
+      "description": "Valgene gjelder med en gang.",
+      "close": "Lukk",
+      "save": "Lagre"
+    },
+    "occupations": {
+      "welder": "Sveiser",
+      "technician": "Tekniker",
+      "electrician": "Elektriker",
+      "fitter": "Industrirørlegger"
+    },
+    "exposureLabel": "Eksponeringstype",
+    "pointsUnit": "poeng",
+    "wholeHall": "Hele bygget",
+    "metrics": {
+      "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
+      "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
+      "vibration": "Gjennomsnittlig daglig vibrasjonspoengsum per person i perioden"
+    },
+    "metricsShort": {
+      "dust": "PM1 TWA",
+      "noise": "LAeq",
+      "vibration": "Snitt per person og dag"
+    },
+    "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
+    "kpi": {
+      "actionValue": "Tiltaksverdi: {{threshold}}",
+      "limitValue": "Grenseverdi: {{threshold}}",
+      "values": {
+        "percentOfWorkingTime": "{{value}} av arbeidstiden",
+        "percentOfWorkdays": "{{value}} av arbeidsdagene"
+      },
+      "noData": "Ingen nøkkeltall for valgt periode.",
+      "suppressed": "Nøkkeltallet er skjult fordi for få personer bidro.",
+      "unavailable": "Nøkkeltallet er ikke tilgjengelig ennå.",
+      "error": "Kunne ikke hente nøkkeltallene."
+    },
+    "overview": {
+      "heading": "Grupper",
+      "hallsHeading": "Bygg",
+      "exposureFilter": {
+        "label": "Vis eksponering",
+        "all": "Alle"
+      },
+      "level": {
+        "label": "Visning",
+        "occupation": "Per yrkesgruppe",
+        "hall": "Hele bygget"
+      },
+      "belowActionValue": "Under tiltaksverdi",
+      "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
+      "info": {
+        "trigger": "Oversiktsguide",
+        "title": "Oversiktsguide",
+        "description": "Hva gruppeverdiene betyr, og hva stolpene og fargene viser.",
+        "groupData": {
+          "title": "Gruppedata",
+          "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
+        },
+        "scale": {
+          "title": "Stolpene og fargene",
+          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
+        },
+        "thresholds": {
+          "title": "Tiltaks- og grenseverdier"
+        }
+      },
+      "noValue": "Ingen verdi",
+      "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
+      "noGroups": {
+        "title": "Ingen grupper å vise",
+        "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
+      },
+      "noHalls": {
+        "title": "Ingen bygg å vise",
+        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
+      },
+      "noData": "Ingen data for valgt periode.",
+      "error": "Kunne ikke hente gruppene.",
+      "hallsError": "Kunne ikke hente byggene."
+    },
+    "group": {
+      "back": "Tilbake til oversikten",
+      "eyebrow": "Gruppe",
+      "hallEyebrow": "Bygg",
+      "fallbackTitle": "Gruppe",
+      "dustFieldLabel": "Støvfraksjon",
+      "periodAverage": "Snitt i perioden",
+      "noPeriodAverage": "Ingen verdi for perioden",
+      "trendTitle": "Utvikling i perioden",
+      "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
+      "granularity": {
+        "day": "Ett punkt per arbeidsdag"
+      },
+      "vibrationGranularity": {
+        "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen"
+      },
+      "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
+      "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
+      "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
+      "suppressed": "Skjult fordi for få personer bidro",
+      "unavailable": {
+        "noSuchGroup": "Gruppen finnes ikke.",
+        "tooFewPeople": "Gruppen har for få personer til at data kan vises."
+      },
+      "noData": "Ingen data for valgt periode.",
+      "noDustFieldData": "Ingen {{dustField}}-data for valgt periode.",
+      "allSuppressed": "Alle verdier i perioden er skjult fordi for få personer bidro.",
+      "error": "Kunne ikke hente gruppen."
     }
   },
   "select": {

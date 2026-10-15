@@ -5,6 +5,7 @@ export default [
 	layout("routes/layout.tsx", [
 		index("routes/landing.tsx"),
 		route("/occupational-health-service/", "routes/occupational-health-service/overview.tsx"),
+		route("/occupational-health-service/map", "routes/occupational-health-service/map.tsx"),
 		route("/occupational-health-service/groups/:groupId", "routes/occupational-health-service/group.tsx"),
 		route("/foreman/", "routes/foreman/overview.tsx"),
 		layout("routes/operator/exposures/exposure-layout.tsx", [

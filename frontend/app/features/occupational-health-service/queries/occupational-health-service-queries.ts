@@ -6,12 +6,14 @@ import {
 	type GroupTrendRequest,
 	GroupTrendResponseSchema,
 	HallSummaryResponseSchema,
+	HallWorkforceResponseSchema,
 } from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import {
 	fetchMockExposureKpis,
 	fetchMockGroupSummaries,
 	fetchMockGroupTrend,
 	fetchMockHallSummaries,
+	fetchMockHallWorkforce,
 } from "@/features/occupational-health-service/queries/occupational-health-service-mock-data.ts";
 import { queryOptions } from "@tanstack/react-query";
 import { minutesToMilliseconds } from "date-fns";
@@ -35,6 +37,15 @@ export function hallSummariesQueryOptions(request: GroupSummaryRequest) {
 	return queryOptions({
 		queryKey: ["occupationalHealthService", "hallSummaries", request],
 		queryFn: async () => HallSummaryResponseSchema.parseAsync(await fetchMockHallSummaries(request)),
+		staleTime: minutesToMilliseconds(10),
+	});
+}
+
+/** Demo-only anonymous building counts for the site map. */
+export function hallWorkforceQueryOptions(site: string) {
+	return queryOptions({
+		queryKey: ["occupationalHealthService", "hallWorkforce", site],
+		queryFn: async () => HallWorkforceResponseSchema.parseAsync(await fetchMockHallWorkforce(site)),
 		staleTime: minutesToMilliseconds(10),
 	});
 }

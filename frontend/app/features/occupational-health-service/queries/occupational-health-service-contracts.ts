@@ -79,6 +79,20 @@ export const GroupSummarySchema = z.object({
 
 export type GroupSummary = z.infer<typeof GroupSummarySchema>;
 
+/** Site-map aggregates. Occupations are listed only when their group meets the privacy threshold. */
+export const HallWorkforceSchema = z.object({
+	hall: z.string(),
+	peopleCount: z.number().int().min(5),
+	occupations: z.string().array(),
+});
+
+export const HallWorkforceResponseSchema = z.object({
+	halls: HallWorkforceSchema.array(),
+});
+
+export type HallWorkforce = z.infer<typeof HallWorkforceSchema>;
+export type HallWorkforceResponse = z.infer<typeof HallWorkforceResponseSchema>;
+
 export const GroupSummaryResponseSchema = z.object({
 	units: ExposureUnitsSchema,
 	/** Groups with too few people are left out by the backend, not hidden by the frontend */

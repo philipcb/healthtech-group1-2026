@@ -272,6 +272,16 @@
   "occupationalHealthServiceDashboard": {
     "title": "Bedriftshelsetjenesten",
     "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
+    "map": {
+      "title": "Områdekart",
+      "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
+      "buildings": "Bygg",
+      "selectedBuilding": "Valgt bygg",
+      "peopleWorkingHere": "{{count}} personer jobber her",
+      "occupations": "Yrkesgrupper",
+      "selectBuilding": "Velg et bygg på kartet for å se en anonym oversikt.",
+      "error": "Kunne ikke hente byggoversikten."
+    },
     "period": {
       "label": "Tidsperiode",
       "month": "Måned",

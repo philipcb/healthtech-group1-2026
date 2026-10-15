@@ -275,6 +275,16 @@
   "occupationalHealthServiceDashboard": {
     "title": "Occupational Health Service",
     "description": "An anonymized overview of workplace exposure, per building and occupation.",
+    "map": {
+      "title": "Site map",
+      "description": "An anonymized overview of occupation groups and people per building.",
+      "buildings": "Buildings",
+      "selectedBuilding": "Selected building",
+      "peopleWorkingHere": "{{count}} people work here",
+      "occupations": "Occupation groups",
+      "selectBuilding": "Select a building on the map to see an anonymous overview.",
+      "error": "Could not load building overview."
+    },
     "period": {
       "label": "Time period",
       "month": "Month",

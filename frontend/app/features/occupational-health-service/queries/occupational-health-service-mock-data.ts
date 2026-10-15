@@ -10,6 +10,7 @@ import {
 	type GroupTrendResponse,
 	type HallSummary,
 	type HallSummaryResponse,
+	type HallWorkforceResponse,
 	kpiUnitByExposure,
 } from "@/features/occupational-health-service/queries/occupational-health-service-contracts.ts";
 import { OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE } from "@/features/user/user-utils.ts";
@@ -188,6 +189,28 @@ export async function fetchMockGroupSummaries(request: GroupSummaryRequest): Pro
 		}));
 
 	return { units: exposureUnitByExposure, groups };
+}
+
+/** Demo-only map totals. The backend must enforce the same minimum-group privacy rule before this is replaced. */
+export async function fetchMockHallWorkforce(site: string): Promise<HallWorkforceResponse> {
+	const halls = mockHalls
+		.filter((hall) => hall.site === site)
+		.map((hall) => {
+			const groups = mockGroups.filter((group) => group.site === site && group.hall === hall.hall);
+
+			return {
+				hall: hall.hall,
+				peopleCount: groups.reduce((total, group) => total + group.peopleCount, 0),
+				occupations: [
+					...new Set(
+						groups.filter((group) => group.peopleCount >= MIN_GROUP_SIZE).map((group) => group.occupation),
+					),
+				],
+			};
+		})
+		.filter((hall) => hall.peopleCount >= MIN_GROUP_SIZE);
+
+	return { halls };
 }
 
 /** Demo only, see `HallSummary` */

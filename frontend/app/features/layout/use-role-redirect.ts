@@ -16,13 +16,18 @@ export function useRoleRedirect() {
 
 		const isOperatorRoute = pathname.startsWith("/operator");
 		const isForemanRoute = pathname.startsWith("/foreman");
+		const isMedicalTeamRoute = pathname.startsWith("/medical-team");
 
-		if (user.role === "operator" && isForemanRoute) {
+		if (user.role === "operator" && (isForemanRoute || isMedicalTeamRoute)) {
 			navigate("/operator", { replace: true });
 		}
 
-		if (user.role === "foreman" && isOperatorRoute) {
+		if (user.role === "foreman" && (isOperatorRoute || isMedicalTeamRoute)) {
 			navigate("/foreman", { replace: true });
+		}
+
+		if (user.role === "medicalTeam" && (isOperatorRoute || isForemanRoute)) {
+			navigate("/medical-team", { replace: true });
 		}
 	}, [user?.role, location.pathname, navigate]);
 }

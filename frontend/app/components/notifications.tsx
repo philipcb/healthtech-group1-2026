@@ -36,6 +36,13 @@ const notifications: Array<{
 	},
 ];
 
+// Written out in full so Tailwind generates these classes, it can't see classes built at runtime like `text-${level}`
+const dangerLevelTextClass: Record<DangerLevel, string> = {
+	safe: "text-safe",
+	warning: "text-warning",
+	danger: "text-danger",
+};
+
 export function Notifications({ onParentClose }: { onParentClose: () => void }) {
 	const { t } = useTranslation();
 	const { user } = useUser();
@@ -69,7 +76,7 @@ export function Notifications({ onParentClose }: { onParentClose: () => void }) 
 
 							<div className="flex flex-1 flex-col gap-0.5">
 								<span className="font-medium text-sm">{t(($) => $.exposures[exposure])}</span>
-								<span className={cn("font-semibold text-xs", `text-${dangerLevel}`)}>
+								<span className={cn("font-semibold text-xs", dangerLevelTextClass[dangerLevel])}>
 									{t(($) => $.dangerLevels[dangerLevel])}
 								</span>
 							</div>

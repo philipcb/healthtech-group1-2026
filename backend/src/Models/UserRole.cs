@@ -10,4 +10,14 @@ public enum UserRole
 	/// A foreman is a supervisor.
 	/// </summary>
 	Foreman = 10,
+
+	/// <summary>
+	/// Occupational Health Service, overviewing a yard
+	/// </summary>
+	OHS = 20,
+
+	/// <summary>
+	/// Member of the upper management team, overviewing multiple yard
+	/// </summary>
+	Manager = 30,
 }

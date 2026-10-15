@@ -118,6 +118,10 @@ namespace backend.Migrations.AggregateDb
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<string>("LocationName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<string>("LocationQualifier")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");

@@ -26,6 +26,7 @@ public class AggregateDbContext : DbContext
 			entity.HasKey(sample => sample.Id);
 			// entity.Property(sample => sample.SampleType).HasConversion<string>();
 			entity.Property(sample => sample.LocationQualifier).HasMaxLength(128);
+			entity.Property(sample => sample.LocationName).HasMaxLength(128);
 			// entity.Property(sample => sample.SampleQualifier).HasMaxLength(128).IsRequired(); 
 			entity.Property(sample => sample.JobQualifier).HasMaxLength(128);
 		});

@@ -10,22 +10,20 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { Progress } from "@/components/ui/progress.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import {
-	PdfChartRenderer,
-	type PdfExportProgress,
-	type PdfPageSpec,
-	type PdfView,
-} from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import { PdfChartRenderer } from "@/features/pdf-export/pdf-chart-renderer.tsx";
+import type { PdfExportProgress, PdfPageSpec, PdfView } from "@/features/pdf-export/pdf-page-spec.ts";
+import { MonthRangePicker } from "@/features/pdf-export/month-range-picker.tsx";
+import { usePdfTitles } from "@/features/pdf-export/use-pdf-titles.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { DayViewIcon, MonthViewIcon, WeekViewIcon } from "@/features/views/views.ts";
 import type { PdfCalendarLabels } from "@/hooks/pdf-calendar.ts";
 import type { PdfLabels } from "@/hooks/pdf-red-day-table.ts";
-import type { PdfTocEntry } from "@/hooks/pdf-table-of-contents.ts";
 import { useExportPDF } from "@/hooks/use-export-pdf.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { today } from "@/lib/date.ts";
 import { formatMinutesAsDuration, formatMinutesAsHoursAndMinutes } from "@/lib/duration.ts";
-import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { exposureUnitByExposure } from "@/lib/exposures.ts";
+import type { PdfPeriod } from "@/lib/pdf/period.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { formatExposureValue, userRoleToString } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -33,16 +31,14 @@ import {
 	addDays,
 	addMonths,
 	addWeeks,
-	addYears,
 	eachDayOfInterval,
-	getYear,
 	isToday,
 	startOfMonth,
 	startOfWeek,
 	startOfYear,
 	subMilliseconds,
 } from "date-fns";
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { CalendarIcon, CalendarRangeIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -84,6 +80,12 @@ function getProgressPercent(progress: PdfExportProgress): number {
  */
 const waitForPaint = () => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
 
+/** The period the dialog opens with: this year so far. */
+const getDefaultPeriod = (): PdfPeriod => ({
+	startMonth: startOfYear(today(), { in: TIMEZONE }),
+	endMonth: startOfMonth(today(), { in: TIMEZONE }),
+});
+
 /**
  * Props for the PDF Export Dialog
  * @param open - Controls whether the dialog is visible
@@ -103,17 +105,29 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	const { t, i18n } = useTranslation(); // For translating UI text (Norwegian/English)
 	const { user } = useUser(); // Current logged-in user (used in PDF filename)
 	const { exportPagesToPDF } = useExportPDF(); // Function to build the PDF from page specs
+	const buildTitles = usePdfTitles(); // Page titles and TOC, built from the page specs
 
 	// STATE: Local date/view selection for the dialog
 	// NOTE: These are independent from the global date/view state that controls the main page.
 	// The dialog has its own date picker so users can export a different date than what's
 	// currently shown on screen.
-	const [localView, setLocalView] = useState<PdfView>("day"); // "day" | "week" | "month" | "year"
+	const [localView, setLocalView] = useState<PdfView>("day"); // "day" | "week" | "month" | "period"
 	const [localDate, setLocalDate] = useState<TZDate>(today()); // The selected date in dialog
 	const [isExporting, setIsExporting] = useState(false); // Loading state during PDF generation
 	const [shouldRenderCharts, setShouldRenderCharts] = useState(false); // Only render charts when exporting
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [progress, setProgress] = useState<PdfExportProgress | null>(null); // Drives the progress bar
+
+	// The months the period export covers.
+	const [localPeriod, setLocalPeriod] = useState<PdfPeriod>(getDefaultPeriod);
+
+	// This component stays mounted while the dialog is closed, so reset the period
+	// each time it opens - during render, so the old period never flashes on screen.
+	const [wasOpen, setWasOpen] = useState(open);
+	if (open !== wasOpen) {
+		setWasOpen(open);
+		if (open) setLocalPeriod(getDefaultPeriod());
+	}
 
 	// Helper function: Calculate date range from selected view/date
 	/**
@@ -156,13 +170,6 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			const start = startOfWeek(localDate, { weekStartsOn: 1, in: TIMEZONE });
 			const previous = subMilliseconds(start, 1); // Last millisecond of previous week
 			const next = addWeeks(start, 1, { in: TIMEZONE }); // First day of next week
-			return { previous, next };
-		}
-
-		if (localView === "year") {
-			const start = startOfYear(localDate, { in: TIMEZONE });
-			const previous = subMilliseconds(start, 1);
-			const next = addYears(start, 1, { in: TIMEZONE });
 			return { previous, next };
 		}
 
@@ -275,88 +282,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			return;
 		}
 
-		// Generate a title for each chart page in the PDF
-		// Calculate exposure types
-		const exposuresToRender = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
+		// Titles and TOC entries, read from the pages in the order they'll be drawn.
+		const { titles, tocEntries } = buildTitles(pages, localView, user.name);
 
-		// Get date range for titles and filename
+		// Date range for the filename
 		const { start, end } = getRangeFromSelection();
-
-		// Titles follow the page order reported by PdfChartRenderer.
-		const titles: Array<string> = [];
-		// Year exports only. Each entry points at a position in `pages` - at any
-		// point below, titles.length is the position the next page will have.
-		const tocEntries: Array<PdfTocEntry> = [];
-
-		for (const exposure of exposuresToRender) {
-			const exposureName = t(($) => $.exposures[exposure as "dust" | "noise" | "vibration"]);
-
-			// For day view: use single date
-			// For week/month view: use date range
-			if (localView === "day") {
-				const dateText = localDate.toLocaleDateString(i18n.language, {
-					day: "numeric",
-					month: "long",
-					year: "numeric",
-				});
-				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title);
-			} else if (localView === "year") {
-				tocEntries.push({ label: exposureName, level: 0, pageIndex: titles.length });
-				const yearStart = startOfYear(localDate, { in: TIMEZONE });
-				for (let i = 0; i < 12; i++) {
-					const monthDate = addMonths(yearStart, i);
-					const monthText = monthDate.toLocaleDateString(i18n.language, { month: "long", year: "numeric" });
-					const heading = `${exposureName} - ${user.name} - ${monthText}`;
-					// Keeps the year, since a report may later span several. Norwegian month
-					// names are lowercase, so capitalise the first letter for the TOC line.
-					tocEntries.push({
-						label: monthText.charAt(0).toLocaleUpperCase(i18n.language) + monthText.slice(1),
-						level: 1,
-						pageIndex: titles.length,
-					});
-					// Each month contributes two pages: the calendar, then its red-day table.
-					titles.push(heading, `${heading} - ${t(($) => $.pdf.redDays)}`);
-				}
-			} else {
-				const dateText = `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })} - ${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
-				const title = `${exposureName} - ${user.name} - ${dateText}`;
-				titles.push(title);
-			}
-		}
-
-		// Day reports are appended after every page above, one title per report -
-		// read from the reports themselves, since their count is only known now.
-		// Also note where each exposure's reports start and end, for the TOC.
-		const dayReportRanges = new Map<Exposure, { first: number; last: number }>();
-		pages.forEach((page, index) => {
-			if (page.kind !== "day-report") return;
-			const dateText = page.date.toLocaleDateString(i18n.language, {
-				day: "numeric",
-				month: "long",
-				year: "numeric",
-			});
-			titles.push(
-				`${t(($) => $.pdf.dayReport)} - ${t(($) => $.exposures[page.exposure])} - ${user.name} - ${dateText}`,
-			);
-			dayReportRanges.set(page.exposure, {
-				first: dayReportRanges.get(page.exposure)?.first ?? index,
-				last: index,
-			});
-		});
-
-		if (dayReportRanges.size > 0) {
-			const [firstRange] = dayReportRanges.values();
-			tocEntries.push({ label: t(($) => $.pdf.dayReports), level: 0, pageIndex: firstRange.first });
-			for (const [exposure, range] of dayReportRanges) {
-				tocEntries.push({
-					label: t(($) => $.exposures[exposure]),
-					level: 1,
-					pageIndex: range.first,
-					lastPageIndex: range.last,
-				});
-			}
-		}
 
 		// Generate filename with date range
 		const fileNameDate =
@@ -366,11 +296,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 						month: "long",
 						year: "numeric",
 					})
-				: localView === "year"
-					? `${getYear(localDate)}`
+				: localView === "period"
+					? `${localPeriod.startMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}-${localPeriod.endMonth.toLocaleDateString(i18n.language, { month: "short", year: "numeric" })}`
 					: `${start.toLocaleDateString(i18n.language, { day: "numeric", month: "short" })}-${end.toLocaleDateString(i18n.language, { day: "numeric", month: "short", year: "numeric" })}`;
 
-		const fileName = `${fileNameDate}-${user.name}-${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
+		const fileName = `${fileNameDate}_${user.name}_${exposureType === "all" ? "Exposure-Overview" : t(($) => $.exposures[exposureType])}`;
 		const coverPageData = {
 			name: user.name,
 			locationLabel: t(($) => $.profile.location),
@@ -400,9 +330,20 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			note: t(($) => $.pdf.note),
 			noRedDays: t(($) => $.pdf.noRedDays),
 			noData: t(($) => $.common.noDataLive),
+			periodSummary: {
+				exposure: t(($) => $.pdf.summaryExposure),
+				totalRedDays: t(($) => $.pdf.summaryRedDays),
+				worstMonth: t(($) => $.pdf.summaryWorstMonth),
+				registeredDays: t(($) => $.pdf.summaryRegisteredDays),
+				averageExposure: t(($) => $.pdf.summaryAverage),
+			},
 			formatDay: (date) => date.toLocaleDateString(i18n.language, { day: "numeric", month: "short" }),
 			formatValue: (exposure, value) =>
 				`${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,
+			formatAverage: (exposure, value) =>
+				value == null
+					? "-"
+					: `${formatExposureValue(value, exposureUnitByExposure[exposure], 2, { mg: 3 })} ${t(($) => $.exposures.units[exposureUnitByExposure[exposure]])}`,
 			formatDuration: (minutes) => formatMinutesAsDuration(minutes, dateFnsLocale),
 			formatHoursAndMinutes: (minutes) => formatMinutesAsHoursAndMinutes(minutes, dateFnsLocale),
 			formatHour: (hour) =>
@@ -428,7 +369,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			titles,
 			coverPageData,
 			labels,
-			localView === "year" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
+			localView === "period" ? { title: t(($) => $.pdf.tableOfContents), entries: tocEntries } : null,
 		);
 
 		resetExport();
@@ -510,61 +451,58 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								</div>
 							</ToggleGroupItem>
 
-							<ToggleGroupItem value="year" aria-label={t(($) => $.views.year)}>
+							<ToggleGroupItem value="period" aria-label={t(($) => $.pdf.period)}>
 								<div className="flex items-center gap-2">
-									<CalendarIcon className="size-4" />
-									<p className="text-sm">{t(($) => $.views.year)}</p>
+									<CalendarRangeIcon className="size-4" />
+									<p className="text-sm">{t(($) => $.pdf.period)}</p>
 								</div>
 							</ToggleGroupItem>
 						</ToggleGroup>
 					</div>
 
-					{/* Navigation buttons (Previous / Today / Next) */}
-					<div className="grid grid-cols-3 items-center gap-2">
-						<Button
-							title={t(($) => $.viewPicker.previous)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(previous)}
-						>
-							<ChevronLeftIcon className="size-3.5 shrink-0" />
-							<p className="truncate text-xs">{t(($) => $.viewPicker.previous)}</p>
-						</Button>
+					{/* Navigation buttons (Previous / Today / Next) - the period picker has its own year arrows */}
+					{localView !== "period" && (
+						<div className="grid grid-cols-3 items-center gap-2">
+							<Button
+								title={t(($) => $.viewPicker.previous)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(previous)}
+							>
+								<ChevronLeftIcon className="size-3.5 shrink-0" />
+								<p className="truncate text-xs">{t(($) => $.viewPicker.previous)}</p>
+							</Button>
 
-						<Button
-							title={t(($) => $.viewPicker.today)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(today())}
-							disabled={isTodayDate}
-						>
-							<CalendarIcon className="size-3.5 shrink-0" />
-							<p className="truncate text-xs">{t(($) => $.viewPicker.today)}</p>
-						</Button>
+							<Button
+								title={t(($) => $.viewPicker.today)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(today())}
+								disabled={isTodayDate}
+							>
+								<CalendarIcon className="size-3.5 shrink-0" />
+								<p className="truncate text-xs">{t(($) => $.viewPicker.today)}</p>
+							</Button>
 
-						<Button
-							title={t(($) => $.viewPicker.next)}
-							size="xs"
-							variant="ghost"
-							className="px-1!"
-							onClick={() => setLocalDate(next)}
-						>
-							<p className="truncate text-xs">{t(($) => $.viewPicker.next)}</p>
-							<ChevronRightIcon className="size-3.5 shrink-0" />
-						</Button>
-					</div>
+							<Button
+								title={t(($) => $.viewPicker.next)}
+								size="xs"
+								variant="ghost"
+								className="px-1!"
+								onClick={() => setLocalDate(next)}
+							>
+								<p className="truncate text-xs">{t(($) => $.viewPicker.next)}</p>
+								<ChevronRightIcon className="size-3.5 shrink-0" />
+							</Button>
+						</div>
+					)}
 
-					{/* Calendar (reuses DatePicker from right sidebar) */}
+					{/* Calendar (reuses DatePicker from right sidebar), or the month grid for a period */}
 					<div className="flex justify-center">
-						{localView === "year" ? (
-							<div className="flex flex-col items-center gap-1 py-8">
-								<span className="font-semibold text-4xl tabular-nums">{getYear(localDate)}</span>
-								<p className="text-muted-foreground text-sm">
-									{t(($) => $.layout.selectedYear, { year: getYear(localDate) })}
-								</p>
-							</div>
+						{localView === "period" ? (
+							<MonthRangePicker value={localPeriod} onChange={setLocalPeriod} />
 						) : (
 							<DatePicker
 								mode={localView}
@@ -579,8 +517,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 				{exportError && <p className="text-destructive text-sm">{exportError}</p>}
 
-				{/* Progress, year exports only - the only ones long enough to need it */}
-				{isExporting && localView === "year" && progress && (
+				{/* Progress, period exports only - the only ones long enough to need it */}
+				{isExporting && localView === "period" && progress && (
 					<div className="flex flex-col gap-1.5">
 						<Progress value={getProgressPercent(progress)} />
 						<p className="text-muted-foreground text-xs">{progressLabel}</p>
@@ -603,10 +541,11 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 			{/* This prevents lag when switching between day/week/month views */}
 			{shouldRenderCharts && (
 				<PdfChartRenderer
-					key={`${exposureType}-${localView}-${localDate.getTime()}`}
+					key={`${exposureType}-${localView}-${localDate.getTime()}-${localPeriod.startMonth.getTime()}-${localPeriod.endMonth.getTime()}`}
 					exposureType={exposureType}
 					view={localView}
 					date={localDate}
+					period={localPeriod}
 					userId={user.id}
 					onPagesReady={handlePagesReady}
 					onProgress={handleProgress}

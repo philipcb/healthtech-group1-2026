@@ -23,7 +23,11 @@ SELECT setseed(0.424242);
 \set HAKON_ID 'dd23801e-f3ff-4b0c-9692-56e7505e9c31'
 \set NORA_ID 'ee23801e-f3ff-4b0c-9692-56e7505e9c31'
 \set EGON_ID 'ff23801e-f3ff-4b0c-9692-56e7505e9c31' 
-
+\set USER16_ID '10000000-0000-0000-0000-000000000016'
+\set USER17_ID '10000000-0000-0000-0000-000000000017'
+\set USER18_ID '10000000-0000-0000-0000-000000000018'
+\set USER19_ID '10000000-0000-0000-0000-000000000019'
+\set USER22_ID '10000000-0000-0000-0000-000000000022'
 \set DEFAULT_PASSWORD_HASH '$2a$11$QXVHkr6TQC8gJvh5P4GFzOYc.HyZA3FxDC3/BghAM3hODQVAoWwwi' -- hashed 'password123'
 
 
@@ -68,7 +72,12 @@ FROM (VALUES
     (:'MAGNUS_ID'::uuid),
     (:'HAKON_ID'::uuid),
     (:'NORA_ID'::uuid),
-    (:'EGON_ID'::uuid)
+    (:'EGON_ID'::uuid),
+    (:'USER16_ID'::uuid),
+    (:'USER17_ID'::uuid),
+    (:'USER18_ID'::uuid),
+    (:'USER19_ID'::uuid),
+    (:'USER22_ID'::uuid)
 ) AS t(u);
 
 

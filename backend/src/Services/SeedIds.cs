@@ -16,6 +16,17 @@ public static class SeedIds
 	public static readonly Guid HakonId = Guid.Parse("dd23801e-f3ff-4b0c-9692-56e7505e9c31");
 	public static readonly Guid NoraId = Guid.Parse("ee23801e-f3ff-4b0c-9692-56e7505e9c31");
 	public static readonly Guid EgonId = Guid.Parse("ff23801e-f3ff-4b0c-9692-56e7505e9c31");
+
+
+
+	public static readonly Guid User16Id = Guid.Parse("10000000-0000-0000-0000-000000000016");
+	public static readonly Guid User17Id = Guid.Parse("10000000-0000-0000-0000-000000000017");
+	public static readonly Guid User18Id = Guid.Parse("10000000-0000-0000-0000-000000000018");
+	public static readonly Guid User19Id = Guid.Parse("10000000-0000-0000-0000-000000000019");
+	public static readonly Guid User20Id = Guid.Parse("10000000-0000-0000-0000-000000000020");
+	public static readonly Guid User21Id = Guid.Parse("10000000-0000-0000-0000-000000000021");
+	public static readonly Guid User22Id = Guid.Parse("10000000-0000-0000-0000-000000000022");
+
 	public static readonly Guid VerdalLocationId = Guid.Parse(
 		"11111111-1111-1111-1111-111111111111"
 	);

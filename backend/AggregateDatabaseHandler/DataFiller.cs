@@ -143,40 +143,15 @@ public class DataFiller
 			JobQualifier
 		);
 
-
-
 		if (!sampleUsers.IsNullOrEmpty())
 		{	
-			if (LocationQualifier == null)
-			{
-				int sumOfUserUnderThreshold = 0;
-				List<string> jobUnderThreshold = new();
-				foreach (string? Job in allJobs)
-				{
-					var userCount = sampleUsers!.Count(u => u.JobDescription != null && u.JobDescription.Equals(Job));
-					if (userCount < 5)
-					{
-						sumOfUserUnderThreshold += userCount;
-						jobUnderThreshold.Add(Job!);
-					}
-				}
-			}
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
 			Sample newSample = new Sample
 			{
 				Id = Guid.NewGuid(),
 				SampleCount = sampleUsers!.Count,
 				Site = Site,
 				LocationQualifier = LocationQualifier,
+				LocationName = LocationQualifier != null ? allLocations.FirstOrDefault(l => l.Id == Guid.Parse(LocationQualifier))?.Building : null,
 				JobQualifier = JobQualifier,
 			};
 			return newSample;
@@ -250,5 +225,4 @@ public class DataFiller
 
 		await _insertHandler.addSamples(allSamples);
 	}
-
 }

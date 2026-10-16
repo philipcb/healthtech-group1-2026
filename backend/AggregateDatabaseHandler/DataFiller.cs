@@ -135,15 +135,42 @@ public class DataFiller
 
 
 
-	public async Task<Sample?> createSample(String Site , String? LocationQualifier, String? JobQualifier)
+	public async Task<Sample?> createSample(String Site , String? LocationQualifier, String? JobQualifier, List<Location> allLocations, List<string?> allJobs)
 	{
 		List<User>? sampleUsers = await _fetchHandler.getUserBySiteAndQualifiers(
 			Site,
 			LocationQualifier,
 			JobQualifier
 		);
+
+
+
 		if (!sampleUsers.IsNullOrEmpty())
-		{
+		{	
+			if (LocationQualifier == null)
+			{
+				int sumOfUserUnderThreshold = 0;
+				List<string> jobUnderThreshold = new();
+				foreach (string? Job in allJobs)
+				{
+					var userCount = sampleUsers!.Count(u => u.JobDescription != null && u.JobDescription.Equals(Job));
+					if (userCount < 5)
+					{
+						sumOfUserUnderThreshold += userCount;
+						jobUnderThreshold.Add(Job!);
+					}
+				}
+			}
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 			Sample newSample = new Sample
 			{
 				Id = Guid.NewGuid(),
@@ -159,22 +186,24 @@ public class DataFiller
 
 	const String notSpecifiedKey = "NotSpecified";
 
+	//Note : right now, this method doesn't remove sample if users have been deleted, but in a final product, it should probably
+	//or at least make the sample depend on time, so you could keep previous valid value while not having currently a particular sample that is valid
 	public async Task updateSamples()
 	{
 		List<Location> allLocations = (await _fetchHandler.getAllLocations()).Distinct().ToList();
-		List<String> allSites = allLocations.Select(l => l.Site).Distinct().ToList();
-		List<String?> allJobs = (await _fetchHandler.getAllJobs()).Distinct().ToList();
+		List<string> allSites = allLocations.Select(l => l.Site).Distinct().ToList();
+		List<string?> allJobs = (await _fetchHandler.getAllJobs()).Distinct().ToList();
 		
 		//It is possible to select no jobs
 		allJobs.Add(null);
 		allJobs.Distinct();
 		List<Sample> currentSamples = await _aggregatedContext.Samples.ToListAsync();
-		Dictionary<String, HashSet<String>> existingSamples = new Dictionary<String, HashSet<string>>();
+		Dictionary<string, HashSet<string>> existingSamples = new Dictionary<String, HashSet<string>>();
 		//fill dico in a way to be able to detect every combinaison of jobs and locations already in db
 		foreach (Sample s in currentSamples)
 		{
-			String locationKey = s.LocationQualifier ?? notSpecifiedKey;
-			String jobKey = s.JobQualifier ?? notSpecifiedKey;
+			string locationKey = s.LocationQualifier ?? notSpecifiedKey;
+			string jobKey = s.JobQualifier ?? notSpecifiedKey;
 			if (!existingSamples.ContainsKey(locationKey))
 			{
 				existingSamples.Add(locationKey, new HashSet<string>());
@@ -185,32 +214,32 @@ public class DataFiller
 		List<Sample> allSamples = [];
 		foreach (Location location in allLocations)
 		{
-			foreach (String? job in allJobs)
+			foreach (string? job in allJobs)
 			{
-				String locationKey = location.Id.ToString();
-				String? JobKey = job ?? notSpecifiedKey;
+				string locationKey = location.Id.ToString();
+				string? JobKey = job ?? notSpecifiedKey;
 				//If this combinaison of location and job isn't already in db
 				if (!existingSamples.ContainsKey(locationKey) || (existingSamples.ContainsKey(locationKey) && !existingSamples[locationKey].Contains(JobKey)))
 				{
-					Sample? potentialSample = await createSample(location.Site, locationKey, job);
+					Sample? potentialSample = await createSample(location.Site, locationKey, job, allLocations, allJobs);
 					if (potentialSample != null)
 					{
 						allSamples.Add(potentialSample);
-					}				
+					}
 				}
 			}
 		}
 		//If location isn't specified, we still have samples for jobs on different site
-		foreach (String site in allSites)
+		foreach (string site in allSites)
 		{
-			foreach (String? job in allJobs)
+			foreach (string? job in allJobs)
 			{
-				String locationKey = notSpecifiedKey;
-				String? JobKey = job ?? notSpecifiedKey;
+				string locationKey = notSpecifiedKey;
+				string? JobKey = job ?? notSpecifiedKey;
 				//If this combinaison of location and job isn't already in db
 				if (!existingSamples.ContainsKey(locationKey) || (existingSamples.ContainsKey(locationKey) && !existingSamples[locationKey].Contains(JobKey)))
 				{
-					Sample? potentialSample = await createSample(site, null, job);
+					Sample? potentialSample = await createSample(site, null, job, allLocations, allJobs);
 					if (potentialSample != null)
 					{
 						allSamples.Add(potentialSample);

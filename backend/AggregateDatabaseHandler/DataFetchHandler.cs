@@ -26,16 +26,65 @@ public class DataFetchHandler(AppDbContext _context)
 	{
 		List<User> users = await _context.User.Where(u => u.Role == UserRole.Operator && u.Location != null && u.Location.Site.Equals(site)).ToListAsync();
 		
-		
-		if (locationQualifier != null)
+		if (locationQualifier != null) //If location isn't null, we simply filter with it 
 		{
 			users = users.Where(u => u.Location!.Id == Guid.Parse(locationQualifier)).ToList();
 		}
+
 		if (jobQualifier != null)
 		{	
 			users = users.Where(u => u.JobDescription != null && u.JobDescription.Equals(jobQualifier)).ToList();
-		}			
+		}
 
+		//When location is null, we have to be careful to not include in the selection of users those who come from subset of size < 5
+		if (locationQualifier == null)
+			{
+				List<string?> allJobs = await getAllJobs();
+						
+				int sumOfUserUnderThreshold = 0;
+				List<string> jobUnderThreshold = new();
+
+				foreach (string? Job in allJobs)
+				{
+					var userCount = users!.Count(u => u.JobDescription != null && u.JobDescription.Equals(Job));
+					if (userCount < 5)
+					{
+						sumOfUserUnderThreshold += userCount;
+						jobUnderThreshold.Add(Job!);
+					}
+				}
+				if (sumOfUserUnderThreshold < 5)
+				{
+					users = users.Where(u => !jobUnderThreshold.Contains(u.JobDescription)).ToList();
+				}
+			}
+		
+
+		//Same as location, if no jobqualifier is specified, then we take all users from the location, but exclude
+		//user from the building and whom job has less than 5 people if the sum of them is < 5 
+		if (jobQualifier == null)
+		{
+			List<Location> allLocation = await getAllLocations();
+						
+			int sumOfUserUnderThreshold = 0;
+			List<Guid> locationIdUnderThreshold = new();
+
+			foreach (Location? loc in allLocation)
+			{
+				var userCount = users!.Count(u => u.Location != null && u.LocationId.Equals(loc.Id));
+				if (userCount < 5)
+				{
+					sumOfUserUnderThreshold += userCount;
+					locationIdUnderThreshold.Add(loc.Id);
+				}
+			}
+			if (sumOfUserUnderThreshold < 5)
+			{
+				users = users.Where(u => !locationIdUnderThreshold.Contains(u.Location.Id)).ToList();
+			}
+		}
+
+		//At the end, if there is less than 5 peoples in the group, then it is not returned
 		if (users.Count < 5)
 		{
 			return null;

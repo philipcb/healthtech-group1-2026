@@ -127,7 +127,7 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 				Reason = "noSuchGroup"
 			};
 		}
-		String? building = sample.LocationQualifier;
+		Guid? building = sample.LocationQualifier;
 		String? occupation = sample.JobQualifier;
 		String? unit;
 		List<TrendPointDto>? exposureAverages;

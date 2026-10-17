@@ -31,7 +31,7 @@ public sealed class SampleDto
     public required Guid GroupId { get; set; }
 
     [JsonPropertyName("hall")]
-    public String? Hall { get; set; } = null;
+    public Guid? Hall { get; set; } = null;
 
     [JsonPropertyName("occupation")]
     public String? Occupation { get; set; } = null;

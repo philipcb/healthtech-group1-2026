@@ -37,7 +37,7 @@ public sealed class AggregatedTrendResponseDto
 public sealed class TrendSampleDto
 {
     [JsonPropertyName("hall")]
-    public string? Hall { get; set; } = null;
+    public Guid? Hall { get; set; } = null;
 
     [JsonPropertyName("occupation")]
     public string? Occupation { get; set; } = null;

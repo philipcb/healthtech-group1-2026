@@ -32,14 +32,14 @@ namespace backend.Migrations.AggregateDb
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<TimeSpan>("AverageTimeInSafeLimits")
-                        .HasColumnType("interval");
+                    b.Property<float>("AverageTimeInSafeLimits")
+                        .HasColumnType("real");
 
-                    b.Property<TimeSpan>("AverageTimeOverAction")
-                        .HasColumnType("interval");
+                    b.Property<float>("AverageTimeOverAction")
+                        .HasColumnType("real");
 
-                    b.Property<TimeSpan>("AverageTimeOverLimit")
-                        .HasColumnType("interval");
+                    b.Property<float>("AverageTimeOverLimit")
+                        .HasColumnType("real");
 
                     b.HasKey("SampleId", "ExposureType", "Time");
 
@@ -122,9 +122,8 @@ namespace backend.Migrations.AggregateDb
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<string>("LocationQualifier")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                    b.Property<Guid?>("LocationQualifier")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("SampleCount")
                         .HasColumnType("integer");

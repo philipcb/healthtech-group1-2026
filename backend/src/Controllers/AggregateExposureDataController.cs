@@ -31,9 +31,7 @@ public class AggregateExposureDataController(IAggregateExposureDataService aggre
 		)
 	{
 		try
-		{
-
-			
+		{		
 			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
 
 			AggregatedTrendResponseDto data = await _aggregateExposureDataService.GetTrendAsync(

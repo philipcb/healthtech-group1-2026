@@ -101,24 +101,39 @@ public class DataFetchHandler(AppDbContext _context)
 		);
 	}
 
-	public async Task<List<TimedData>> fetchAggregatedDataOverSampleUsers(List<User> users, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
+	public async Task<(List<TimedData> dataList, List<AboveThresholdRate> aboveThresholdData)> fetchAggregatedDataOverSampleUsers(List<User> users, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
 	{
-		var rawData = new List<TimedData>();
+		var rawDataList = new List<TimedData>();
+		var rateList = new List<AboveThresholdRate>();
 		foreach(var user in users)
 		{
-			rawData.AddRange(await fetchUserAggregatedDataAsync(user.Id, startTime, endTime, exposureType, field));
+		
+			var userData = await fetchUserAggregatedDataAsync(user.Id, startTime, endTime, exposureType, field);
+			var dataFlat = userData.Select(d => new TimedData
+			{
+				Time = d.Time,
+				AvgValue = d.Value,
+				PeakValue = d.PeakValue
+			});
+			
+			rawDataList.AddRange(dataFlat);
+
+			var aboveThresholdData = userData.GroupBy(d => d.Time.Day).Select(g => new AboveThresholdRate
+			{
+				Time = new DateTime(g.Key).ToUniversalTime(),
+				WarningRate = 1.0 / g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+				DangerRate = 1.0 / g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count()
+			});
+
+			rateList.AddRange(aboveThresholdData);
 		}
-				
-		var rawDataFlat = rawData.GroupBy(d => d.Time).Select(g => new TimedData
-		{
-			Time = g.Key,
-			AvgValue = g.Average(x => x.AvgValue),
-			PeakValue = g.Average(x => x.PeakValue)
-		});
-		return rawDataFlat.ToList();				
+
+
+
+		return (dataList : rawDataList.ToList(), aboveThresholdData: rateList.ToList());				
 	}
 
-	public async Task<IEnumerable<TimedData>> fetchUserAggregatedDataAsync(Guid userId, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
+	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(Guid userId, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
 	{
 		string materializedViewName = ExposureUtils.GetMaterializedViewName(
 			exposureType,
@@ -181,22 +196,39 @@ public class DataFetchHandler(AppDbContext _context)
 		// If the requested aggregation function is sum, the value is cumulated.
 		// NOTE: Maybe this should be changed in the future, for example by only allowing sum aggregation for vibration data,
 		// but for now this is done to allow fetching different aggregations while making sure the threshold logic remains correct.
+		
+		
+		
 		var dataWithCumulatedExposureSumValues = ExposureUtils.CumulateVibrationSumValues(
 			exposureType,
 			AggregationFunction.Avg,
 			rawExposureData
 		);
+		
+		var dataHourly = dataWithCumulatedExposureSumValues.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
+		.Select(g => new RawExposureData(
+			new DateTime(g.Key.Date.Year, g.Key.Date.Month, g.Key.Date.Day, g.Key.Hour, 0, 0).ToUniversalTime(),
+			g.Average(x => x.Value),
+			g.Average(x => x.AvgValue),
+			g.Average(x => x.MaxValue),
+			g.Average(x => x.SumValue),
+			userId
+		));
 
-		// var dataWithDangerLevels = ThresholdUtils.CalculateDangerLevels(
-		// 	exposureType,
-		// 	dataWithCumulatedExposureSumValues,
-		// 	request.Field
-		// );
 
-		var result = dataWithCumulatedExposureSumValues.Select<RawExposureData, TimedData>(data => new TimedData{
-			Time = data.Time,
-			AvgValue = data.Value,
-			PeakValue = exposureType == ExposureType.Noise ? data.MaxValue : null
+		var dataWithDangerLevels = ThresholdUtils.CalculateDangerLevels(
+			exposureType,
+			dataWithCumulatedExposureSumValues,
+			field
+		);
+
+		var result = dataWithDangerLevels.Select(item => new ExposureDataDto
+		{
+			Time = item.data.Time,
+			Value = item.data.Value,
+			PeakValue = exposureType == ExposureType.Noise ? item.data.MaxValue : null,
+			DangerLevel = item.dangerLevels.dangerLevel,
+			PeakDangerLevel = item.dangerLevels.peakDangerLevel,
 		});
 
 		return result;
@@ -214,4 +246,12 @@ public class TimedData
 	/// Only used for noise
 	/// </summary>
 	public double? PeakValue { get; set; }	
+}
+
+public class AboveThresholdRate
+{
+	public DateTime Time { get; set; }
+	public double WarningRate { get; set; }
+	public double DangerRate { get; set; }
+
 }

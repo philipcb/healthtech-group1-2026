@@ -48,10 +48,12 @@ public class DataFiller
 	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
 	{
 		DateTime lowestTime = await _aggregatedContext.VibrationAverages.OrderByDescending(d => d.Time).Where(d => d.SampleId == sampleId).Select(d => d.Time).FirstOrDefaultAsync();
-		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
-		List<TimedData> aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Vibration, null);
+		DateTime startTime = lowestTime.Date.AddDays(1).ToUniversalTime();
+		
+		(List<TimedData>, List<AboveThresholdRate>) aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Vibration, null);
+		
 		Console.WriteLine($"Update Vibration averages from {startTime} to {endTime}");
-		List<VibrationAverage> finalAggregatedData = aggregatedData.Select(d => new VibrationAverage{
+		List<VibrationAverage> finalAggregatedData = aggregatedData.dataList.Select(d => new VibrationAverage{
 			SampleId = sampleId,
 			Time = d.Time,
 			AverageExposure = d.AvgValue
@@ -65,8 +67,8 @@ public class DataFiller
 		DateTime lowestTime = await _aggregatedContext.NoiseAverages.OrderByDescending(d => d.Time).Where(d => d.SampleId == sampleId).Select(d => d.Time).FirstOrDefaultAsync();
 		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
 		Console.WriteLine($"Update Noise averages from {startTime} to {endTime}");
-		List<TimedData> aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Noise, null);
-		List<NoiseAverage> finalAggregatedData = aggregatedData.Select(d => new NoiseAverage{
+		(List<TimedData>, List<AboveThresholdRate>) aggregatedData = await _fetchHandler.fetchAggregatedDataOverSampleUsers(users, startTime, endTime, ExposureType.Noise, null);
+		List<NoiseAverage> finalAggregatedData = aggregatedData.dataList.Select(d => new NoiseAverage{
 			SampleId = sampleId,
 			Time = d.Time,
 			AverageLcpk = d.AvgValue,
@@ -174,6 +176,7 @@ public class DataFiller
 		allJobs.Distinct();
 		List<Sample> currentSamples = await _aggregatedContext.Samples.ToListAsync();
 		Dictionary<string, HashSet<string>> existingSamples = new Dictionary<String, HashSet<string>>();
+		
 		//fill dico in a way to be able to detect every combinaison of jobs and locations already in db
 		foreach (Sample s in currentSamples)
 		{

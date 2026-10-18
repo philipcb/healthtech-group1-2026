@@ -150,7 +150,7 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 				unit = "points";
 				exposureAverages = await _context.VibrationAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
 				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => d.AverageExposure)})
+				.Select(g => new TrendPointDto{Time = g.Key, Value = g.OrderByDescending(d => d.Time).FirstOrDefault()!.AverageExposure})
 				.OrderBy(d => d.Time).ToListAsync();
 				break;
 			default :
@@ -196,7 +196,7 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 			overviewList.Add(new SampleDto
 			{
 				GroupId = s.Id,
-				Hall = s.LocationQualifier,
+				Hall = s.LocationName,
 				Occupation = s.JobQualifier,
 				Averages = new SampleAveragesDto
 				{

@@ -5,11 +5,13 @@ using Backend.Models;
 using Backend.Services;
 using Backend.Utils;
 using Backend.Validation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
 
 [ApiController]
+[Authorize(Policy = "OHSOnly")]
 [Route("api/medical-team")]
 public class AggregateExposureDataController(IAggregateExposureDataService aggregateExposureDataService) : ControllerBase
 {

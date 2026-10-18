@@ -118,7 +118,7 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 		string? field
 	)
 	{
-		var sample = await _context.Samples.Where(s => s.Id == sampleId && s.Site.Equals(_signedInUserContext.User.Location.Site)).FirstOrDefaultAsync();
+		var sample = await _context.Samples.Where(s => s.Id == sampleId && s.Site.Equals(_signedInUserContext.User!.Location!.Site)).FirstOrDefaultAsync();
 		if (sample == null)
 		{
 			return new AggregatedTrendResponseDto
@@ -186,7 +186,7 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 		DateTime endTime
 		)
 	{
-		var allSamples = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User.Location.Site)).ToListAsync();
+		var allSamples = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User!.Location!.Site)).ToListAsync();
 		List<SampleDto> overviewList = new();
 		foreach (Sample s in allSamples)
 		{

@@ -20,7 +20,7 @@ public class DataFetchHandler(AppDbContext _context)
 
 	public async Task<List<User>?> getUserBySiteAndQualifiers(
 		String site,
-		String? locationQualifier,
+		Guid? locationQualifier,
 		String? jobQualifier
 	)
 	{
@@ -28,7 +28,7 @@ public class DataFetchHandler(AppDbContext _context)
 		
 		if (locationQualifier != null) //If location isn't null, we simply filter with it 
 		{
-			users = users.Where(u => u.Location!.Id == Guid.Parse(locationQualifier)).ToList();
+			users = users.Where(u => u.Location!.Id == locationQualifier).ToList();
 		}
 
 		if (jobQualifier != null)
@@ -101,7 +101,7 @@ public class DataFetchHandler(AppDbContext _context)
 		);
 	}
 
-	public async Task<(List<TimedData> dataList, List<AboveThresholdRate> aboveThresholdData)> fetchAggregatedDataOverSampleUsers(List<User> users, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
+	public async Task<(List<TimedData> dataList, List<AboveThresholdRate> aboveThresholdDataList)> fetchAggregatedDataOverSampleUsers(List<User> users, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
 	{
 		var rawDataList = new List<TimedData>();
 		var rateList = new List<AboveThresholdRate>();
@@ -118,19 +118,31 @@ public class DataFetchHandler(AppDbContext _context)
 			
 			rawDataList.AddRange(dataFlat);
 
-			var aboveThresholdData = userData.GroupBy(d => d.Time.Day).Select(g => new AboveThresholdRate
+			var aboveThresholdData = userData.GroupBy(d => d.Time.Date).Select(g => new AboveThresholdRate
 			{
-				Time = new DateTime(g.Key).ToUniversalTime(),
-				WarningRate = 1.0 / g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-				DangerRate = 1.0 / g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count()
+				Time = g.Key,
+				WarningRate = g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+				DangerRate = g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count()
 			});
 
 			rateList.AddRange(aboveThresholdData);
 		}
+		
+		var averageDataList = rawDataList.GroupBy(d => d.Time).Select(g => new TimedData
+			{
+				Time = g.Key,
+				AvgValue = g.Average(d => d.AvgValue),
+				PeakValue = g.Average(d => d.PeakValue ?? null)
+			});
 
+		var averageRateList = rateList.GroupBy(d => d.Time).Select(g => new AboveThresholdRate
+			{
+				Time = g.Key,
+				WarningRate = g.Average(d => d.WarningRate),
+				DangerRate = g.Average(d => d.DangerRate)
+			});
 
-
-		return (dataList : rawDataList.ToList(), aboveThresholdData: rateList.ToList());				
+		return (dataList : averageDataList.ToList(), aboveThresholdDataList: averageRateList.ToList());				
 	}
 
 	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(Guid userId, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)

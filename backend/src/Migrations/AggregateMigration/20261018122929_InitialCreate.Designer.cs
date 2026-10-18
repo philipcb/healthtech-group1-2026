@@ -8,11 +8,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace backend.Migrations.AggregateDb
+namespace backend.Migrations.AggregateMigration
 {
     [DbContext(typeof(AggregateDbContext))]
-    [Migration("20261008120011_UpdateSampleChangeQualifiers")]
-    partial class UpdateSampleChangeQualifiers
+    [Migration("20261018122929_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,14 +35,14 @@ namespace backend.Migrations.AggregateDb
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<TimeSpan>("AverageTimeInSafeLimits")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeInSafeLimits")
+                        .HasColumnType("double precision");
 
-                    b.Property<TimeSpan>("AverageTimeOverAction")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeOverAction")
+                        .HasColumnType("double precision");
 
-                    b.Property<TimeSpan>("AverageTimeOverLimit")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeOverLimit")
+                        .HasColumnType("double precision");
 
                     b.HasKey("SampleId", "ExposureType", "Time");
 
@@ -121,9 +121,12 @@ namespace backend.Migrations.AggregateDb
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<string>("LocationQualifier")
+                    b.Property<string>("LocationName")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("LocationQualifier")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("SampleCount")
                         .HasColumnType("integer");

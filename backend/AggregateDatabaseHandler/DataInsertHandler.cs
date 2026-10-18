@@ -25,4 +25,9 @@ public class DataInsertHandler(AggregateDbContext _context)
 		await _context.NoiseAverages.AddRangeAsync(datas);
 	}
 
+	public async Task addDataRange(List<AveragePer8HourShift> datas)
+	{
+		await _context.AveragesPer8HourShift.AddRangeAsync(datas);
+	}
+
 };

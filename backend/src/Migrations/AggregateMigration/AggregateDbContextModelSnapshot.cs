@@ -2,20 +2,17 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace backend.Migrations.AggregateDb
+namespace backend.Migrations.AggregateMigration
 {
     [DbContext(typeof(AggregateDbContext))]
-    [Migration("20261002134610_addSiteToSample")]
-    partial class addSiteToSample
+    partial class AggregateDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,14 +32,14 @@ namespace backend.Migrations.AggregateDb
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<TimeSpan>("AverageTimeInSafeLimits")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeInSafeLimits")
+                        .HasColumnType("double precision");
 
-                    b.Property<TimeSpan>("AverageTimeOverAction")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeOverAction")
+                        .HasColumnType("double precision");
 
-                    b.Property<TimeSpan>("AverageTimeOverLimit")
-                        .HasColumnType("interval");
+                    b.Property<double>("AverageTimeOverLimit")
+                        .HasColumnType("double precision");
 
                     b.HasKey("SampleId", "ExposureType", "Time");
 
@@ -117,17 +114,19 @@ namespace backend.Migrations.AggregateDb
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("SampleCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SampleQualifier")
-                        .IsRequired()
+                    b.Property<string>("JobQualifier")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<string>("SampleType")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<string>("LocationName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("LocationQualifier")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SampleCount")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Site")
                         .IsRequired()

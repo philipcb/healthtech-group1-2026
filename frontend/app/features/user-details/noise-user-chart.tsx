@@ -10,10 +10,10 @@ import { getDisplayedExposureValue, useExposureChartData } from "@/hooks/use-exp
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
-import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
-import type { Exposure } from "@/lib/exposures.ts";
-import { type Aggregation, Aggregations } from "@/lib/exposures.ts";
+import { getStartEnd } from "@/lib/date.ts";
+import { type Aggregation, Aggregations, aggregationFor, type Exposure } from "@/lib/exposures.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { overviewGranularityByView } from "@/lib/views.ts";
 import { useQuery } from "@tanstack/react-query";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
@@ -45,7 +45,13 @@ export function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusD
 	} = useExposureChartData(exposure, { userId: selectedUser.id, usePeakAggregation });
 
 	const { data: overviewResponse } = useQuery(
-		getGetExposureOverviewQueryOptions(selectedUser.id, buildExposureOverviewQuery([exposure], view, date)),
+		getGetExposureOverviewQueryOptions(selectedUser.id, {
+			[exposure]: {
+				...getStartEnd(view, date),
+				granularity: overviewGranularityByView[view],
+				function: aggregationFor(exposure, false),
+			},
+		}),
 	);
 
 	const showTrendLineChart = view === "month" || view === "week";

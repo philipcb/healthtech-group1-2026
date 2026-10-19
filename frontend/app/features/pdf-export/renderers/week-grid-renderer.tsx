@@ -3,9 +3,17 @@ import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import { aggregationFor, getStartEnd, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
-import { type Aggregation, Aggregations, defaultDustField, type Exposure, parseAsDustField } from "@/lib/exposures.ts";
+import {
+	type Aggregation,
+	Aggregations,
+	aggregationFor,
+	defaultDustField,
+	type Exposure,
+	getSummaryGranularity,
+	parseAsDustField,
+} from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { addDays, eachDayOfInterval, setHours, startOfDay, startOfHour, startOfWeek } from "date-fns";

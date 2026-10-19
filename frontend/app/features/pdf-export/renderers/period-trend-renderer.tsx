@@ -5,9 +5,8 @@ import { getTrendMetrics, TREND_CHARTS_PER_PAGE } from "@/features/pdf-export/re
 import { serializeChartSvg } from "@/hooks/pdf-day-report.ts";
 import type { PdfPeriodTrendSeries } from "@/hooks/pdf-period-trend-chart.ts";
 import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
-import { aggregationFor } from "@/lib/exposure-query-utils.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { aggregationFor, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import { getSummaryPeriod, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { useQueries } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";

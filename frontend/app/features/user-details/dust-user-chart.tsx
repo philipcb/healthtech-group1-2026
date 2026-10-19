@@ -16,8 +16,9 @@ import {
 } from "@/lib/api/generated/exposure-data.ts";
 import type { ExposureDataDto, UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
-import { buildExposureOverviewQuery, getStartEnd } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import {
+	aggregationFor,
 	type DustField,
 	defaultDustField,
 	type Exposure,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { overviewGranularityByView } from "@/lib/views.ts";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
@@ -47,7 +49,14 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 		useExposureChartData(exposure, { userId: selectedUser.id, dustField });
 
 	const { data: overviewResponse } = useQuery(
-		getGetExposureOverviewQueryOptions(selectedUser.id, buildExposureOverviewQuery([exposure], view, date)),
+		getGetExposureOverviewQueryOptions(selectedUser.id, {
+			[exposure]: {
+				...getStartEnd(view, date),
+				granularity: overviewGranularityByView[view],
+				function: aggregationFor(exposure, false),
+				field: defaultDustField,
+			},
+		}),
 	);
 
 	const dustPm1TwaThreshold = getThreshold(exposure, "pm1_twa");

@@ -7,10 +7,11 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
-import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
-import { exposures } from "@/lib/exposures.ts";
+import { aggregationFor, defaultDustField } from "@/lib/exposures.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { overviewGranularityByView } from "@/lib/views.ts";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -22,12 +23,21 @@ export default function OperatorHome() {
 
 	const { user } = useUser();
 
+	const { startTime, endTime } = getStartEnd(view, date);
+	const granularity = overviewGranularityByView[view];
+
 	// NOTE: If we later add a peak noise switch here it wouldn't work because we don't return peakDangerLevel in the overview query.
 	const {
 		data: response,
 		isLoading,
 		isError,
-	} = useQuery(getGetExposureOverviewQueryOptions(user.id, buildExposureOverviewQuery([...exposures], view, date)));
+	} = useQuery(
+		getGetExposureOverviewQueryOptions(user.id, {
+			dust: { startTime, endTime, granularity, function: aggregationFor("dust", false), field: defaultDustField },
+			noise: { startTime, endTime, granularity, function: aggregationFor("noise", false) },
+			vibration: { startTime, endTime, granularity, function: aggregationFor("vibration", false) },
+		}),
+	);
 
 	const overviewBuckets = response?.data;
 	const hourDomain = response?.hourDomain;

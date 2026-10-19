@@ -1,4 +1,4 @@
-import type { ExposureType, Field } from "@/lib/api/generated/models/index.ts";
+import type { AggregationFunction, ExposureType, Field, TimeGranularity } from "@/lib/api/generated/models/index.ts";
 import { parseAsStringLiteral } from "nuqs";
 
 /** The backend's exposure types, in the order the app shows them */
@@ -27,6 +27,22 @@ export const parseAsDustField = parseAsStringLiteral(dustFields);
 
 export type Aggregation = "average" | "peak";
 export const Aggregations: Array<Aggregation> = ["average", "peak"];
+
+export function aggregationFor(exposure: Exposure, usePeakAggregation: boolean): AggregationFunction {
+	switch (exposure) {
+		case "dust":
+			return "avg";
+		case "noise":
+			return usePeakAggregation ? "max" : "avg";
+		case "vibration":
+			return "sum";
+	}
+}
+
+/** The granularity of the data the exposure summary counts minutes in each danger level from */
+export function getSummaryGranularity(exposure: Exposure | null): TimeGranularity {
+	return exposure === "vibration" ? "hour" : "minute";
+}
 
 export function isExposure(input: string): input is Exposure {
 	// biome-ignore lint/suspicious/noExplicitAny: Array#includes requires argument to be a exposure, not a string

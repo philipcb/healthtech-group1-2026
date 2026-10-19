@@ -8,18 +8,14 @@ import {
 	getGetExposureDataQueryOptions,
 	getGetExposureOverviewQueryOptions,
 } from "@/lib/api/generated/exposure-data.ts";
-import {
-	aggregationFor,
-	buildExposureOverviewQuery,
-	getStartEnd,
-	getSummaryGranularity,
-} from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import {
 	type Aggregation,
 	Aggregations,
+	aggregationFor,
 	defaultDustField,
 	type Exposure,
-	exposures,
+	getSummaryGranularity,
 	parseAsDustField,
 } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
@@ -61,9 +57,11 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	// TODO: When we take vibration disconnectedOn into account we could fetch it with minute granularity for the day
 	// view as well
 	const granularity = getSummaryGranularity(exposure);
+	const { startTime, endTime } = getStartEnd(view, currentDate);
 
 	const exposureQuery = exposure && {
-		...getStartEnd(view, currentDate),
+		startTime,
+		endTime,
 		granularity,
 		function: aggregationFor(exposure, peakAggregation),
 		field: exposure === "dust" ? dustField : undefined,
@@ -80,10 +78,22 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 			),
 			getGetExposureOverviewQueryOptions(
 				user.id,
-				buildExposureOverviewQuery([...exposures], view, currentDate, {
-					usePeakAggregation: peakAggregation,
-					granularity,
-				}),
+				{
+					dust: {
+						startTime,
+						endTime,
+						granularity,
+						function: aggregationFor("dust", peakAggregation),
+						field: defaultDustField,
+					},
+					noise: { startTime, endTime, granularity, function: aggregationFor("noise", peakAggregation) },
+					vibration: {
+						startTime,
+						endTime,
+						granularity,
+						function: aggregationFor("vibration", peakAggregation),
+					},
+				},
 				{ query: { enabled: !exposureQueryEnabled } },
 			),
 		],

@@ -9,9 +9,10 @@ import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
-import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { getStartEnd } from "@/lib/date.ts";
+import { aggregationFor, type Exposure } from "@/lib/exposures.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { overviewGranularityByView } from "@/lib/views.ts";
 import { useQuery } from "@tanstack/react-query";
 
 export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
@@ -25,7 +26,13 @@ export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithSta
 	});
 
 	const { data: overviewResponse } = useQuery(
-		getGetExposureOverviewQueryOptions(selectedUser.id, buildExposureOverviewQuery([exposure], view, date)),
+		getGetExposureOverviewQueryOptions(selectedUser.id, {
+			[exposure]: {
+				...getStartEnd(view, date),
+				granularity: overviewGranularityByView[view],
+				function: aggregationFor(exposure, false),
+			},
+		}),
 	);
 
 	const showTrendLineChart = view === "month" || view === "week";

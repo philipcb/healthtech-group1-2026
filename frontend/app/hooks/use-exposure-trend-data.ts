@@ -4,9 +4,10 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { AggregationFunction, ExposureDataDto, TimeGranularity } from "@/lib/api/generated/models/index.ts";
-import { aggregationFor, defaultFieldFor, getStartEnd, granularityForView } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { Exposure, ExposureTypeField } from "@/lib/exposures.ts";
+import { aggregationFor, defaultDustField, type Exposure, type ExposureTypeField } from "@/lib/exposures.ts";
+import { granularityByView } from "@/lib/views.ts";
 import { useQueries } from "@tanstack/react-query";
 
 export interface ExposureTrendSeries {
@@ -41,9 +42,9 @@ export function useExposureTrendData(
 				userId,
 				{
 					...getStartEnd(view, date),
-					granularity: options.granularity ?? granularityForView(view),
+					granularity: options.granularity ?? granularityByView[view],
 					function: options.aggregationFunction ?? aggregationFor(exposure, usePeakAggregation),
-					field: field ?? defaultFieldFor(exposure),
+					field: field ?? (exposure === "dust" ? defaultDustField : undefined),
 				},
 				{ query: { enabled: view !== "day" } },
 			),

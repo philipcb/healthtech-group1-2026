@@ -6,16 +6,18 @@ import { type PdfDaySeries, serializeChartSvg } from "@/hooks/pdf-day-report.ts"
 import { TIMEZONE } from "@/i18n/locale.ts";
 import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import { aggregationFor, getStartEnd, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
 import {
 	type Aggregation,
 	Aggregations,
+	aggregationFor,
 	type DustField,
 	dustFields,
 	type Exposure,
 	exposureUnitByExposure,
+	getSummaryGranularity,
 } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";

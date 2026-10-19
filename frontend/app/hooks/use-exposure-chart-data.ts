@@ -4,12 +4,13 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
-import { aggregationFor, defaultFieldFor, getStartEnd, granularityForView } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { DustField, Exposure } from "@/lib/exposures.ts";
+import { aggregationFor, type DustField, defaultDustField, type Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
+import { granularityByView } from "@/lib/views.ts";
 import { useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
 
@@ -34,9 +35,9 @@ export function useExposureChartData(
 
 	const query = {
 		...getStartEnd(view, date),
-		granularity: granularityForView(view),
+		granularity: granularityByView[view],
 		function: aggregationFor(exposure, usePeakAggregation),
-		field: options.dustField ?? defaultFieldFor(exposure),
+		field: options.dustField ?? (exposure === "dust" ? defaultDustField : undefined),
 	};
 
 	const { data: response, isLoading, isError } = useQuery(getGetExposureDataQueryOptions(exposure, userId, query));

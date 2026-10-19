@@ -3,8 +3,8 @@ import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { ExposureChartCard } from "@/features/user-details/exposure-chart-card.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { exposureOverviewQueryOptions } from "@/lib/api.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
+import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { exposures } from "@/lib/exposures.ts";
@@ -20,10 +20,7 @@ export function AllExposuresUserOverview({ selectedUser }: { selectedUser: UserW
 		isLoading,
 		isError,
 	} = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([...exposures], view, date),
-			userId: selectedUser.id,
-		}),
+		getGetExposureOverviewQueryOptions(selectedUser.id, buildExposureOverviewQuery([...exposures], view, date)),
 	);
 
 	const data = response?.data;

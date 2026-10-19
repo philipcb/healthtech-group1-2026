@@ -3,16 +3,18 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DataTable } from "@/components/ui/data-table.tsx";
+import { type User, UserRole } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { UserSearch } from "@/features/user/user-search.tsx";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import {
-	fetchSubordinatesQueryOptions,
-	useAddSubordinatesMutation,
-	useRemoveSubordinatesMutation,
-	usersQueryOptions,
-} from "@/lib/api.ts";
-import { type User, UserRole, type UserWithStatusDto } from "@/lib/dto/user.ts";
-import { useQuery } from "@tanstack/react-query";
+	useAddSubordinates,
+	useGetSubordinates,
+	useGetUsers,
+	useRemoveSubordinates,
+} from "@/lib/api/generated/user.ts";
+import { invalidateSubordinates } from "@/lib/api/invalidation.ts";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,9 +67,9 @@ export default function TeamPage() {
 		data: subordinates,
 		isLoading: isSubordinatesLoading,
 		error: subordinatesError,
-	} = useQuery(fetchSubordinatesQueryOptions(user.id));
+	} = useGetSubordinates(user.id);
 
-	const { data: users } = useQuery(usersQueryOptions());
+	const { data: users } = useGetUsers();
 
 	const filteredUsers = useMemo(() => {
 		if (!(users && subordinates)) {
@@ -79,8 +81,13 @@ export default function TeamPage() {
 		return users.filter((user) => user.role === UserRole.Operator && !subordinateIds.has(user.id));
 	}, [users, subordinates]);
 
-	const addSubordinates = useAddSubordinatesMutation(user.id);
-	const removeSubordinates = useRemoveSubordinatesMutation(user.id);
+	const queryClient = useQueryClient();
+	const addSubordinates = useAddSubordinates({
+		mutation: { onSuccess: (_, { managerId }) => invalidateSubordinates(queryClient, managerId) },
+	});
+	const removeSubordinates = useRemoveSubordinates({
+		mutation: { onSuccess: (_, { managerId }) => invalidateSubordinates(queryClient, managerId) },
+	});
 
 	const handleAddSubordinates = () => {
 		if (userIdSelection.length === 0) {
@@ -89,21 +96,27 @@ export default function TeamPage() {
 
 		const userIds = userIdSelection.map((user) => user.id);
 
-		addSubordinates.mutate(userIds, {
-			onSuccess: () => {
-				setUserIdSelection([]);
+		addSubordinates.mutate(
+			{ managerId: user.id, data: userIds },
+			{
+				onSuccess: () => {
+					setUserIdSelection([]);
+				},
 			},
-		});
+		);
 	};
 
 	const handleRemoveSubordinates = () => {
 		const selectedIds = Object.keys(rowSelection);
 
-		removeSubordinates.mutate(selectedIds, {
-			onSuccess: () => {
-				setRowSelection({});
+		removeSubordinates.mutate(
+			{ managerId: user.id, data: selectedIds },
+			{
+				onSuccess: () => {
+					setRowSelection({});
+				},
 			},
-		});
+		);
 	};
 
 	if (isSubordinatesLoading) {

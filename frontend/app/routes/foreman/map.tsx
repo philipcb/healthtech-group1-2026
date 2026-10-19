@@ -2,8 +2,7 @@
 
 import { LocationMap } from "@/features/location-map/location-map.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
-import { fetchSubordinatesQueryOptions } from "@/lib/api.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useGetSubordinates } from "@/lib/api/generated/user.ts";
 import { useTranslation } from "react-i18next";
 
 export default function MapPage() {
@@ -14,7 +13,7 @@ export default function MapPage() {
 		data: subordinates,
 		isLoading: isSubordinatesLoading,
 		error: subordinatesError,
-	} = useQuery(fetchSubordinatesQueryOptions(user.id));
+	} = useGetSubordinates(user.id);
 
 	if (isSubordinatesLoading) {
 		return <div className="p-4">{t(($) => $.common.loading)}</div>;

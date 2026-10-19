@@ -1,20 +1,18 @@
+import type {
+	AggregationFunction,
+	ExposureOverviewRequestDto,
+	TimeGranularity,
+} from "@/lib/api/generated/models/index.ts";
+import { defaultDustField, type ExposureTypeField } from "@/lib/exposures.ts";
 import type { TZDate } from "@date-fns/tz";
 import { endOfDay, endOfMonth, endOfWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
-import type {
-	AggregateFnKey,
-	ExposureDataRequestDto,
-	ExposureOverviewRequestDto,
-	ExposureTypeField,
-	GranularityKey,
-} from "./dto/exposure.ts";
 import type { Exposure } from "./exposures.ts";
 import type { View } from "./views.ts";
 
-function getGranularityFromView(view: View, isOverview?: boolean): GranularityKey {
+export function granularityForView(view: View): TimeGranularity {
 	switch (view) {
 		case "day":
-			// The overview shows hourly data in the day view
-			return isOverview ? "hour" : "minute";
+			return "minute";
 		case "week":
 			return "hour";
 		case "month":
@@ -22,7 +20,7 @@ function getGranularityFromView(view: View, isOverview?: boolean): GranularityKe
 	}
 }
 
-function getAggregationFunction(exposure: Exposure, usePeakAggregation: boolean): AggregateFnKey {
+export function aggregationFor(exposure: Exposure, usePeakAggregation: boolean): AggregationFunction {
 	switch (exposure) {
 		case "dust":
 			return "avg";
@@ -33,14 +31,8 @@ function getAggregationFunction(exposure: Exposure, usePeakAggregation: boolean)
 	}
 }
 
-function getExposureTypeFieldFromExposure(exposure: Exposure): ExposureTypeField | undefined {
-	switch (exposure) {
-		case "dust":
-			return "pm1_twa";
-		case "noise":
-		case "vibration":
-			return undefined;
-	}
+export function defaultFieldFor(exposure: Exposure): ExposureTypeField | undefined {
+	return exposure === "dust" ? defaultDustField : undefined;
 }
 
 export function getStartEnd(
@@ -69,62 +61,33 @@ export function getStartEnd(
 	}
 }
 
-export function buildExposureQuery(
-	exposure: Exposure,
-	view: View,
-	selectedDay: TZDate,
-	options?: {
-		granularity?: GranularityKey;
-		aggregationFunction?: AggregateFnKey;
-		field?: ExposureTypeField;
-		usePeakAggregation?: boolean;
-		isOverview?: boolean;
-		startTime?: TZDate;
-		endTime?: TZDate;
-	},
-): ExposureDataRequestDto {
-	const { startTime: defaultStartTime, endTime: defaultEndTime } = getStartEnd(view, selectedDay);
-
-	const startTime = options?.startTime ?? defaultStartTime;
-	const endTime = options?.endTime ?? defaultEndTime;
-
-	const granularity = options?.granularity ?? getGranularityFromView(view, options?.isOverview);
-	const aggregationFunction =
-		options?.aggregationFunction ?? getAggregationFunction(exposure, options?.usePeakAggregation ?? false);
-	const field = options?.field ?? getExposureTypeFieldFromExposure(exposure);
-
-	const query: ExposureDataRequestDto = {
-		startTime,
-		endTime,
-		granularity,
-		function: aggregationFunction,
-		field,
-	};
-
-	return query;
-}
-
 export function buildExposureOverviewQuery(
 	exposures: Array<Exposure>,
 	view: View,
 	selectedDate: TZDate,
 	options?: {
 		usePeakAggregation?: boolean;
-		granularity?: GranularityKey;
+		granularity?: TimeGranularity;
 	},
 ): ExposureOverviewRequestDto {
+	const { startTime, endTime } = getStartEnd(view, selectedDate);
+	// The overview shows hourly data in the day view
+	const granularity = options?.granularity ?? (view === "day" ? "hour" : granularityForView(view));
+
 	return Object.fromEntries(
 		exposures.map((exposure) => [
 			exposure,
-			buildExposureQuery(exposure, view, selectedDate, {
-				isOverview: true,
-				usePeakAggregation: options?.usePeakAggregation,
-				granularity: options?.granularity,
-			}),
+			{
+				startTime,
+				endTime,
+				granularity,
+				function: aggregationFor(exposure, options?.usePeakAggregation ?? false),
+				field: defaultFieldFor(exposure),
+			},
 		]),
 	);
 }
 
-export function getSummaryGranularity(exposure: Exposure | null): GranularityKey {
+export function getSummaryGranularity(exposure: Exposure | null): TimeGranularity {
 	return exposure === "vibration" ? "hour" : "minute";
 }

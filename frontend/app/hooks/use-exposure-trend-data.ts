@@ -2,16 +2,16 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import type { AggregateFnKey, ExposureDto, ExposureTypeField, GranularityKey } from "@/lib/dto/exposure.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import type { AggregationFunction, ExposureDataDto, TimeGranularity } from "@/lib/api/generated/models/index.ts";
+import { aggregationFor, defaultFieldFor, getStartEnd, granularityForView } from "@/lib/exposure-query-utils.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import type { Exposure, ExposureTypeField } from "@/lib/exposures.ts";
 import { useQueries } from "@tanstack/react-query";
 
 export interface ExposureTrendSeries {
 	field: ExposureTypeField | undefined;
-	data: Array<ExposureDto>;
+	data: Array<ExposureDataDto>;
 }
 
 export function useExposureTrendData(
@@ -20,8 +20,8 @@ export function useExposureTrendData(
 		userId?: string;
 		usePeakAggregation?: boolean;
 		fields?: Array<ExposureTypeField>;
-		aggregationFunction?: AggregateFnKey;
-		granularity?: GranularityKey;
+		aggregationFunction?: AggregationFunction;
+		granularity?: TimeGranularity;
 	} = {},
 ) {
 	const { view } = useView();
@@ -36,17 +36,17 @@ export function useExposureTrendData(
 
 	const queryResults = useQueries({
 		queries: fields.map((field) =>
-			exposureQueryOptions({
+			getGetExposureDataQueryOptions(
 				exposure,
-				query: buildExposureQuery(exposure, view, date, {
-					field,
-					usePeakAggregation,
-					aggregationFunction: options.aggregationFunction,
-					granularity: options.granularity,
-				}),
 				userId,
-				enabled: view !== "day",
-			}),
+				{
+					...getStartEnd(view, date),
+					granularity: options.granularity ?? granularityForView(view),
+					function: options.aggregationFunction ?? aggregationFor(exposure, usePeakAggregation),
+					field: field ?? defaultFieldFor(exposure),
+				},
+				{ query: { enabled: view !== "day" } },
+			),
 		),
 	});
 

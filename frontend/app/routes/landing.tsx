@@ -1,5 +1,5 @@
+import { UserRole } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
-import { UserRole } from "@/lib/dto/user.ts";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ErrorBoundary } from "../root.tsx";

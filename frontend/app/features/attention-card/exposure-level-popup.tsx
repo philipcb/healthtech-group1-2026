@@ -1,8 +1,8 @@
 import { ExposureBadge } from "@/components/exposure-badge.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table.tsx";
 import { BasePopup } from "@/features/popups/base-popup.tsx";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
 import { exposures } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";

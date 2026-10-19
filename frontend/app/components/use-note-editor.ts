@@ -1,27 +1,26 @@
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { createNote, deleteNote, notesQueryOptions, updateNote } from "@/lib/api.ts";
-import { buildNotesQueryKeyPrefix } from "@/lib/query-key-builder.ts";
+import { useCreateNote, useDeleteNote, useGetNotes, useUpdateNote } from "@/lib/api/generated/note-data.ts";
+import { invalidateNotes } from "@/lib/api/invalidation.ts";
+import { getStartEnd } from "@/lib/exposure-query-utils.ts";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { isSameDay } from "date-fns";
 import { useEffect, useState } from "react";
 
 export function useNoteEditor(view: View, date: TZDate, userId: string) {
 	const queryClient = useQueryClient();
 
-	const { data, isLoading, isError, refetch } = useQuery(notesQueryOptions({ view, selectedDay: date, userId }));
+	const { data, isLoading, isError, refetch } = useGetNotes(userId, getStartEnd(view, date));
 
 	const onSettled = () => {
-		queryClient.invalidateQueries({
-			queryKey: buildNotesQueryKeyPrefix(userId),
-		});
+		invalidateNotes(queryClient, userId);
 		refetch();
 	};
 
-	const { mutate: mutateCreateNote } = useMutation({ mutationFn: createNote, onSettled });
-	const { mutate: mutateUpdateNote } = useMutation({ mutationFn: updateNote, onSettled });
-	const { mutate: mutateDeleteNote } = useMutation({ mutationFn: deleteNote, onSettled });
+	const { mutate: mutateCreateNote } = useCreateNote({ mutation: { onSettled } });
+	const { mutate: mutateUpdateNote } = useUpdateNote({ mutation: { onSettled } });
+	const { mutate: mutateDeleteNote } = useDeleteNote({ mutation: { onSettled } });
 
 	const noteForSelectedDate = data?.find((note) => isSameDay(note.time, date, { in: TIMEZONE })) ?? null;
 	const [noteValue, setNoteValue] = useState(noteForSelectedDate?.note ?? "");
@@ -34,7 +33,8 @@ export function useNoteEditor(view: View, date: TZDate, userId: string) {
 
 			if (noteForSelectedDate !== null) {
 				mutateDeleteNote({
-					time: noteForSelectedDate.time,
+					// Orval types a date-time request body that isn't an object as a string
+					data: noteForSelectedDate.time.toISOString(),
 					userId,
 				});
 			}
@@ -44,7 +44,7 @@ export function useNoteEditor(view: View, date: TZDate, userId: string) {
 
 		if (noteForSelectedDate === null) {
 			mutateCreateNote({
-				note: {
+				data: {
 					time: date,
 					note: trimmedNoteValue,
 				},
@@ -52,7 +52,7 @@ export function useNoteEditor(view: View, date: TZDate, userId: string) {
 			});
 		} else if (trimmedNoteValue !== noteForSelectedDate.note) {
 			mutateUpdateNote({
-				note: {
+				data: {
 					time: noteForSelectedDate.time,
 					note: trimmedNoteValue,
 				},

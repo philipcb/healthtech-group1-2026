@@ -1,9 +1,9 @@
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { ExposureSlider } from "@/components/exposure-slider.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import type { TZDate } from "@date-fns/tz";
 import type { CurveType } from "recharts/types/shape/Curve";
@@ -14,7 +14,7 @@ interface LiveExposureCardProps {
 	exposureField?: ExposureTypeField;
 	exposureUnitLabel: string;
 	chartUnit: ExposureUnit;
-	data: Array<ExposureDto>;
+	data: Array<ExposureDataDto>;
 	minTime: TZDate;
 	maxTime: TZDate;
 	chartClassName?: string;

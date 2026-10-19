@@ -1,5 +1,5 @@
+import type { User } from "@/features/user/user.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
-import type { User } from "@/lib/dto/user.ts";
 import type { LucideIcon } from "lucide-react";
 import { href, type To } from "react-router";
 

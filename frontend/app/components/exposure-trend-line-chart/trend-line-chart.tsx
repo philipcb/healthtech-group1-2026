@@ -1,10 +1,10 @@
 import { ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { DangerLevels } from "@/lib/danger-levels.ts";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { cn, formatExposureValue } from "@/lib/utils.ts";
 import { addDays, addWeeks, endOfMonth, endOfWeek, getISOWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
@@ -29,7 +29,7 @@ const MOBILE_MAX_X_TICKS = 4;
 export type TrendSeries = {
 	exposure: Exposure;
 	exposureField?: ExposureTypeField;
-	data: Array<ExposureDto>;
+	data: Array<ExposureDataDto>;
 };
 
 export interface TrendLineChartProps {

@@ -4,10 +4,24 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { getLocale } from "@/i18n/locale.ts";
-import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
-import { buildExposureOverviewQuery, buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
-import { defaultDustField, type Exposure, exposures, parseAsDustField } from "@/lib/exposures.ts";
+import {
+	getGetExposureDataQueryOptions,
+	getGetExposureOverviewQueryOptions,
+} from "@/lib/api/generated/exposure-data.ts";
+import {
+	aggregationFor,
+	buildExposureOverviewQuery,
+	getStartEnd,
+	getSummaryGranularity,
+} from "@/lib/exposure-query-utils.ts";
+import {
+	type Aggregation,
+	Aggregations,
+	defaultDustField,
+	type Exposure,
+	exposures,
+	parseAsDustField,
+} from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
@@ -48,31 +62,30 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	// view as well
 	const granularity = getSummaryGranularity(exposure);
 
-	const exposureQuery =
-		exposure &&
-		buildExposureQuery(exposure, view, currentDate, {
-			usePeakAggregation: peakAggregation,
-			granularity,
-			field: exposure === "dust" ? dustField : undefined,
-		});
+	const exposureQuery = exposure && {
+		...getStartEnd(view, currentDate),
+		granularity,
+		function: aggregationFor(exposure, peakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	};
 	const exposureQueryEnabled = exposure !== null && exposureQuery !== null;
 
 	const [exposureResponse, allExposuresResponse] = useQueries({
 		queries: [
-			exposureQueryOptions({
-				exposure: exposure as NonNullable<typeof exposure>,
-				query: exposureQuery as NonNullable<typeof exposureQuery>,
-				enabled: exposureQueryEnabled,
-				userId: user.id,
-			}),
-			exposureOverviewQueryOptions({
-				query: buildExposureOverviewQuery([...exposures], view, currentDate, {
+			getGetExposureDataQueryOptions(
+				exposure as NonNullable<typeof exposure>,
+				user.id,
+				exposureQuery as NonNullable<typeof exposureQuery>,
+				{ query: { enabled: exposureQueryEnabled } },
+			),
+			getGetExposureOverviewQueryOptions(
+				user.id,
+				buildExposureOverviewQuery([...exposures], view, currentDate, {
 					usePeakAggregation: peakAggregation,
 					granularity,
 				}),
-				userId: user.id,
-				enabled: !exposureQueryEnabled,
-			}),
+				{ query: { enabled: !exposureQueryEnabled } },
+			),
 		],
 	});
 

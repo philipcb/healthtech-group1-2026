@@ -9,8 +9,8 @@ import {
 	ComboboxList,
 	ComboboxValue,
 } from "@/components/ui/combobox.tsx";
+import type { User } from "@/features/user/user.ts";
 import { getUserComboboxLabel } from "@/features/user/user-combobox-label.ts";
-import type { User } from "@/lib/dto/user.ts";
 import type { ComboboxRootProps } from "@base-ui/react";
 
 type UserSearchProps<Multiple extends boolean = false> = Exclude<ComboboxRootProps<User, Multiple>, "placeholder"> & {

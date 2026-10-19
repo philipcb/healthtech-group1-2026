@@ -8,11 +8,11 @@ import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { getDisplayedExposureValue, useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { exposureOverviewQueryOptions } from "@/lib/api.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
+import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
 import type { Exposure } from "@/lib/exposures.ts";
+import { type Aggregation, Aggregations } from "@/lib/exposures.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { useQuery } from "@tanstack/react-query";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -45,10 +45,7 @@ export function NoiseUserChart({ selectedUser }: { selectedUser: UserWithStatusD
 	} = useExposureChartData(exposure, { userId: selectedUser.id, usePeakAggregation });
 
 	const { data: overviewResponse } = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([exposure], view, date),
-			userId: selectedUser.id,
-		}),
+		getGetExposureOverviewQueryOptions(selectedUser.id, buildExposureOverviewQuery([exposure], view, date)),
 	);
 
 	const showTrendLineChart = view === "month" || view === "week";

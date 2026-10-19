@@ -6,7 +6,7 @@ import { ExposureGraphEmptyState } from "@/features/statistic-card.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { exposureOverviewQueryOptions } from "@/lib/api.ts";
+import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { exposures } from "@/lib/exposures.ts";
@@ -27,12 +27,7 @@ export default function OperatorHome() {
 		data: response,
 		isLoading,
 		isError,
-	} = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([...exposures], view, date),
-			userId: user.id,
-		}),
-	);
+	} = useQuery(getGetExposureOverviewQueryOptions(user.id, buildExposureOverviewQuery([...exposures], view, date)));
 
 	const overviewBuckets = response?.data;
 	const hourDomain = response?.hourDomain;

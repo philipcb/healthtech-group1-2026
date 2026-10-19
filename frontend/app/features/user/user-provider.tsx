@@ -1,4 +1,4 @@
-import type { User } from "@/lib/dto/user.ts";
+import type { User } from "@/features/user/user.ts";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { UserContext } from "./user-context.tsx";
 import {

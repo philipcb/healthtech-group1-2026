@@ -9,12 +9,12 @@ import { PeriodTrendChartsRenderer } from "@/features/pdf-export/renderers/perio
 import { SingleDayChartRenderer } from "@/features/pdf-export/renderers/single-day-renderer.tsx";
 import { WeekGridRenderer } from "@/features/pdf-export/renderers/week-grid-renderer.tsx";
 import type { PdfDayReport } from "@/hooks/pdf-day-report.ts";
-import { notesRangeQueryOptions } from "@/lib/api.ts";
+import { useGetNotes } from "@/lib/api/generated/note-data.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { getPeriodMonths, getPeriodRange, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { getDayReportKey } from "@/lib/pdf/red-days.ts";
-import { useQuery } from "@tanstack/react-query";
 import { memo, useCallback, useRef, useState } from "react";
+
 /**
  * PDF Chart Renderer - Off-Screen Rendering for PDF Export
  *
@@ -98,10 +98,7 @@ export const PdfChartRenderer = memo(function PdfChartRendererInner({
 	} | null>(null);
 
 	// One request for the whole period's notes; only the period export needs them.
-	const notesQuery = useQuery({
-		...notesRangeQueryOptions({ ...getPeriodRange(period), userId }),
-		enabled: view === "period",
-	});
+	const notesQuery = useGetNotes(userId, getPeriodRange(period), { query: { enabled: view === "period" } });
 	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];

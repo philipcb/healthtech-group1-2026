@@ -2,8 +2,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { ExposureChartView } from "@/features/exposure-line-chart-card/exposure-chart-view.tsx";
 import NoiseExposureLineChartCard from "@/features/exposure-line-chart-card/noise-exposure-line-chart-card.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
 import type { Exposure } from "@/lib/exposures.ts";
+import { type Aggregation, Aggregations } from "@/lib/exposures.ts";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 

@@ -1,10 +1,9 @@
-import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
+import type { ExposureType, Field } from "@/lib/api/generated/models/index.ts";
 import { parseAsStringLiteral } from "nuqs";
-import { z } from "zod";
 
-export const exposures = ["dust", "noise", "vibration"] as const;
-export type Exposure = (typeof exposures)[number];
-export const ExposureSchema = z.enum(exposures);
+/** The backend's exposure types, in the order the app shows them */
+export const exposures = ["dust", "noise", "vibration"] as const satisfies ReadonlyArray<ExposureType>;
+export type Exposure = ExposureType;
 export const parseAsExposure = parseAsStringLiteral(exposures);
 
 export const exposureUnits = ["mg", "ug", "points", "db"] as const;
@@ -18,10 +17,16 @@ export const exposureUnitByExposure: Record<Exposure, ExposureUnit> = {
 	vibration: "points",
 };
 
+/** What is measured for an exposure type, like PM1 TWA for dust */
+export type ExposureTypeField = Field;
+
 export const dustFields = ["pm1_twa", "pm25_twa", "pm10_twa"] as const satisfies ReadonlyArray<ExposureTypeField>;
 export type DustField = (typeof dustFields)[number];
 export const defaultDustField: DustField = "pm1_twa";
 export const parseAsDustField = parseAsStringLiteral(dustFields);
+
+export type Aggregation = "average" | "peak";
+export const Aggregations: Array<Aggregation> = ["average", "peak"];
 
 export function isExposure(input: string): input is Exposure {
 	// biome-ignore lint/suspicious/noExplicitAny: Array#includes requires argument to be a exposure, not a string

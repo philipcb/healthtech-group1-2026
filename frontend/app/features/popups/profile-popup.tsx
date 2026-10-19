@@ -1,4 +1,4 @@
-import type { User } from "@/lib/dto/user.ts";
+import type { User } from "@/features/user/user.ts";
 import { getSecurityRegulations } from "@/lib/security-regulations.ts";
 import { userRoleToString } from "@/lib/utils.ts";
 import { BriefcaseBusiness, MapPin, User as UserIcon } from "lucide-react";

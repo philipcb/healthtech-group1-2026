@@ -7,12 +7,12 @@ import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { exposureOverviewQueryOptions } from "@/lib/api.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
-import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
+import { getStartEnd } from "@/lib/date.ts";
+import { aggregationFor, type Exposure } from "@/lib/exposures.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { useQuery } from "@tanstack/react-query";
+import { overviewGranularityByView } from "@/lib/views.ts";
 
 export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 	const { view } = useView();
@@ -24,12 +24,13 @@ export function VibrationUserChart({ selectedUser }: { selectedUser: UserWithSta
 		userId: selectedUser.id,
 	});
 
-	const { data: overviewResponse } = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([exposure], view, date),
-			userId: selectedUser.id,
-		}),
-	);
+	const { data: overviewResponse } = useGetExposureOverview(selectedUser.id, {
+		[exposure]: {
+			...getStartEnd(view, date),
+			granularity: overviewGranularityByView[view],
+			function: aggregationFor(exposure, false),
+		},
+	});
 
 	const showTrendLineChart = view === "month" || view === "week";
 	const showVibrationStatistics = view === "day";

@@ -4,10 +4,9 @@ import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { getTrendMetrics, TREND_CHARTS_PER_PAGE } from "@/features/pdf-export/renderers/period-metrics.ts";
 import { serializeChartSvg } from "@/hooks/pdf-day-report.ts";
 import type { PdfPeriodTrendSeries } from "@/hooks/pdf-period-trend-chart.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import { type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import { aggregationFor, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import { getSummaryPeriod, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { useQueries } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
@@ -31,15 +30,12 @@ export function PeriodTrendChartsRenderer({
 
 	const queries = useQueries({
 		queries: metrics.map((metric) =>
-			exposureQueryOptions({
-				exposure: metric.exposure,
-				query: buildExposureQuery(metric.exposure, "day", periodStart, {
-					field: metric.field,
-					granularity: "day",
-					startTime: periodStart,
-					endTime: periodEnd,
-				}),
-				userId,
+			getGetExposureDataQueryOptions(metric.exposure, userId, {
+				startTime: periodStart,
+				endTime: periodEnd,
+				granularity: "day",
+				function: aggregationFor(metric.exposure, false),
+				field: metric.field,
 			}),
 		),
 	});

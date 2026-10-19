@@ -4,8 +4,8 @@ import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
+import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 import type { TZDate } from "@date-fns/tz";
@@ -25,7 +25,7 @@ const MAX_X_TICKS = 12;
 const TICK_STEPS_IN_MONTHS = [1, 2, 3, 6, 12];
 
 export interface PeriodTrendLineChartProps {
-	data: Array<ExposureDto>;
+	data: Array<ExposureDataDto>;
 	periodStart: TZDate;
 	periodEnd: TZDate;
 	minY: number;

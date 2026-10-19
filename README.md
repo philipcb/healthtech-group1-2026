@@ -121,6 +121,8 @@ pnpm run dev
 # The frontend will be running at http://localhost:5173
 ```
 
+The frontend's API client (types, Zod schemas, fetch functions and TanStack Query hooks) is generated from the backend's OpenAPI spec. To update it after an API change, see [frontend/app/lib/api/README.md](frontend/app/lib/api/README.md).
+
 ## Run tests
 
 ```sh

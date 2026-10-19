@@ -3,28 +3,30 @@ import { DayWidget } from "@/features/day-widget/day-widget.tsx";
 import { ExposureChartCard } from "@/features/user-details/exposure-chart-card.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { exposureOverviewQueryOptions } from "@/lib/api.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
-import { buildExposureOverviewQuery } from "@/lib/exposure-query-utils.ts";
+import { useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
-import { exposures } from "@/lib/exposures.ts";
+import { aggregationFor, defaultDustField } from "@/lib/exposures.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { useQuery } from "@tanstack/react-query";
+import { overviewGranularityByView } from "@/lib/views.ts";
 
 export function AllExposuresUserOverview({ selectedUser }: { selectedUser: UserWithStatusDto }) {
 	const { view } = useView();
 	const { date } = useDate();
 
+	const { startTime, endTime } = getStartEnd(view, date);
+	const granularity = overviewGranularityByView[view];
+
 	const {
 		data: response,
 		isLoading,
 		isError,
-	} = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([...exposures], view, date),
-			userId: selectedUser.id,
-		}),
-	);
+	} = useGetExposureOverview(selectedUser.id, {
+		dust: { startTime, endTime, granularity, function: aggregationFor("dust", false), field: defaultDustField },
+		noise: { startTime, endTime, granularity, function: aggregationFor("noise", false) },
+		vibration: { startTime, endTime, granularity, function: aggregationFor("vibration", false) },
+	});
 
 	const data = response?.data;
 	const hourDomain = response?.hourDomain;

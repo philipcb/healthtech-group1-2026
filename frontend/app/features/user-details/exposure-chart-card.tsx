@@ -1,6 +1,6 @@
 import { Card, CardTitle } from "@/components/ui/card.tsx";
 import { ExposureLineChartCardSkeleton } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import type { ExposureDto, ExposureOverviewBucketDto } from "@/lib/dto/exposure.ts";
+import type { CombinedExposureBucketDto, ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import type { TZDate } from "@date-fns/tz";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ export function ExposureChartCard({
 }: {
 	isLoading: boolean;
 	isError: boolean;
-	data: Array<ExposureDto> | Array<ExposureOverviewBucketDto> | undefined;
+	data: Array<ExposureDataDto> | Array<CombinedExposureBucketDto> | undefined;
 	isExposure?: boolean;
 	selectedDate: TZDate;
 	children: ReactNode;

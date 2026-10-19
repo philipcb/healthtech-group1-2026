@@ -1,6 +1,21 @@
 import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import { TZDate } from "@date-fns/tz";
-import { addDays, addMonths, addWeeks, formatDate, isExists, startOfDay, subDays, subMonths, subWeeks } from "date-fns";
+import {
+	addDays,
+	addMonths,
+	addWeeks,
+	endOfDay,
+	endOfMonth,
+	endOfWeek,
+	formatDate,
+	isExists,
+	startOfDay,
+	startOfMonth,
+	startOfWeek,
+	subDays,
+	subMonths,
+	subWeeks,
+} from "date-fns";
 import { createParser } from "nuqs";
 import { z } from "zod";
 import type { View } from "./views.ts";
@@ -79,3 +94,29 @@ export const getNextDay = (selectedDay: TZDate, view: View): TZDate => {
 
 	return nextDay;
 };
+
+export function getStartEnd(
+	view: View,
+	selectedDay: TZDate,
+): {
+	startTime: TZDate;
+	endTime: TZDate;
+} {
+	switch (view) {
+		case "day":
+			return {
+				startTime: startOfDay(selectedDay),
+				endTime: endOfDay(selectedDay),
+			};
+		case "week":
+			return {
+				startTime: startOfWeek(selectedDay, { weekStartsOn: 1 }),
+				endTime: endOfWeek(selectedDay, { weekStartsOn: 1 }),
+			};
+		case "month":
+			return {
+				startTime: startOfMonth(selectedDay),
+				endTime: endOfMonth(selectedDay),
+			};
+	}
+}

@@ -1,6 +1,6 @@
+import { DangerLevel as DangerLevelSchema, type UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { t } from "i18next";
-import z from "zod";
-import type { UserWithStatusDto } from "./dto/user.ts";
+import type z from "zod";
 import type { Exposure } from "./exposures.ts";
 
 export const DANGER_LEVEL_SEVERITY: Record<DangerLevel, number> = {
@@ -9,7 +9,7 @@ export const DANGER_LEVEL_SEVERITY: Record<DangerLevel, number> = {
 	safe: 0,
 } as const;
 
-export const DangerLevelSchema = z.enum(["safe", "warning", "danger"]);
+export { DangerLevelSchema };
 export type DangerLevel = z.infer<typeof DangerLevelSchema>;
 
 /** Is "a" higher severity than "b"? */

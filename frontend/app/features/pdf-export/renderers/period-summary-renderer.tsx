@@ -2,9 +2,8 @@ import type { CollectedPage } from "@/features/pdf-export/pdf-page-spec.ts";
 import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { PERIOD_SUMMARY_METRICS } from "@/features/pdf-export/renderers/period-metrics.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import type { Exposure } from "@/lib/exposures.ts";
+import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { aggregationFor, type Exposure } from "@/lib/exposures.ts";
 import { getPeriodMonths, getSummaryPeriod, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { useQueries } from "@tanstack/react-query";
 import { differenceInCalendarDays, endOfMonth } from "date-fns";
@@ -29,36 +28,38 @@ export function PeriodSummaryRenderer({
 	const dayQueries = useQueries({
 		queries: PERIOD_SUMMARY_METRICS.flatMap((metric) =>
 			months.map((month) =>
-				exposureQueryOptions({
-					exposure: metric.exposure,
-					enabled: exposures.includes(metric.exposure) && month <= periodEnd,
-					query: buildExposureQuery(metric.exposure, "day", periodStart, {
-						field: metric.field,
-						granularity: "day",
+				getGetExposureDataQueryOptions(
+					metric.exposure,
+					userId,
+					{
 						startTime: month,
 						endTime:
 							endOfMonth(month, { in: TIMEZONE }) < periodEnd
 								? endOfMonth(month, { in: TIMEZONE })
 								: periodEnd,
-					}),
-					userId,
-				}),
+						granularity: "day",
+						function: aggregationFor(metric.exposure, false),
+						field: metric.field,
+					},
+					{ query: { enabled: exposures.includes(metric.exposure) && month <= periodEnd } },
+				),
 			),
 		),
 	});
 	const averageQueries = useQueries({
 		queries: PERIOD_SUMMARY_METRICS.map((metric) =>
-			exposureQueryOptions({
-				exposure: metric.exposure,
-				enabled: exposures.includes(metric.exposure),
-				query: buildExposureQuery(metric.exposure, "day", periodStart, {
-					field: metric.field,
-					granularity: "minute",
+			getGetExposureDataQueryOptions(
+				metric.exposure,
+				userId,
+				{
 					startTime: periodStart,
 					endTime: periodEnd,
-				}),
-				userId,
-			}),
+					granularity: "minute",
+					function: aggregationFor(metric.exposure, false),
+					field: metric.field,
+				},
+				{ query: { enabled: exposures.includes(metric.exposure) } },
+			),
 		),
 	});
 	const isLoading = [...dayQueries, ...averageQueries].some((query) => query.isLoading);

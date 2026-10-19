@@ -11,17 +11,16 @@ import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.t
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { TeamSummary } from "@/features/sidebar/team-summary.tsx";
+import type { User } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { UserSelect } from "@/features/user/user-select.tsx";
 import { UserDetails } from "@/features/user-details/user-details.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
-import { fetchSubordinatesQueryOptions, fetchThresholdSummaryQueryOptions } from "@/lib/api.ts";
+import { useGetSubordinates, useGetThresholdSummary } from "@/lib/api/generated/user.ts";
 import { today } from "@/lib/date.ts";
-import type { ThresholdSummary } from "@/lib/dto/threshold.ts";
-import type { User } from "@/lib/dto/user.ts";
 import { type Exposure, exposures, parseAsExposure } from "@/lib/exposures.ts";
-import { useQuery } from "@tanstack/react-query";
+import { type ThresholdSummary, withMissingCountsAsZero } from "@/lib/threshold-summary.ts";
 import { subDays } from "date-fns";
 import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
@@ -44,14 +43,17 @@ export default function ForemanOverview() {
 	const minSelectableDate = subDays(today(), 7);
 	const maxSelectableDate = today();
 
-	const { data: users } = useQuery(fetchSubordinatesQueryOptions(user.id));
+	const { data: users } = useGetSubordinates(user.id);
+	const timeRange = { startTime: startDate.toISOString(), endTime: endDate.toISOString() };
 	const {
 		data: subordinates,
 		isLoading: isSubordinatesLoading,
 		error: subordinatesError,
-	} = useQuery(fetchSubordinatesQueryOptions(user.id, startDate, endDate));
-	const { data: thresholdSummary, isLoading: isThresholdSummaryLoading } = useQuery(
-		fetchThresholdSummaryQueryOptions(user.id, startDate, endDate),
+	} = useGetSubordinates(user.id, timeRange);
+	const { data: thresholdSummary, isLoading: isThresholdSummaryLoading } = useGetThresholdSummary(
+		user.id,
+		timeRange,
+		{ query: { select: withMissingCountsAsZero } },
 	);
 
 	const selectedUser = users?.find((subordinate) => subordinate.id === selectedUserId);

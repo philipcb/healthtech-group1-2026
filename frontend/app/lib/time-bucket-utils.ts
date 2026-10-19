@@ -1,17 +1,17 @@
+import type { CombinedExposureBucketDto, ExposureDataDto, TimeGranularity } from "@/lib/api/generated/models/index.ts";
 import { hoursToMinutes } from "date-fns";
 import type { DangerLevel } from "./danger-levels.ts";
-import type { ExposureDto, ExposureOverviewBucketDto, GranularityKey } from "./dto/exposure.ts";
 import { type Exposure, exposures } from "./exposures.ts";
 import type { OverviewChartRow, SummaryCounts, SummaryLevelCounts, TimeBucketStatus } from "./time-bucket-types.ts";
 
 interface CalculateSummaryCountsOptions {
 	peakAggregation: boolean;
-	granularity: GranularityKey;
+	granularity: TimeGranularity;
 	exposure: Exposure | null;
 }
 
 export function calculateSummaryCounts(
-	data: Array<ExposureDto> | Array<ExposureOverviewBucketDto>,
+	data: Array<ExposureDataDto> | Array<CombinedExposureBucketDto>,
 	{ exposure, peakAggregation, granularity }: CalculateSummaryCountsOptions,
 ): SummaryCounts {
 	const summary: SummaryCounts = {
@@ -58,7 +58,7 @@ const HOURS_IN_DAY = 24;
 function incrementLevelCount(
 	counts: SummaryLevelCounts,
 	level: DangerLevel | null | undefined,
-	granularity: GranularityKey,
+	granularity: TimeGranularity,
 ) {
 	let value = 1;
 
@@ -83,7 +83,7 @@ function incrementLevelCount(
 	}
 }
 
-export function getDangerLevelFromData(data: ExposureDto, peakAggregation: boolean): DangerLevel {
+export function getDangerLevelFromData(data: ExposureDataDto, peakAggregation: boolean): DangerLevel {
 	if (peakAggregation) {
 		return data.peakDangerLevel ?? data.dangerLevel;
 	}
@@ -91,7 +91,7 @@ export function getDangerLevelFromData(data: ExposureDto, peakAggregation: boole
 }
 
 export function mapExposureDataToTimeBucketStatuses(
-	data: Array<ExposureDto>,
+	data: Array<ExposureDataDto>,
 	exposure: Exposure,
 	peakAggregation: boolean,
 ): Array<TimeBucketStatus> {
@@ -106,7 +106,7 @@ export function mapExposureDataToTimeBucketStatuses(
 	});
 }
 
-export function mapOverviewDataToTimeBucketStatuses(data: Array<ExposureOverviewBucketDto>): Array<TimeBucketStatus> {
+export function mapOverviewDataToTimeBucketStatuses(data: Array<CombinedExposureBucketDto>): Array<TimeBucketStatus> {
 	return data.map((point) => ({
 		time: point.time,
 		dangerLevel: point.dangerLevel,
@@ -115,7 +115,7 @@ export function mapOverviewDataToTimeBucketStatuses(data: Array<ExposureOverview
 }
 
 export function mapOverviewBucketsToChartRows(
-	data: Array<ExposureOverviewBucketDto>,
+	data: Array<CombinedExposureBucketDto>,
 	startHour: number,
 	endHour: number,
 ): Array<OverviewChartRow> {

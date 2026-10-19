@@ -4,8 +4,8 @@ import {
 	ExposureLineChartCardSkeleton,
 } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
 import type { Exposure } from "@/lib/exposures.ts";
+import { type Aggregation, Aggregations } from "@/lib/exposures.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useId } from "react";

@@ -1,4 +1,4 @@
-import type { ExposureDto } from "@/lib/dto/exposure.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 
 export const DUST_Y_AXIS_STEP = 7.5;
@@ -22,7 +22,7 @@ function getYAxisOptions(exposure: Exposure, usePeakAggregation: boolean) {
 }
 
 export function computeYAxisRange(
-	data: Array<ExposureDto>,
+	data: Array<ExposureDataDto>,
 	options?: {
 		topPadding?: number;
 		bottomPadding?: number;
@@ -60,7 +60,7 @@ export function buildYAxisTicks(minY: number, maxY: number, step: number): Array
 
 export function getExposureYAxisRange(
 	exposure: Exposure,
-	data: Array<ExposureDto>,
+	data: Array<ExposureDataDto>,
 	options: { usePeakAggregation?: boolean } = {},
 ): { minY: number; maxY: number } {
 	const usePeakAggregation = options.usePeakAggregation ?? false;

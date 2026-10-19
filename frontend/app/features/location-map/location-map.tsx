@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles, getHighestDangerLevel, mapDangerLevelToColor } from "@/lib/danger-levels.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
 import L, { type LatLngBoundsExpression, type PathOptions } from "leaflet";
 import { parseAsStringLiteral, useQueryState } from "nuqs";

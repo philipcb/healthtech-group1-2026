@@ -2,7 +2,7 @@ import { AllExposuresUserOverview } from "@/features/user-details/all-exposures-
 import { DustUserChart } from "@/features/user-details/dust-user-chart.tsx";
 import { NoiseUserChart } from "@/features/user-details/noise-user-chart.tsx";
 import { VibrationUserChart } from "@/features/user-details/vibration-user-chart.tsx";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 
 export function UserDetails({

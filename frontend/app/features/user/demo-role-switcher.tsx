@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
+import { type User, UserRoleSchema } from "@/features/user/user.ts";
 import { DEMO_FALLBACK_USERS } from "@/features/user/user-utils.ts";
-import { type User, UserRoleSchema } from "@/lib/dto/user.ts";
 import { cn, userRoleToString } from "@/lib/utils.ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";

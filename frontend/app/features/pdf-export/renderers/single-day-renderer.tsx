@@ -4,13 +4,21 @@ import type { CollectedPage } from "@/features/pdf-export/pdf-page-spec.ts";
 import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { type PdfDaySeries, serializeChartSvg } from "@/hooks/pdf-day-report.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
+import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
-import { buildExposureQuery, getSummaryGranularity } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import { type DustField, dustFields, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
+import {
+	type Aggregation,
+	Aggregations,
+	aggregationFor,
+	type DustField,
+	dustFields,
+	type Exposure,
+	exposureUnitByExposure,
+	getSummaryGranularity,
+} from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { downsampleExposureData } from "@/lib/utils.ts";
@@ -48,36 +56,31 @@ export function SingleDayChartRenderer({
 	const summaryGranularity = getSummaryGranularity(exposure);
 	const chartQueries = useQueries({
 		queries: fields.map((field) =>
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, "day", tzDate, { field, usePeakAggregation: false }),
-				userId,
+			getGetExposureDataQueryOptions(exposure, userId, {
+				...getStartEnd("day", tzDate),
+				granularity: "minute",
+				function: aggregationFor(exposure, false),
+				field,
 			}),
 		),
 	});
 	const gridQueries = useQueries({
 		queries: fields.map((field) =>
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, "day", tzDate, {
-					field,
-					usePeakAggregation: false,
-					granularity: "hour",
-				}),
-				userId,
+			getGetExposureDataQueryOptions(exposure, userId, {
+				...getStartEnd("day", tzDate),
+				granularity: "hour",
+				function: aggregationFor(exposure, false),
+				field,
 			}),
 		),
 	});
 	const summaryQueries = useQueries({
 		queries: fields.map((field) =>
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, "day", tzDate, {
-					field,
-					usePeakAggregation: peakAggregation,
-					granularity: summaryGranularity,
-				}),
-				userId,
+			getGetExposureDataQueryOptions(exposure, userId, {
+				...getStartEnd("day", tzDate),
+				granularity: summaryGranularity,
+				function: aggregationFor(exposure, peakAggregation),
+				field,
 			}),
 		),
 	});

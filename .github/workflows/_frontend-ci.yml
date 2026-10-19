@@ -39,3 +39,6 @@ jobs:
 
       - name: Typecheck
         run: pnpm type-check:router
+
+      - name: Generated API client is up to date
+        run: pnpm api:check

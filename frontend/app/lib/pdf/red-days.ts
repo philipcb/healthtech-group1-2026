@@ -1,6 +1,5 @@
 import { TIMEZONE } from "@/i18n/locale.ts";
-import type { ExposureDto, GranularityKey } from "@/lib/dto/exposure.ts";
-import type { Note } from "@/lib/dto/note.ts";
+import type { ExposureDataDto, NoteDataDto, TimeGranularity } from "@/lib/api/generated/models/index.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { SummaryLevelCounts } from "@/lib/time-bucket-types.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
@@ -39,10 +38,10 @@ export function getRedDays({
 	granularity,
 }: {
 	exposure: Exposure;
-	dayData: Array<ExposureDto>;
-	minuteData: Array<ExposureDto>;
-	notes: Array<Note>;
-	granularity: GranularityKey;
+	dayData: Array<ExposureDataDto>;
+	minuteData: Array<ExposureDataDto>;
+	notes: Array<NoteDataDto>;
+	granularity: TimeGranularity;
 }): Array<RedDayRow> {
 	return dayData
 		.filter((day) => day.dangerLevel === "danger")

@@ -1,6 +1,6 @@
 import { TIMEZONE } from "@/i18n/locale.ts";
 import type { TZDate } from "@date-fns/tz";
-import { eachMonthOfInterval, endOfMonth, startOfMonth } from "date-fns";
+import { eachMonthOfInterval, endOfDay, endOfMonth, startOfMonth } from "date-fns";
 
 /**
  * What a period export covers - always whole months: from the first day of
@@ -33,6 +33,8 @@ export function getPeriodMonths(period: PdfPeriod): Array<TZDate> {
  */
 export function getSummaryPeriod(period: PdfPeriod): { periodStart: TZDate; periodEnd: TZDate } {
 	const { startTime, endTime } = getPeriodRange(period);
-	const today = TIMEZONE(new Date());
+	// End of today, not "now": the period ends up in query keys, which must stay the same between renders. The
+	// backend doesn't return data after the current time anyway.
+	const today = endOfDay(new Date(), { in: TIMEZONE });
 	return { periodStart: startTime, periodEnd: today < endTime ? today : endTime };
 }

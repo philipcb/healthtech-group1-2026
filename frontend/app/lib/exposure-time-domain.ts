@@ -1,7 +1,10 @@
 import { TIMEZONE_NAME } from "@/i18n/locale.ts";
+import type { HourDomainDto } from "@/lib/api/generated/models/index.ts";
 import { TZDate } from "@date-fns/tz";
-import { DEFAULT_MAX_HOUR_DOMAIN, DEFAULT_MIN_HOUR_DOMAIN, type HourDomainDto } from "./dto/hour-domain.ts";
 import type { View } from "./views.ts";
+
+const DEFAULT_MIN_HOUR_DOMAIN = 0;
+const DEFAULT_MAX_HOUR_DOMAIN = 23;
 
 const MAX_CHART_HOUR = 23;
 const MIN_CHART_HOUR = 0;

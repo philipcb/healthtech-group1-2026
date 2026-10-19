@@ -1,5 +1,5 @@
+import type { User } from "@/features/user/user.ts";
 import { now } from "@/lib/date.ts";
-import type { User } from "@/lib/dto/user.ts";
 
 export const USER_STORAGE_KEY = "demo_user_id" as const;
 
@@ -62,3 +62,6 @@ export function getStoredUser(): User {
 
 	return DEFAULT_USER;
 }
+
+export const createLocationName = (location: User["location"]) =>
+	location.building ? `${location.building}, ${location.site}` : location.site;

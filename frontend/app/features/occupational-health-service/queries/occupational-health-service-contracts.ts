@@ -7,8 +7,8 @@ import { type DustField, type Exposure, exposures, exposureUnitByExposure, expos
 import { z } from "zod";
 
 /*
- * Contracts for the occupational health service's aggregated data: Zod schemas for the responses and plain types for the requests,
- * like `lib/dto`. Every response comes from synthetic mock data for now.
+ * Contracts for the occupational health service's aggregated data: Zod schemas for the responses and plain types for the requests.
+ * Every response comes from synthetic mock data for now.
  *
  * Parsing only checks the shape. Hiding small groups, protecting against subtracting overlapping groups and access
  * control have to be enforced by the backend.

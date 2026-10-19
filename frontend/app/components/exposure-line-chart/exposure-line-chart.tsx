@@ -3,11 +3,11 @@ import { type ChartConfig, ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { getLocale } from "@/i18n/locale.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { DangerLevels } from "@/lib/danger-levels.ts";
 import { now as getNow, toTZDate } from "@/lib/date.ts";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { cn, formatExposureValue } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -46,7 +46,7 @@ const chartConfig = {
 type LineChartVariant = "default" | "compact";
 
 export interface ExposureLineChartProps extends PropsWithChildren {
-	chartData: Array<ExposureDto>;
+	chartData: Array<ExposureDataDto>;
 	maxY: number;
 	minY: number;
 	unit: ExposureUnit;

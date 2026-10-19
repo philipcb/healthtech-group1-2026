@@ -2,7 +2,7 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { getMaxPointByValue } from "@/features/statistic-card-utils.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
-import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData } from "@/lib/api/generated/exposure-data.ts";
 import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
@@ -11,7 +11,6 @@ import { aggregationFor, type DustField, defaultDustField, type Exposure } from 
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { granularityByView } from "@/lib/views.ts";
-import { useQuery } from "@tanstack/react-query";
 import { setHours } from "date-fns";
 
 export function getDisplayedExposureValue(point: ExposureDataDto, usePeakAggregation: boolean): number {
@@ -40,7 +39,7 @@ export function useExposureChartData(
 		field: options.dustField ?? (exposure === "dust" ? defaultDustField : undefined),
 	};
 
-	const { data: response, isLoading, isError } = useQuery(getGetExposureDataQueryOptions(exposure, userId, query));
+	const { data: response, isLoading, isError } = useGetExposureData(exposure, userId, query);
 
 	const data = response?.data;
 	const hourDomain = response?.hourDomain;

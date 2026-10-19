@@ -1,7 +1,7 @@
 import type { CollectedPage } from "@/features/pdf-export/pdf-page-spec.ts";
 import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData } from "@/lib/api/generated/exposure-data.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import {
 	type Aggregation,
@@ -14,7 +14,6 @@ import {
 } from "@/lib/exposures.ts";
 import { getCalendarDays } from "@/lib/pdf/calendar-days.ts";
 import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { useQuery } from "@tanstack/react-query";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useRef } from "react";
 
@@ -36,22 +35,18 @@ export function MonthCalendarRenderer({
 	const parseAsAggregation = parseAsStringLiteral(Aggregations);
 	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
 	const usePeakAggregation = aggregation === "peak";
-	const dayQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("month", monthDate),
-			granularity: "day",
-			function: aggregationFor(exposure, usePeakAggregation),
-			field: exposure === "dust" ? dustField : undefined,
-		}),
-	);
-	const summaryQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("month", monthDate),
-			granularity,
-			function: aggregationFor(exposure, usePeakAggregation),
-			field: exposure === "dust" ? dustField : undefined,
-		}),
-	);
+	const dayQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("month", monthDate),
+		granularity: "day",
+		function: aggregationFor(exposure, usePeakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	});
+	const summaryQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("month", monthDate),
+		granularity,
+		function: aggregationFor(exposure, usePeakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	});
 	const isLoading = dayQuery.isLoading || summaryQuery.isLoading;
 	const dayData = dayQuery.data?.data ?? [];
 	const summaryData = summaryQuery.data?.data ?? [];

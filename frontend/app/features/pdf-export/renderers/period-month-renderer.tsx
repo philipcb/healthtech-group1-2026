@@ -1,7 +1,7 @@
 import type { CollectedPage } from "@/features/pdf-export/pdf-page-spec.ts";
 import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { useBatchQueue } from "@/features/pdf-export/renderers/use-batch-queue.ts";
-import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData } from "@/lib/api/generated/exposure-data.ts";
 import type { NoteDataDto } from "@/lib/api/generated/models/index.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import {
@@ -18,7 +18,6 @@ import { getPeriodMonths, type PdfPeriod } from "@/lib/pdf/period.ts";
 import { getRedDays } from "@/lib/pdf/red-days.ts";
 import { calculateSummaryCounts, mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import type { TZDate } from "@date-fns/tz";
-import { useQuery } from "@tanstack/react-query";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useRef } from "react";
 
@@ -57,25 +56,21 @@ function MonthGridPage({
 
 	// Day granularity: one bucket per day, drives the calendar colours and tells us
 	// which days are red.
-	const gridQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("month", monthDate),
-			granularity: "day",
-			function: aggregationFor(exposure, usePeakAggregation),
-			field: exposure === "dust" ? dustField : undefined,
-		}),
-	);
+	const gridQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("month", monthDate),
+		granularity: "day",
+		function: aggregationFor(exposure, usePeakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	});
 
 	// Summary granularity: the SAME query ExposureSummary makes on this page, so it is
 	// served from the React Query cache. Gives per-day zone minutes and averages.
-	const minuteQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("month", monthDate),
-			granularity,
-			function: aggregationFor(exposure, usePeakAggregation),
-			field: exposure === "dust" ? dustField : undefined,
-		}),
-	);
+	const minuteQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("month", monthDate),
+		granularity,
+		function: aggregationFor(exposure, usePeakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	});
 
 	const isLoading = gridQuery.isLoading || minuteQuery.isLoading;
 

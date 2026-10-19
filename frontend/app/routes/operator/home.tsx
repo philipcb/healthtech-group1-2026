@@ -6,13 +6,12 @@ import { ExposureGraphEmptyState } from "@/features/statistic-card.tsx";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { getGetExposureOverviewQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { aggregationFor, defaultDustField } from "@/lib/exposures.ts";
 import { mapOverviewBucketsToChartRows, mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { overviewGranularityByView } from "@/lib/views.ts";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 export default function OperatorHome() {
@@ -31,13 +30,11 @@ export default function OperatorHome() {
 		data: response,
 		isLoading,
 		isError,
-	} = useQuery(
-		getGetExposureOverviewQueryOptions(user.id, {
-			dust: { startTime, endTime, granularity, function: aggregationFor("dust", false), field: defaultDustField },
-			noise: { startTime, endTime, granularity, function: aggregationFor("noise", false) },
-			vibration: { startTime, endTime, granularity, function: aggregationFor("vibration", false) },
-		}),
-	);
+	} = useGetExposureOverview(user.id, {
+		dust: { startTime, endTime, granularity, function: aggregationFor("dust", false), field: defaultDustField },
+		noise: { startTime, endTime, granularity, function: aggregationFor("noise", false) },
+		vibration: { startTime, endTime, granularity, function: aggregationFor("vibration", false) },
+	});
 
 	const overviewBuckets = response?.data;
 	const hourDomain = response?.hourDomain;

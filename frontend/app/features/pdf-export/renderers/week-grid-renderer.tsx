@@ -1,7 +1,7 @@
 import type { CollectedPage } from "@/features/pdf-export/pdf-page-spec.ts";
 import { PAGE_KEYS } from "@/features/pdf-export/renderers/page-keys.ts";
 import { TIMEZONE } from "@/i18n/locale.ts";
-import { getGetExposureDataQueryOptions } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData } from "@/lib/api/generated/exposure-data.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
@@ -15,7 +15,6 @@ import {
 	parseAsDustField,
 } from "@/lib/exposures.ts";
 import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
-import { useQuery } from "@tanstack/react-query";
 import { addDays, eachDayOfInterval, setHours, startOfDay, startOfHour, startOfWeek } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useRef } from "react";
@@ -38,22 +37,18 @@ export function WeekGridRenderer({
 	const parseAsAggregation = parseAsStringLiteral(Aggregations);
 	const [aggregation] = useQueryState<Aggregation>("aggregation", parseAsAggregation.withDefault("average"));
 	const peakAggregation = aggregation === "peak";
-	const gridQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("week", tzDate),
-			granularity: "hour",
-			function: aggregationFor(exposure, false),
-			field: exposure === "dust" ? "pm1_twa" : undefined,
-		}),
-	);
-	const summaryQuery = useQuery(
-		getGetExposureDataQueryOptions(exposure, userId, {
-			...getStartEnd("week", tzDate),
-			granularity,
-			function: aggregationFor(exposure, peakAggregation),
-			field: exposure === "dust" ? dustField : undefined,
-		}),
-	);
+	const gridQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("week", tzDate),
+		granularity: "hour",
+		function: aggregationFor(exposure, false),
+		field: exposure === "dust" ? "pm1_twa" : undefined,
+	});
+	const summaryQuery = useGetExposureData(exposure, userId, {
+		...getStartEnd("week", tzDate),
+		granularity,
+		function: aggregationFor(exposure, peakAggregation),
+		field: exposure === "dust" ? dustField : undefined,
+	});
 
 	const isLoading = gridQuery.isLoading || summaryQuery.isLoading;
 	const gridData = gridQuery.data?.data ?? [];

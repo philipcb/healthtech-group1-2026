@@ -72,7 +72,7 @@ const OPERATION_IDS: Record<string, string> = {
  * C# enum members in camelCase.
  */
 const STRING_ENUMS: Record<string, Array<string>> = {
-	UserRole: ["operator", "foreman"],
+	UserRole: ["operator", "foreman", "ohs", "manager"],
 	DangerLevel: ["safe", "warning", "danger"],
 	ExposureType: ["noise", "vibration", "dust"],
 	TimeGranularity: ["minute", "hour", "day"],

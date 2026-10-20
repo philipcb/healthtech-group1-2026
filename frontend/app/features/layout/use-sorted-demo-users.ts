@@ -1,4 +1,4 @@
-import type { User } from "@/features/user/user.ts";
+import { hasFrontendRole, type User } from "@/features/user/user.ts";
 import { KARI_NORDMANN_ID, OLA_NORDMANN_ID } from "@/features/user/user-utils.ts";
 import { useGetUsers } from "@/lib/api/generated/user.ts";
 
@@ -7,7 +7,7 @@ const priorityUserIds: Array<string> = [OLA_NORDMANN_ID, KARI_NORDMANN_ID];
 export function useSortedDemoUsers(): Array<User> {
 	const { data: users } = useGetUsers();
 
-	return (users ?? []).toSorted((a, b) => {
+	return (users ?? []).filter(hasFrontendRole).toSorted((a, b) => {
 		const aPriority = priorityUserIds.indexOf(a.id);
 		const bPriority = priorityUserIds.indexOf(b.id);
 

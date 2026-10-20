@@ -15,7 +15,7 @@ export const CreateUserDto = zod.object({
   "password": zod.string(),
   "locationId": zod.string().regex(createUserDtoLocationIdRegExp),
   "managerIds": zod.array(zod.string().regex(createUserDtoManagerIdsItemRegExp)),
-  "role": zod.enum(['operator', 'foreman']),
+  "role": zod.enum(['operator', 'foreman', 'ohs', 'manager']),
   "jobDescription": zod.string().nullable()
 })
 

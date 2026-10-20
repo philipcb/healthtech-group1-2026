@@ -1,14 +1,13 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
 import { OperatorExposureStatusTable } from "@/components/operator-exposure-status-table.tsx";
-import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { UserStatusChart } from "@/components/users-status-chart.tsx";
 import { AttentionCard } from "@/features/attention-card/attention-card.tsx";
-import { PieChartCard } from "@/features/attention-card/pie-chart-card.tsx";
+import { ExposureSummaryGrid } from "@/features/attention-card/exposure-summary-grid.tsx";
 import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
+import { ExposureToggle } from "@/features/exposure-toggle/exposure-toggle.tsx";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { TeamSummary } from "@/features/sidebar/team-summary.tsx";
 import type { User } from "@/features/user/user.ts";
@@ -19,10 +18,9 @@ import { useView } from "@/features/views/use-view.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetSubordinates, useGetThresholdSummary } from "@/lib/api/generated/user.ts";
 import { today } from "@/lib/date.ts";
-import { type Exposure, exposures, parseAsExposure } from "@/lib/exposures.ts";
-import { type ThresholdSummary, withMissingCountsAsZero } from "@/lib/threshold-summary.ts";
+import { type Exposure, parseAsExposure } from "@/lib/exposures.ts";
+import { withMissingCountsAsZero } from "@/lib/threshold-summary.ts";
 import { subDays } from "date-fns";
-import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -76,53 +74,7 @@ export default function ForemanOverview() {
 
 				<div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-6">
 					<div className="grid w-full grid-cols-1 items-center gap-3 md:grid-cols-[auto_1fr]">
-						<div className="flex gap-1">
-							<ToggleGroup
-								type="single"
-								value={exposure ?? "all"}
-								variant="outline"
-								onValueChange={(value: Exposure | "") => {
-									setExposure(value || null);
-								}}
-							>
-								<ToggleGroupItem
-									value="dust"
-									aria-label={t(($) => $.exposures.dust)}
-									className="rounded-l-xl! px-2 lg:px-3"
-								>
-									<ExposureIcon type="dust" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.dust)}</p>
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value="noise"
-									aria-label={t(($) => $.exposures.noise)}
-									className="px-2 lg:px-3"
-								>
-									<ExposureIcon type="noise" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.noise)}</p>
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value="vibration"
-									aria-label={t(($) => $.exposures.vibration)}
-									className="rounded-r-md! px-2 lg:px-3"
-								>
-									<ExposureIcon type="vibration" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.vibration)}</p>
-								</ToggleGroupItem>
-							</ToggleGroup>
-
-							<Button
-								type="button"
-								aria-label={t(($) => $.foremanDashboard.overview.clearExposureFilter)}
-								variant="outline"
-								size="icon"
-								onClick={() => setExposure(null)}
-								disabled={exposure === null}
-								className="shrink-0 rounded-r-xl"
-							>
-								<XIcon className="size-4" aria-hidden="true" />
-							</Button>
-						</div>
+						<ExposureToggle value={exposure} onValueChange={setExposure} />
 
 						{users === undefined || isSubordinatesLoading ? (
 							<Skeleton className="h-9 w-73 justify-self-end" />
@@ -217,35 +169,6 @@ export default function ForemanOverview() {
 						/>
 					</aside>
 				</div>
-			</div>
-		</div>
-	);
-}
-
-function ExposureSummaryGrid({ thresholdSummary }: { thresholdSummary: ThresholdSummary | undefined }) {
-	const { t } = useTranslation();
-
-	if (thresholdSummary === undefined) {
-		return null;
-	}
-
-	return (
-		<div className="flex flex-col gap-4">
-			<h2 className="font-medium text-lg">{t(($) => $.foremanDashboard.overview.exposure)}</h2>
-			<div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3">
-				{exposures.map((exposureType) => (
-					<PieChartCard
-						data={{
-							safe: thresholdSummary[exposureType].safe,
-							warning: thresholdSummary[exposureType].warning,
-							danger: thresholdSummary[exposureType].danger,
-						}}
-						label={t(($) => $.exposures[exposureType])}
-						to={`?exposure=${exposureType}`}
-						key={exposureType}
-						exposureType={exposureType}
-					/>
-				))}
 			</div>
 		</div>
 	);

@@ -16,6 +16,7 @@ interface AttentionCardProps {
 	isSubordinatesLoading?: boolean;
 	thresholdSummary?: ThresholdSummary;
 	isThresholdSummaryLoading?: boolean;
+	showIndividuals?: boolean;
 }
 
 export const AttentionCard = ({
@@ -23,6 +24,7 @@ export const AttentionCard = ({
 	isSubordinatesLoading,
 	thresholdSummary,
 	isThresholdSummaryLoading,
+	showIndividuals = true,
 }: AttentionCardProps) => {
 	const { t } = useTranslation();
 	const [exposure] = useQueryState("exposure", parseAsExposure);
@@ -100,32 +102,33 @@ export const AttentionCard = ({
 
 				<CardContent className="gap-2">
 					<div className="mt-5 grid items-stretch gap-6 md:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
-						{!exposure && (
+						{/* Without individuals, the counts are shown for the selected exposure too, as the lists of names aren't */}
+						{!(exposure && showIndividuals) && (
 							<>
 								<StatCard
 									label={t(($) => $.foremanDashboard.overview.statCards.danger.label)}
 									dangerLevel="danger"
-									onClick={() => openForStatus("danger")}
+									onClick={showIndividuals ? () => openForStatus("danger") : undefined}
 									value={thresholdSummary[selectedExposureKey].danger}
 								/>
 
 								<StatCard
 									label={t(($) => $.foremanDashboard.overview.statCards.warning.label)}
 									dangerLevel="warning"
-									onClick={() => openForStatus("warning")}
+									onClick={showIndividuals ? () => openForStatus("warning") : undefined}
 									value={thresholdSummary[selectedExposureKey].warning}
 								/>
 
 								<StatCard
 									label={t(($) => $.foremanDashboard.overview.statCards.safe.label)}
 									dangerLevel="safe"
-									onClick={() => openForStatus("safe")}
+									onClick={showIndividuals ? () => openForStatus("safe") : undefined}
 									value={thresholdSummary[selectedExposureKey].safe}
 								/>
 							</>
 						)}
 
-						{exposure && (
+						{exposure && showIndividuals && (
 							<>
 								<ExposureRiskCard
 									users={subordinates ?? []}

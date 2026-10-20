@@ -4,7 +4,15 @@ import { MapPinIcon, ShieldUserIcon, UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../user/user-context.tsx";
 
-export const TeamSummary = ({ subordinateCount }: { subordinateCount: number }) => {
+type TeamSummaryProps = {
+	subordinateCount: number;
+	/** "Your team" by default */
+	title?: string;
+	/** "{{count}} operators in team" by default */
+	membersCountLabel?: string;
+};
+
+export const TeamSummary = ({ subordinateCount, title, membersCountLabel }: TeamSummaryProps) => {
 	const { t } = useTranslation();
 	const { user } = useUser();
 
@@ -13,7 +21,7 @@ export const TeamSummary = ({ subordinateCount }: { subordinateCount: number }) 
 			<CardLabelHeader>
 				<ShieldUserIcon className="size-4" />
 				<h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-					{t(($) => $.sidebar.yourTeam)}
+					{title ?? t(($) => $.sidebar.yourTeam)}
 				</h2>
 			</CardLabelHeader>
 
@@ -26,9 +34,10 @@ export const TeamSummary = ({ subordinateCount }: { subordinateCount: number }) 
 				<div className="flex items-center gap-2">
 					<UsersIcon className="size-4" />
 					<p className="text-sm">
-						{t(($) => $.foremanDashboard.team.membersCount, {
-							count: subordinateCount,
-						})}
+						{membersCountLabel ??
+							t(($) => $.foremanDashboard.team.membersCount, {
+								count: subordinateCount,
+							})}
 					</p>
 				</div>
 			</CardContent>

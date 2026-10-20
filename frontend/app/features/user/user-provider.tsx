@@ -1,12 +1,7 @@
 import type { User } from "@/features/user/user.ts";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { UserContext } from "./user-context.tsx";
-import {
-	DEFAULT_USER,
-	OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER,
-	OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID,
-	USER_STORAGE_KEY,
-} from "./user-utils.ts";
+import { DEFAULT_USER, DEMO_FALLBACK_USERS, USER_STORAGE_KEY } from "./user-utils.ts";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
 	const [user, setUserState] = useState<User>(() => {
@@ -15,9 +10,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
 			if (stored) {
 				const storedUser = JSON.parse(stored) as User;
-				if (storedUser.id === OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID) {
-					localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER));
-					return OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER;
+				// A stored demo user is replaced by its current version, since it only exists in the frontend
+				const demoUser = Object.values(DEMO_FALLBACK_USERS).find((demo) => demo.id === storedUser.id);
+				if (demoUser) {
+					localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(demoUser));
+					return demoUser;
 				}
 				return storedUser;
 			}

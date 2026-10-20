@@ -257,7 +257,8 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "occupationalHealthService": "Bedriftshelsetjeneste"
+      "occupationalHealthService": "Bedriftshelsetjeneste",
+      "management": "Ledelse"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },
@@ -267,9 +268,7 @@
       "toRegister": "Gå til registreringssiden"
     }
   },
-  "occupationalHealthServiceDashboard": {
-    "title": "Bedriftshelsetjenesten",
-    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
+  "aggregatedExposure": {
     "map": {
       "title": "Områdekart",
       "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
@@ -278,7 +277,8 @@
       "peopleWorkingHere": "{{count}} personer jobber her",
       "occupations": "Yrkesgrupper",
       "selectBuilding": "Velg et bygg på kartet for å se en anonym oversikt.",
-      "error": "Kunne ikke hente byggoversikten."
+      "error": "Kunne ikke hente byggoversikten.",
+      "noSiteMap": "Dette verftet har ikke områdekart ennå. Velg et bygg i listen for å se en anonym oversikt."
     },
     "period": {
       "label": "Tidsperiode",
@@ -301,6 +301,8 @@
       "december": "Desember"
     },
     "filters": {
+      "yard": "Verft",
+      "allYards": "Alle verft",
       "hall": "Bygg",
       "allHalls": "Alle bygg",
       "title": "Filtre",
@@ -364,7 +366,8 @@
         },
         "scale": {
           "title": "Stolpene og fargene",
-          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
+          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien.",
+          "assessment": "Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
         },
         "thresholds": {
           "title": "Tiltaks- og grenseverdier"
@@ -413,6 +416,13 @@
       "allSuppressed": "Alle verdier i perioden er skjult fordi for få personer bidro.",
       "error": "Kunne ikke hente gruppen."
     }
+  },
+  "occupationalHealthServiceDashboard": {
+    "title": "Bedriftshelsetjenesten",
+    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke."
+  },
+  "managementDashboard": {
+    "title": "Ledelse"
   },
   "select": {
     "all": "Velg alle",

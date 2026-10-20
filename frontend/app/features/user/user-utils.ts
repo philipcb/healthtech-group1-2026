@@ -45,8 +45,26 @@ export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER: User = {
 	},
 };
 
+export const MANAGEMENT_DEMO_USER: User = {
+	...DEFAULT_USER,
+	id: "44444444-4444-4444-4444-444444444444",
+	name: "Lars Leder",
+	email: "lars.leder@aker.com",
+	role: "management",
+	jobDescription: "HMS-direktør",
+	location: {
+		...DEFAULT_USER.location,
+		latitude: 59.8982,
+		longitude: 10.6279,
+		region: "Akershus",
+		city: "Fornebu",
+		site: "Aker Solutions Fornebu",
+	},
+};
+
 export const DEMO_FALLBACK_USERS: Partial<Record<User["role"], User>> = {
 	occupationalHealthService: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER,
+	management: MANAGEMENT_DEMO_USER,
 };
 
 export function getStoredUser(): User {

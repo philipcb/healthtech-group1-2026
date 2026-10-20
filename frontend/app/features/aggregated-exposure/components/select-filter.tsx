@@ -1,0 +1,49 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select.tsx";
+import type { LucideIcon } from "lucide-react";
+import { useId } from "react";
+
+const ALL = "all";
+
+/** Narrows the dashboard to one of `options`. This only filters what's shown, the backend decides what exists. */
+export function SelectFilter({
+	label,
+	icon: Icon,
+	options,
+	value,
+	onValueChange,
+	allLabel,
+}: {
+	label: string;
+	icon: LucideIcon;
+	options: Array<string>;
+	/** `null`, or a value that isn't in `options`, is every option */
+	value: string | null;
+	onValueChange: (value: string | null) => void;
+	/** The option for every value at once. Left out when one value has to be picked. */
+	allLabel?: string;
+}) {
+	const id = useId();
+	const selected = value !== null && options.includes(value) ? value : ALL;
+
+	return (
+		<div className="flex flex-col gap-1.5">
+			<label className="flex items-center gap-2 font-medium text-sm" htmlFor={id}>
+				<Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+				{label}
+			</label>
+			<Select value={selected} onValueChange={(option) => onValueChange(option === ALL ? null : option)}>
+				<SelectTrigger id={id} className="w-full bg-background sm:w-60">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{allLabel !== undefined && <SelectItem value={ALL}>{allLabel}</SelectItem>}
+					{options.map((option) => (
+						<SelectItem key={option} value={option}>
+							{option}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
+	);
+}

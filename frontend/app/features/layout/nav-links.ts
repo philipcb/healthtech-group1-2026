@@ -48,6 +48,13 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 			];
 		}
 
+		case "management": {
+			return [
+				{ to: href("/management"), label: t(($) => $.layout.home) },
+				{ to: href("/management/map"), label: t(($) => $.layout.map) },
+			];
+		}
+
 		default: {
 			return [];
 		}

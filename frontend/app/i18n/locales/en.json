@@ -260,7 +260,8 @@
     "role": {
       "operator": "Operator",
       "foreman": "Foreman",
-      "occupationalHealthService": "Occupational Health Service"
+      "occupationalHealthService": "Occupational Health Service",
+      "management": "Management"
     },
     "searchPlaceholder": "Search users..."
   },
@@ -270,9 +271,7 @@
       "toRegister": "Go to register page"
     }
   },
-  "occupationalHealthServiceDashboard": {
-    "title": "Occupational Health Service",
-    "description": "An anonymized overview of workplace exposure, per building and occupation.",
+  "aggregatedExposure": {
     "map": {
       "title": "Site map",
       "description": "An anonymized overview of occupation groups and people per building.",
@@ -281,7 +280,8 @@
       "peopleWorkingHere": "{{count}} people work here",
       "occupations": "Occupation groups",
       "selectBuilding": "Select a building on the map to see an anonymous overview.",
-      "error": "Could not load building overview."
+      "error": "Could not load building overview.",
+      "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
     },
     "period": {
       "label": "Time period",
@@ -304,6 +304,8 @@
       "december": "December"
     },
     "filters": {
+      "yard": "Yard",
+      "allYards": "All yards",
       "hall": "Building",
       "allHalls": "All buildings",
       "title": "Filters",
@@ -367,7 +369,8 @@
         },
         "scale": {
           "title": "Bars and colors",
-          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The dots next to the value say the same without color: one dot below the action value, two above it, and three above the limit value. The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
+          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The dots next to the value say the same without color: one dot below the action value, two above it, and three above the limit value.",
+          "assessment": "The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
         },
         "thresholds": {
           "title": "Action and limit values"
@@ -416,6 +419,13 @@
       "allSuppressed": "All values in the period are hidden because too few people contributed.",
       "error": "Could not load the group."
     }
+  },
+  "occupationalHealthServiceDashboard": {
+    "title": "Occupational Health Service",
+    "description": "An anonymized overview of workplace exposure, per building and occupation."
+  },
+  "managementDashboard": {
+    "title": "Management"
   },
   "select": {
     "all": "Select all",

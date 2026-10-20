@@ -2,10 +2,7 @@ import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import type { GroupSummaryRequest, GroupTrendResponse } from "@/features/aggregated-exposure/api/contracts.ts";
-import { exposureKpisQueryOptions, groupTrendQueryOptions } from "@/features/aggregated-exposure/api/queries.ts";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
-import { ExposureKpiPanel } from "@/features/aggregated-exposure/components/exposure-kpi-panel.tsx";
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
@@ -19,13 +16,17 @@ import {
 	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
-	getHallName,
+	isExposureUnavailable,
+	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
+import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
+import { useUser } from "@/features/user/user-context.tsx";
+import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
+import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
 import { cn } from "@/lib/utils.ts";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
@@ -36,18 +37,20 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const { search } = useLocation();
 	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
 		useAggregatedExposureSearchParams();
-	const { period, month, year } = periodSelection;
-	const { data, isPending, isError } = useQuery(
-		groupTrendQueryOptions({
-			groupId,
-			exposure,
-			dustField: exposure === "dust" ? dustField : undefined,
-			period,
-			month,
-			year,
-		}),
+	const { user } = useUser();
+	const periodParams = toPeriodParams(periodSelection);
+	const groupsQuery = useGetAggregateGroups(periodParams, {
+		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+	});
+	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
+	// unavailable exposure
+	const group = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
+	const trendQuery = useGetAggregateGroupTrend(
+		group?.groupId ?? "",
+		{ exposure, dustField: exposure === "dust" ? dustField : undefined, ...periodParams },
+		{ query: { enabled: group !== undefined && !isExposureUnavailable(exposure) } },
 	);
-	const group = data?.status === "ok" ? data.group : null;
+	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 
 	const exposurePickers = (
 		<>
@@ -78,20 +81,16 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
-							{group?.level === "hall"
-								? t(($) => $.aggregatedExposure.group.hallEyebrow)
-								: t(($) => $.aggregatedExposure.group.eyebrow)}
+							{t(($) => $.aggregatedExposure.group.eyebrow)}
 							{scope.site === null && group && ` · ${group.site}`}
 						</p>
-						{isPending ? (
+						{groupsQuery.isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{group === null
+								{group === undefined
 									? t(($) => $.aggregatedExposure.group.fallbackTitle)
-									: group.level === "hall"
-										? getHallName(group.hall, t)
-										: getGroupName(group, t)}
+									: getGroupName(group, t)}
 							</h1>
 						)}
 					</div>
@@ -108,20 +107,29 @@ export function GroupPage({ groupId }: { groupId: string }) {
 
 			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
 
-			{isPending ? (
+			{groupsQuery.isPending ? (
 				<Skeleton className="h-96 w-full" />
-			) : isError ? (
+			) : groupsQuery.isError ? (
 				<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
-			) : data.status === "unavailable" ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable[data.reason])} />
-			) : (
-				<GroupDetails
-					trend={data}
-					groupId={groupId}
-					exposure={exposure}
-					dustField={dustField}
-					request={{ site: scope.site, period, month, year }}
+			) : group === undefined ? (
+				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
+			) : isExposureUnavailable(exposure) ? (
+				<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
+			) : trendQuery.isPending ? (
+				<Skeleton className="h-96 w-full" />
+			) : trendQuery.isError ? (
+				<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
+			) : trendQuery.data.status === "unavailable" ? (
+				// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
+				<EmptyState
+					title={
+						exposure === "dust"
+							? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
+							: t(($) => $.aggregatedExposure.group.noData)
+					}
 				/>
+			) : (
+				<GroupDetails trend={trendQuery.data} exposure={exposure} dustField={dustField} />
 			)}
 		</div>
 	);
@@ -129,19 +137,14 @@ export function GroupPage({ groupId }: { groupId: string }) {
 
 function GroupDetails({
 	trend,
-	groupId,
 	exposure,
 	dustField,
-	request,
 }: {
-	trend: Extract<GroupTrendResponse, { status: "ok" }>;
-	groupId: string;
+	trend: AggregatedTrendOkDto;
 	exposure: Exposure;
 	dustField: DustField;
-	request: GroupSummaryRequest;
 }) {
 	const { t } = useTranslation();
-	const kpiQuery = useQuery(exposureKpisQueryOptions({ ...request, level: trend.group.level, dustField }));
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const metricLabel =
 		exposure === "dust"
@@ -158,6 +161,7 @@ function GroupDetails({
 					<p className="text-muted-foreground text-xs">
 						{t(($) => $.aggregatedExposure.group.unitAndGranularity, {
 							unit: getGroupUnitLabel(trend.unit, t),
+							// The backend's day point for vibration is the day's last hour, not the average of its hours
 							granularity:
 								exposure === "vibration"
 									? t(($) => $.aggregatedExposure.group.vibrationGranularity[trend.granularity])
@@ -192,13 +196,21 @@ function GroupDetails({
 				<StatisticCardLayout
 					label={t(($) => $.aggregatedExposure.group.periodAverage)}
 					value={
-						trend.average === null
+						// Left out when every point is `null`
+						trend.average === undefined
 							? t(($) => $.aggregatedExposure.group.noPeriodAverage)
 							: formatGroupValue(trend.average, trend.unit, t)
 					}
-					caption={metricLabel}
+					caption={
+						exposure === "vibration"
+							? t(($) => $.aggregatedExposure.group.vibrationPeriodAverage)
+							: metricLabel
+					}
 				/>
-				<ExposureKpiPanel kpiQuery={kpiQuery} groupId={groupId} exposure={exposure} />
+				{/* The aggregate API has no key figures for time above the action and limit values yet */}
+				<p className="rounded-xl border border-dashed p-4 text-muted-foreground text-sm md:col-span-2">
+					{t(($) => $.aggregatedExposure.kpiUnavailable)}
+				</p>
 			</div>
 		</div>
 	);

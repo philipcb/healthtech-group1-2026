@@ -25,47 +25,14 @@ export const DEFAULT_USER: User = {
 	},
 };
 
-export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID = "33333333-3333-3333-3333-333333333333" as const;
-export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE = "Aker Solutions Verdal" as const;
-
-export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER: User = {
-	...DEFAULT_USER,
-	id: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID,
-	name: "Mia Medisin",
-	email: "mia.medisin@aker.com",
-	role: "occupationalHealthService",
-	jobDescription: "Bedriftslege",
-	location: {
-		...DEFAULT_USER.location,
-		latitude: 63.7933,
-		longitude: 11.4817,
-		region: "Trøndelag",
-		city: "Verdal",
-		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
-	},
-};
-
-export const MANAGEMENT_DEMO_USER: User = {
-	...DEFAULT_USER,
-	id: "44444444-4444-4444-4444-444444444444",
-	name: "Lars Leder",
-	email: "lars.leder@aker.com",
-	role: "management",
-	jobDescription: "HMS-direktør",
-	location: {
-		...DEFAULT_USER.location,
-		latitude: 59.8982,
-		longitude: 10.6279,
-		region: "Akershus",
-		city: "Fornebu",
-		site: "Aker Solutions Fornebu",
-	},
-};
-
-export const DEMO_FALLBACK_USERS: Partial<Record<User["role"], User>> = {
-	occupationalHealthService: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER,
-	management: MANAGEMENT_DEMO_USER,
-};
+/**
+ * Demo users that only existed in the frontend, before the backend had users with these roles. A stored one is
+ * dropped, since the backend doesn't know it.
+ */
+export const REMOVED_DEMO_USER_IDS: ReadonlyArray<string> = [
+	"33333333-3333-3333-3333-333333333333",
+	"44444444-4444-4444-4444-444444444444",
+];
 
 export function getStoredUser(): User {
 	try {

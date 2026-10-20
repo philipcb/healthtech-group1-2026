@@ -1,7 +1,7 @@
 import type { User } from "@/features/user/user.ts";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { UserContext } from "./user-context.tsx";
-import { DEFAULT_USER, DEMO_FALLBACK_USERS, USER_STORAGE_KEY } from "./user-utils.ts";
+import { DEFAULT_USER, REMOVED_DEMO_USER_IDS, USER_STORAGE_KEY } from "./user-utils.ts";
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
 	const [user, setUserState] = useState<User>(() => {
@@ -10,13 +10,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
 			if (stored) {
 				const storedUser = JSON.parse(stored) as User;
-				// A stored demo user is replaced by its current version, since it only exists in the frontend
-				const demoUser = Object.values(DEMO_FALLBACK_USERS).find((demo) => demo.id === storedUser.id);
-				if (demoUser) {
-					localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(demoUser));
-					return demoUser;
+				if (!REMOVED_DEMO_USER_IDS.includes(storedUser.id)) {
+					return storedUser;
 				}
-				return storedUser;
+				// Removed, so requests aren't sent as a user the backend doesn't know
+				localStorage.removeItem(USER_STORAGE_KEY);
 			}
 		} catch (error) {
 			console.error("Failed to parse user from local storage", error);

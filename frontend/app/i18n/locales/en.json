@@ -269,19 +269,17 @@
     "currentRole": "Current role:",
     "navigate": {
       "toRegister": "Go to register page"
-    }
+    },
+    "noUserWithRole": "No user has this role"
   },
   "aggregatedExposure": {
     "map": {
       "title": "Site map",
       "description": "An anonymized overview of occupation groups and people per building.",
-      "buildings": "Buildings",
-      "selectedBuilding": "Selected building",
-      "peopleWorkingHere": "{{count}} people work here",
-      "occupations": "Occupation groups",
-      "selectBuilding": "Select a building on the map to see an anonymous overview.",
-      "error": "Could not load building overview.",
-      "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
+      "unavailable": {
+        "title": "The site map isn't available yet",
+        "description": "There's no data on people and occupation groups per building yet."
+      }
     },
     "period": {
       "label": "Time period",
@@ -321,30 +319,22 @@
     },
     "exposureLabel": "Exposure type",
     "pointsUnit": "points",
-    "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
-      "vibration": "Average daily vibration points per person in the period"
+      "vibration": "Average vibration points per tool session"
     },
     "metricsShort": {
       "dust": "PM1 TWA",
       "noise": "LAeq",
-      "vibration": "Average per person and day"
+      "vibration": "Points per tool session"
     },
-    "privacyNotice": "Groups with fewer than {{count}} people are hidden.",
-    "kpi": {
-      "actionValue": "Action value: {{threshold}}",
-      "limitValue": "Limit value: {{threshold}}",
-      "values": {
-        "percentOfWorkingTime": "{{value}} of working time",
-        "percentOfWorkdays": "{{value}} of workdays"
-      },
-      "noData": "No key figures for the selected period.",
-      "suppressed": "The key figure is hidden because too few people contributed.",
-      "unavailable": "This key figure isn't available yet.",
-      "error": "Could not load the key figures."
+    "privacyNotice": "Groups with fewer than {{count}} registered people aren't shown.",
+    "unavailableValue": "Not available",
+    "exposureUnavailable": {
+      "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
+    "kpiUnavailable": "Key figures for time above the action and limit values aren't available yet.",
     "overview": {
       "heading": "Groups",
       "hallsHeading": "Buildings",
@@ -365,12 +355,12 @@
         "description": "What the group values mean, and what the bars and colors show.",
         "groupData": {
           "title": "Group data",
-          "aggregation": "Exposure values are aggregated at group level. Individual exposure may vary, so the group average may not represent any individual."
+          "aggregation": "Each value is based on the group's hourly averages: for every hour, the average of the measurements of the group members who were measured that hour. A day's value is the average of its hours, and the overview shows the average of the period's days. Individual exposure may vary, so the group average may not represent any individual."
         },
         "scale": {
           "title": "Bars and colors",
           "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The dots next to the value say the same without color: one dot below the action value, two above it, and three above the limit value.",
-          "assessment": "The colors show where the group average lies compared to the thresholds, and aren't a professional assessment of the group."
+          "assessment": "The action and limit values apply to one person's daily exposure, while the values shown are group averages of hourly values, so the colors are only indicative and aren't a professional assessment of the group."
         },
         "thresholds": {
           "title": "Action and limit values"
@@ -382,42 +372,41 @@
         "title": "No groups to display",
         "description": "Groups with too few people are not shown, to protect privacy."
       },
-      "noHalls": {
-        "title": "No buildings to display",
-        "description": "Buildings with too few people are not shown, to protect privacy."
+      "hallsUnavailable": {
+        "title": "Whole buildings aren't available yet",
+        "description": "Only groups per occupation in each building can be shown."
       },
       "noData": "No data for the selected period.",
-      "error": "Could not load the groups.",
-      "hallsError": "Could not load the buildings."
+      "error": "Could not load the groups."
     },
     "group": {
       "back": "Back to the overview",
       "eyebrow": "Group",
-      "hallEyebrow": "Building",
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
       "noPeriodAverage": "No value for the period",
+      "vibrationPeriodAverage": "The average of the daily points in the chart. The overview averages all hours, so the values can differ.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "One point per working day"
+        "day": "One point per day with measurements: the average of the day's hourly values"
       },
       "vibrationGranularity": {
-        "day": "One point per working day: the average of each person's points that day"
+        "day": "One point per day with measurements: the value for the day's last hour with measurements"
       },
       "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
       "colorsNotice": "The line colors show where the group average lies compared to a single person's action value ({{action}}) and limit value ({{limit}}) for the selected exposure and, for dust, the selected fraction. They aren't a professional assessment of the group.",
       "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",
-      "suppressed": "Hidden because too few people contributed",
+      "suppressed": "No value",
       "unavailable": {
-        "noSuchGroup": "The group doesn't exist.",
-        "tooFewPeople": "The group has too few people for data to be shown."
+        "noSuchGroup": "The group doesn't exist."
       },
       "noData": "No data for the selected period.",
       "noDustFieldData": "No {{dustField}} data for the selected period.",
-      "allSuppressed": "All values in the period are hidden because too few people contributed.",
-      "error": "Could not load the group."
+      "allSuppressed": "No values for the selected period.",
+      "error": "Could not load the group.",
+      "trendError": "Could not load the group's development."
     }
   },
   "occupationalHealthServiceDashboard": {
@@ -425,7 +414,11 @@
     "description": "An anonymized overview of workplace exposure, per building and occupation."
   },
   "managementDashboard": {
-    "title": "Management"
+    "title": "Management",
+    "unavailable": {
+      "title": "No data available for management yet",
+      "description": "Aggregated exposure data is only available to the occupational health service for now."
+    }
   },
   "select": {
     "all": "Select all",

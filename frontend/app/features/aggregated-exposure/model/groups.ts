@@ -1,4 +1,5 @@
 import type { TranslateFn } from "@/i18n/config.ts";
+import type { AggregatedOverviewResponseDto, SampleDto } from "@/lib/api/generated/models/index.ts";
 import { type DustField, type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
@@ -17,6 +18,44 @@ export function getShownExposures(filter: ExposureFilter): ReadonlyArray<Exposur
 }
 
 /**
+ * Exposures the aggregate API has values for, but not values that can be shown as what the dashboard says they are.
+ * They're shown as unavailable instead, and their trends aren't requested. None at the moment.
+ */
+export const unavailableExposures = [] as const satisfies ReadonlyArray<Exposure>;
+export type UnavailableExposure = (typeof unavailableExposures)[number];
+
+export function isExposureUnavailable(exposure: Exposure): exposure is UnavailableExposure {
+	return (unavailableExposures as ReadonlyArray<Exposure>).includes(exposure);
+}
+
+/** One occupation in one hall, with the site the backend returned it for */
+export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { site: string; hall: string; occupation: string };
+
+/**
+ * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend only returns the signed-in user's
+ * site, so that's every group's site. Where each value comes from in the aggregate database:
+ * - dust: average PM1 TWA, `DustAverage.AveragePm1Twa`.
+ * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
+ *   energy average.
+ * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's
+ *   hours, and the trend shows each day's last hour.
+ */
+export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto, site: string) {
+	const hiddenAverages = Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null]));
+
+	return {
+		units,
+		// The backend only sends groups of one occupation in one hall, but the DTO allows a missing hall or occupation
+		groups: groups.flatMap(
+			({ groupId, hall, occupation, averages }): Array<GroupSummary> =>
+				hall === null || occupation === null
+					? []
+					: [{ groupId, site, hall, occupation, averages: { ...averages, ...hiddenAverages } }],
+		),
+	};
+}
+
+/**
  * The existing action and limit values each exposure's bar is drawn against. They apply to a single person's exposure,
  * while the cards show group averages, so the colors place the group average on that scale rather than assess every
  * person in the group. How comparable each exposure's value is to its thresholds:
@@ -24,8 +63,8 @@ export function getShownExposures(filter: ExposureFilter): ReadonlyArray<Exposur
  *   professional assessment.
  * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
  *   the measurement basis isn't the same and needs a professional assessment.
- * - vibration: 100 / 400 points apply to a person's daily points, the same basis as the value (average daily points per
- *   person), as long as the equipment's points follow the HSE points system, which the supplier hasn't confirmed.
+ * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average points per
+ *   tool session, so the measurement basis isn't the same and needs a professional assessment.
  */
 export const thresholdByExposure: Record<Exposure, Threshold> = {
 	dust: getThreshold("dust", "pm1_twa"),
@@ -75,10 +114,6 @@ export function compareByExposureFilter(
 	filter: ExposureFilter,
 ) {
 	return filter === "all" ? 0 : compareAverages(averagesA[filter], averagesB[filter]);
-}
-
-export function getHallName(hall: string, t: TranslateFn) {
-	return `${hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {

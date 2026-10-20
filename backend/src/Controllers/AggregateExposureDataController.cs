@@ -23,7 +23,7 @@ public class AggregateExposureDataController(
 	[HttpGet("groups/{groupId}/trend")]
 	//[ServiceFilter(typeof(ValidateFieldForExposureTypeFilter))]
 	[ProducesResponseType(typeof(AggregatedTrendResponseDto), StatusCodes.Status200OK)]
-	public async Task<ActionResult<ExposureResponseDto>> GetSampleTrend(
+	public async Task<ActionResult<AggregatedTrendResponseDto>> GetSampleTrend(
 		[FromRoute] Guid groupId,
 		[FromQuery] ExposureType exposure,
 		[FromQuery] string period,
@@ -58,14 +58,23 @@ public class AggregateExposureDataController(
 
 	[HttpGet("groups")]
 	//[ServiceFilter(typeof(ValidateFieldForExposureTypeFilter))]
-	[ProducesResponseType(typeof(AggregateExposureDataRequestDto), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(AggregatedOverviewResponseDto), StatusCodes.Status200OK)]
 	public async Task<ActionResult<AggregatedOverviewResponseDto>> GetAggregateOverview(
 		[FromQuery] string period,
 		[FromQuery] int year,
 		[FromQuery] int? month
 	)
 	{
-		var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+		(DateTime startTime, DateTime endTime) timeLimits;
+		try
+		{
+			timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest($"The request is invalid: {ex.Message}");
+		}
+
 		return new AggregatedOverviewResponseDto
 		{
 			Units = new MeasurementUnitsDto()

@@ -1,9 +1,13 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
-import type { GroupSummary, GroupSummaryResponse } from "@/features/aggregated-exposure/api/contracts.ts";
 import { DangerLevelBadge, ThresholdBar } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { formatGroupValue, thresholdByExposure } from "@/features/aggregated-exposure/model/groups.ts";
+import {
+	formatGroupValue,
+	isExposureUnavailable,
+	thresholdByExposure,
+} from "@/features/aggregated-exposure/model/groups.ts";
+import type { MeasurementUnitsDto, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { ChevronRight } from "lucide-react";
@@ -22,8 +26,8 @@ export function SummaryCard({
 	header: ReactNode;
 	groupId: string;
 	name: string;
-	averages: GroupSummary["averages"];
-	units: GroupSummaryResponse["units"];
+	averages: SampleAveragesDto;
+	units: MeasurementUnitsDto;
 	shownExposures: ReadonlyArray<Exposure>;
 }) {
 	return (
@@ -57,14 +61,17 @@ function ExposureLink({
 	name: string;
 	average: number | null;
 	exposure: Exposure;
-	unit: GroupSummaryResponse["units"][Exposure];
+	unit: MeasurementUnitsDto[Exposure];
 }) {
 	const { t } = useTranslation();
 	const { search } = useLocation();
 	const { getGroupPath } = useDashboardScope();
 
-	const value =
-		average === null ? t(($) => $.aggregatedExposure.overview.noValue) : formatGroupValue(average, unit, t);
+	const value = isExposureUnavailable(exposure)
+		? t(($) => $.aggregatedExposure.unavailableValue)
+		: average === null
+			? t(($) => $.aggregatedExposure.overview.noValue)
+			: formatGroupValue(average, unit, t);
 	const threshold = thresholdByExposure[exposure];
 	const level = average === null ? null : getDangerLevel(average, threshold.warning, threshold.danger);
 	// The level is also written out and shown as dots, so it isn't only shown by the bar's colors. Without a value there's

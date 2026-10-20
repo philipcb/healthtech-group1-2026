@@ -1,4 +1,3 @@
-import type { GroupSummaryRequest } from "@/features/aggregated-exposure/api/contracts.ts";
 import type { ComponentType } from "react";
 
 export type YardFilterProps = {
@@ -19,7 +18,7 @@ export type DashboardScope = {
 	 * The site the data is fetched for, or `null` for every site the user has access to. The groups can then be from
 	 * several sites, so they're shown with their site.
 	 */
-	site: GroupSummaryRequest["site"];
+	site: string | null;
 	title: string;
 	description?: string;
 	/** Whether the overview guide's introduction, its note on what the colors aren't and the site map's hint are shown */

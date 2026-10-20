@@ -1,21 +1,27 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import type { GroupSummary, GroupSummaryRequest } from "@/features/aggregated-exposure/api/contracts.ts";
-import { groupSummariesQueryOptions, hallSummariesQueryOptions } from "@/features/aggregated-exposure/api/queries.ts";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
 import { GroupLevelToggle } from "@/features/aggregated-exposure/components/group-level-toggle.tsx";
 import { GroupList } from "@/features/aggregated-exposure/components/group-list.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
-import { HallList } from "@/features/aggregated-exposure/components/hall-list.tsx";
 import { OverviewFilterDialog } from "@/features/aggregated-exposure/components/overview-filter-dialog.tsx";
 import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
 import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { DangerLevelBadgeLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { type ExposureFilter, getShownExposures, MIN_GROUP_SIZE } from "@/features/aggregated-exposure/model/groups.ts";
+import {
+	type ExposureFilter,
+	getShownExposures,
+	isExposureUnavailable,
+	MIN_GROUP_SIZE,
+	toGroupSummaries,
+} from "@/features/aggregated-exposure/model/groups.ts";
+import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@/features/user/user-context.tsx";
+import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
+import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,9 +33,11 @@ export function OverviewPage() {
 	const { YardFilter } = scope;
 	const { exposureFilter, setExposureFilter, yard, setYard, hall, setHall, level, setLevel, periodSelection } =
 		useAggregatedExposureSearchParams();
-	const { period, month, year } = periodSelection;
-	const request: GroupSummaryRequest = { site: scope.site, period, month, year };
-	const { data } = useQuery(groupSummariesQueryOptions(request));
+	const { user } = useUser();
+	const params = toPeriodParams(periodSelection);
+	const { data } = useGetAggregateGroups(params, {
+		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+	});
 
 	const yards = getYards(data?.groups);
 	const selectedYard = YardFilter && yard !== null && yards.includes(yard) ? yard : null;
@@ -99,16 +107,14 @@ export function OverviewPage() {
 				</div>
 
 				{level === "hall" ? (
-					<HallResults
-						request={request}
-						yard={selectedYard}
-						hall={selectedHall}
-						filter={exposureFilter}
-						showsYard={scope.site === null}
+					// The aggregate API has no protected whole-building values yet
+					<EmptyState
+						title={t(($) => $.aggregatedExposure.overview.hallsUnavailable.title)}
+						description={t(($) => $.aggregatedExposure.overview.hallsUnavailable.description)}
 					/>
 				) : (
 					<GroupResults
-						request={request}
+						params={params}
 						yard={selectedYard}
 						hall={selectedHall}
 						filter={exposureFilter}
@@ -121,7 +127,7 @@ export function OverviewPage() {
 }
 
 type ResultsProps = {
-	request: GroupSummaryRequest;
+	params: GetAggregateGroupsParams;
 	yard: string | null;
 	hall: string | null;
 	filter: ExposureFilter;
@@ -132,9 +138,12 @@ function isSelected(summary: { site: string; hall: string }, yard: string | null
 	return (yard === null || summary.site === yard) && (hall === null || summary.hall === hall);
 }
 
-function GroupResults({ request, yard, hall, filter, showsYard }: ResultsProps) {
+function GroupResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
 	const { t } = useTranslation();
-	const { data, isPending, isError } = useQuery(groupSummariesQueryOptions(request));
+	const { user } = useUser();
+	const { data, isPending, isError } = useGetAggregateGroups(params, {
+		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+	});
 	const groups = data?.groups.filter((group) => isSelected(group, yard, hall)) ?? [];
 
 	return isPending ? (
@@ -146,6 +155,8 @@ function GroupResults({ request, yard, hall, filter, showsYard }: ResultsProps) 
 			title={t(($) => $.aggregatedExposure.overview.noGroups.title)}
 			description={t(($) => $.aggregatedExposure.overview.noGroups.description)}
 		/>
+	) : filter !== "all" && isExposureUnavailable(filter) ? (
+		<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[filter])} />
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
 		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
 	) : (
@@ -153,27 +164,6 @@ function GroupResults({ request, yard, hall, filter, showsYard }: ResultsProps) 
 	);
 }
 
-function HallResults({ request, yard, hall, filter, showsYard }: ResultsProps) {
-	const { t } = useTranslation();
-	const { data, isPending, isError } = useQuery(hallSummariesQueryOptions(request));
-	const halls = data?.halls.filter((summary) => isSelected(summary, yard, hall)) ?? [];
-
-	return isPending ? (
-		<Skeleton className="h-64 w-full" />
-	) : isError ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.hallsError)} />
-	) : halls.length === 0 ? (
-		<EmptyState
-			title={t(($) => $.aggregatedExposure.overview.noHalls.title)}
-			description={t(($) => $.aggregatedExposure.overview.noHalls.description)}
-		/>
-	) : halls.every((summary) => hasNoValues(summary.averages, filter)) ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
-	) : (
-		<HallList halls={halls} units={data.units} filter={filter} showsYard={showsYard} />
-	);
-}
-
-function hasNoValues(averages: GroupSummary["averages"], filter: ExposureFilter) {
+function hasNoValues(averages: SampleAveragesDto, filter: ExposureFilter) {
 	return getShownExposures(filter).every((exposure) => averages[exposure] === null);
 }

@@ -1,6 +1,6 @@
 import { SignupForm } from "@/components/signup-form.tsx";
 import { DemoRoleSwitcher } from "@/features/user/demo-role-switcher.tsx";
-import { hasFrontendRole, type User } from "@/features/user/user.ts";
+import { toFrontendUser, type User } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useGetUsers } from "@/lib/api/generated/user.ts";
 import { useNavigate } from "react-router";
@@ -23,7 +23,7 @@ export default function Page() {
 				</div>
 
 				<DemoRoleSwitcher
-					users={users?.filter(hasFrontendRole)}
+					users={users?.map(toFrontendUser)}
 					onSelect={handleDemoSelect}
 					size="lg"
 					className="w-full max-w-sm rounded-xl p-4"

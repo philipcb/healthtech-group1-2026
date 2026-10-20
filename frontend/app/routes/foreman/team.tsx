@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { DataTable } from "@/components/ui/data-table.tsx";
-import { hasFrontendRole, type User, UserRole } from "@/features/user/user.ts";
+import { toFrontendUser, type User, UserRole } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { UserSearch } from "@/features/user/user-search.tsx";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
@@ -79,7 +79,7 @@ export default function TeamPage() {
 		const subordinateIds = new Set(subordinates.map((s) => s.id));
 
 		return users
-			.filter(hasFrontendRole)
+			.map(toFrontendUser)
 			.filter((user) => user.role === UserRole.Operator && !subordinateIds.has(user.id));
 	}, [users, subordinates]);
 

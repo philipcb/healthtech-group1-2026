@@ -42,3 +42,8 @@ export function getPeriodLabel(
 ) {
 	return period === "month" ? `${getMonthLabel(month, t)} ${year}` : year.toString();
 }
+
+/** The aggregate API's period parameters. It only reads `month` for the month period, zero-based like the frontend's. */
+export function toPeriodParams({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
+	return { period, year, month: period === "month" ? month : undefined };
+}

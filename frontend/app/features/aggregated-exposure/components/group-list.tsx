@@ -1,18 +1,19 @@
-import type { GroupSummary, GroupSummaryResponse } from "@/features/aggregated-exposure/api/contracts.ts";
 import { SummaryCard } from "@/features/aggregated-exposure/components/summary-card.tsx";
 import {
 	compareByExposureFilter,
 	type ExposureFilter,
+	type GroupSummary,
 	getGroupName,
 	getOccupationLabel,
 	getShownExposures,
 } from "@/features/aggregated-exposure/model/groups.ts";
+import type { MeasurementUnitsDto } from "@/lib/api/generated/models/index.ts";
 import { Factory } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 type GroupListProps = {
 	groups: Array<GroupSummary>;
-	units: GroupSummaryResponse["units"];
+	units: MeasurementUnitsDto;
 	filter: ExposureFilter;
 	showsYard: boolean;
 };

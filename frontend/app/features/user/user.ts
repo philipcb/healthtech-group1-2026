@@ -1,15 +1,8 @@
-import { UserRole as BackendUserRole, type UserDto } from "@/lib/api/generated/models/index.ts";
+import type { UserRole as BackendUserRole, UserDto } from "@/lib/api/generated/models/index.ts";
 import { z } from "zod";
 
-/**
- * The backend's operator and foreman roles, and `occupationalHealthService` and `management`, frontend-only roles for
- * the demo. The backend's `ohs` and `manager` roles have no pages yet.
- */
-export const UserRoleSchema = z.enum([
-	...BackendUserRole.extract(["operator", "foreman"]).options,
-	"occupationalHealthService",
-	"management",
-]);
+/** The frontend's names for the backend's roles, see `toFrontendUser` */
+export const UserRoleSchema = z.enum(["operator", "foreman", "occupationalHealthService", "management"]);
 
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
@@ -20,10 +13,16 @@ export const UserRole = {
 	Management: "management",
 } as const satisfies Record<string, UserRole>;
 
-/** A user from the backend, or a demo user with a frontend-only role */
+const frontendRoleByBackendRole: Record<BackendUserRole, UserRole> = {
+	operator: UserRole.Operator,
+	foreman: UserRole.Foreman,
+	ohs: UserRole.OccupationalHealthService,
+	manager: UserRole.Management,
+};
+
+/** A user from the backend, with the frontend's name for its role */
 export type User = Omit<UserDto, "role"> & { role: UserRole };
 
-/** Whether a user from the backend has a role the frontend has pages for */
-export function hasFrontendRole<T extends UserDto>(user: T): user is T & User {
-	return UserRoleSchema.safeParse(user.role).success;
+export function toFrontendUser<T extends UserDto>(user: T): Omit<T, "role"> & { role: UserRole } {
+	return { ...user, role: frontendRoleByBackendRole[user.role] };
 }

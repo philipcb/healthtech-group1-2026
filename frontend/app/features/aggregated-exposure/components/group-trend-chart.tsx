@@ -4,14 +4,14 @@ import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
-import type { GroupTrendPoint } from "@/features/aggregated-exposure/api/contracts.ts";
 import { formatGroupNumber, formatGroupValue, getGroupUnitLabel } from "@/features/aggregated-exposure/model/groups.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
+import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
-import { differenceInCalendarDays, eachMonthOfInterval, max, parseISO } from "date-fns";
+import { differenceInCalendarDays, eachMonthOfInterval, format, max, parseISO } from "date-fns";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis, type YAxisTickContentProps } from "recharts";
@@ -29,7 +29,7 @@ type ChartRow = {
 };
 
 type GroupTrendChartProps = {
-	points: Array<GroupTrendPoint>;
+	points: Array<TrendPointDto>;
 	unit: ExposureUnit;
 	label: string;
 	threshold: Threshold | null;
@@ -43,7 +43,9 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
 	const rows: Array<ChartRow> = points.map((point) => {
-		const date = parseISO(point.time);
+		// The backend sends the start of each UTC day, which is the same day in the app's time zone. Its local date is
+		// drawn at local midnight.
+		const date = parseISO(format(point.time, "yyyy-MM-dd"));
 
 		return { timestamp: date.getTime(), tooltipLabel: formatDate(date, "EEEE d. MMMM yyyy"), value: point.value };
 	});

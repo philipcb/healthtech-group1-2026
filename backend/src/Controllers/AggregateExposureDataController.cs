@@ -13,27 +13,27 @@ namespace Backend.Controllers;
 [ApiController]
 [Authorize(Policy = "OHSOnly")]
 [Route("api/medical-team")]
-public class AggregateExposureDataController(IAggregateExposureDataService aggregateExposureDataService) : ControllerBase
+public class AggregateExposureDataController(
+	IAggregateExposureDataService aggregateExposureDataService
+) : ControllerBase
 {
-	private readonly IAggregateExposureDataService _aggregateExposureDataService = aggregateExposureDataService;
+	private readonly IAggregateExposureDataService _aggregateExposureDataService =
+		aggregateExposureDataService;
 
 	[HttpGet("groups/{groupId}/trend")]
 	//[ServiceFilter(typeof(ValidateFieldForExposureTypeFilter))]
-	[ProducesResponseType(
-        typeof(AggregatedTrendResponseDto),
-        StatusCodes.Status200OK)]
-	
+	[ProducesResponseType(typeof(AggregatedTrendResponseDto), StatusCodes.Status200OK)]
 	public async Task<ActionResult<ExposureResponseDto>> GetSampleTrend(
 		[FromRoute] Guid groupId,
-        [FromQuery] ExposureType exposure,
-        [FromQuery] string period,
-        [FromQuery] int year,
-        [FromQuery] int? month,
-        [FromQuery] string? dustField = null
-		)
+		[FromQuery] ExposureType exposure,
+		[FromQuery] string period,
+		[FromQuery] int year,
+		[FromQuery] int? month,
+		[FromQuery] string? dustField = null
+	)
 	{
 		try
-		{		
+		{
 			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
 
 			AggregatedTrendResponseDto data = await _aggregateExposureDataService.GetTrendAsync(
@@ -58,21 +58,28 @@ public class AggregateExposureDataController(IAggregateExposureDataService aggre
 
 	[HttpGet("groups")]
 	//[ServiceFilter(typeof(ValidateFieldForExposureTypeFilter))]
-	[ProducesResponseType(
-        typeof(AggregateExposureDataRequestDto),
-        StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(AggregateExposureDataRequestDto), StatusCodes.Status200OK)]
 	public async Task<ActionResult<AggregatedOverviewResponseDto>> GetAggregateOverview(
-        [FromQuery] string period,
-        [FromQuery] int year,
-        [FromQuery] int? month
-		)
+		[FromQuery] string period,
+		[FromQuery] int year,
+		[FromQuery] int? month
+	)
 	{
 		var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
 		return new AggregatedOverviewResponseDto
 		{
-			Units = new MeasurementUnitsDto(){Dust = "ug", Noise = "db", Vibration = "points"},
-			Groups = (List<SampleDto>)await _aggregateExposureDataService.GetOverviewAggregateDataAsync(timeLimits.startTime, timeLimits.endTime)	
+			Units = new MeasurementUnitsDto()
+			{
+				Dust = "ug",
+				Noise = "db",
+				Vibration = "points",
+			},
+			Groups =
+				(List<SampleDto>)
+					await _aggregateExposureDataService.GetOverviewAggregateDataAsync(
+						timeLimits.startTime,
+						timeLimits.endTime
+					),
 		};
 	}
-		
 }

@@ -9,7 +9,6 @@ public class DataInsertHandler(AggregateDbContext _context)
 		await _context.Set<Sample>().AddRangeAsync(samples);
 	}
 
-	
 	public async Task addDataRange(List<DustAverage> datas)
 	{
 		await _context.DustAverages.AddRangeAsync(datas);
@@ -19,7 +18,7 @@ public class DataInsertHandler(AggregateDbContext _context)
 	{
 		await _context.VibrationAverages.AddRangeAsync(datas);
 	}
-	
+
 	public async Task addDataRange(List<NoiseAverage> datas)
 	{
 		await _context.NoiseAverages.AddRangeAsync(datas);
@@ -29,5 +28,4 @@ public class DataInsertHandler(AggregateDbContext _context)
 	{
 		await _context.AveragesPer8HourShift.AddRangeAsync(datas);
 	}
-
 };

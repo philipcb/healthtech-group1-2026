@@ -12,9 +12,7 @@ namespace Backend.Services;
 
 public interface IAggregateExposureDataService
 {
-
-	Task<double?> GetWholeAverage
-	(
+	Task<double?> GetWholeAverage(
 		DateTime startTime,
 		DateTime endTime,
 		Guid? sampleId,
@@ -31,21 +29,23 @@ public interface IAggregateExposureDataService
 	);
 
 	Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
-		DateTime startTime, 
+		DateTime startTime,
 		DateTime endTime
 	);
 }
 
-public class AggregateExposureDataService(AggregateDbContext context, SignedInUserContext signedInUserContext)
-	: IAggregateExposureDataService
+public class AggregateExposureDataService(
+	AggregateDbContext context,
+	SignedInUserContext signedInUserContext
+) : IAggregateExposureDataService
 {
 	private readonly AggregateDbContext _context = context;
 	private readonly SignedInUserContext _signedInUserContext = signedInUserContext;
 
 	// public async Task<SampleDTOs?> getSampleFromQualifiers(string? locationId, string? job)
 	// {
-	// 	var sample = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User.Location.Site) 
-	// 	&& ((locationId == null && s.LocationQualifier == null) || (s.LocationQualifier != null && s.LocationQualifier.Equals(locationId))) 
+	// 	var sample = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User.Location.Site)
+	// 	&& ((locationId == null && s.LocationQualifier == null) || (s.LocationQualifier != null && s.LocationQualifier.Equals(locationId)))
 	// 	&& ((job == null && s.JobQualifier == null) || (s.JobQualifier != null && s.JobQualifier.Equals(job)))).FirstOrDefaultAsync();
 
 	// 	if (sample != null)
@@ -62,7 +62,6 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 	// 	return null;
 	// }
 
-
 	private double? GetCorrectDustValue(DustAverage data, string field)
 	{
 		switch (field)
@@ -77,10 +76,8 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 		return null;
 	}
 
-
 	//function to get the average of averages of each user of a given time period and a given exposure type
-	public async Task<double?> GetWholeAverage
-	(
+	public async Task<double?> GetWholeAverage(
 		DateTime startTime,
 		DateTime endTime,
 		Guid? sampleId,
@@ -88,23 +85,45 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 		string? field
 	)
 	{
-		switch (exposureType){
+		switch (exposureType)
+		{
 			case ExposureType.Dust:
-				return _context.DustAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => GetCorrectDustValue(d, field!))})
-				.Average(d => d.Value);
+				return _context
+					.DustAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.Average(d => GetCorrectDustValue(d, field!)),
+					})
+					.Average(d => d.Value);
 			case ExposureType.Noise:
-				return _context.NoiseAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => d.AverageLaeq)})
-				.Average(d => d.Value);
+				return _context
+					.NoiseAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.Average(d => d.AverageLaeq),
+					})
+					.Average(d => d.Value);
 			case ExposureType.Vibration:
-				return _context.VibrationAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => d.AverageExposure)})
-				.Average(d => d.Value);
-			default :
+				return _context
+					.VibrationAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.Average(d => d.AverageExposure),
+					})
+					.Average(d => d.Value);
+			default:
 				return null;
 		}
 	}
@@ -118,42 +137,71 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 		string? field
 	)
 	{
-		var sample = await _context.Samples.Where(s => s.Id == sampleId && s.Site.Equals(_signedInUserContext.User!.Location!.Site)).FirstOrDefaultAsync();
+		var sample = await _context
+			.Samples.Where(s =>
+				s.Id == sampleId && s.Site.Equals(_signedInUserContext.User!.Location!.Site)
+			)
+			.FirstOrDefaultAsync();
 		if (sample == null)
 		{
 			return new AggregatedTrendResponseDto
 			{
 				Status = "unavailable",
-				Reason = "noSuchGroup"
+				Reason = "noSuchGroup",
 			};
 		}
 		Guid? building = sample.LocationQualifier;
 		String? occupation = sample.JobQualifier;
 		String? unit;
 		List<TrendPointDto>? exposureAverages;
-		switch (exposureType){
+		switch (exposureType)
+		{
 			case ExposureType.Dust:
 				unit = "ug";
-				exposureAverages = await _context.DustAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => GetCorrectDustValue(d, field!))})
-				.OrderBy(d => d.Time).ToListAsync();
+				exposureAverages = await _context
+					.DustAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.Average(d => GetCorrectDustValue(d, field!)),
+					})
+					.OrderBy(d => d.Time)
+					.ToListAsync();
 				break;
 			case ExposureType.Noise:
 				unit = "db";
-				exposureAverages = await _context.NoiseAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.Average(d => d.AverageLaeq)})
-				.OrderBy(d => d.Time).ToListAsync();
+				exposureAverages = await _context
+					.NoiseAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.Average(d => d.AverageLaeq),
+					})
+					.OrderBy(d => d.Time)
+					.ToListAsync();
 				break;
 			case ExposureType.Vibration:
 				unit = "points";
-				exposureAverages = await _context.VibrationAverages.Where(d => d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new TrendPointDto{Time = g.Key, Value = g.OrderByDescending(d => d.Time).FirstOrDefault()!.AverageExposure})
-				.OrderBy(d => d.Time).ToListAsync();
+				exposureAverages = await _context
+					.VibrationAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.GroupBy(d => d.Time.Date)
+					.Select(g => new TrendPointDto
+					{
+						Time = g.Key,
+						Value = g.OrderByDescending(d => d.Time).FirstOrDefault()!.AverageExposure,
+					})
+					.OrderBy(d => d.Time)
+					.ToListAsync();
 				break;
-			default :
+			default:
 				unit = null;
 				exposureAverages = null;
 				break;
@@ -163,48 +211,66 @@ public class AggregateExposureDataService(AggregateDbContext context, SignedInUs
 			return new AggregatedTrendResponseDto
 			{
 				Status = "unavailable",
-				Reason = "noSuchGroup"
+				Reason = "noSuchGroup",
 			};
 		}
 		return new AggregatedTrendResponseDto
 		{
 			Status = "ok",
-			Group = new TrendSampleDto
-			{
-				Hall = building,
-				Occupation = occupation
-			},
+			Group = new TrendSampleDto { Hall = building, Occupation = occupation },
 			Unit = unit,
 			Average = exposureAverages!.Average(d => d.Value),
 			Granularity = "day",
-			Points = exposureAverages
+			Points = exposureAverages,
 		};
 	}
 
 	public async Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
-		DateTime startTime, 
+		DateTime startTime,
 		DateTime endTime
-		)
+	)
 	{
-		var allSamples = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User!.Location!.Site)).ToListAsync();
+		var allSamples = await _context
+			.Samples.Where(s => s.Site.Equals(_signedInUserContext.User!.Location!.Site))
+			.ToListAsync();
 		List<SampleDto> overviewList = new();
 		foreach (Sample s in allSamples)
 		{
-			var averageDustValues = await GetWholeAverage(startTime, endTime, s.Id, ExposureType.Dust, "pm1_twa");
-			var averageNoiseValues = await GetWholeAverage(startTime, endTime, s.Id, ExposureType.Noise, null);
-			var averageVibrationValues = await GetWholeAverage(startTime, endTime, s.Id, ExposureType.Vibration, null);
-			overviewList.Add(new SampleDto
-			{
-				GroupId = s.Id,
-				Hall = s.LocationName,
-				Occupation = s.JobQualifier,
-				Averages = new SampleAveragesDto
+			var averageDustValues = await GetWholeAverage(
+				startTime,
+				endTime,
+				s.Id,
+				ExposureType.Dust,
+				"pm1_twa"
+			);
+			var averageNoiseValues = await GetWholeAverage(
+				startTime,
+				endTime,
+				s.Id,
+				ExposureType.Noise,
+				null
+			);
+			var averageVibrationValues = await GetWholeAverage(
+				startTime,
+				endTime,
+				s.Id,
+				ExposureType.Vibration,
+				null
+			);
+			overviewList.Add(
+				new SampleDto
 				{
-					Dust = averageDustValues,
-					Noise = averageNoiseValues,
-					Vibration = averageVibrationValues
+					GroupId = s.Id,
+					Hall = s.LocationName,
+					Occupation = s.JobQualifier,
+					Averages = new SampleAveragesDto
+					{
+						Dust = averageDustValues,
+						Noise = averageNoiseValues,
+						Vibration = averageVibrationValues,
+					},
 				}
-			});
+			);
 		}
 		return overviewList;
 	}

@@ -122,23 +122,25 @@ public class UserControllerTests
 
 		var expectedUser = new FullUser
 		{
-			user = new User{
-			Id = Guid.NewGuid(),
-			Role = createUserDto.Role,
-			LocationId = createUserDto.LocationId,
-			Location = MockLocation,
-			JobDescription = createUserDto.JobDescription,
-			Managers = [],
-			Subordinates = []
+			user = new User
+			{
+				Id = Guid.NewGuid(),
+				Role = createUserDto.Role,
+				LocationId = createUserDto.LocationId,
+				Location = MockLocation,
+				JobDescription = createUserDto.JobDescription,
+				Managers = [],
+				Subordinates = [],
 			},
 
-			userInfo = new UserInfo{
-			Id = Guid.NewGuid(),
-			Name = createUserDto.Name,
-			Email = createUserDto.Email,
-			PasswordHash = "hashed",
-			CreatedAt = DateTime.UtcNow
-			}
+			userInfo = new UserInfo
+			{
+				Id = Guid.NewGuid(),
+				Name = createUserDto.Name,
+				Email = createUserDto.Email,
+				PasswordHash = "hashed",
+				CreatedAt = DateTime.UtcNow,
+			},
 		};
 
 		_mockUserService
@@ -273,7 +275,9 @@ public class UserControllerTests
 		var result = await _controller.GetSubordinates(managerId, startTime, endTime);
 
 		// Assert
-		var data = Assert.IsAssignableFrom<IEnumerable<FullUserWithStatusDto>>(result.Value).ToList();
+		var data = Assert
+			.IsAssignableFrom<IEnumerable<FullUserWithStatusDto>>(result.Value)
+			.ToList();
 		Assert.Equal(2, data.Count);
 		Assert.Equal(DangerLevel.Warning, data[0].Status.Status);
 		Assert.Equal(DangerLevel.Danger, data[1].Status.Status);
@@ -568,23 +572,24 @@ public class UserControllerTests
 	{
 		return new FullUser
 		{
-			user = new User{
-			Id = id,
-			Role = role,
-			LocationId = MockLocation.Id,
-			Location = MockLocation,
-			Managers = [],
-			Subordinates = []
+			user = new User
+			{
+				Id = id,
+				Role = role,
+				LocationId = MockLocation.Id,
+				Location = MockLocation,
+				Managers = [],
+				Subordinates = [],
 			},
 
-			userInfo = new UserInfo{
-			Id = id,
-			Name = name,
-			Email = email,
-			PasswordHash = "hashed",
-			CreatedAt = DateTime.UtcNow
-				
-			}
+			userInfo = new UserInfo
+			{
+				Id = id,
+				Name = name,
+				Email = email,
+				PasswordHash = "hashed",
+				CreatedAt = DateTime.UtcNow,
+			},
 		};
 	}
 }

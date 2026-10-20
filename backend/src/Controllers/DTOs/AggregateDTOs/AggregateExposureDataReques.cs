@@ -4,8 +4,6 @@ using ExposureType = Backend.Models.ExposureType;
 
 namespace Backend.DTOs;
 
-
-
 public record AggregateExposureDataRequestDto(
 	[Required] DateTimeOffset StartTime,
 	[Required] DateTimeOffset EndTime,
@@ -14,15 +12,14 @@ public record AggregateExposureDataRequestDto(
 	Field? Field
 ) : IValidatableObject
 {
-    public IEnumerable<ValidationResult> Validate(
-        ValidationContext validationContext)
-    {
-        if (Granularity == TimeGranularity.Minute)
-        {
-            yield return new ValidationResult(
-                "Minutely granularity is not supported.",
-                [nameof(Granularity)]
-            );
-        }
-    }
+	public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+	{
+		if (Granularity == TimeGranularity.Minute)
+		{
+			yield return new ValidationResult(
+				"Minutely granularity is not supported.",
+				[nameof(Granularity)]
+			);
+		}
+	}
 }

@@ -43,7 +43,6 @@ namespace AggregatedDatabaseHandler
 			var AggregatedDbUrl = configuration.GetValue<string>("AGGREGATE_DATABASE_URL");
 			var OperationalDbUrl = configuration.GetValue<string>("DATABASE_URL");
 
-
 			using (var opContext = CreateOperationaldDbContext(OperationalDbUrl!))
 			{
 				using (var aggContext = CreateAggregatedDbContext(AggregatedDbUrl!))

@@ -1,8 +1,8 @@
 using Backend;
 using Backend.DTOs;
 using Backend.Models;
-using Backend.Utils;
 using Backend.Records;
+using Backend.Utils;
 using Microsoft.AspNetCore.Authentication.OAuth.Claims;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,54 +24,63 @@ public class DataFetchHandler(AppDbContext _context)
 		String? jobQualifier
 	)
 	{
-		List<User> users = await _context.User.Where(u => u.Role == UserRole.Operator && u.Location != null && u.Location.Site.Equals(site)).ToListAsync();
-		
-		if (locationQualifier != null) //If location isn't null, we simply filter with it 
+		List<User> users = await _context
+			.User.Where(u =>
+				u.Role == UserRole.Operator && u.Location != null && u.Location.Site.Equals(site)
+			)
+			.ToListAsync();
+
+		if (locationQualifier != null) //If location isn't null, we simply filter with it
 		{
 			users = users.Where(u => u.Location!.Id == locationQualifier).ToList();
 		}
 
 		if (jobQualifier != null)
-		{	
-			users = users.Where(u => u.JobDescription != null && u.JobDescription.Equals(jobQualifier)).ToList();
+		{
+			users = users
+				.Where(u => u.JobDescription != null && u.JobDescription.Equals(jobQualifier))
+				.ToList();
 		}
 
 		//When location is null, we have to be careful to not include in the selection of users those who come from subset of size < 5
 		if (locationQualifier == null)
-			{
-				List<string?> allJobs = await getAllJobs();
-						
-				int sumOfUserUnderThreshold = 0;
-				List<string> jobUnderThreshold = new();
+		{
+			List<string?> allJobs = await getAllJobs();
 
-				foreach (string? Job in allJobs)
+			int sumOfUserUnderThreshold = 0;
+			List<string> jobUnderThreshold = new();
+
+			foreach (string? Job in allJobs)
+			{
+				var userCount = users!.Count(u =>
+					u.JobDescription != null && u.JobDescription.Equals(Job)
+				);
+				if (userCount < 5)
 				{
-					var userCount = users!.Count(u => u.JobDescription != null && u.JobDescription.Equals(Job));
-					if (userCount < 5)
-					{
-						sumOfUserUnderThreshold += userCount;
-						jobUnderThreshold.Add(Job!);
-					}
-				}
-				if (sumOfUserUnderThreshold < 5)
-				{
-					users = users.Where(u => !jobUnderThreshold.Contains(u.JobDescription)).ToList();
+					sumOfUserUnderThreshold += userCount;
+					jobUnderThreshold.Add(Job!);
 				}
 			}
-		
+			if (sumOfUserUnderThreshold < 5)
+			{
+				users = users.Where(u => !jobUnderThreshold.Contains(u.JobDescription)).ToList();
+			}
+		}
 
 		//Same as location, if no jobqualifier is specified, then we take all users from the location, but exclude
-		//user from the building and whom job has less than 5 people if the sum of them is < 5 
+		//user from the building and whom job has less than 5 people if the sum of them is < 5
 		if (jobQualifier == null)
 		{
 			List<Location> allLocation = await getAllLocations();
-						
+
 			int sumOfUserUnderThreshold = 0;
 			List<Guid> locationIdUnderThreshold = new();
 
 			foreach (Location? loc in allLocation)
 			{
-				var userCount = users!.Count(u => u.Location != null && u.LocationId.Equals(loc.Id));
+				var userCount = users!.Count(u =>
+					u.Location != null && u.LocationId.Equals(loc.Id)
+				);
 				if (userCount < 5)
 				{
 					sumOfUserUnderThreshold += userCount;
@@ -80,7 +89,9 @@ public class DataFetchHandler(AppDbContext _context)
 			}
 			if (sumOfUserUnderThreshold < 5)
 			{
-				users = users.Where(u => !locationIdUnderThreshold.Contains(u.Location.Id)).ToList();
+				users = users
+					.Where(u => !locationIdUnderThreshold.Contains(u.Location.Id))
+					.ToList();
 			}
 		}
 
@@ -101,57 +112,85 @@ public class DataFetchHandler(AppDbContext _context)
 		);
 	}
 
-	public async Task<(List<TimedData> dataList, List<AboveThresholdRate> aboveThresholdDataList)> fetchAggregatedDataOverSampleUsers(List<User> users, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
+	public async Task<(
+		List<TimedData> dataList,
+		List<AboveThresholdRate> aboveThresholdDataList
+	)> fetchAggregatedDataOverSampleUsers(
+		List<User> users,
+		DateTime startTime,
+		DateTime endTime,
+		ExposureType exposureType,
+		Field? field
+	)
 	{
 		var rawDataList = new List<TimedData>();
 		var rateList = new List<AboveThresholdRate>();
-		foreach(var user in users)
+		foreach (var user in users)
 		{
-		
-			var userData = await fetchUserAggregatedDataAsync(user.Id, startTime, endTime, exposureType, field);
+			var userData = await fetchUserAggregatedDataAsync(
+				user.Id,
+				startTime,
+				endTime,
+				exposureType,
+				field
+			);
 			var dataFlat = userData.Select(d => new TimedData
 			{
 				Time = d.Time,
 				AvgValue = d.Value,
-				PeakValue = d.PeakValue
+				PeakValue = d.PeakValue,
 			});
-			
+
 			rawDataList.AddRange(dataFlat);
 
-			var aboveThresholdData = userData.GroupBy(d => d.Time.Date).Select(g => new AboveThresholdRate
-			{
-				Time = g.Key,
-				WarningRate = g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-				DangerRate = g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count()
-			});
+			var aboveThresholdData = userData
+				.GroupBy(d => d.Time.Date)
+				.Select(g => new AboveThresholdRate
+				{
+					Time = g.Key,
+					WarningRate = g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+					DangerRate = g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+				});
 
 			rateList.AddRange(aboveThresholdData);
 		}
-		
-		var averageDataList = rawDataList.GroupBy(d => d.Time).Select(g => new TimedData
+
+		var averageDataList = rawDataList
+			.GroupBy(d => d.Time)
+			.Select(g => new TimedData
 			{
 				Time = g.Key,
 				AvgValue = g.Average(d => d.AvgValue),
-				PeakValue = g.Average(d => d.PeakValue ?? null)
+				PeakValue = g.Average(d => d.PeakValue ?? null),
 			});
 
-		var averageRateList = rateList.GroupBy(d => d.Time).Select(g => new AboveThresholdRate
+		var averageRateList = rateList
+			.GroupBy(d => d.Time)
+			.Select(g => new AboveThresholdRate
 			{
 				Time = g.Key,
 				WarningRate = g.Average(d => d.WarningRate),
-				DangerRate = g.Average(d => d.DangerRate)
+				DangerRate = g.Average(d => d.DangerRate),
 			});
 
-		return (dataList : averageDataList.ToList(), aboveThresholdDataList: averageRateList.ToList());				
+		return (
+			dataList: averageDataList.ToList(),
+			aboveThresholdDataList: averageRateList.ToList()
+		);
 	}
 
-	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(Guid userId, DateTime startTime, DateTime endTime, ExposureType exposureType, Field? field)
+	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(
+		Guid userId,
+		DateTime startTime,
+		DateTime endTime,
+		ExposureType exposureType,
+		Field? field
+	)
 	{
 		string materializedViewName = ExposureUtils.GetMaterializedViewName(
 			exposureType,
 			TimeGranularity.Hour
 		);
-
 
 		//Don't need to clamp value i guess ?
 
@@ -179,8 +218,6 @@ public class DataFetchHandler(AppDbContext _context)
 			field
 		);
 
-
-
 		var sql =
 			$@"
             SELECT 
@@ -192,15 +229,10 @@ public class DataFetchHandler(AppDbContext _context)
 				user_id as ""UserId""
             FROM {materializedViewName}";
 
-
 		var rawExposureData = await _context
 			.Database.SqlQueryRaw<RawExposureData>(sql)
 			.AsQueryable()
-			.Where(data =>
-				data.Time >= startTime
-				&& data.Time <= endTime
-				&& data.UserId == userId
-			)
+			.Where(data => data.Time >= startTime && data.Time <= endTime && data.UserId == userId)
 			.ToListAsync();
 
 		// For vibration data, danger levels are always calculated from cumulative daily sum expore,
@@ -208,25 +240,30 @@ public class DataFetchHandler(AppDbContext _context)
 		// If the requested aggregation function is sum, the value is cumulated.
 		// NOTE: Maybe this should be changed in the future, for example by only allowing sum aggregation for vibration data,
 		// but for now this is done to allow fetching different aggregations while making sure the threshold logic remains correct.
-		
-		
-		
+
 		var dataWithCumulatedExposureSumValues = ExposureUtils.CumulateVibrationSumValues(
 			exposureType,
 			AggregationFunction.Avg,
 			rawExposureData
 		);
-		
-		var dataHourly = dataWithCumulatedExposureSumValues.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
-		.Select(g => new RawExposureData(
-			new DateTime(g.Key.Date.Year, g.Key.Date.Month, g.Key.Date.Day, g.Key.Hour, 0, 0).ToUniversalTime(),
-			g.Average(x => x.Value),
-			g.Average(x => x.AvgValue),
-			g.Average(x => x.MaxValue),
-			g.Average(x => x.SumValue),
-			userId
-		));
 
+		var dataHourly = dataWithCumulatedExposureSumValues
+			.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
+			.Select(g => new RawExposureData(
+				new DateTime(
+					g.Key.Date.Year,
+					g.Key.Date.Month,
+					g.Key.Date.Day,
+					g.Key.Hour,
+					0,
+					0
+				).ToUniversalTime(),
+				g.Average(x => x.Value),
+				g.Average(x => x.AvgValue),
+				g.Average(x => x.MaxValue),
+				g.Average(x => x.SumValue),
+				userId
+			));
 
 		var dataWithDangerLevels = ThresholdUtils.CalculateDangerLevels(
 			exposureType,
@@ -245,8 +282,6 @@ public class DataFetchHandler(AppDbContext _context)
 
 		return result;
 	}
-
-
 };
 
 public class TimedData
@@ -257,7 +292,7 @@ public class TimedData
 	/// <summary>
 	/// Only used for noise
 	/// </summary>
-	public double? PeakValue { get; set; }	
+	public double? PeakValue { get; set; }
 }
 
 public class AboveThresholdRate
@@ -265,5 +300,4 @@ public class AboveThresholdRate
 	public DateTime Time { get; set; }
 	public double WarningRate { get; set; }
 	public double DangerRate { get; set; }
-
 }

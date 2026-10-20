@@ -406,7 +406,7 @@ public class DatabaseSeeder
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocation2Id,
 				Role = UserRole.Operator,
-			},			
+			},
 			new User
 			{
 				Id = SeedIds.User22Id,
@@ -431,14 +431,12 @@ public class DatabaseSeeder
 			(SeedIds.OlaId, SeedIds.User19Id),
 			(SeedIds.OlaId, SeedIds.User20Id),
 			(SeedIds.OlaId, SeedIds.User21Id),
-
 			(SeedIds.AstridId, SeedIds.ErikId),
 			(SeedIds.AstridId, SeedIds.MagnusId),
 			(SeedIds.AstridId, SeedIds.HakonId),
 			(SeedIds.AstridId, SeedIds.NoraId),
 			(SeedIds.AstridId, SeedIds.EgonId),
 			(SeedIds.AstridId, SeedIds.User22Id),
-
 		];
 
 		HashSet<Guid> existingLocationIds = await dbContext

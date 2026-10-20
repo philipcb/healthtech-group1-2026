@@ -43,31 +43,26 @@ jobs:
           TRAEFIK_CONTAINER_NAME: healthtech-prd-traefik-1
           DB_CONTAINER_NAME: healthtech-prd-db-1
         run: |
+          COMPOSE="docker compose --env-file ./backend/.env --env-file ./frontend/.env -f docker-compose.prd.yml"
+
           echo "Rebuilding and deploying..."
-          docker compose --env-file ./backend/.env --env-file ./frontend/.env -f docker-compose.prd.yml up --build -d
+          # `up` starts db -> db-init (creates login/aggregate databases) -> db-migrator (3 contexts) -> backend.
+          # If db-init or db-migrator fails, `up` fails and the backend is never started.
+          if ! $COMPOSE up --build -d; then
+              echo "Deployment failed. Printing database init and migration logs:"
+              $COMPOSE logs --no-color --tail 50 db-init db-migrator || true
+              exit 1
+          fi
 
           # Simple health check
           sleep 15
-          if [ "$(docker inspect -f '{{.State.Running}}' ${DB_CONTAINER_NAME})" == "false" ]; then
-              echo "Database failed to start after 15s. Printing logs:"
-              docker logs ${DB_CONTAINER_NAME} | tail -n 20 
-              exit 1
-          fi
-          if [ "$(docker inspect -f '{{.State.Running}}' ${TRAEFIK_CONTAINER_NAME})" == "false" ]; then
-              echo "Traefik failed to start after 15s. Printing logs:"
-              docker logs ${TRAEFIK_CONTAINER_NAME} | tail -n 20 
-              exit 1
-          fi
-          if [ "$(docker inspect -f '{{.State.Running}}' ${BACKEND_CONTAINER_NAME})" == "false" ]; then
-              echo "Backend failed to start after 15s. Printing logs:"
-              docker logs ${BACKEND_CONTAINER_NAME} | tail -n 20 
-              exit 1
-          fi
-          if [ "$(docker inspect -f '{{.State.Running}}' ${FRONTEND_CONTAINER_NAME})" == "false" ]; then
-              echo "Frontend failed to start after 15s. Printing logs:"
-              docker logs ${FRONTEND_CONTAINER_NAME} | tail -n 20 
-              exit 1
-          fi
+          for NAME in "$DB_CONTAINER_NAME" "$TRAEFIK_CONTAINER_NAME" "$BACKEND_CONTAINER_NAME" "$FRONTEND_CONTAINER_NAME"; do
+              if [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" == "false" ]; then
+                  echo "$NAME failed to start after 15s. Printing logs:"
+                  docker logs "$NAME" | tail -n 20
+                  exit 1
+              fi
+          done
 
           echo "Deployment successful. Cleaning up old images..."
           docker image prune -f

@@ -5,13 +5,10 @@ namespace Backend.Models;
 public class User
 {
 	public Guid Id { get; set; }
-	public required string Name { get; set; }
-	public required string Email { get; set; }
-	public required string PasswordHash { get; set; }
 	public string? JobDescription { get; set; }
-	public required DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-	public required UserRole Role { get; set; }
 	public ICollection<NoteData> Notes { get; set; } = [];
+	public required UserRole Role { get; set; }
+
 	public required Guid LocationId { get; set; }
 
 	/// <summary>

@@ -4,6 +4,7 @@ using Backend.Middleware;
 using Backend.Services;
 using Backend.Utils;
 using Backend.Validation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,17 +64,43 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetValue<string>("DATABASE_URL"))
 );
 
+builder.Services.AddDbContext<LoginDbContext>(options =>
+	options.UseNpgsql(builder.Configuration.GetValue<string>("LOGIN_DATABASE_URL"))
+);
+
+builder.Services.AddDbContext<AggregateDbContext>(options =>
+	options.UseNpgsql(builder.Configuration.GetValue<string>("AGGREGATE_DATABASE_URL"))
+);
+
+Console.WriteLine(builder.Configuration.GetValue<string>("LOGIN_DATABASE_URL"));
+
 builder.Services.AddScoped<SignedInUserContext>();
 builder.Services.AddScoped<IExposureDataService, ExposureDataService>();
 builder.Services.AddScoped<ValidateFieldForExposureTypeFilter>();
 builder.Services.AddScoped<INoteDataService, NoteDataService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserStatusService, UserStatusService>();
+builder.Services.AddScoped<IAggregateExposureDataService, AggregateExposureDataService>();
+
+builder.Services.AddScoped<IAuthorizationHandler, RoleAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+	options.AddPolicy(
+		"OHSOnly",
+		policy => policy.AddRequirements(new RoleRequirement(UserRole.OHS))
+	);
+
+	options.AddPolicy(
+		"ManagerOnly",
+		policy => policy.AddRequirements(new RoleRequirement(UserRole.Manager))
+	);
+});
 
 var app = builder.Build();
 
 app.UseMiddleware<SignedInUserMiddleware>();
-
+app.UseAuthorization();
 app.UseCors(AllowDevFrontend);
 app.MapControllers();
 

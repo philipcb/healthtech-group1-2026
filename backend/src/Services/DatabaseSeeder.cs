@@ -5,16 +5,213 @@ namespace Backend.Services;
 
 public class DatabaseSeeder
 {
-	private static readonly Guid TrondId = Guid.Parse("bbb3801e-f3ff-4b0c-9692-56e7505e9c31");
-	private static readonly Guid GjertrudId = Guid.Parse("ccc3801e-f3ff-4b0c-9692-56e7505e9c32");
-	private static readonly Guid KlaraId = Guid.Parse("ccc3801e-f3ff-4b0c-9692-56e7505e9c33");
-	private static readonly Guid BirgirId = Guid.Parse("ddd3801e-f3ff-4b0c-9692-56e7505e9c31");
-	private static readonly Guid TorleifId = Guid.Parse("eee3801e-f3ff-4b0c-9692-56e7505e9c31");
-	private static readonly Guid BjornulfId = Guid.Parse("fff3801e-f3ff-4b0c-9692-56e7505e9c31");
-
 	// password123
 	private const string DefaultPasswordHash =
 		"$2a$11$QXVHkr6TQC8gJvh5P4GFzOYc.HyZA3FxDC3/BghAM3hODQVAoWwwi";
+
+	public async Task SeedLoginAsync(DbContext dbContext, CancellationToken ct)
+	{
+		DateTime now = DateTime.UtcNow;
+		List<UserInfo> seedUsers =
+		[
+			new UserInfo
+			{
+				Id = SeedIds.OlaId,
+				Name = "Ola Nordmann",
+				Email = "ola.nordmann@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.KariId,
+				Name = "Kari Nordmann",
+				Email = "kari.nordmann@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.PerId,
+				Name = "Per Hansen",
+				Email = "per.hansen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.TrondId,
+				Name = "Trond Pedersen",
+				Email = "trond.pedersen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.GjertrudId,
+				Name = "Gjertrud Olsen",
+				Email = "gjertrud.olsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.KlaraId,
+				Name = "Klara Johansen",
+				Email = "klara.johansen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.BirgirId,
+				Name = "Birgir Sigurdsson",
+				Email = "birgir.sigurdsson@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.TorleifId,
+				Name = "Torleif Eriksen",
+				Email = "torleif.eriksen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.BjornulfId,
+				Name = "Bjørnulf Knutsen",
+				Email = "bjornul.knutsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			//----
+			new UserInfo
+			{
+				Id = SeedIds.AstridId,
+				Name = "Astrid Bers",
+				Email = "astrid.bers@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.ErikId,
+				Name = "Erik Belsen",
+				Email = "erik.belsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.MagnusId,
+				Name = "Magnus Motok",
+				Email = "magnus.motok@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.HakonId,
+				Name = "Hakon Damar",
+				Email = "hakon.damar@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.NoraId,
+				Name = "Nora Eriksen",
+				Email = "nora.eriksen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.EgonId,
+				Name = "Egon Knutsen",
+				Email = "egon.knutsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			//More user, part2
+			new UserInfo
+			{
+				Id = SeedIds.User16Id,
+				Name = "Anders Kristoffersen",
+				Email = "anders.kristoffersen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User17Id,
+				Name = "Lars Johansen",
+				Email = "lars.johansen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User18Id,
+				Name = "Morten Nilsen",
+				Email = "morten.nilsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User19Id,
+				Name = "Henrik Andersen",
+				Email = "henrik.andersen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User20Id,
+				Name = "Thomas Larsen",
+				Email = "thomas.larsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User21Id,
+				Name = "Kristian Berg",
+				Email = "kristian.berg@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User22Id,
+				Name = "Martin Haugen",
+				Email = "martin.haugen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+		];
+
+		HashSet<Guid> existingUserIds = await dbContext
+			.Set<UserInfo>()
+			.Select(user => user.Id)
+			.ToHashSetAsync(ct);
+
+		List<UserInfo> usersToAdd = [];
+
+		foreach (UserInfo user in seedUsers)
+		{
+			if (!existingUserIds.Contains(user.Id))
+			{
+				usersToAdd.Add(user);
+			}
+		}
+
+		dbContext.Set<UserInfo>().AddRange(usersToAdd);
+		await dbContext.SaveChangesAsync(ct);
+	}
 
 	public async Task SeedDataAsync(DbContext dbContext, CancellationToken ct)
 	{
@@ -31,6 +228,18 @@ public class DatabaseSeeder
 				Region = "Trøndelag",
 				Latitude = 63.78788207165566f,
 				Longitude = 11.440749156413084f,
+				City = "Verdal",
+				Users = [],
+			},
+			new Location
+			{
+				Id = SeedIds.VerdalLocation2Id,
+				Site = "Aker Solutions Verdal",
+				Building = "A-hallen",
+				Country = "Norway",
+				Region = "Trøndelag",
+				Latitude = 50.45557107165522f,
+				Longitude = 21.100749156413084f,
 				City = "Verdal",
 				Users = [],
 			},
@@ -53,10 +262,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.OlaId,
-				Name = "Ola Nordmann",
-				Email = "ola.nordmann@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Formann for bygg 1",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Foreman,
@@ -64,10 +269,6 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.KariId,
-				Name = "Kari Nordmann",
-				Email = "kari.nordmann@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Sveiser",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
@@ -75,78 +276,142 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.PerId,
-				Name = "Per Hansen",
-				Email = "per.hansen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = TrondId,
-				Name = "Trond Pedersen",
-				Email = "trond.pedersen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
+				Id = SeedIds.TrondId,
+				JobDescription = "Sveiser",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.GjertrudId,
+				JobDescription = "Sveiser",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.KlaraId,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = GjertrudId,
-				Name = "Gjertrud Olsen",
-				Email = "gjertrud.olsen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
+				Id = SeedIds.BirgirId,
+				JobDescription = "Engineer",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.TorleifId,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = KlaraId,
-				Name = "Klara Johansen",
-				Email = "klara.johansen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
+				Id = SeedIds.BjornulfId,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = BirgirId,
-				Name = "Birgir Sigurdsson",
-				Email = "birgir.sigurdsson@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
+				Id = SeedIds.User16Id,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = TorleifId,
-				Name = "Torleif Eriksen",
-				Email = "torleif.eriksen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
+				Id = SeedIds.User17Id,
+				JobDescription = "Sveiser",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User18Id,
 				JobDescription = "Technician",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
-				Id = BjornulfId,
-				Name = "Bjørnulf Knutsen",
-				Email = "bjornul.knutsen@aker.com",
-				PasswordHash = DefaultPasswordHash,
-				CreatedAt = now,
-				JobDescription = "Technician",
+				Id = SeedIds.User19Id,
+				JobDescription = "Sveiser",
 				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User20Id,
+				JobDescription = "Manager",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.Manager,
+			},
+			new User
+			{
+				Id = SeedIds.User21Id,
+				JobDescription = "Doctor",
+				LocationId = SeedIds.VerdalLocationId,
+				Role = UserRole.OHS,
+			},
+			//---------Second building users--------------
+			new User
+			{
+				Id = SeedIds.AstridId,
+				JobDescription = "Formann for bygg 2",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Foreman,
+			},
+			new User
+			{
+				Id = SeedIds.ErikId,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.MagnusId,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.HakonId,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.NoraId,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.EgonId,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User22Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.VerdalLocation2Id,
 				Role = UserRole.Operator,
 			},
 		];
@@ -155,12 +420,23 @@ public class DatabaseSeeder
 		[
 			(SeedIds.OlaId, SeedIds.KariId),
 			(SeedIds.OlaId, SeedIds.PerId),
-			(SeedIds.OlaId, TrondId),
-			(SeedIds.OlaId, GjertrudId),
-			(SeedIds.OlaId, KlaraId),
-			(SeedIds.OlaId, BirgirId),
-			(SeedIds.OlaId, TorleifId),
-			(SeedIds.OlaId, BjornulfId),
+			(SeedIds.OlaId, SeedIds.TrondId),
+			(SeedIds.OlaId, SeedIds.GjertrudId),
+			(SeedIds.OlaId, SeedIds.KlaraId),
+			(SeedIds.OlaId, SeedIds.BirgirId),
+			(SeedIds.OlaId, SeedIds.TorleifId),
+			(SeedIds.OlaId, SeedIds.BjornulfId),
+			(SeedIds.OlaId, SeedIds.User17Id),
+			(SeedIds.OlaId, SeedIds.User18Id),
+			(SeedIds.OlaId, SeedIds.User19Id),
+			(SeedIds.OlaId, SeedIds.User20Id),
+			(SeedIds.OlaId, SeedIds.User21Id),
+			(SeedIds.AstridId, SeedIds.ErikId),
+			(SeedIds.AstridId, SeedIds.MagnusId),
+			(SeedIds.AstridId, SeedIds.HakonId),
+			(SeedIds.AstridId, SeedIds.NoraId),
+			(SeedIds.AstridId, SeedIds.EgonId),
+			(SeedIds.AstridId, SeedIds.User22Id),
 		];
 
 		HashSet<Guid> existingLocationIds = await dbContext

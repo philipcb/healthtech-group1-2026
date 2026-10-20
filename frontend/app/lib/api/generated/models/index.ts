@@ -6,6 +6,10 @@
  */
 
 export * from './addSubordinatesBody.zod.ts';
+export * from './aggregatedOverviewResponseDto.zod.ts';
+export * from './aggregatedTrendOkDto.zod.ts';
+export * from './aggregatedTrendResponseDto.zod.ts';
+export * from './aggregatedTrendUnavailableDto.zod.ts';
 export * from './aggregationFunction.zod.ts';
 export * from './combinedExposureBucketDto.zod.ts';
 export * from './createNoteBody.zod.ts';
@@ -21,6 +25,8 @@ export * from './exposureResponseDto.zod.ts';
 export * from './exposureThresholdSummaryDto.zod.ts';
 export * from './exposureType.zod.ts';
 export * from './field.zod.ts';
+export * from './getAggregateGroupTrendParams.zod.ts';
+export * from './getAggregateGroupsParams.zod.ts';
 export * from './getExposureDataBody.zod.ts';
 export * from './getExposureOverviewBody.zod.ts';
 export * from './getNotesBody.zod.ts';
@@ -28,12 +34,17 @@ export * from './getSubordinatesParams.zod.ts';
 export * from './getThresholdSummaryParams.zod.ts';
 export * from './hourDomainDto.zod.ts';
 export * from './locationDto.zod.ts';
+export * from './measurementUnitsDto.zod.ts';
 export * from './noteDataCreateDto.zod.ts';
 export * from './noteDataDto.zod.ts';
 export * from './noteDataRequestDto.zod.ts';
 export * from './removeSubordinatesBody.zod.ts';
+export * from './sampleAveragesDto.zod.ts';
+export * from './sampleDto.zod.ts';
 export * from './thresholdSummaryDto.zod.ts';
 export * from './timeGranularity.zod.ts';
+export * from './trendPointDto.zod.ts';
+export * from './trendSampleDto.zod.ts';
 export * from './updateNoteBody.zod.ts';
 export * from './updateUserBody.zod.ts';
 export * from './updateUserDto.zod.ts';

@@ -257,7 +257,8 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "occupationalHealthService": "Bedriftshelsetjeneste"
+      "occupationalHealthService": "Bedriftshelsetjeneste",
+      "management": "Ledelse"
     },
     "searchPlaceholder": "Søk etter brukere..."
   },
@@ -265,20 +266,17 @@
     "currentRole": "Nåværende rolle:",
     "navigate": {
       "toRegister": "Gå til registreringssiden"
-    }
+    },
+    "noUserWithRole": "Ingen bruker har denne rollen"
   },
-  "occupationalHealthServiceDashboard": {
-    "title": "Bedriftshelsetjenesten",
-    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke.",
+  "aggregatedExposure": {
     "map": {
       "title": "Områdekart",
       "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
-      "buildings": "Bygg",
-      "selectedBuilding": "Valgt bygg",
-      "peopleWorkingHere": "{{count}} personer jobber her",
-      "occupations": "Yrkesgrupper",
-      "selectBuilding": "Velg et bygg på kartet for å se en anonym oversikt.",
-      "error": "Kunne ikke hente byggoversikten."
+      "unavailable": {
+        "title": "Områdekartet er ikke tilgjengelig ennå",
+        "description": "Det finnes ingen data om personer og yrkesgrupper per bygg ennå."
+      }
     },
     "period": {
       "label": "Tidsperiode",
@@ -301,6 +299,8 @@
       "december": "Desember"
     },
     "filters": {
+      "yard": "Verft",
+      "allYards": "Alle verft",
       "hall": "Bygg",
       "allHalls": "Alle bygg",
       "title": "Filtre",
@@ -316,30 +316,22 @@
     },
     "exposureLabel": "Eksponeringstype",
     "pointsUnit": "poeng",
-    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
-      "vibration": "Gjennomsnittlig daglig vibrasjonspoengsum per person i perioden"
+      "vibration": "Gjennomsnittlige vibrasjonspoeng per verktøyøkt"
     },
     "metricsShort": {
       "dust": "PM1 TWA",
       "noise": "LAeq",
-      "vibration": "Snitt per person og dag"
+      "vibration": "Poeng per verktøyøkt"
     },
-    "privacyNotice": "Grupper med færre enn {{count}} personer vises ikke.",
-    "kpi": {
-      "actionValue": "Tiltaksverdi: {{threshold}}",
-      "limitValue": "Grenseverdi: {{threshold}}",
-      "values": {
-        "percentOfWorkingTime": "{{value}} av arbeidstiden",
-        "percentOfWorkdays": "{{value}} av arbeidsdagene"
-      },
-      "noData": "Ingen nøkkeltall for valgt periode.",
-      "suppressed": "Nøkkeltallet er skjult fordi for få personer bidro.",
-      "unavailable": "Nøkkeltallet er ikke tilgjengelig ennå.",
-      "error": "Kunne ikke hente nøkkeltallene."
+    "privacyNotice": "Grupper med færre enn {{count}} registrerte personer vises ikke.",
+    "unavailableValue": "Ikke tilgjengelig",
+    "exposureUnavailable": {
+      "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
+    "kpiUnavailable": "Nøkkeltall for tid over tiltaks- og grenseverdiene er ikke tilgjengelige ennå.",
     "overview": {
       "heading": "Grupper",
       "hallsHeading": "Bygg",
@@ -360,11 +352,12 @@
         "description": "Hva gruppeverdiene betyr, og hva stolpene og fargene viser.",
         "groupData": {
           "title": "Gruppedata",
-          "aggregation": "Eksponeringsverdiene er aggregert på gruppenivå. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
+          "aggregation": "Hver verdi bygger på gruppens timessnitt: for hver time, snittet av målingene til gruppemedlemmene som ble målt den timen. En dags verdi er snittet av timene, og oversikten viser snittet av dagene i perioden. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
         },
         "scale": {
           "title": "Stolpene og fargene",
-          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien. Fargene viser hvor gruppesnittet ligger i forhold til tersklene, og er ikke en faglig vurdering av gruppen."
+          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien.",
+          "assessment": "Tiltaks- og grenseverdiene gjelder én persons daglige eksponering, mens verdiene som vises er gruppesnitt av timesverdier. Fargene er derfor bare veiledende og er ikke en faglig vurdering av gruppen."
         },
         "thresholds": {
           "title": "Tiltaks- og grenseverdier"
@@ -376,43 +369,49 @@
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
-      "noHalls": {
-        "title": "Ingen bygg å vise",
-        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
+      "hallsUnavailable": {
+        "title": "Hele bygg er ikke tilgjengelig ennå",
+        "description": "Bare grupper per yrke i hvert bygg kan vises."
       },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene.",
-      "hallsError": "Kunne ikke hente byggene."
+      "error": "Kunne ikke hente gruppene."
     },
     "group": {
       "back": "Tilbake til oversikten",
       "eyebrow": "Gruppe",
-      "hallEyebrow": "Bygg",
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
       "noPeriodAverage": "Ingen verdi for perioden",
+      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen. Oversikten snitter alle timer, så verdiene kan være ulike.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "Ett punkt per arbeidsdag"
+        "day": "Ett punkt per dag med målinger: snittet av dagens timesverdier"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per arbeidsdag: gjennomsnittet av hver persons poengsum den dagen"
+        "day": "Ett punkt per dag med målinger: verdien for dagens siste time med målinger"
       },
       "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
       "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
       "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
-      "suppressed": "Skjult fordi for få personer bidro",
+      "suppressed": "Ingen verdi",
       "unavailable": {
-        "noSuchGroup": "Gruppen finnes ikke.",
-        "tooFewPeople": "Gruppen har for få personer til at data kan vises."
+        "noSuchGroup": "Gruppen finnes ikke."
       },
       "noData": "Ingen data for valgt periode.",
       "noDustFieldData": "Ingen {{dustField}}-data for valgt periode.",
-      "allSuppressed": "Alle verdier i perioden er skjult fordi for få personer bidro.",
-      "error": "Kunne ikke hente gruppen."
+      "allSuppressed": "Ingen verdier for valgt periode.",
+      "error": "Kunne ikke hente gruppen.",
+      "trendError": "Kunne ikke hente utviklingen for gruppen."
     }
+  },
+  "occupationalHealthServiceDashboard": {
+    "title": "Bedriftshelsetjenesten",
+    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke."
+  },
+  "managementDashboard": {
+    "title": "Ledelse"
   },
   "select": {
     "all": "Velg alle",

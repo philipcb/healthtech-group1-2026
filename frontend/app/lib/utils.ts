@@ -21,6 +21,8 @@ export const userRoleToString = (role: User["role"], t: TranslateFn) => {
 			return t(($) => $.user.role.foreman);
 		case "occupationalHealthService":
 			return t(($) => $.user.role.occupationalHealthService);
+		case "management":
+			return t(($) => $.user.role.management);
 		default:
 			return role;
 	}

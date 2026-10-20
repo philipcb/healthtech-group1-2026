@@ -83,6 +83,10 @@ builder.Services.AddScoped<IUserStatusService, UserStatusService>();
 builder.Services.AddScoped<IAggregateExposureDataService, AggregateExposureDataService>();
 
 builder.Services.AddScoped<IAuthorizationHandler, RoleAuthorizationHandler>();
+builder.Services.AddSingleton<
+	IAuthorizationMiddlewareResultHandler,
+	SignedInUserAuthorizationResultHandler
+>();
 
 builder.Services.AddAuthorization(options =>
 {
@@ -95,13 +99,21 @@ builder.Services.AddAuthorization(options =>
 		"ManagerOnly",
 		policy => policy.AddRequirements(new RoleRequirement(UserRole.Manager))
 	);
+
+	// The occupational health service sees its own site, management every site. AggregateExposureDataService filters
+	// the data by role.
+	options.AddPolicy(
+		"AggregateExposureAccess",
+		policy => policy.AddRequirements(new RoleRequirement(UserRole.OHS, UserRole.Manager))
+	);
 });
 
 var app = builder.Build();
 
+// Before authorization, so rejected responses also have CORS headers and the frontend can read their status
+app.UseCors(AllowDevFrontend);
 app.UseMiddleware<SignedInUserMiddleware>();
 app.UseAuthorization();
-app.UseCors(AllowDevFrontend);
 app.MapControllers();
 
 // Configure the HTTP request pipeline.

@@ -114,8 +114,8 @@ public class DataFiller
 			{
 				SampleId = sampleId,
 				Time = d.Time,
-				AverageLcpk = d.AvgValue,
-				AverageLaeq = (double)d.PeakValue!,
+				AverageLaeq = d.AvgValue,
+				AverageLcpk = (double)d.PeakValue!,
 			})
 			.ToList();
 

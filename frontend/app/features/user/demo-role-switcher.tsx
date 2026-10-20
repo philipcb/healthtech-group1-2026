@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { type User, UserRoleSchema } from "@/features/user/user.ts";
-import { DEMO_FALLBACK_USERS } from "@/features/user/user-utils.ts";
 import { cn, userRoleToString } from "@/lib/utils.ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +26,7 @@ export const DemoRoleSwitcher = ({ users, onSelect, activeRole, size, className,
 					Object.keys(UserRoleSchema.enum).map((role) => {
 						const roleValue = role as User["role"];
 						const isActive = activeRole === roleValue;
+						const userWithRole = users.find((u) => u.role === roleValue);
 
 						return (
 							<Button
@@ -38,13 +38,10 @@ export const DemoRoleSwitcher = ({ users, onSelect, activeRole, size, className,
 									"bg-amber-200 hover:bg-amber-300 dark:bg-amber-900/75 dark:hover:bg-amber-800",
 									isActive && "bg-amber-300 dark:bg-amber-800",
 								)}
-								onClick={() => {
-									const userWithRole =
-										users.find((u) => u.role === roleValue) ?? DEMO_FALLBACK_USERS[roleValue];
-									if (userWithRole) {
-										onSelect(userWithRole);
-									}
-								}}
+								// The backend has no user with the role to sign in as
+								disabled={userWithRole === undefined}
+								title={userWithRole === undefined ? t(($) => $.demo.noUserWithRole) : undefined}
+								onClick={() => userWithRole && onSelect(userWithRole)}
 							>
 								{userRoleToString(roleValue, t)}
 							</Button>

@@ -14,7 +14,7 @@ export const UpdateUserDto = zod.object({
   "locationId": zod.string().nullish(),
   "managerIds": zod.array(zod.string()).nullish(),
   "subordinateIds": zod.array(zod.string()).nullish(),
-  "role": zod.union([zod.null(),zod.enum(['operator', 'foreman'])]).optional()
+  "role": zod.union([zod.null(),zod.enum(['operator', 'foreman', 'ohs', 'manager'])]).optional()
 })
 
 export type UpdateUserDto = zod.output<typeof UpdateUserDto>;

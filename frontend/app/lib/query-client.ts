@@ -6,7 +6,7 @@ const DEFAULT_REFETCH_INTERVAL = minutesToMilliseconds(1);
 
 /**
  * Defaults for the generated API client's queries, whose keys start with `['api', ...]` or `['POST', 'api', ...]`.
- * Other queries, like the occupational health service's mock data, keep TanStack Query's defaults.
+ * Other queries keep TanStack Query's defaults.
  */
 function setApiQueryDefaults(client: QueryClient) {
 	const defaults = {

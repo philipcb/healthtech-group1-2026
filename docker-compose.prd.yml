@@ -1,5 +1,12 @@
 name: healthtech-prd
 
+# Connection strings for the three databases. Defined once and reused by every service that needs them.
+# We override `Host` to use the docker service name (`db`) and the in-network port (5432).
+x-db-connections: &db-connections
+  DATABASE_URL: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+  LOGIN_DATABASE_URL: "Host=db;Port=5432;Database=${LOGIN_DB:?LOGIN_DB is required};Username=${LOGIN_USER:?LOGIN_USER is required};Password=${LOGIN_PASSWORD:?LOGIN_PASSWORD is required}"
+  AGGREGATE_DATABASE_URL: "Host=db;Port=5432;Database=${AGGREGATE_DB:?AGGREGATE_DB is required};Username=${AGGREGATE_USER:?AGGREGATE_USER is required};Password=${AGGREGATE_PASSWORD:?AGGREGATE_PASSWORD is required}"
+
 services:
   traefik:
     image: traefik:v3.7.1
@@ -28,6 +35,52 @@ services:
     networks:
       - app-network
 
+  # One-shot: creates the login and aggregate roles + databases if they don't exist.
+  # Postgres only creates POSTGRES_DB by itself, so this replaces the psql commands from databaseSetUp.sh.
+  db-init:
+    image: timescale/timescaledb:latest-pg17
+    entrypoint: ["/bin/sh", "/init/init-databases.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ~/env/backend.env
+    volumes:
+      - ./infra/db:/init:ro
+    networks:
+      - app-network
+    restart: "no"
+
+  # One-shot: runs the migrations of all three contexts, in order.
+  # "efbundle-*" are created in backend/Dockerfile and are self-contained executables for EF Core migrations.
+  db-migrator:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        echo "Migrating operational database..."
+        ./efbundle-app --connection "$$DATABASE_URL"
+        echo "Migrating login database..."
+        ./efbundle-login --connection "$$LOGIN_DATABASE_URL"
+        echo "Migrating aggregate database..."
+        ./efbundle-aggregate --connection "$$AGGREGATE_DATABASE_URL"
+        echo "All migrations applied."
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    env_file:
+      - ~/env/backend.env
+    environment:
+      <<: *db-connections
+    networks:
+      - app-network
+    restart: "no" # Don't restart after it finishes
+
   backend:
     build:
       context: ./backend
@@ -41,8 +94,7 @@ services:
     env_file:
       - ~/env/backend.env
     environment:
-      # We override `Host` to use the docker container name defined above
-      DATABASE_URL: "Host=db;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      <<: *db-connections
     networks:
       - app-network
     labels:
@@ -50,6 +102,28 @@ services:
       - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
+
+  # One-shot, manual: fills the aggregate database from the operational and login databases.
+  # Not started by `up`. Run it after seeding:
+  #   docker compose ... -f docker-compose.prd.yml run --rm aggregate-filler
+  aggregate-filler:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    entrypoint: ["dotnet", "aggregate-handler/healthtech.AggregateDatabaseHandler.dll"]
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully
+    env_file:
+      - ~/env/backend.env
+    environment:
+      <<: *db-connections
+    networks:
+      - app-network
+    restart: "no"
 
   frontend:
     build:
@@ -68,28 +142,6 @@ services:
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.routers.frontend.priority=1"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-
-  db-migrator:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    # "efbundle" is created in backend/Dockerfile and is a self-contained executable for running EF Core migrations
-    entrypoint: ["./efbundle"]
-    command:
-      [
-        "--connection",
-        "Host=db;Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}",
-      ]
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./backend/seed:/seed
-    env_file:
-      - ~/env/backend.env
-    networks:
-      - app-network
-    restart: "no" # Don't restart after it finishes
 
 volumes:
   db_data:

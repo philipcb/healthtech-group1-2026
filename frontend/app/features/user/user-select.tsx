@@ -37,7 +37,7 @@ export function UserSelect({
 			<Combobox
 				items={users}
 				disabled={disabled}
-				value={selectedUser ?? undefined}
+				value={selectedUser}
 				onValueChange={(nextUser: UserSelectUser | null) => onValueChange(nextUser?.id ?? null)}
 				itemToStringValue={(user: UserSelectUser) => user.id}
 				itemToStringLabel={getUserComboboxLabel}

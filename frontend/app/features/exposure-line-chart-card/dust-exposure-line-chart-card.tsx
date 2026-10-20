@@ -56,7 +56,7 @@ export function DustExposureLineChartCard({ userId, breakoutOnMobile }: Props) {
 			maxY={maxY}
 			minY={minY}
 			exposure={exposure}
-			dustField={query.field}
+			dustField={query.field ?? undefined}
 			breakoutOnMobile={breakoutOnMobile}
 			headerRight={
 				<div className="flex items-center gap-2">

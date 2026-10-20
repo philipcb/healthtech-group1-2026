@@ -3,11 +3,11 @@ import { type ChartConfig, ChartContainer } from "@/components/ui/chart.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { getLocale } from "@/i18n/locale.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { DangerLevels } from "@/lib/danger-levels.ts";
 import { now as getNow, toTZDate } from "@/lib/date.ts";
-import type { ExposureDto, ExposureTypeField } from "@/lib/dto/exposure.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { cn, formatExposureValue } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
@@ -46,7 +46,7 @@ const chartConfig = {
 type LineChartVariant = "default" | "compact";
 
 export interface ExposureLineChartProps extends PropsWithChildren {
-	chartData: Array<ExposureDto>;
+	chartData: Array<ExposureDataDto>;
 	maxY: number;
 	minY: number;
 	unit: ExposureUnit;
@@ -54,6 +54,9 @@ export interface ExposureLineChartProps extends PropsWithChildren {
 	exposure: Exposure;
 	usePeakData?: boolean;
 	dustField?: ExposureTypeField;
+	showArea?: boolean;
+	unitLabelPosition?: "side" | "top";
+	lineStrokeWidth?: number;
 
 	chartContainerClassName?: string;
 	showLegend?: boolean;
@@ -75,6 +78,9 @@ export function ExposureLineChart({
 	exposure,
 	usePeakData = false,
 	dustField,
+	showArea = true,
+	unitLabelPosition = "side",
+	lineStrokeWidth = 1.25,
 	minTime,
 	maxTime,
 	chartContainerClassName,
@@ -190,10 +196,12 @@ export function ExposureLineChart({
 							? undefined
 							: {
 									value: t(($) => $.exposures.units[unit]),
-									position: "inside",
-									dx: -32,
-									angle: -90,
-									className: "mr-4 text-lg",
+									position: unitLabelPosition === "top" ? "insideTopLeft" : "inside",
+									dx: unitLabelPosition === "top" ? 50 : -32,
+									dy: unitLabelPosition === "top" ? -16 : 0,
+									angle: unitLabelPosition === "top" ? 0 : -90,
+									fontSize: unitLabelPosition === "top" ? 10 : undefined,
+									className: unitLabelPosition === "top" ? "mr-4" : "text-lg mr-4",
 									fill: "var(--color-muted-foreground)",
 								}
 					}
@@ -211,45 +219,45 @@ export function ExposureLineChart({
 						/>
 					</linearGradient>
 
-					{/* Gradient for area background */}
-					<linearGradient id={`${id}-area`} x1="0" y1="0" x2="0" y2="1">
-						<ExposureLineChartGradientStops
-							values={[minY, maxDataValue]}
-							warningThreshold={warning}
-							dangerThreshold={dangerThreshold}
-							usePeakData={usePeakData}
-						/>
-					</linearGradient>
-
-					<linearGradient id={`${id}-fade-gradient`} x1="0" y1="0" x2="0" y2="1">
-						{/* How much of the gradient (50%) should be fully visible until it starts fading out */}
-						<stop offset="0%" stopColor="white" stopOpacity={1} />
-						<stop offset="50%" stopColor="white" stopOpacity={1} />
-
-						{/* Fades out completely at the bottom (100%) */}
-						<stop offset="100%" stopColor="white" stopOpacity={0} />
-					</linearGradient>
-
-					<mask id={`${id}-fade-mask`}>
-						<rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-fade-gradient)`} />
-					</mask>
+					{showArea && (
+						<>
+							<linearGradient id={`${id}-area`} x1="0" y1="0" x2="0" y2="1">
+								<ExposureLineChartGradientStops
+									values={[minY, maxDataValue]}
+									warningThreshold={warning}
+									dangerThreshold={dangerThreshold}
+									usePeakData={usePeakData}
+								/>
+							</linearGradient>
+							<linearGradient id={`${id}-fade-gradient`} x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stopColor="white" stopOpacity={1} />
+								<stop offset="50%" stopColor="white" stopOpacity={1} />
+								<stop offset="100%" stopColor="white" stopOpacity={0} />
+							</linearGradient>
+							<mask id={`${id}-fade-mask`}>
+								<rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}-fade-gradient)`} />
+							</mask>
+						</>
+					)}
 				</defs>
-				<Area
-					dataKey="value"
-					type={lineType}
-					fill={`url(#${id}-area)`}
-					stroke="none"
-					baseValue={minY}
-					fillOpacity={0.25}
-					mask={`url(#${id}-fade-mask)`}
-					isAnimationActive={false}
-					animationDuration={0}
-				/>
+				{showArea && (
+					<Area
+						dataKey="value"
+						type={lineType}
+						fill={`url(#${id}-area)`}
+						stroke="none"
+						baseValue={minY}
+						fillOpacity={0.25}
+						mask={`url(#${id}-fade-mask)`}
+						isAnimationActive={false}
+						animationDuration={0}
+					/>
+				)}
 				<Line
 					dataKey="value"
 					type={lineType}
 					stroke={`url(#${id}-line)`}
-					strokeWidth={1.25}
+					strokeWidth={lineStrokeWidth}
 					isAnimationActive={false}
 					animationDuration={0}
 					dot={false}

@@ -3,8 +3,8 @@ import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
 import { NoiseTrendLineChartCard } from "@/features/trend-line-chart-card/noise-trend-line-chart-card.tsx";
 import { getDisplayedExposureValue, useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { type Aggregation, Aggregations } from "@/lib/dto/exposure.ts";
 import type { Exposure } from "@/lib/exposures.ts";
+import { type Aggregation, Aggregations } from "@/lib/exposures.ts";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 export default function Noise() {

@@ -1,369 +1,151 @@
-import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
-import { TrendLineChart } from "@/components/exposure-trend-line-chart/trend-line-chart.tsx";
-import { CalendarWidget } from "@/features/calendar-widget/calendar-widget.tsx";
-import { DayWidget } from "@/features/day-widget/day-widget.tsx";
-import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
-import { ExposureSummary } from "@/features/summary-card.tsx";
-import { toWeeklyMax } from "@/features/trend-line-chart-card/trend-line-chart-utils.ts";
-import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
-import { TIMEZONE } from "@/i18n/locale.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import type { ExposureTypeField } from "@/lib/dto/exposure.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
-import { getHourDomain } from "@/lib/exposure-time-domain.ts";
-import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
+import type { CollectedPage, PdfExportProgress, PdfPageSpec, PdfView } from "@/features/pdf-export/pdf-page-spec.ts";
+import { DayReportBatchRenderer, type DayReportJob } from "@/features/pdf-export/renderers/day-report-renderer.tsx";
+import { MonthCalendarRenderer } from "@/features/pdf-export/renderers/month-calendar-renderer.tsx";
+import { getPageOrder } from "@/features/pdf-export/renderers/page-keys.ts";
+import { getTrendMetrics, getTrendPageCount } from "@/features/pdf-export/renderers/period-metrics.ts";
+import { PeriodBatchRenderer } from "@/features/pdf-export/renderers/period-month-renderer.tsx";
+import { PeriodSummaryRenderer } from "@/features/pdf-export/renderers/period-summary-renderer.tsx";
+import { PeriodTrendChartsRenderer } from "@/features/pdf-export/renderers/period-trend-renderer.tsx";
+import { SingleDayChartRenderer } from "@/features/pdf-export/renderers/single-day-renderer.tsx";
+import { WeekGridRenderer } from "@/features/pdf-export/renderers/week-grid-renderer.tsx";
+import type { PdfDayReport } from "@/hooks/pdf-day-report.ts";
+import { useGetNotes } from "@/lib/api/generated/note-data.ts";
 import type { Exposure } from "@/lib/exposures.ts";
-import { getThreshold } from "@/lib/thresholds.ts";
-import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { downsampleExposureData } from "@/lib/utils.ts";
-import type { View } from "@/lib/views.ts";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { setHours } from "date-fns";
-import type { CSSProperties } from "react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { getPeriodMonths, getPeriodRange, type PdfPeriod } from "@/lib/pdf/period.ts";
+import { getDayReportKey } from "@/lib/pdf/red-days.ts";
+import { memo, useCallback, useRef, useState } from "react";
 
 /**
- * PDF Chart Renderer - Off-Screen Chart Rendering for PDF Export
+ * PDF Chart Renderer - Off-Screen Rendering for PDF Export
  *
- * Renders TWO separate pages per exposure type, so each ends up on its own A4 sheet:
- *  - a "summary" page: ExposureSummary + the grid widget (Day/Week/Calendar)
- *  - a "chart" page: just the line chart, with extra headroom so the x-axis and
- *    legend are never cropped when the page is captured as an image.
+ * Renders everything a PDF export needs, off-screen, then reports each page as
+ * a PdfPageSpec once its data has loaded. The actual PDF assembly happens
+ * elsewhere (use-export-pdf.ts) - this file and renderers/ only decide what each page is.
+ *
+ * Page count and shape depend on the view:
+ *  - day: 1 vector-drawn report page per exposure type - SingleDayChartRenderer
+ *  - week/month: 1 vector-drawn grid page per exposure type
+ *  - period: 2 pages per month per exposure type (a vector calendar, a red-day
+ *    table) - MonthGridPage, scheduled by PeriodBatchRenderer. Then, once those
+ *    are all in, one day report per red day appended at the end - the day
+ *    export's own SingleDayChartRenderer, scheduled by DayReportBatchRenderer.
  *
  * The whole tree is wrapped in the "pdf-export-light" class (see app.css), which
  * re-declares every theme CSS variable to its light-mode value. This makes the
  * exported PDF always look the same regardless of the user's dark/light setting,
  * without needing to touch the real page or flash anything on screen.
  *
- * Used by: pdf-export-dialog.tsx (renders this when dialog is open)
+ * Used by: pdf-export-dialog.tsx (renders this when the dialog is exporting)
  */
-
-type PdfPage = "summary" | "chart";
-
-interface CollectedPage {
-	id: string;
-	exposure: Exposure;
-	page: PdfPage;
-}
 
 interface PdfChartRendererProps {
 	exposureType: "dust" | "noise" | "vibration" | "all";
-	view: View;
+	view: PdfView;
+	/** The day, week or month to export. */
 	date: Date;
+	/** The months to export - only the period view uses it. */
+	period: PdfPeriod;
 	userId: string;
-	onIdsReady: (ids: Array<string>) => void;
+	onPagesReady: (pages: Array<PdfPageSpec>) => void;
+	/** Called whenever a new page or day report comes in - drives the progress bar and stall timeout. */
+	onProgress?: (progress: PdfExportProgress) => void;
 }
 
-// Extra headroom below the plotted area so the x-axis labels and legend always fit
-// inside the captured image (see the comment on CHART_AREA_HEIGHT usage below for why
-// this needs to be a real, generous number rather than exactly the plot's height).
-// If you still see cropping, or too much empty space, adjust this single constant.
-const CHART_AREA_HEIGHT = 600;
-
-const pdfPageStyle: CSSProperties = {
-	width: "1200px",
-	background: "white",
-	padding: "20px",
-	boxSizing: "border-box",
-	display: "flex",
-	flexDirection: "column",
-	gap: "24px",
-};
-
 /**
- * Single day chart renderer - handles one exposure type for ONE day (hour-based X-axis)
+ * One day report per red-day row, in the order the period pages already have
+ * them: exposure types in export order, months in order within each, days in
+ * order within each month - so no sorting is needed.
  */
-function SingleDayChartRenderer({
-	exposure,
-	date,
-	userId,
-	onPageReady,
-}: {
-	exposure: Exposure;
-	date: Date;
-	userId: string;
-	onPageReady: (page: CollectedPage) => void;
-}) {
-	const summaryId = useId();
-	const chartId = useId();
-
-	// Convert to TZDate
-	const tzDate = TIMEZONE(date);
-
-	// Always use "day" view for individual day charts
-	const query = buildExposureQuery(exposure, "day", tzDate, {
-		field: exposure === "dust" ? "pm10_twa" : undefined,
-		usePeakAggregation: false,
-	});
-
-	// Fetch data directly
-	const { data: response, isLoading } = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId,
-		}),
-	);
-
-	const data = response?.data ?? [];
-	const hourDomain = response?.hourDomain;
-
-	// Calculate Y-axis range and hour domain
-	const { minY, maxY } = getExposureYAxisRange(exposure, data, {
-		usePeakAggregation: false,
-	});
-
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		data.map((d) => d.time),
-		"day",
-	);
-	const minTime = setHours(tzDate, minHour);
-	const maxTime = setHours(tzDate, maxHour);
-
-	// Get thresholds for warning/danger lines
-	const threshold = getThreshold(exposure, exposure === "dust" ? "pm10_twa" : undefined);
-	const dayGridData = [
-		{
-			exposure,
-			dangerLevelByHour: data.reduce<Record<number, (typeof data)[number]["dangerLevel"]>>((levels, point) => {
-				levels[point.time.getUTCHours()] = point.dangerLevel;
-				return levels;
-			}, {}),
-		},
-	];
-
-	// Report both pages once loaded.
-	useEffect(() => {
-		if (!isLoading) {
-			onPageReady({ id: summaryId, exposure, page: "summary" });
-			onPageReady({ id: chartId, exposure, page: "chart" });
-		}
-	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
-
-	if (isLoading) {
-		return null;
-	}
-
-	return (
-		<>
-			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
-				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView="day" />
-				<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-					<DayWidget
-						data={dayGridData}
-						startHour={minHour}
-						endHour={maxHour}
-						selectedDate={tzDate}
-						exposureTypes={[exposure]}
-					/>
-				</div>
-			</div>
-
-			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
-				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
-					<BaseExposureLineChartCard
-						minTime={minTime}
-						maxTime={maxTime}
-						chartData={downsampleExposureData(exposure, data)}
-						unit={exposure === "dust" ? "ug" : "db"}
-						id={`${chartId}-chart`}
-						maxY={maxY}
-						minY={minY}
-						exposure={exposure}
-						dustField={exposure === "dust" ? "pm10_twa" : undefined}
-					>
-						<ThresholdLine y={threshold.danger} dangerLevel="danger" />
-						<ThresholdLine y={threshold.warning} dangerLevel="warning" />
-					</BaseExposureLineChartCard>
-				</div>
-			</div>
-		</>
+function getDayReportJobs(pages: Array<PdfPageSpec>): Array<DayReportJob> {
+	return pages.flatMap((page) =>
+		page.kind === "red-days"
+			? page.rows.map((row) => ({
+					key: getDayReportKey(row.exposure, row.date),
+					exposure: row.exposure,
+					date: row.date,
+				}))
+			: [],
 	);
 }
 
 /**
- * Aggregated trend chart renderer - handles one exposure type for week/month view
- */
-function TrendChartRenderer({
-	exposure,
-	date,
-	view,
-	userId,
-	onPageReady,
-}: {
-	exposure: Exposure;
-	date: Date;
-	view: "week" | "month";
-	userId: string;
-	onPageReady: (page: CollectedPage) => void;
-}) {
-	const summaryId = useId();
-	const chartId = useId();
-	const tzDate = TIMEZONE(date);
-
-	// Determine which fields to query based on exposure type
-	// (matches DustTrendLineChartCard, NoiseTrendLineChartCard, VibrationTrendLineChartCard)
-	const fields: Array<ExposureTypeField | undefined> = (() => {
-		if (exposure === "dust") {
-			return ["pm1_twa", "pm25_twa", "pm4_twa", "pm10_twa"];
-		}
-		return [undefined]; // noise and vibration have no fields
-	})();
-
-	const granularity: "day" | "week" = view === "week" ? "day" : "week";
-
-	// Fetch data for all fields (replicating useExposureTrendData logic)
-	const queryResults = useQueries({
-		queries: fields.map((field) =>
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, tzDate, {
-					field,
-					usePeakAggregation: false,
-					aggregationFunction: exposure === "dust" ? "max" : undefined,
-					granularity: "day",
-				}),
-				userId,
-			}),
-		),
-	});
-	const gridQuery = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query: buildExposureQuery(exposure, view, tzDate, {
-				field: exposure === "dust" ? "pm1_twa" : undefined,
-				usePeakAggregation: false,
-			}),
-			userId,
-		}),
-	);
-
-	const isLoading = queryResults.some((q) => q.isLoading) || gridQuery.isLoading;
-	const gridData = mapExposureDataToTimeBucketStatuses(gridQuery.data?.data ?? [], exposure, false);
-	const hourDomain = gridQuery.data?.hourDomain;
-	const { minHour, maxHour } = getHourDomain(
-		hourDomain,
-		gridQuery.data?.data.map((point) => point.time),
-		view,
-	);
-
-	const series = fields.map((field, index) => {
-		const rawData = queryResults[index]?.data?.data ?? [];
-		const data = granularity === "week" ? toWeeklyMax(rawData) : rawData;
-
-		return {
-			field,
-			data,
-			exposure,
-			exposureField: field,
-		};
-	});
-
-	// Calculate Y-axis range (matching useExposureTrendData)
-	const { minY, maxY } = getExposureYAxisRange(
-		exposure,
-		series.flatMap((s) => s.data),
-		{ usePeakAggregation: false },
-	);
-
-	// Report ID when chart is ready
-	useEffect(() => {
-		if (!isLoading) {
-			const timer = setTimeout(() => {
-				onPageReady({ id: summaryId, exposure, page: "summary" });
-				onPageReady({ id: chartId, exposure, page: "chart" });
-			}, 200);
-			return () => clearTimeout(timer);
-		}
-	}, [isLoading, summaryId, chartId, exposure, onPageReady]);
-
-	if (isLoading) {
-		return null;
-	}
-
-	// Determine unit based on exposure type
-	const unit = exposure === "dust" ? "ug" : exposure === "noise" ? "db" : "points";
-
-	return (
-		<>
-			<div id={summaryId} className="pdf-export-container" style={pdfPageStyle}>
-				<ExposureSummary exposureType={exposure} selectedDate={tzDate} selectedView={view} />
-				{view === "week" ? (
-					<div style={{ width: "1160px" }}>
-						<WeekWidget dayStartHour={minHour} dayEndHour={maxHour} data={gridData} selectedDate={tzDate} />
-					</div>
-				) : (
-					<div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-						<CalendarWidget selectedDay={tzDate} data={gridData} />
-					</div>
-				)}
-			</div>
-
-			<div id={chartId} className="pdf-export-container" style={pdfPageStyle}>
-				<div style={{ width: "1160px", height: `${CHART_AREA_HEIGHT}px` }}>
-					<TrendLineChart
-						selectedDate={tzDate}
-						granularity={granularity}
-						unit={unit}
-						minY={minY}
-						maxY={maxY}
-						series={series}
-					/>
-				</div>
-			</div>
-		</>
-	);
-}
-
-/**
- * Main renderer - coordinates all pages and reports their final IDs once everything
- * has loaded.
+ * Top-level renderer: picks the right per-view renderer above, collects every
+ * page it reports via handlePageReady, and calls onPagesReady once every key in
+ * getPageOrder has come in.
  *
- * Each exposure type produces two pages: "summary" (ExposureSummary + grid) and
- * "chart" (the line chart). Pages are reported to the parent in a FIXED order —
- * dust, noise, vibration (or just the single selected type), summary before chart —
- * regardless of which exposure's data happens to finish loading first. This matters
- * because `titles` in pdf-export-dialog.tsx is built in that same fixed order; without
- * this, a chart that loads faster than another could end up with the wrong title.
+ * Pages are handed over in getPageOrder's order, not the order they finished
+ * loading in, so the PDF's page order never depends on which query was fastest.
+ *
+ * Memoized: the dialog re-renders on every progress update, and without this
+ * the whole off-screen export tree would re-render with it each time.
  */
-export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady }: PdfChartRendererProps) {
-	const collectedRef = useRef<Map<string, CollectedPage>>(new Map());
+export const PdfChartRenderer = memo(function PdfChartRendererInner({
+	exposureType,
+	view,
+	date,
+	period,
+	userId,
+	onPagesReady,
+	onProgress,
+}: PdfChartRendererProps) {
+	const collectedRef = useRef<Map<string, PdfPageSpec>>(new Map());
 	const [hasReported, setHasReported] = useState(false);
+	// Set once a period export's own pages are all in AND it has red days: the day
+	// reports are rendered next, and onPagesReady only fires once they're done.
+	const [dayReportPhase, setDayReportPhase] = useState<{
+		periodPages: Array<PdfPageSpec>;
+		jobs: Array<DayReportJob>;
+	} | null>(null);
+
+	// One request for the whole period's notes; only the period export needs them.
+	const notesQuery = useGetNotes(userId, getPeriodRange(period), { query: { enabled: view === "period" } });
+	const notes = notesQuery.data ?? [];
 
 	const exposuresToRender: Array<Exposure> = exposureType === "all" ? ["dust", "noise", "vibration"] : [exposureType];
-	const expectedCount = exposuresToRender.length * 2; // one summary + one chart page per exposure
+	const trendPageCount = getTrendPageCount(getTrendMetrics(exposuresToRender).length);
+	const pageOrder = getPageOrder(view, exposuresToRender, getPeriodMonths(period).length, trendPageCount);
 
 	const handlePageReady = useCallback(
-		(pageInfo: CollectedPage) => {
+		({ key, spec }: CollectedPage) => {
 			if (hasReported) return;
 
-			collectedRef.current.set(`${pageInfo.exposure}-${pageInfo.page}`, pageInfo);
+			// Renderers re-report the same page on re-renders; only a genuinely new page
+			// counts as progress, or a stuck export would keep resetting its stall timer.
+			const countBefore = collectedRef.current.size;
+			collectedRef.current.set(key, spec);
+			if (collectedRef.current.size > countBefore) {
+				onProgress?.({ step: "collecting", done: collectedRef.current.size, total: pageOrder.length });
+			}
 
-			if (collectedRef.current.size === expectedCount) {
-				const orderedIds = exposuresToRender.flatMap((exposure) => {
-					const summaryPage = collectedRef.current.get(`${exposure}-summary`);
-					const chartPage = collectedRef.current.get(`${exposure}-chart`);
-					return [summaryPage?.id, chartPage?.id].filter((id): id is string => id != null);
+			if (collectedRef.current.size === pageOrder.length) {
+				const orderedPages = pageOrder.flatMap((pageKey) => {
+					const page = collectedRef.current.get(pageKey);
+					return page ? [page] : [];
 				});
 
-				onIdsReady(orderedIds);
 				setHasReported(true);
+
+				// A period export isn't fin- each still
+				// needs its day report appended. Everything else is done now.
+				const dayReportJobs = view === "period" ? getDayReportJobs(orderedPages) : [];
+
+				if (dayReportJobs.length > 0) {
+					setDayReportPhase({ periodPages: orderedPages, jobs: dayReportJobs });
+					onProgress?.({ step: "dayReports", done: 0, total: dayReportJobs.length });
+				} else {
+					onPagesReady(orderedPages);
+				}
 			}
 		},
-		[expectedCount, exposuresToRender, onIdsReady, hasReported],
+		[pageOrder, onPagesReady, onProgress, hasReported, view],
 	);
 
-	// Reset when component mounts/unmounts
-	useEffect(() => {
-		collectedRef.current.clear();
-		setHasReported(false);
-
-		return () => {
-			collectedRef.current.clear();
-			setHasReported(false);
-		};
-	}, []);
+	const handleDayReportsDone = useCallback(
+		(reports: Array<PdfDayReport>) => {
+			if (dayReportPhase) onPagesReady([...dayReportPhase.periodPages, ...reports]);
+		},
+		[dayReportPhase, onPagesReady],
+	);
 
 	return (
 		<div
@@ -374,26 +156,72 @@ export function PdfChartRenderer({ exposureType, view, date, userId, onIdsReady 
 				left: "-9999px",
 			}}
 		>
-			{view === "day"
-				? exposuresToRender.map((exposure) => (
-						<SingleDayChartRenderer
-							key={exposure}
-							exposure={exposure}
-							date={date}
+			{view === "day" ? (
+				exposuresToRender.map((exposure) => (
+					<SingleDayChartRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
+			) : view === "period" ? (
+				// Hold off until the notes arrive, so getRedDays never runs against an empty list.
+				// One shared PeriodBatchRenderer, not one per exposure - this is what makes the
+				// batch size apply across the whole export (e.g. Overview) rather than 3x it.
+				notesQuery.isLoading ? null : (
+					<>
+						<PeriodSummaryRenderer
+							period={period}
+							userId={userId}
+							exposures={exposuresToRender}
+							onPageReady={handlePageReady}
+						/>
+						<PeriodTrendChartsRenderer
+							exposures={exposuresToRender}
+							period={period}
 							userId={userId}
 							onPageReady={handlePageReady}
 						/>
-					))
-				: exposuresToRender.map((exposure) => (
-						<TrendChartRenderer
-							key={exposure}
-							exposure={exposure}
-							date={date}
-							view={view}
+						<PeriodBatchRenderer
+							exposures={exposuresToRender}
+							period={period}
 							userId={userId}
+							notes={notes}
 							onPageReady={handlePageReady}
 						/>
-					))}
+					</>
+				)
+			) : view === "month" ? (
+				exposuresToRender.map((exposure) => (
+					<MonthCalendarRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
+			) : (
+				exposuresToRender.map((exposure) => (
+					<WeekGridRenderer
+						key={exposure}
+						exposure={exposure}
+						date={date}
+						userId={userId}
+						onPageReady={handlePageReady}
+					/>
+				))
+			)}
+			{dayReportPhase && (
+				<DayReportBatchRenderer
+					jobs={dayReportPhase.jobs}
+					userId={userId}
+					onAllDone={handleDayReportsDone}
+					onProgress={onProgress}
+				/>
+			)}
 		</div>
 	);
-}
+});

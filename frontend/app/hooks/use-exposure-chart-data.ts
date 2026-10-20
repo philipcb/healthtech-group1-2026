@@ -2,18 +2,18 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { getMaxPointByValue } from "@/features/statistic-card-utils.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
-import { exposureQueryOptions } from "@/lib/api.ts";
-import type { ExposureDto } from "@/lib/dto/exposure.ts";
-import { buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { useGetExposureData } from "@/lib/api/generated/exposure-data.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import { getHourDomain } from "@/lib/exposure-time-domain.ts";
 import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
-import type { DustField, Exposure } from "@/lib/exposures.ts";
+import { aggregationFor, type DustField, defaultDustField, type Exposure } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapExposureDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { useQuery } from "@tanstack/react-query";
+import { granularityByView } from "@/lib/views.ts";
 import { setHours } from "date-fns";
 
-export function getDisplayedExposureValue(point: ExposureDto, usePeakAggregation: boolean): number {
+export function getDisplayedExposureValue(point: ExposureDataDto, usePeakAggregation: boolean): number {
 	return usePeakAggregation && point.peakValue != null ? point.peakValue : point.value;
 }
 
@@ -32,22 +32,14 @@ export function useExposureChartData(
 	const userId = options.userId ?? user.id;
 	const usePeakAggregation = options.usePeakAggregation ?? false;
 
-	const query = buildExposureQuery(exposure, view, date, {
-		field: options.dustField,
-		usePeakAggregation,
-	});
+	const query = {
+		...getStartEnd(view, date),
+		granularity: granularityByView[view],
+		function: aggregationFor(exposure, usePeakAggregation),
+		field: options.dustField ?? (exposure === "dust" ? defaultDustField : undefined),
+	};
 
-	const {
-		data: response,
-		isLoading,
-		isError,
-	} = useQuery(
-		exposureQueryOptions({
-			exposure,
-			query,
-			userId,
-		}),
-	);
+	const { data: response, isLoading, isError } = useGetExposureData(exposure, userId, query);
 
 	const data = response?.data;
 	const hourDomain = response?.hourDomain;
@@ -55,7 +47,7 @@ export function useExposureChartData(
 	const threshold = getThreshold(exposure, options.dustField);
 	const dangerThreshold = usePeakAggregation ? (threshold.peakDanger ?? threshold.danger) : threshold.danger;
 
-	const getValue = (point: ExposureDto) => getDisplayedExposureValue(point, usePeakAggregation);
+	const getValue = (point: ExposureDataDto) => getDisplayedExposureValue(point, usePeakAggregation);
 
 	const latestPoint = data?.at(-1) ?? null;
 	const maxPoint = data && data.length > 0 ? getMaxPointByValue(data, getValue) : null;

@@ -6,7 +6,6 @@ import {
 	buildLiveExposureQueries,
 	getLiveExposureWindow,
 	parseTimeRange,
-	resolveTimeRange,
 	type TimeRangeOption,
 } from "@/features/live/live-exposure-queries.ts";
 import { useLiveExposureData } from "@/features/live/use-live-exposure-data.ts";
@@ -27,10 +26,10 @@ import type { Route } from "./+types/live";
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 	const { searchParams } = new URL(request.url);
 	const userId = searchParams.get("userId") ?? getStoredUser().id;
-	const liveWindow = getLiveExposureWindow(userId, resolveTimeRange(searchParams.get("timeRange")));
-	const queries = buildLiveExposureQueries(liveWindow);
+	const timeRange = parseTimeRange.parseServerSide(searchParams.get("timeRange") ?? undefined);
+	const queries = buildLiveExposureQueries(userId, getLiveExposureWindow(timeRange));
 
-	await Promise.allSettled(queries.map((options) => queryClient.ensureQueryData(options)));
+	await Promise.allSettled(Object.values(queries).map((options) => queryClient.ensureQueryData(options)));
 	return null;
 }
 
@@ -42,7 +41,7 @@ export default function OperatorLiveView() {
 
 	const today = getToday();
 
-	const [timeRange, setTimeRange] = useQueryState<TimeRangeOption>("timeRange", parseTimeRange.withDefault("30"));
+	const [timeRange, setTimeRange] = useQueryState<TimeRangeOption>("timeRange", parseTimeRange);
 
 	const targetUserId = selectedUserId ?? user.id;
 

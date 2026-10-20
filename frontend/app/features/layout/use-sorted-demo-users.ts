@@ -1,12 +1,11 @@
+import type { User } from "@/features/user/user.ts";
 import { KARI_NORDMANN_ID, OLA_NORDMANN_ID } from "@/features/user/user-utils.ts";
-import { usersQueryOptions } from "@/lib/api.ts";
-import type { User } from "@/lib/dto/user.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useGetUsers } from "@/lib/api/generated/user.ts";
 
 const priorityUserIds: Array<string> = [OLA_NORDMANN_ID, KARI_NORDMANN_ID];
 
 export function useSortedDemoUsers(): Array<User> {
-	const { data: users } = useQuery(usersQueryOptions());
+	const { data: users } = useGetUsers();
 
 	return (users ?? []).toSorted((a, b) => {
 		const aPriority = priorityUserIds.indexOf(a.id);

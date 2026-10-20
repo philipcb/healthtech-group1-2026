@@ -1,5 +1,5 @@
+import type { User } from "@/features/user/user.ts";
 import { now } from "@/lib/date.ts";
-import type { User } from "@/lib/dto/user.ts";
 
 export const USER_STORAGE_KEY = "demo_user_id" as const;
 
@@ -25,6 +25,30 @@ export const DEFAULT_USER: User = {
 	},
 };
 
+export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID = "33333333-3333-3333-3333-333333333333" as const;
+export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE = "Aker Solutions Verdal" as const;
+
+export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER: User = {
+	...DEFAULT_USER,
+	id: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER_ID,
+	name: "Mia Medisin",
+	email: "mia.medisin@aker.com",
+	role: "occupationalHealthService",
+	jobDescription: "Bedriftslege",
+	location: {
+		...DEFAULT_USER.location,
+		latitude: 63.7933,
+		longitude: 11.4817,
+		region: "Trøndelag",
+		city: "Verdal",
+		site: OCCUPATIONAL_HEALTH_SERVICE_DEMO_SITE,
+	},
+};
+
+export const DEMO_FALLBACK_USERS: Partial<Record<User["role"], User>> = {
+	occupationalHealthService: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER,
+};
+
 export function getStoredUser(): User {
 	try {
 		const stored = localStorage.getItem(USER_STORAGE_KEY);
@@ -38,3 +62,6 @@ export function getStoredUser(): User {
 
 	return DEFAULT_USER;
 }
+
+export const createLocationName = (location: User["location"]) =>
+	location.building ? `${location.building}, ${location.site}` : location.site;

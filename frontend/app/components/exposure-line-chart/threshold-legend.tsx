@@ -19,22 +19,33 @@ export function ThresholdLegend({ items }: { items: Array<ThresholdLegendItem> }
 
 				return (
 					<div key={item.dangerLevel} className="flex items-center gap-2">
-						<svg width="24" height="8" className="shrink-0" aria-label={dangerLevelLabel}>
-							<title>{dangerLevelLabel}</title>
-							<line
-								x1="0"
-								y1="4"
-								x2="24"
-								y2="4"
-								stroke={item.color}
-								strokeWidth="2"
-								strokeDasharray={strokeDasharray}
-							/>
-						</svg>
+						<ThresholdLegendLine
+							label={dangerLevelLabel}
+							color={item.color}
+							strokeDasharray={strokeDasharray}
+						/>
 						<span>{dangerLevelLabel}</span>
 					</div>
 				);
 			})}
 		</div>
+	);
+}
+
+/** A sample of a threshold line, drawn in its color and dash pattern. Without `strokeDasharray`, the line is solid. */
+export function ThresholdLegendLine({
+	label,
+	color,
+	strokeDasharray,
+}: {
+	label: string;
+	color: string;
+	strokeDasharray?: string;
+}) {
+	return (
+		<svg width="24" height="8" className="shrink-0" aria-label={label}>
+			<title>{label}</title>
+			<line x1="0" y1="4" x2="24" y2="4" stroke={color} strokeWidth="2" strokeDasharray={strokeDasharray} />
+		</svg>
 	);
 }

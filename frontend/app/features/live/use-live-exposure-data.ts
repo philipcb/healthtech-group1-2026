@@ -8,35 +8,28 @@ import { isWithinInterval } from "date-fns";
 import { useMemo } from "react";
 
 export function useLiveExposureData(userId: string, timeRange: TimeRangeOption) {
-	const liveWindow = getLiveExposureWindow(userId, timeRange);
+	const liveWindow = getLiveExposureWindow(timeRange);
 	const { start, end } = liveWindow;
+	const queries = buildLiveExposureQueries(userId, liveWindow);
 
-	const [dustTwa1Result, dustTwa25Result, dustTwa10Result, noiseResult, vibrationResult] = useQueries({
-		queries: buildLiveExposureQueries(liveWindow),
+	const [dustPm1, dustPm25, dustPm10, noise, vibration] = useQueries({
+		queries: [queries.dustPm1, queries.dustPm25, queries.dustPm10, queries.noise, queries.vibration],
 	});
 
-	const dustTwa1Data = dustTwa1Result.data?.data ?? [];
-	const dustTwa25Data = dustTwa25Result.data?.data ?? [];
-	const dustTwa10Data = dustTwa10Result.data?.data ?? [];
-	const noiseData = noiseResult.data?.data ?? [];
-	const rawVibrationData = vibrationResult.data?.data ?? [];
-
 	// Since vibration is cumulative over the day we have to fetch data from the start of the day and then filter it to the selected time range
-	const vibrationData = useMemo(() => {
-		if (!rawVibrationData) {
-			return [];
-		}
-
-		return rawVibrationData.filter((d) => isWithinInterval(d.time, { start, end }));
-	}, [rawVibrationData, start, end]);
+	const rawVibrationData = vibration.data?.data;
+	const vibrationData = useMemo(
+		() => (rawVibrationData ?? []).filter((d) => isWithinInterval(d.time, { start, end })),
+		[rawVibrationData, start, end],
+	);
 
 	return {
 		start,
 		end,
-		dustTwa1Data,
-		dustTwa25Data,
-		dustTwa10Data,
-		noiseData,
+		dustTwa1Data: dustPm1.data?.data ?? [],
+		dustTwa25Data: dustPm25.data?.data ?? [],
+		dustTwa10Data: dustPm10.data?.data ?? [],
+		noiseData: noise.data?.data ?? [],
 		vibrationData,
 	};
 }

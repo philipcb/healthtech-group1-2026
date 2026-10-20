@@ -1,10 +1,10 @@
+import type { User } from "@/features/user/user.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
+import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
 import { type ClassValue, clsx } from "clsx";
 import { CircleDashedIcon, FrownIcon, MehIcon, SmileIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import type { DangerLevel } from "./danger-levels.ts";
-import type { ExposureDto } from "./dto/exposure.ts";
-import type { User } from "./dto/user.ts";
 import type { Exposure, ExposureUnit } from "./exposures.ts";
 
 const UG_TO_MG = 0.001;
@@ -19,13 +19,15 @@ export const userRoleToString = (role: User["role"], t: TranslateFn) => {
 			return t(($) => $.user.role.operator);
 		case "foreman":
 			return t(($) => $.user.role.foreman);
+		case "occupationalHealthService":
+			return t(($) => $.user.role.occupationalHealthService);
 		default:
 			return role;
 	}
 };
 
-export function downsampleDataPoints(data: Array<ExposureDto>, bucketSize: number): Array<ExposureDto> {
-	const result: Array<ExposureDto> = [];
+export function downsampleDataPoints(data: Array<ExposureDataDto>, bucketSize: number): Array<ExposureDataDto> {
+	const result: Array<ExposureDataDto> = [];
 
 	for (let i = 0; i < data.length; i += bucketSize) {
 		const bucket = data.slice(i, i + bucketSize);
@@ -50,7 +52,7 @@ export function downsampleDataPoints(data: Array<ExposureDto>, bucketSize: numbe
 	return result;
 }
 
-export function downsampleExposureData(exposure: Exposure, data: Array<ExposureDto>): Array<ExposureDto> {
+export function downsampleExposureData(exposure: Exposure, data: Array<ExposureDataDto>): Array<ExposureDataDto> {
 	if (exposure === "vibration") {
 		return data;
 	}

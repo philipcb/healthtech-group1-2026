@@ -1,5 +1,5 @@
+import type { User } from "@/features/user/user.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
-import type { User } from "@/lib/dto/user.ts";
 import type { LucideIcon } from "lucide-react";
 import { href, type To } from "react-router";
 
@@ -38,6 +38,13 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 					to: href("/foreman/team"),
 					label: t(($) => $.layout.team),
 				},
+			];
+		}
+
+		case "occupationalHealthService": {
+			return [
+				{ to: href("/occupational-health-service"), label: t(($) => $.layout.home) },
+				{ to: href("/occupational-health-service/map"), label: t(($) => $.layout.map) },
 			];
 		}
 

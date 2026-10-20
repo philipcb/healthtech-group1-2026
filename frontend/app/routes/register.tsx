@@ -1,15 +1,14 @@
 import { SignupForm } from "@/components/signup-form.tsx";
 import { DemoRoleSwitcher } from "@/features/user/demo-role-switcher.tsx";
+import type { User } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
-import { usersQueryOptions } from "@/lib/api.ts";
-import type { User } from "@/lib/dto/user.ts";
-import { useQuery } from "@tanstack/react-query";
+import { useGetUsers } from "@/lib/api/generated/user.ts";
 import { useNavigate } from "react-router";
 
 export default function Page() {
 	const navigate = useNavigate();
 	const { setUser } = useUser();
-	const { data: users } = useQuery(usersQueryOptions());
+	const { data: users } = useGetUsers();
 
 	const handleDemoSelect = (user: User) => {
 		setUser(user);

@@ -1,6 +1,6 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ExposureSlider } from "@/components/exposure-slider.tsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { DustExposureLineChartCard } from "@/features/exposure-line-chart-card/dust-exposure-line-chart-card.tsx";
 import { ExposureStatisticsSection } from "@/features/statistic-card.tsx";
@@ -10,22 +10,22 @@ import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { exposureOverviewQueryOptions, exposureQueryOptions } from "@/lib/api.ts";
+import { getGetExposureDataQueryOptions, useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
+import type { ExposureDataDto, UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
-import type { ExposureDto } from "@/lib/dto/exposure.ts";
-import type { UserWithStatusDto } from "@/lib/dto/user.ts";
-import { buildExposureOverviewQuery, buildExposureQuery } from "@/lib/exposure-query-utils.ts";
+import { getStartEnd } from "@/lib/date.ts";
 import {
+	aggregationFor,
 	type DustField,
 	defaultDustField,
-	dustFields,
 	type Exposure,
 	parseAsDustField,
 	parseAsExposureUnit,
 } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { overviewGranularityByView } from "@/lib/views.ts";
+import { useQueries } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -45,12 +45,14 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 	const { data, isLoading, isError, threshold, latestPoint, maxPoint, averageValue, minHour, maxHour } =
 		useExposureChartData(exposure, { userId: selectedUser.id, dustField });
 
-	const { data: overviewResponse } = useQuery(
-		exposureOverviewQueryOptions({
-			query: buildExposureOverviewQuery([exposure], view, date),
-			userId: selectedUser.id,
-		}),
-	);
+	const { data: overviewResponse } = useGetExposureOverview(selectedUser.id, {
+		[exposure]: {
+			...getStartEnd(view, date),
+			granularity: overviewGranularityByView[view],
+			function: aggregationFor(exposure, false),
+			field: defaultDustField,
+		},
+	});
 
 	const dustPm1TwaThreshold = getThreshold(exposure, "pm1_twa");
 	const dustPm25TwaThreshold = getThreshold(exposure, "pm25_twa");
@@ -59,41 +61,29 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 
 	const [dustTwa1Result, dustTwa25Result, dustTwa4Result, dustTwa10Result] = useQueries({
 		queries: [
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, date, {
-					granularity: "day",
-					aggregationFunction: "avg",
-					field: "pm1_twa",
-				}),
-				userId: selectedUser.id,
+			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
+				...getStartEnd(view, date),
+				granularity: "day",
+				function: "avg",
+				field: "pm1_twa",
 			}),
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, date, {
-					granularity: "day",
-					aggregationFunction: "avg",
-					field: "pm25_twa",
-				}),
-				userId: selectedUser.id,
+			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
+				...getStartEnd(view, date),
+				granularity: "day",
+				function: "avg",
+				field: "pm25_twa",
 			}),
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, date, {
-					granularity: "day",
-					aggregationFunction: "avg",
-					field: "pm4_twa",
-				}),
-				userId: selectedUser.id,
+			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
+				...getStartEnd(view, date),
+				granularity: "day",
+				function: "avg",
+				field: "pm4_twa",
 			}),
-			exposureQueryOptions({
-				exposure,
-				query: buildExposureQuery(exposure, view, date, {
-					granularity: "day",
-					aggregationFunction: "avg",
-					field: "pm10_twa",
-				}),
-				userId: selectedUser.id,
+			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
+				...getStartEnd(view, date),
+				granularity: "day",
+				function: "avg",
+				field: "pm10_twa",
 			}),
 		],
 	});
@@ -107,16 +97,8 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 	const showDustStatistics = view === "day";
 
 	return (
-		<div className="flex max-w-4xl flex-col gap-4">
-			<Tabs value={dustField} onValueChange={(value) => setDustField(value as DustField)}>
-				<TabsList>
-					{dustFields.map((field) => (
-						<TabsTrigger key={field} value={field}>
-							{t(($) => $.exposures.dustFields[field])}
-						</TabsTrigger>
-					))}
-				</TabsList>
-			</Tabs>
+		<div className="flex flex-col gap-4 lg:max-w-4xl">
+			<DustFieldTabs value={dustField} onValueChange={setDustField} />
 
 			<ExposureChartCard
 				isLoading={isLoading}
@@ -132,7 +114,7 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 						data={mapOverviewDataToTimeBucketStatuses(overviewResponse?.data ?? [])}
 					/>
 				) : (
-					<DustExposureLineChartCard userId={selectedUser.id} />
+					<DustExposureLineChartCard userId={selectedUser.id} breakoutOnMobile={true} />
 				)}
 			</ExposureChartCard>
 
@@ -203,12 +185,14 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 				</CardContent>
 			</Card>
 
-			{showTrendLineChart && <DustTrendLineChartCard unit={dustUnit} userId={selectedUser.id} />}
+			{showTrendLineChart && (
+				<DustTrendLineChartCard unit={dustUnit} userId={selectedUser.id} breakoutOnMobile={true} />
+			)}
 		</div>
 	);
 }
 
-function getAvgValue(data: Array<ExposureDto>): number {
+function getAvgValue(data: Array<ExposureDataDto>): number {
 	if (data.length === 0) {
 		return 0;
 	}

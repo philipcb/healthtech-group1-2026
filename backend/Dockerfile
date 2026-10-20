@@ -20,6 +20,11 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 WORKDIR /app/src
 RUN dotnet build *.csproj -c Release --no-restore
 
+# AggregateDbContextFactory throws at design time if this variable is missing. The value is never used
+# to connect: the real connection string is passed with --connection when the bundle runs.
+# (Build stage only, it does not end up in the final image.)
+ENV AGGREGATE_DATABASE_URL="Host=localhost;Port=5432;Database=build;Username=build;Password=build"
+
 # Create one EF Core bundle per DbContext. Bundles are self-contained executables that run
 # migrations without needing the .NET SDK in the final image. --context is required because
 # the project has several DbContexts.

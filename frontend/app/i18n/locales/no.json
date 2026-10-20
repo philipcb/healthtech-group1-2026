@@ -111,6 +111,26 @@
       "danger": "Over grenseverdi"
     }
   },
+  "myTrends": {
+    "title": "Mine trender",
+    "period": {
+      "week": "Uke {{period}} mot uke {{baselineStart}}–{{baselineEnd}}",
+      "month": "{{period}} mot {{baselineStart}}–{{baselineEnd}}"
+    },
+    "trend": {
+      "higher": "Høyere enn vanlig",
+      "same": "Som vanlig",
+      "lower": "Lavere enn vanlig"
+    },
+    "share": "{{percent}} % av måletiden over tiltaksverdi (vanlig: {{normal}} %)",
+    "notEnoughData": "For lite data til å vise trend",
+    "higherHint": "Har du byttet verktøy eller oppgave? Legg gjerne til et notat.",
+    "coverage": {
+      "week": "Målt {{hours}} t i uke {{period}} (vanlig: {{normal}} t)",
+      "month": "Målt {{hours}} t i {{period}} (vanlig: {{normal}} t)"
+    },
+    "private": "Bare du ser dette"
+  },
   "lineChart": {
     "danger": "Over grenseverdi",
     "warning": "Over tiltaksverdi",

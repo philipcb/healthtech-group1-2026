@@ -411,11 +411,7 @@
     "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke."
   },
   "managementDashboard": {
-    "title": "Ledelse",
-    "unavailable": {
-      "title": "Ingen data tilgjengelig for ledelsen ennå",
-      "description": "Aggregerte eksponeringsdata er foreløpig bare tilgjengelig for bedriftshelsetjenesten."
-    }
+    "title": "Ledelse"
   },
   "select": {
     "all": "Velg alle",

@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Controllers;
 
 [ApiController]
-[Authorize(Policy = "OHSOnly")]
+[Authorize(Policy = "AggregateExposureAccess")]
 [Route("api/medical-team")]
 public class AggregateExposureDataController(
 	IAggregateExposureDataService aggregateExposureDataService

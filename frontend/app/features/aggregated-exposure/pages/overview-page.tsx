@@ -19,7 +19,6 @@ import {
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
-import { useUser } from "@/features/user/user-context.tsx";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
 import { MapPin, ShieldCheck } from "lucide-react";
@@ -33,10 +32,9 @@ export function OverviewPage() {
 	const { YardFilter } = scope;
 	const { exposureFilter, setExposureFilter, yard, setYard, hall, setHall, level, setLevel, periodSelection } =
 		useAggregatedExposureSearchParams();
-	const { user } = useUser();
 	const params = toPeriodParams(periodSelection);
 	const { data } = useGetAggregateGroups(params, {
-		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+		query: { select: toGroupSummaries },
 	});
 
 	const yards = getYards(data?.groups);
@@ -140,9 +138,8 @@ function isSelected(summary: { site: string; hall: string }, yard: string | null
 
 function GroupResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
 	const { t } = useTranslation();
-	const { user } = useUser();
 	const { data, isPending, isError } = useGetAggregateGroups(params, {
-		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+		query: { select: toGroupSummaries },
 	});
 	const groups = data?.groups.filter((group) => isSelected(group, yard, hall)) ?? [];
 

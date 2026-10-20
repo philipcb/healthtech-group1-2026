@@ -28,26 +28,27 @@ export function isExposureUnavailable(exposure: Exposure): exposure is Unavailab
 	return (unavailableExposures as ReadonlyArray<Exposure>).includes(exposure);
 }
 
-/** One occupation in one hall, with the site the backend returned it for */
-export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { site: string; hall: string; occupation: string };
+/** One occupation in one hall */
+export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string; occupation: string };
 
 /**
- * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend only returns the signed-in user's
- * site, so that's every group's site. Where each value comes from in the aggregate database:
+ * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
+ * the occupational health service its own, management every site. Where each value comes from in the aggregate
+ * database:
  * - dust: average PM1 TWA, `DustAverage.AveragePm1Twa`.
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
  * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's
  *   hours, and the trend shows each day's last hour.
  */
-export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto, site: string) {
+export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
 	const hiddenAverages = Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null]));
 
 	return {
 		units,
 		// The backend only sends groups of one occupation in one hall, but the DTO allows a missing hall or occupation
 		groups: groups.flatMap(
-			({ groupId, hall, occupation, averages }): Array<GroupSummary> =>
+			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
 				hall === null || occupation === null
 					? []
 					: [{ groupId, site, hall, occupation, averages: { ...averages, ...hiddenAverages } }],

@@ -10,6 +10,7 @@ namespace Backend.IntegrationTests.Fixtures;
 public sealed class PostgresTestDbFixture : IAsyncLifetime
 {
 	private const string LoginDatabaseName = "backend_login_test";
+	private const string AggregateDatabaseName = "backend_aggregate_test";
 	private readonly PostgreSqlContainer _container;
 
 	public PostgresTestDbFixture()
@@ -24,7 +25,8 @@ public sealed class PostgresTestDbFixture : IAsyncLifetime
 	public async Task InitializeAsync()
 	{
 		await _container.StartAsync();
-		await CreateLoginDatabaseAsync();
+		await CreateDatabaseAsync(LoginDatabaseName);
+		await CreateDatabaseAsync(AggregateDatabaseName);
 		await ResetDatabaseAsync();
 	}
 
@@ -60,15 +62,28 @@ public sealed class PostgresTestDbFixture : IAsyncLifetime
 		return new LoginDbContext(options);
 	}
 
-	private async Task CreateLoginDatabaseAsync()
+	public AggregateDbContext CreateAggregateDbContext()
+	{
+		string connectionString = new NpgsqlConnectionStringBuilder(
+			_container.GetConnectionString()
+		)
+		{
+			Database = AggregateDatabaseName,
+		}.ConnectionString;
+
+		var options = new DbContextOptionsBuilder<AggregateDbContext>()
+			.UseNpgsql(connectionString)
+			.Options;
+
+		return new AggregateDbContext(options);
+	}
+
+	private async Task CreateDatabaseAsync(string databaseName)
 	{
 		await using var connection = new NpgsqlConnection(_container.GetConnectionString());
 		await connection.OpenAsync();
 
-		await using var command = new NpgsqlCommand(
-			$"CREATE DATABASE {LoginDatabaseName}",
-			connection
-		);
+		await using var command = new NpgsqlCommand($"CREATE DATABASE {databaseName}", connection);
 		await command.ExecuteNonQueryAsync();
 	}
 
@@ -76,11 +91,14 @@ public sealed class PostgresTestDbFixture : IAsyncLifetime
 	{
 		await using var appContext = CreateDbContext();
 		await using var loginContext = CreateLoginDbContext();
+		await using var aggregateContext = CreateAggregateDbContext();
 
 		await appContext.Database.EnsureDeletedAsync();
 		await appContext.Database.MigrateAsync();
 		await loginContext.Database.EnsureDeletedAsync();
 		await loginContext.Database.MigrateAsync();
+		await aggregateContext.Database.EnsureDeletedAsync();
+		await aggregateContext.Database.MigrateAsync();
 
 		DatabaseSeeder seeder = new();
 		await seeder.SeedDataAsync(appContext, CancellationToken.None);

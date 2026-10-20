@@ -35,6 +35,9 @@ public sealed class SampleDto
 	[JsonPropertyName("groupId")]
 	public required Guid GroupId { get; set; }
 
+	[JsonPropertyName("site")]
+	public required string Site { get; set; }
+
 	[JsonPropertyName("hall")]
 	public String? Hall { get; set; } = null;
 

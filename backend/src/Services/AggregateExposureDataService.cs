@@ -63,6 +63,21 @@ public class AggregateExposureDataService(
 	// 	return null;
 	// }
 
+	// The groups the signed-in user may see. The occupational health service only sees its own site, management every
+	// site. Any other role sees nothing, even if an endpoint lets it through.
+	private IQueryable<Sample> GetAccessibleSamples()
+	{
+		var user = _signedInUserContext.User;
+		var site = user?.Location?.Site;
+
+		return user?.Role switch
+		{
+			UserRole.Manager => _context.Samples,
+			UserRole.OHS when site != null => _context.Samples.Where(s => s.Site == site),
+			_ => _context.Samples.Where(_ => false),
+		};
+	}
+
 	// An expression rather than a method call, so EF Core can put it into the SQL, used with
 	// `g.AsQueryable().Average(...)`. Throws for any other field, since the query would otherwise average NULL, which
 	// Postgres rejects.
@@ -138,13 +153,8 @@ public class AggregateExposureDataService(
 	)
 	{
 		// Only groups of one occupation in one hall, like the overview
-		var sample = await _context
-			.Samples.Where(s =>
-				s.Id == sampleId
-				&& s.Site.Equals(_signedInUserContext.User!.Location!.Site)
-				&& s.LocationQualifier != null
-				&& s.JobQualifier != null
-			)
+		var sample = await GetAccessibleSamples()
+			.Where(s => s.Id == sampleId && s.LocationQualifier != null && s.JobQualifier != null)
 			.FirstOrDefaultAsync();
 		if (sample == null)
 		{
@@ -236,12 +246,8 @@ public class AggregateExposureDataService(
 	)
 	{
 		// Only groups of one occupation in one hall. The whole site, whole halls and whole occupations overlap them.
-		var allSamples = await _context
-			.Samples.Where(s =>
-				s.Site.Equals(_signedInUserContext.User!.Location!.Site)
-				&& s.LocationQualifier != null
-				&& s.JobQualifier != null
-			)
+		var allSamples = await GetAccessibleSamples()
+			.Where(s => s.LocationQualifier != null && s.JobQualifier != null)
 			.ToListAsync();
 		List<SampleDto> overviewList = new();
 		foreach (Sample s in allSamples)
@@ -271,6 +277,7 @@ public class AggregateExposureDataService(
 				new SampleDto
 				{
 					GroupId = s.Id,
+					Site = s.Site,
 					Hall = s.LocationName,
 					Occupation = s.JobQualifier,
 					Averages = new SampleAveragesDto

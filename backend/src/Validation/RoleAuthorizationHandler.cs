@@ -13,7 +13,11 @@ public class RoleAuthorizationHandler(SignedInUserContext signedInUserContext)
 	{
 		var user = _signedInUserContext.User;
 
-		if (user is not null && user.Role == requirement.RequiredRole && user.Location != null)
+		if (
+			user is not null
+			&& requirement.AllowedRoles.Contains(user.Role)
+			&& user.Location != null
+		)
 		{
 			context.Succeed(requirement);
 		}
@@ -22,7 +26,11 @@ public class RoleAuthorizationHandler(SignedInUserContext signedInUserContext)
 	}
 }
 
-public class RoleRequirement(UserRole requiredRole) : IAuthorizationRequirement
+/// <summary>
+/// Requires the signed-in user to have exactly one of the given roles. Roles aren't hierarchical here, so a higher role
+/// doesn't get access to a lower role's endpoints.
+/// </summary>
+public class RoleRequirement(params UserRole[] allowedRoles) : IAuthorizationRequirement
 {
-	public UserRole RequiredRole { get; } = requiredRole;
+	public IReadOnlyCollection<UserRole> AllowedRoles { get; } = allowedRoles;
 }

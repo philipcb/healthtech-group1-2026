@@ -21,7 +21,6 @@ import {
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
-import { useUser } from "@/features/user/user-context.tsx";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
@@ -37,10 +36,9 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const { search } = useLocation();
 	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
 		useAggregatedExposureSearchParams();
-	const { user } = useUser();
 	const periodParams = toPeriodParams(periodSelection);
 	const groupsQuery = useGetAggregateGroups(periodParams, {
-		query: { select: (response) => toGroupSummaries(response, user.location.site) },
+		query: { select: toGroupSummaries },
 	});
 	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
 	// unavailable exposure

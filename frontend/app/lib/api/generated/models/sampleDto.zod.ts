@@ -10,6 +10,7 @@ export const sampleDtoGroupIdRegExp = new RegExp('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}
 
 export const SampleDto = zod.object({
   "groupId": zod.string().regex(sampleDtoGroupIdRegExp),
+  "site": zod.string(),
   "hall": zod.string().nullable(),
   "occupation": zod.string().nullable(),
   "averages": zod.object({

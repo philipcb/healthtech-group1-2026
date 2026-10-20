@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5063/"
+      "url": "http://localhost:5099/"
     }
   ],
   "paths": {
@@ -1584,13 +1584,17 @@
       },
       "SampleDto": {
         "required": [
-          "groupId"
+          "groupId",
+          "site"
         ],
         "type": "object",
         "properties": {
           "groupId": {
             "type": "string",
             "format": "uuid"
+          },
+          "site": {
+            "type": "string"
           },
           "hall": {
             "type": [

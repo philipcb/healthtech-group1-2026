@@ -16,6 +16,7 @@ export const AggregatedOverviewResponseDto = zod.object({
 }),
   "groups": zod.array(zod.object({
   "groupId": zod.string().regex(aggregatedOverviewResponseDtoGroupsItemGroupIdRegExp),
+  "site": zod.string(),
   "hall": zod.string().nullable(),
   "occupation": zod.string().nullable(),
   "averages": zod.object({

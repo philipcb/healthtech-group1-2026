@@ -414,11 +414,7 @@
     "description": "An anonymized overview of workplace exposure, per building and occupation."
   },
   "managementDashboard": {
-    "title": "Management",
-    "unavailable": {
-      "title": "No data available for management yet",
-      "description": "Aggregated exposure data is only available to the occupational health service for now."
-    }
+    "title": "Management"
   },
   "select": {
     "all": "Select all",

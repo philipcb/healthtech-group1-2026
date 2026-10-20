@@ -10,7 +10,7 @@ import { useView } from "@/features/views/use-view.ts";
 import { WeekWidget } from "@/features/week-widget/week-widget.tsx";
 import { useExposureChartData } from "@/hooks/use-exposure-chart-data.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { getGetExposureDataQueryOptions, useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData, useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
 import type { ExposureDataDto, UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import { getStartEnd } from "@/lib/date.ts";
@@ -25,7 +25,6 @@ import {
 import { getThreshold } from "@/lib/thresholds.ts";
 import { mapOverviewDataToTimeBucketStatuses } from "@/lib/time-bucket-utils.ts";
 import { overviewGranularityByView } from "@/lib/views.ts";
-import { useQueries } from "@tanstack/react-query";
 import { useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
@@ -59,34 +58,11 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 	const dustPm4TwaThreshold = getThreshold(exposure, "pm4_twa");
 	const dustPm10TwaThreshold = getThreshold(exposure, "pm10_twa");
 
-	const [dustTwa1Result, dustTwa25Result, dustTwa4Result, dustTwa10Result] = useQueries({
-		queries: [
-			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
-				...getStartEnd(view, date),
-				granularity: "day",
-				function: "avg",
-				field: "pm1_twa",
-			}),
-			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
-				...getStartEnd(view, date),
-				granularity: "day",
-				function: "avg",
-				field: "pm25_twa",
-			}),
-			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
-				...getStartEnd(view, date),
-				granularity: "day",
-				function: "avg",
-				field: "pm4_twa",
-			}),
-			getGetExposureDataQueryOptions(exposure, selectedUser.id, {
-				...getStartEnd(view, date),
-				granularity: "day",
-				function: "avg",
-				field: "pm10_twa",
-			}),
-		],
-	});
+	const twaRequest = { ...getStartEnd(view, date), granularity: "day", function: "avg" } as const;
+	const dustTwa1Result = useGetExposureData(exposure, selectedUser.id, { ...twaRequest, field: "pm1_twa" });
+	const dustTwa25Result = useGetExposureData(exposure, selectedUser.id, { ...twaRequest, field: "pm25_twa" });
+	const dustTwa4Result = useGetExposureData(exposure, selectedUser.id, { ...twaRequest, field: "pm4_twa" });
+	const dustTwa10Result = useGetExposureData(exposure, selectedUser.id, { ...twaRequest, field: "pm10_twa" });
 
 	const avgPm1Twa = getAvgValue(dustTwa1Result.data?.data ?? []);
 	const avgPm25Twa = getAvgValue(dustTwa25Result.data?.data ?? []);

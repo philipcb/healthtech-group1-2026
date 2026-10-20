@@ -4,10 +4,7 @@ import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import { getLocale } from "@/i18n/locale.ts";
-import {
-	getGetExposureDataQueryOptions,
-	getGetExposureOverviewQueryOptions,
-} from "@/lib/api/generated/exposure-data.ts";
+import { useGetExposureData, useGetExposureOverview } from "@/lib/api/generated/exposure-data.ts";
 import { getStartEnd } from "@/lib/date.ts";
 import {
 	type Aggregation,
@@ -22,7 +19,6 @@ import { calculateSummaryCounts } from "@/lib/time-bucket-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
-import { useQueries } from "@tanstack/react-query";
 import { formatDuration, hoursToMinutes, type Locale, minutesToHours } from "date-fns";
 import { InfoIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
@@ -68,36 +64,32 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	};
 	const exposureQueryEnabled = exposure !== null && exposureQuery !== null;
 
-	const [exposureResponse, allExposuresResponse] = useQueries({
-		queries: [
-			getGetExposureDataQueryOptions(
-				exposure as NonNullable<typeof exposure>,
-				user.id,
-				exposureQuery as NonNullable<typeof exposureQuery>,
-				{ query: { enabled: exposureQueryEnabled } },
-			),
-			getGetExposureOverviewQueryOptions(
-				user.id,
-				{
-					dust: {
-						startTime,
-						endTime,
-						granularity,
-						function: aggregationFor("dust", peakAggregation),
-						field: defaultDustField,
-					},
-					noise: { startTime, endTime, granularity, function: aggregationFor("noise", peakAggregation) },
-					vibration: {
-						startTime,
-						endTime,
-						granularity,
-						function: aggregationFor("vibration", peakAggregation),
-					},
-				},
-				{ query: { enabled: !exposureQueryEnabled } },
-			),
-		],
-	});
+	const exposureResponse = useGetExposureData(
+		exposure as NonNullable<typeof exposure>,
+		user.id,
+		exposureQuery as NonNullable<typeof exposureQuery>,
+		{ query: { enabled: exposureQueryEnabled } },
+	);
+	const allExposuresResponse = useGetExposureOverview(
+		user.id,
+		{
+			dust: {
+				startTime,
+				endTime,
+				granularity,
+				function: aggregationFor("dust", peakAggregation),
+				field: defaultDustField,
+			},
+			noise: { startTime, endTime, granularity, function: aggregationFor("noise", peakAggregation) },
+			vibration: {
+				startTime,
+				endTime,
+				granularity,
+				function: aggregationFor("vibration", peakAggregation),
+			},
+		},
+		{ query: { enabled: !exposureQueryEnabled } },
+	);
 
 	const response = exposure === null ? allExposuresResponse : exposureResponse;
 

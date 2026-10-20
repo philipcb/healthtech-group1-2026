@@ -17,17 +17,34 @@ export function useRoleRedirect() {
 		const isOperatorRoute = pathname.startsWith("/operator");
 		const isForemanRoute = pathname.startsWith("/foreman");
 		const isOccupationalHealthServiceRoute = pathname.startsWith("/occupational-health-service");
+		const isOccupationalHygienistRoute = pathname.startsWith("/occupational-hygienist");
 
-		if (user.role === "operator" && (isForemanRoute || isOccupationalHealthServiceRoute)) {
+		if (
+			user.role === "operator" &&
+			(isForemanRoute || isOccupationalHealthServiceRoute || isOccupationalHygienistRoute)
+		) {
 			navigate("/operator", { replace: true });
 		}
 
-		if (user.role === "foreman" && (isOperatorRoute || isOccupationalHealthServiceRoute)) {
+		if (
+			user.role === "foreman" &&
+			(isOperatorRoute || isOccupationalHealthServiceRoute || isOccupationalHygienistRoute)
+		) {
 			navigate("/foreman", { replace: true });
 		}
 
-		if (user.role === "occupationalHealthService" && (isOperatorRoute || isForemanRoute)) {
+		if (
+			user.role === "occupationalHealthService" &&
+			(isOperatorRoute || isForemanRoute || isOccupationalHygienistRoute)
+		) {
 			navigate("/occupational-health-service", { replace: true });
+		}
+
+		if (
+			user.role === "occupationalHygienist" &&
+			(isOperatorRoute || isForemanRoute || isOccupationalHealthServiceRoute)
+		) {
+			navigate("/occupational-hygienist", { replace: true });
 		}
 	}, [user?.role, location.pathname, navigate]);
 }

@@ -25,6 +25,11 @@ export default function Page() {
 			return;
 		}
 
+		if (user.role === UserRole.OccupationalHygienist) {
+			navigate("/occupational-hygienist/");
+			return;
+		}
+
 		setError(new Error(`Unknown user role "${user.role}"`));
 	}, [user, navigate]);
 

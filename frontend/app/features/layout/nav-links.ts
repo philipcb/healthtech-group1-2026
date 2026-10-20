@@ -48,6 +48,10 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 			];
 		}
 
+		case "occupationalHygienist": {
+			return [{ to: href("/occupational-hygienist"), label: t(($) => $.layout.home) }];
+		}
+
 		default: {
 			return [];
 		}

@@ -260,9 +260,23 @@
     "role": {
       "operator": "Operator",
       "foreman": "Foreman",
-      "occupationalHealthService": "Occupational Health Service"
+      "occupationalHealthService": "Occupational Health Service",
+      "occupationalHygienist": "Occupational Hygienist"
     },
     "searchPlaceholder": "Search users..."
+  },
+  "occupationalHygienistDashboard": {
+    "title": {
+      "all": "Your area's exposure",
+      "exposure": "Your area's {{exposure}} exposure"
+    },
+    "area": {
+      "title": "Your area",
+      "operatorCount": "{{count}} operators in area",
+      "operatorCount_one": "{{count}} operator in area",
+      "operatorCount_other": "{{count}} operators in area",
+      "failedToLoad": "Failed to load the exposure for the area"
+    }
   },
   "demo": {
     "currentRole": "Current role:",

@@ -257,9 +257,23 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "occupationalHealthService": "Bedriftshelsetjeneste"
+      "occupationalHealthService": "Bedriftshelsetjeneste",
+      "occupationalHygienist": "Yrkeshygieniker"
     },
     "searchPlaceholder": "Søk etter brukere..."
+  },
+  "occupationalHygienistDashboard": {
+    "title": {
+      "all": "Ditt områdes eksponering",
+      "exposure": "Ditt områdes {{exposure}}eksponering"
+    },
+    "area": {
+      "title": "Ditt område",
+      "operatorCount": "{{count}} operatører i området",
+      "operatorCount_one": "{{count}} operatør i området",
+      "operatorCount_other": "{{count}} operatører i området",
+      "failedToLoad": "Kunne ikke laste eksponering for området"
+    }
   },
   "demo": {
     "currentRole": "Nåværende rolle:",

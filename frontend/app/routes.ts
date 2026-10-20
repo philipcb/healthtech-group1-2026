@@ -7,6 +7,7 @@ export default [
 		route("/occupational-health-service/", "routes/occupational-health-service/overview.tsx"),
 		route("/occupational-health-service/map", "routes/occupational-health-service/map.tsx"),
 		route("/occupational-health-service/groups/:groupId", "routes/occupational-health-service/group.tsx"),
+		route("/occupational-hygienist/", "routes/occupational-hygienist/overview.tsx"),
 		route("/foreman/", "routes/foreman/overview.tsx"),
 		layout("routes/operator/exposures/exposure-layout.tsx", [
 			route("/operator/dust", "routes/operator/exposures/dust.tsx"),

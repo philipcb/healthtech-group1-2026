@@ -45,8 +45,31 @@ export const OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER: User = {
 	},
 };
 
+export const OCCUPATIONAL_HYGIENIST_DEMO_USER_ID = "44444444-4444-4444-4444-444444444444" as const;
+
+export const OCCUPATIONAL_HYGIENIST_DEMO_USER: User = {
+	...DEFAULT_USER,
+	id: OCCUPATIONAL_HYGIENIST_DEMO_USER_ID,
+	name: "Hanne Hygiene",
+	email: "hanne.hygiene@aker.com",
+	role: "occupationalHygienist",
+	jobDescription: "Yrkeshygieniker",
+	// The same location as the foreman whose team the hygienist borrows, see `useOccupationalHygienistAreaData`
+	location: {
+		id: "11111111-1111-1111-1111-111111111111",
+		latitude: 63.7933,
+		longitude: 11.4817,
+		country: "Norway",
+		region: "Trøndelag",
+		city: "Verdal",
+		site: "Aker Solutions Verdal",
+		building: "M-hallen",
+	},
+};
+
 export const DEMO_FALLBACK_USERS: Partial<Record<User["role"], User>> = {
 	occupationalHealthService: OCCUPATIONAL_HEALTH_SERVICE_DEMO_USER,
+	occupationalHygienist: OCCUPATIONAL_HYGIENIST_DEMO_USER,
 };
 
 export function getStoredUser(): User {

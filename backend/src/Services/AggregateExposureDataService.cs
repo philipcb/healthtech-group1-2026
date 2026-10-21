@@ -153,7 +153,9 @@ public class AggregateExposureDataService(
 	)
 	{
 		// Any group the user may see, like the overview
-		var sample = await GetAccessibleSamples().Where(s => s.Id == sampleId).FirstOrDefaultAsync();
+		var sample = await GetAccessibleSamples()
+			.Where(s => s.Id == sampleId)
+			.FirstOrDefaultAsync();
 		if (sample == null)
 		{
 			return new AggregatedTrendResponseDto

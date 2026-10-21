@@ -272,11 +272,17 @@
   "aggregatedExposure": {
     "map": {
       "title": "Områdekart",
-      "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
-      "unavailable": {
-        "title": "Områdekartet er ikke tilgjengelig ennå",
-        "description": "Det finnes ingen data om personer og yrkesgrupper per bygg ennå."
-      }
+      "description": "Anonym oversikt over yrkesgruppene i hvert bygg.",
+      "buildings": "Bygg",
+      "selectedBuilding": "Valgt bygg",
+      "occupations": "Yrkesgrupper",
+      "peopleWorkingHere": "{{count}} personer jobber her",
+      "peopleCountUnavailable": "Antall personer er ikke tilgjengelig",
+      "selectBuilding": "Velg et bygg på kartet eller i listen for å se en anonym oversikt.",
+      "notOnMap": "Ikke på kartet",
+      "error": "Kunne ikke hente byggoversikten.",
+      "noBuildings": "Ingen bygg med yrkesgrupper ennå.",
+      "noSiteMap": "Dette verftet har ikke områdekart ennå. Velg et bygg i listen for å se en anonym oversikt."
     },
     "period": {
       "label": "Tidsperiode",

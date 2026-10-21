@@ -275,11 +275,17 @@
   "aggregatedExposure": {
     "map": {
       "title": "Site map",
-      "description": "An anonymized overview of occupation groups and people per building.",
-      "unavailable": {
-        "title": "The site map isn't available yet",
-        "description": "There's no data on people and occupation groups per building yet."
-      }
+      "description": "An anonymized overview of the occupation groups in each building.",
+      "buildings": "Buildings",
+      "selectedBuilding": "Selected building",
+      "occupations": "Occupation groups",
+      "peopleWorkingHere": "{{count}} people work here",
+      "peopleCountUnavailable": "Head count isn't available",
+      "selectBuilding": "Select a building on the map or in the list to see an anonymous overview.",
+      "notOnMap": "Not on the map",
+      "error": "Could not load building overview.",
+      "noBuildings": "No buildings with occupation groups yet.",
+      "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
     },
     "period": {
       "label": "Time period",

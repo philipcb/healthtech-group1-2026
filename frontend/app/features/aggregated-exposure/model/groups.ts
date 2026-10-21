@@ -31,6 +31,9 @@ export function isExposureUnavailable(exposure: Exposure): exposure is Unavailab
 /** One occupation in one hall */
 export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string; occupation: string };
 
+/** A whole hall, every occupation in it */
+export type HallSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string };
+
 /**
  * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
  * the occupational health service its own, management every site. Where each value comes from in the aggregate
@@ -43,15 +46,18 @@ export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: stri
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
 	const hiddenAverages = Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null]));
+	const summaries = groups.map((group) => ({ ...group, averages: { ...group.averages, ...hiddenAverages } }));
 
 	return {
 		units,
-		// The backend only sends groups of one occupation in one hall, but the DTO allows a missing hall or occupation
-		groups: groups.flatMap(
+		// The backend also sends one occupation across the site and the whole site, which have no hall and aren't shown
+		groups: summaries.flatMap(
 			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
-				hall === null || occupation === null
-					? []
-					: [{ groupId, site, hall, occupation, averages: { ...averages, ...hiddenAverages } }],
+				hall === null || occupation === null ? [] : [{ groupId, site, hall, occupation, averages }],
+		),
+		halls: summaries.flatMap(
+			({ groupId, site, hall, occupation, averages }): Array<HallSummary> =>
+				hall === null || occupation !== null ? [] : [{ groupId, site, hall, averages }],
 		),
 	};
 }
@@ -115,6 +121,10 @@ export function compareByExposureFilter(
 	filter: ExposureFilter,
 ) {
 	return filter === "all" ? 0 : compareAverages(averagesA[filter], averagesB[filter]);
+}
+
+export function getHallName(hall: string, t: TranslateFn) {
+	return `${hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {

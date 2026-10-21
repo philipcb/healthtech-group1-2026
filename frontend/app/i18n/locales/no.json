@@ -322,6 +322,7 @@
     },
     "exposureLabel": "Eksponeringstype",
     "pointsUnit": "poeng",
+    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
@@ -375,16 +376,18 @@
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
-      "hallsUnavailable": {
-        "title": "Hele bygg er ikke tilgjengelig ennå",
-        "description": "Bare grupper per yrke i hvert bygg kan vises."
+      "noHalls": {
+        "title": "Ingen bygg å vise",
+        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
       },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene."
+      "error": "Kunne ikke hente gruppene.",
+      "hallsError": "Kunne ikke hente byggene."
     },
     "group": {
       "back": "Tilbake til oversikten",
       "eyebrow": "Gruppe",
+      "hallEyebrow": "Bygg",
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",

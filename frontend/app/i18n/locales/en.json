@@ -325,6 +325,7 @@
     },
     "exposureLabel": "Exposure type",
     "pointsUnit": "points",
+    "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
@@ -378,16 +379,18 @@
         "title": "No groups to display",
         "description": "Groups with too few people are not shown, to protect privacy."
       },
-      "hallsUnavailable": {
-        "title": "Whole buildings aren't available yet",
-        "description": "Only groups per occupation in each building can be shown."
+      "noHalls": {
+        "title": "No buildings to display",
+        "description": "Buildings with too few people are not shown, to protect privacy."
       },
       "noData": "No data for the selected period.",
-      "error": "Could not load the groups."
+      "error": "Could not load the groups.",
+      "hallsError": "Could not load the buildings."
     },
     "group": {
       "back": "Back to the overview",
       "eyebrow": "Group",
+      "hallEyebrow": "Building",
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",

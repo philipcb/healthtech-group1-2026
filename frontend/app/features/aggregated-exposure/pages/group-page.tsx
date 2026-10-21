@@ -16,6 +16,7 @@ import {
 	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
+	getHallName,
 	isExposureUnavailable,
 	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
@@ -42,7 +43,9 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	});
 	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
 	// unavailable exposure
-	const group = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
+	const occupationGroup = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
+	const hallGroup = groupsQuery.data?.halls.find((summary) => summary.groupId === groupId);
+	const group = occupationGroup ?? hallGroup;
 	const trendQuery = useGetAggregateGroupTrend(
 		group?.groupId ?? "",
 		{ exposure, dustField: exposure === "dust" ? dustField : undefined, ...periodParams },
@@ -79,16 +82,20 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
-							{t(($) => $.aggregatedExposure.group.eyebrow)}
+							{hallGroup
+								? t(($) => $.aggregatedExposure.group.hallEyebrow)
+								: t(($) => $.aggregatedExposure.group.eyebrow)}
 							{scope.site === null && group && ` · ${group.site}`}
 						</p>
 						{groupsQuery.isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{group === undefined
-									? t(($) => $.aggregatedExposure.group.fallbackTitle)
-									: getGroupName(group, t)}
+								{occupationGroup
+									? getGroupName(occupationGroup, t)
+									: hallGroup
+										? getHallName(hallGroup.hall, t)
+										: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
 					</div>

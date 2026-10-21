@@ -152,10 +152,8 @@ public class AggregateExposureDataService(
 		string? field
 	)
 	{
-		// Only groups of one occupation in one hall, like the overview
-		var sample = await GetAccessibleSamples()
-			.Where(s => s.Id == sampleId && s.LocationQualifier != null && s.JobQualifier != null)
-			.FirstOrDefaultAsync();
+		// Any group the user may see, like the overview
+		var sample = await GetAccessibleSamples().Where(s => s.Id == sampleId).FirstOrDefaultAsync();
 		if (sample == null)
 		{
 			return new AggregatedTrendResponseDto
@@ -245,10 +243,9 @@ public class AggregateExposureDataService(
 		DateTime endTime
 	)
 	{
-		// Only groups of one occupation in one hall. The whole site, whole halls and whole occupations overlap them.
-		var allSamples = await GetAccessibleSamples()
-			.Where(s => s.LocationQualifier != null && s.JobQualifier != null)
-			.ToListAsync();
+		// Every group the user may see: one occupation in one hall, a whole hall, one occupation across the site and the
+		// whole site. Groups with too few people are never created in the aggregate database.
+		var allSamples = await GetAccessibleSamples().ToListAsync();
 		List<SampleDto> overviewList = new();
 		foreach (Sample s in allSamples)
 		{

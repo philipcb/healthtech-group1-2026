@@ -64,6 +64,17 @@ const OPERATION_IDS: Record<string, string> = {
 	"post /api/notes/{userId}/create": "createNote",
 	"post /api/exposure/{exposureType}/{userId}": "getExposureData",
 	"post /api/exposure/overview/{userId}": "getExposureOverview",
+	"get /api/medical-team/groups": "getAggregateGroups",
+	"get /api/medical-team/groups/{groupId}/trend": "getAggregateGroupTrend",
+};
+
+/**
+ * The backend's `FullUserDto` classes, kept under the names the frontend already uses for them, so the generated models
+ * don't change
+ */
+const RENAMED_SCHEMAS: Record<string, string> = {
+	FullUserDto: "UserDto",
+	FullUserWithStatusDto: "UserWithStatusDto",
 };
 
 /**
@@ -72,7 +83,7 @@ const OPERATION_IDS: Record<string, string> = {
  * C# enum members in camelCase.
  */
 const STRING_ENUMS: Record<string, Array<string>> = {
-	UserRole: ["operator", "foreman"],
+	UserRole: ["operator", "foreman", "ohs", "manager"],
 	DangerLevel: ["safe", "warning", "danger"],
 	ExposureType: ["noise", "vibration", "dust"],
 	TimeGranularity: ["minute", "hour", "day"],
@@ -96,7 +107,19 @@ const RESPONSE_SCHEMAS = [
 	"CombinedExposureBucketDto",
 	"ExposureThresholdSummaryDto",
 	"NoteDataDto",
+	"TrendSampleDto",
+	"TrendPointDto",
+	"AggregatedOverviewResponseDto",
+	"MeasurementUnitsDto",
+	"SampleDto",
+	"SampleAveragesDto",
 ];
+
+/** Response schemas that don't describe what the backend sends. `correctBackendContract` replaces them. */
+const REPLACED_RESPONSE_SCHEMAS = ["AggregatedTrendResponseDto"];
+
+/** The units `AggregateExposureDataController` and `AggregateExposureDataService` send */
+const AGGREGATE_UNIT = { type: "string", enum: ["ug", "db", "points"] };
 
 const GUID_PATTERN = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
 
@@ -124,13 +147,31 @@ function responseSchemaNames(spec: unknown): Array<string> {
 	return [...found].filter((name) => !(name in STRING_ENUMS)).sort();
 }
 
+function renameSchemas(spec: unknown) {
+	const schemas = at(spec, "components", "schemas");
+
+	for (const [from, to] of Object.entries(RENAMED_SCHEMAS)) {
+		assert.ok(from in schemas, `The backend spec no longer has the schema ${from}`);
+		assert.ok(!(to in schemas), `The backend spec now has a schema ${to} of its own`);
+		schemas[to] = schemas[from];
+		delete schemas[from];
+	}
+
+	walk(spec, (node) => {
+		const name = typeof node.$ref === "string" ? node.$ref.replace("#/components/schemas/", "") : undefined;
+		if (name !== undefined && name in RENAMED_SCHEMAS) {
+			node.$ref = schemaRef(RENAMED_SCHEMAS[name]).$ref;
+		}
+	});
+}
+
 function correctBackendContract(spec: unknown) {
 	const schemas = at(spec, "components", "schemas");
 	const paths = at(spec, "paths");
 
 	assert.deepEqual(
 		responseSchemaNames(spec),
-		[...RESPONSE_SCHEMAS].sort(),
+		[...RESPONSE_SCHEMAS, ...REPLACED_RESPONSE_SCHEMAS].sort(),
 		"The backend spec's response schemas changed: update RESPONSE_SCHEMAS in openapi/corrections.ts",
 	);
 
@@ -154,9 +195,10 @@ function correctBackendContract(spec: unknown) {
 		schemas[name] = { type: "string", enum: values };
 	}
 
-	// ASP.NET documents `NumberHandling.AllowReadingFromString` for numbers, but the backend always writes numbers
+	// ASP.NET documents `NumberHandling.AllowReadingFromString` for numbers, but the backend always writes numbers. Query
+	// parameters are declared the same way.
 	let numericFields = 0;
-	walk(schemas, (node) => {
+	walk([schemas, paths], (node) => {
 		if (Array.isArray(node.type) && node.type.includes("string") && typeof node.pattern === "string") {
 			const types = node.type.filter((type) => type !== "string");
 			if (types.includes("number") || types.includes("integer")) {
@@ -254,6 +296,66 @@ function correctBackendContract(spec: unknown) {
 		assert.deepEqual(time.type, ["null", "string"], `The backend spec changed ${name}.time`);
 		time.type = "string";
 	}
+
+	// `TimeWindowUtils.GetPeriodLimit` only accepts these periods, and fails without a period or year. `month` is
+	// zero-based and only used for the month period.
+	for (const path of ["/api/medical-team/groups", "/api/medical-team/groups/{groupId}/trend"]) {
+		const parameters = at(paths, path, "get").parameters;
+		assert.ok(Array.isArray(parameters), `${path} no longer has parameters`);
+		for (const parameter of parameters) {
+			assert.ok(isObject(parameter));
+			if (parameter.name === "period") {
+				assert.deepEqual(parameter.schema, { type: "string" }, `The backend spec changed ${path}'s period`);
+				parameter.schema = { type: "string", enum: ["month", "year"] };
+			}
+			if (parameter.name === "period" || parameter.name === "year" || parameter.name === "exposure") {
+				parameter.required = true;
+			}
+		}
+	}
+
+	// AggregateExposureDataController.GetAggregateOverview always sends these units
+	const units = at(schemas, "MeasurementUnitsDto", "properties");
+	for (const exposure of ["dust", "noise", "vibration"]) {
+		assert.deepEqual(
+			units[exposure],
+			{ type: "string" },
+			`The backend spec changed MeasurementUnitsDto.${exposure}`,
+		);
+		units[exposure] = AGGREGATE_UNIT;
+	}
+
+	// AggregatedTrendResponseDto leaves out its `null` properties (`JsonIgnoreCondition.WhenWritingNull`).
+	// AggregateExposureDataService.GetTrendAsync sends either the trend, whose average is left out when every point is
+	// `null`, `noSuchGroup`, also for a group without measurements in the period, or `exposureUnavailable` for vibration.
+	assert.deepEqual(
+		Object.keys(at(schemas, "AggregatedTrendResponseDto", "properties")).sort(),
+		["average", "granularity", "group", "points", "reason", "status", "unit"],
+		"The backend spec changed AggregatedTrendResponseDto",
+	);
+	schemas.AggregatedTrendOkDto = {
+		type: "object",
+		required: ["status", "group", "unit", "granularity", "points"],
+		properties: {
+			status: { type: "string", enum: ["ok"] },
+			group: schemaRef("TrendSampleDto"),
+			unit: AGGREGATE_UNIT,
+			average: { type: "number" },
+			granularity: { type: "string", enum: ["day"] },
+			points: { type: "array", items: schemaRef("TrendPointDto") },
+		},
+	};
+	schemas.AggregatedTrendUnavailableDto = {
+		type: "object",
+		required: ["status", "reason"],
+		properties: {
+			status: { type: "string", enum: ["unavailable"] },
+			reason: { type: "string", enum: ["noSuchGroup", "exposureUnavailable"] },
+		},
+	};
+	schemas.AggregatedTrendResponseDto = {
+		oneOf: [schemaRef("AggregatedTrendOkDto"), schemaRef("AggregatedTrendUnavailableDto")],
+	};
 }
 
 function addFrontendRequirements(spec: unknown) {
@@ -291,6 +393,7 @@ function addFrontendRequirements(spec: unknown) {
 }
 
 const correctSpec: InputTransformerFn = (spec) => {
+	renameSchemas(spec);
 	correctBackendContract(spec);
 	addFrontendRequirements(spec);
 	return spec;

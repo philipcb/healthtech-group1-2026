@@ -16,7 +16,7 @@ export const UserDto = zod.object({
   "email": zod.email(),
   "jobDescription": zod.string().nullable(),
   "createdAt": tzDateSchema,
-  "role": zod.enum(['operator', 'foreman']),
+  "role": zod.enum(['operator', 'foreman', 'ohs', 'manager']),
   "location": zod.object({
   "id": zod.string().regex(userDtoLocationIdRegExp),
   "latitude": zod.number(),

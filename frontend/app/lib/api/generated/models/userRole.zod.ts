@@ -6,7 +6,7 @@
  */
 import * as zod from 'zod';
 
-export const UserRole = zod.enum(['operator', 'foreman'])
+export const UserRole = zod.enum(['operator', 'foreman', 'ohs', 'manager'])
 
 export type UserRole = zod.output<typeof UserRole>;
 export type UserRoleOutput = zod.output<typeof UserRole>;

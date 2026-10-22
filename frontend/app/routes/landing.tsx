@@ -25,6 +25,11 @@ export default function Page() {
 			return;
 		}
 
+		if (user.role === UserRole.Management) {
+			navigate("/management/");
+			return;
+		}
+
 		setError(new Error(`Unknown user role "${user.role}"`));
 	}, [user, navigate]);
 

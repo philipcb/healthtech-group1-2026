@@ -15,7 +15,7 @@ export const CreateUserBody = zod.object({
   "password": zod.string(),
   "locationId": zod.string().regex(createUserBodyLocationIdRegExp),
   "managerIds": zod.array(zod.string().regex(createUserBodyManagerIdsItemRegExp)),
-  "role": zod.enum(['operator', 'foreman']),
+  "role": zod.enum(['operator', 'foreman', 'ohs', 'manager']),
   "jobDescription": zod.string().nullable()
 })
 

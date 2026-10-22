@@ -251,7 +251,11 @@ function ExposureSummaryGrid({ thresholdSummary }: { thresholdSummary: Threshold
 	);
 }
 
-function resolveForemanOverviewTitle(t: TranslateFn, exposure: Exposure | null, selectedUser: User | undefined) {
+function resolveForemanOverviewTitle(
+	t: TranslateFn,
+	exposure: Exposure | null,
+	selectedUser: Pick<User, "name"> | undefined,
+) {
 	const exposureTitle = exposure
 		? t(($) => $.exposures[exposure]).toLowerCase()
 		: t(($) => $.operatorHeader.subtitle.allExposureTypes).toLowerCase();

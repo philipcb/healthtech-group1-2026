@@ -341,7 +341,6 @@
     "exposureUnavailable": {
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
-    "kpiUnavailable": "Key figures for time above the action and limit values aren't available yet.",
     "overview": {
       "heading": "Groups",
       "hallsHeading": "Buildings",
@@ -395,14 +394,23 @@
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
       "noPeriodAverage": "No value for the period",
-      "vibrationPeriodAverage": "The average of the daily points in the chart. The overview averages all hours, so the values can differ.",
+      "timeOverAction": "Time above action value",
+      "timeOverLimit": "Time above limit value",
+      "timeOverActionCaption": "Share of the hours where the group's hourly average was at least {{action}}, including above the limit value.",
+      "timeOverLimitCaption": "Share of the hours where the group's hourly average was at least {{limit}}.",
+      "timeOverOnlyForDustField": "Only calculated for {{dustField}}.",
+      "daysOverAction": "Days above action value",
+      "daysOverLimit": "Days above limit value",
+      "daysOverActionCaption": "Share of the days where the group's value in the chart was at least {{action}} points, including above the limit value.",
+      "daysOverLimitCaption": "Share of the days where the group's value in the chart was at least {{limit}} points.",
+      "vibrationPeriodAverage": "The average of the daily points in the chart, which are the workers' total points per day.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "granularity": {
         "day": "One point per day with measurements: the average of the day's hourly values"
       },
       "vibrationGranularity": {
-        "day": "One point per day with measurements: the value for the day's last hour with measurements"
+        "day": "One point per day with measurements: the average of the workers' total points for the day"
       },
       "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
       "colorsNotice": "The line colors show where the group average lies compared to a single person's action value ({{action}}) and limit value ({{limit}}) for the selected exposure and, for dust, the selected fraction. They aren't a professional assessment of the group.",

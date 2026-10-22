@@ -229,6 +229,31 @@ public class AggregateExposureDataService(
 				Reason = "noSuchGroup",
 			};
 		}
+
+		// The aggregate job only computes the time over the thresholds of dust from PM1 TWA, so other dust fields have none
+		if (exposureType != ExposureType.Dust || field == "pm1_twa")
+		{
+			var shiftAverages = await _context
+				.AveragesPer8HourShift.Where(d =>
+					d.SampleId == sampleId
+					&& d.ExposureType == exposureType
+					&& startTime <= d.Time
+					&& d.Time < endTime
+				)
+				.ToListAsync();
+			var shiftAverageByDay = shiftAverages
+				.GroupBy(d => d.Time.Date)
+				.ToDictionary(g => g.Key, g => g.First());
+			foreach (var point in exposureAverages!)
+			{
+				if (shiftAverageByDay.TryGetValue(point.Time.Date, out var shiftAverage))
+				{
+					point.AverageTimeOverAction = shiftAverage.AverageTimeOverAction;
+					point.AverageTimeOverLimit = shiftAverage.AverageTimeOverLimit;
+				}
+			}
+		}
+
 		return new AggregatedTrendResponseDto
 		{
 			Status = "ok",

@@ -20,7 +20,9 @@ export const AggregatedTrendOkDto = zod.object({
   "granularity": zod.enum(['day']),
   "points": zod.array(zod.object({
   "time": tzDateSchema,
-  "value": zod.number().nullable()
+  "value": zod.number().nullable(),
+  "averageTimeOverAction": zod.number().nullable(),
+  "averageTimeOverLimit": zod.number().nullable()
 }))
 })
 

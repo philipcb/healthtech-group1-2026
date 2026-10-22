@@ -149,7 +149,7 @@ function GroupDetails({
 	exposure: Exposure;
 	dustField: DustField;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const metricLabel =
 		exposure === "dust"
@@ -157,6 +157,39 @@ function GroupDetails({
 			: t(($) => $.aggregatedExposure.metrics[exposure]);
 	const threshold = getGroupThreshold(exposure, dustField);
 	const isColored = trend.points.some((point) => point.value !== null);
+	// The backend only calculates the time above the thresholds of dust from PM1, so other fractions have none
+	const timeOverUnavailableCaption =
+		exposure === "dust" && dustField !== "pm1_twa"
+			? t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
+					dustField: t(($) => $.exposures.dustFields.pm1_twa),
+				})
+			: undefined;
+	// Like the overview's info dialog, so the thresholds keep their decimals, like 7.5 µg/m³
+	const numberFormat = new Intl.NumberFormat(i18n.language === "no" ? "nb-NO" : "en-US");
+	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(trend.unit, t)}`;
+	// Vibration classifies the group's daily value in the chart instead of each hour, so its key figures are shares of days
+	const kpiText =
+		exposure === "vibration"
+			? {
+					action: t(($) => $.aggregatedExposure.group.daysOverAction),
+					limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
+					actionCaption: t(($) => $.aggregatedExposure.group.daysOverActionCaption, {
+						action: threshold.warning,
+					}),
+					limitCaption: t(($) => $.aggregatedExposure.group.daysOverLimitCaption, {
+						limit: threshold.danger,
+					}),
+				}
+			: {
+					action: t(($) => $.aggregatedExposure.group.timeOverAction),
+					limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+					actionCaption: t(($) => $.aggregatedExposure.group.timeOverActionCaption, {
+						action: formatThreshold(threshold.warning),
+					}),
+					limitCaption: t(($) => $.aggregatedExposure.group.timeOverLimitCaption, {
+						limit: formatThreshold(threshold.danger),
+					}),
+				};
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -166,7 +199,7 @@ function GroupDetails({
 					<p className="text-muted-foreground text-xs">
 						{t(($) => $.aggregatedExposure.group.unitAndGranularity, {
 							unit: getGroupUnitLabel(trend.unit, t),
-							// The backend's day point for vibration is the day's last hour, not the average of its hours
+							// The backend's day point for vibration is the average of the workers' daily totals, not of the day's hourly values
 							granularity:
 								exposure === "vibration"
 									? t(($) => $.aggregatedExposure.group.vibrationGranularity[trend.granularity])
@@ -212,11 +245,29 @@ function GroupDetails({
 							: metricLabel
 					}
 				/>
-				{/* The aggregate API has no key figures for time above the action and limit values yet */}
-				<p className="rounded-xl border border-dashed p-4 text-muted-foreground text-sm md:col-span-2">
-					{t(($) => $.aggregatedExposure.kpiUnavailable)}
-				</p>
+				<StatisticCardLayout
+					label={kpiText.action}
+					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverAction))}
+					caption={timeOverUnavailableCaption ?? kpiText.actionCaption}
+				/>
+				<StatisticCardLayout
+					label={kpiText.limit}
+					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverLimit))}
+					caption={timeOverUnavailableCaption ?? kpiText.limitCaption}
+				/>
 			</div>
 		</div>
 	);
+}
+
+// The average of the days that have a share, as a whole percentage. `—` when no day has one, so missing data isn't
+// shown as 0 %.
+function formatAverageShare(shares: Array<number | null>) {
+	const present = shares.filter((share) => share !== null);
+	if (present.length === 0) {
+		return "—";
+	}
+
+	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
+	return `${Math.round(average * 100)} %`;
 }

@@ -338,7 +338,6 @@
     "exposureUnavailable": {
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
-    "kpiUnavailable": "Nøkkeltall for tid over tiltaks- og grenseverdiene er ikke tilgjengelige ennå.",
     "overview": {
       "heading": "Grupper",
       "hallsHeading": "Bygg",
@@ -392,14 +391,23 @@
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
       "noPeriodAverage": "Ingen verdi for perioden",
-      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen. Oversikten snitter alle timer, så verdiene kan være ulike.",
+      "timeOverAction": "Tid over tiltaksverdi",
+      "timeOverLimit": "Tid over grenseverdi",
+      "timeOverActionCaption": "Andel av timene der gruppas timesnitt var minst {{action}}, inkludert over grenseverdien.",
+      "timeOverLimitCaption": "Andel av timene der gruppas timesnitt var minst {{limit}}.",
+      "timeOverOnlyForDustField": "Beregnes bare for {{dustField}}.",
+      "daysOverAction": "Dager over tiltaksverdi",
+      "daysOverLimit": "Dager over grenseverdi",
+      "daysOverActionCaption": "Andel av dagene der gruppas verdi i grafen var minst {{action}} poeng, inkludert over grenseverdien.",
+      "daysOverLimitCaption": "Andel av dagene der gruppas verdi i grafen var minst {{limit}} poeng.",
+      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen, som er arbeidernes samlede poeng per dag.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "granularity": {
         "day": "Ett punkt per dag med målinger: snittet av dagens timesverdier"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per dag med målinger: verdien for dagens siste time med målinger"
+        "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
       },
       "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
       "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",

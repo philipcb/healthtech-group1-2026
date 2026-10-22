@@ -335,4 +335,114 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Equal("unavailable", trend.Status);
 		Assert.Equal("noSuchGroup", trend.Reason);
 	}
+
+	private static readonly DateTime DayWithShiftAverage = new(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
+	private static readonly DateTime DayWithoutShiftAverage = new(
+		2026,
+		9,
+		16,
+		0,
+		0,
+		0,
+		DateTimeKind.Utc
+	);
+
+	// Noise on two days and dust on one, with the time over the thresholds stored for the first day only
+	private async Task SeedShiftAveragesAsync()
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+
+		context.NoiseAverages.Add(
+			new NoiseAverage
+			{
+				SampleId = OwnSiteGroupId,
+				Time = DayWithoutShiftAverage.AddHours(10),
+				AverageLaeq = 80,
+				AverageLcpk = 120,
+			}
+		);
+		context.DustAverages.Add(
+			new DustAverage
+			{
+				SampleId = OwnSiteGroupId,
+				Time = DayWithShiftAverage.AddHours(10),
+				AveragePm1Twa = 1,
+				AveragePm10Twa = 10,
+			}
+		);
+		foreach (var exposureType in new[] { ExposureType.Noise, ExposureType.Dust })
+		{
+			context.AveragesPer8HourShift.Add(
+				new AveragePer8HourShift
+				{
+					SampleId = OwnSiteGroupId,
+					Time = DayWithShiftAverage,
+					ExposureType = exposureType,
+					AverageTimeOverAction = 0.5,
+					AverageTimeOverLimit = 0.125,
+					AverageTimeInSafeLimits = 0.5,
+				}
+			);
+		}
+
+		await context.SaveChangesAsync();
+	}
+
+	[Fact]
+	public async Task GetTrendAsync_ReturnsTimeOverThresholds_PerDay()
+	{
+		await SeedShiftAveragesAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			StartTime,
+			EndTime,
+			OwnSiteGroupId,
+			ExposureType.Noise,
+			null
+		);
+
+		Assert.Equal("ok", trend.Status);
+		var withShiftAverage = Assert.Single(trend.Points!, p => p.Time == DayWithShiftAverage);
+		Assert.Equal(0.5, withShiftAverage.AverageTimeOverAction);
+		Assert.Equal(0.125, withShiftAverage.AverageTimeOverLimit);
+		var withoutShiftAverage = Assert.Single(
+			trend.Points!,
+			p => p.Time == DayWithoutShiftAverage
+		);
+		Assert.Null(withoutShiftAverage.AverageTimeOverAction);
+		Assert.Null(withoutShiftAverage.AverageTimeOverLimit);
+
+		var json = System.Text.Json.JsonSerializer.Serialize(withShiftAverage);
+		Assert.Contains("\"averageTimeOverAction\":0.5", json);
+		Assert.Contains("\"averageTimeOverLimit\":0.125", json);
+	}
+
+	[Theory]
+	[InlineData("pm1_twa", 0.5, 0.125)]
+	[InlineData("pm10_twa", null, null)]
+	public async Task GetTrendAsync_ReturnsTimeOverThresholds_OnlyForPm1Twa_ForDust(
+		string field,
+		double? expectedTimeOverAction,
+		double? expectedTimeOverLimit
+	)
+	{
+		await SeedShiftAveragesAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			StartTime,
+			EndTime,
+			OwnSiteGroupId,
+			ExposureType.Dust,
+			field
+		);
+
+		var point = Assert.Single(trend.Points!);
+		Assert.Equal(expectedTimeOverAction, point.AverageTimeOverAction);
+		Assert.Equal(expectedTimeOverLimit, point.AverageTimeOverLimit);
+	}
 }

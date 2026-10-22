@@ -124,7 +124,6 @@ public class DataFetchHandler(AppDbContext _context)
 	)
 	{
 		var rawDataList = new List<TimedData>();
-		var rateList = new List<AboveThresholdRate>();
 		foreach (var user in users)
 		{
 			var userData = await fetchUserAggregatedDataAsync(
@@ -134,52 +133,76 @@ public class DataFetchHandler(AppDbContext _context)
 				exposureType,
 				field
 			);
-			var dataFlat = userData.Select(d => new TimedData
-			{
-				Time = d.Time,
-				AvgValue = d.Value,
-				PeakValue = d.PeakValue,
-			});
+			// Vibration points add up over the day, so each worker gets one value per day, their total. Averaging the
+			// workers per hour and taking the day's last hour would leave out workers without a session in that hour.
+			var dataFlat = exposureType == ExposureType.Vibration ? ToDailyTotals(userData) : userData;
 
 			rawDataList.AddRange(dataFlat);
-
-			var aboveThresholdData = userData
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new AboveThresholdRate
-				{
-					Time = g.Key,
-					WarningRate = g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-					DangerRate = g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
-				});
-
-			rateList.AddRange(aboveThresholdData);
 		}
 
-		var averageDataList = rawDataList
-			.GroupBy(d => d.Time)
+		var averageDataList = AverageOverWorkers(rawDataList);
+
+		// The key figures classify the group's values, the same as the chart shows, so they never say how many workers were
+		// above a threshold. Vibration has one value per day, noise and dust one per hour.
+		var aboveThresholdDataList =
+			exposureType == ExposureType.Vibration
+				? ClassifyGroupDailyValues(exposureType, averageDataList)
+				: ClassifyGroupHourlyValues(exposureType, field, averageDataList);
+
+		return (dataList: averageDataList, aboveThresholdDataList);
+	}
+
+	// Each of the group's hourly values against the thresholds, and per day the share of the group's hours at each level
+	public static List<AboveThresholdRate> ClassifyGroupHourlyValues(
+		ExposureType exposureType,
+		Field? field,
+		IEnumerable<TimedData> groupHourlyValues
+	) =>
+		groupHourlyValues
+			.GroupBy(d => d.Time.Date)
+			.Select(g =>
+				AboveThresholdRate.FromDangerLevels(
+					g.Key,
+					g.Select(d =>
+							ThresholdUtils.CalculateDangerLevel(exposureType, d.AvgValue, null, field).dangerLevel
+						)
+						.ToList()
+				)
+			)
+			.ToList();
+
+	// Each of the group's daily values against the thresholds, so a day is either fully above a threshold or not at all
+	public static List<AboveThresholdRate> ClassifyGroupDailyValues(
+		ExposureType exposureType,
+		IEnumerable<TimedData> groupDailyValues
+	) =>
+		groupDailyValues
+			.Select(d =>
+				AboveThresholdRate.FromDangerLevels(
+					d.Time,
+					[ThresholdUtils.CalculateDangerLevel(exposureType, d.AvgValue, null).dangerLevel]
+				)
+			)
+			.ToList();
+
+	// The average over the workers that have data at each time
+	public static List<TimedData> AverageOverWorkers(IEnumerable<TimedData> data) =>
+		data.GroupBy(d => d.Time)
 			.Select(g => new TimedData
 			{
 				Time = g.Key,
 				AvgValue = g.Average(d => d.AvgValue),
 				PeakValue = g.Average(d => d.PeakValue ?? null),
-			});
+			})
+			.ToList();
 
-		var averageRateList = rateList
-			.GroupBy(d => d.Time)
-			.Select(g => new AboveThresholdRate
-			{
-				Time = g.Key,
-				WarningRate = g.Average(d => d.WarningRate),
-				DangerRate = g.Average(d => d.DangerRate),
-			});
+	// One worker's vibration points per day: the day's last cumulated value, which is the day's total
+	public static IEnumerable<TimedData> ToDailyTotals(IEnumerable<TimedData> cumulatedData) =>
+		cumulatedData
+			.GroupBy(d => d.Time.Date)
+			.Select(g => new TimedData { Time = g.Key, AvgValue = g.MaxBy(d => d.Time)!.AvgValue });
 
-		return (
-			dataList: averageDataList.ToList(),
-			aboveThresholdDataList: averageRateList.ToList()
-		);
-	}
-
-	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(
+	public async Task<IEnumerable<TimedData>> fetchUserAggregatedDataAsync(
 		Guid userId,
 		DateTime startTime,
 		DateTime endTime,
@@ -199,6 +222,12 @@ public class DataFetchHandler(AppDbContext _context)
 		// 	_signedInUserContext?.User?.Role
 		// );
 		// endTime = TimeWindowUtils.ClampRequestEndDateToCurrentDateTime(endTime.UtcDateTime);
+
+		string valueColumnName = ExposureUtils.GetAggregateColumnName(
+			GetValueFunction(exposureType),
+			exposureType,
+			field
+		);
 
 		string avgColumnName = ExposureUtils.GetAggregateColumnName(
 			AggregationFunction.Avg,
@@ -222,7 +251,7 @@ public class DataFetchHandler(AppDbContext _context)
 			$@"
             SELECT 
                 bucket as ""Time"",
-                {avgColumnName} as ""Value"",
+                {valueColumnName} as ""Value"",
 				{avgColumnName} as ""AvgValue"",
 				{maxColumnName} as ""MaxValue"",
 				{sumColumnName} as ""SumValue"",
@@ -235,53 +264,27 @@ public class DataFetchHandler(AppDbContext _context)
 			.Where(data => data.Time >= startTime && data.Time <= endTime && data.UserId == userId)
 			.ToListAsync();
 
-		// For vibration data, danger levels are always calculated from cumulative daily sum expore,
-		// ignoring the requested aggregation function.
-		// If the requested aggregation function is sum, the value is cumulated.
-		// NOTE: Maybe this should be changed in the future, for example by only allowing sum aggregation for vibration data,
-		// but for now this is done to allow fetching different aggregations while making sure the threshold logic remains correct.
-
-		var dataWithCumulatedExposureSumValues = ExposureUtils.CumulateVibrationSumValues(
-			exposureType,
-			AggregationFunction.Avg,
-			rawExposureData
-		);
-
-		var dataHourly = dataWithCumulatedExposureSumValues
-			.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
-			.Select(g => new RawExposureData(
-				new DateTime(
-					g.Key.Date.Year,
-					g.Key.Date.Month,
-					g.Key.Date.Day,
-					g.Key.Hour,
-					0,
-					0
-				).ToUniversalTime(),
-				g.Average(x => x.Value),
-				g.Average(x => x.AvgValue),
-				g.Average(x => x.MaxValue),
-				g.Average(x => x.SumValue),
-				userId
-			));
-
-		var dataWithDangerLevels = ThresholdUtils.CalculateDangerLevels(
-			exposureType,
-			dataWithCumulatedExposureSumValues,
-			field
-		);
-
-		var result = dataWithDangerLevels.Select(item => new ExposureDataDto
-		{
-			Time = item.data.Time,
-			Value = item.data.Value,
-			PeakValue = exposureType == ExposureType.Noise ? item.data.MaxValue : null,
-			DangerLevel = item.dangerLevels.dangerLevel,
-			PeakDangerLevel = item.dangerLevels.peakDangerLevel,
-		});
-
-		return result;
+		return CalculateUserExposureData(exposureType, rawExposureData);
 	}
+
+	// Vibration points add up over the day, so their value is the hour's sum. Other exposures use the hour's average.
+	public static AggregationFunction GetValueFunction(ExposureType exposureType) =>
+		exposureType == ExposureType.Vibration ? AggregationFunction.Sum : AggregationFunction.Avg;
+
+	// One worker's hourly values, without danger levels, since only the group's values are classified. Vibration is
+	// cumulated through the day. Only pass one worker's data, since the cumulation doesn't tell workers apart.
+	public static IEnumerable<TimedData> CalculateUserExposureData(
+		ExposureType exposureType,
+		List<RawExposureData> rawExposureData
+	) =>
+		ExposureUtils
+			.CumulateVibrationSumValues(exposureType, GetValueFunction(exposureType), rawExposureData)
+			.Select(data => new TimedData
+			{
+				Time = data.Time,
+				AvgValue = data.Value,
+				PeakValue = exposureType == ExposureType.Noise ? data.MaxValue : null,
+			});
 };
 
 public class TimedData
@@ -300,4 +303,19 @@ public class AboveThresholdRate
 	public DateTime Time { get; set; }
 	public double WarningRate { get; set; }
 	public double DangerRate { get; set; }
+
+	// The share of the data points at each danger level. Each point has exactly one level and both shares have the same
+	// denominator, so they never overlap. Cast before dividing so integer division doesn't truncate the share to 0.
+	public static AboveThresholdRate FromDangerLevels(
+		DateTime time,
+		IReadOnlyCollection<DangerLevel> dangerLevels
+	) =>
+		new()
+		{
+			Time = time,
+			WarningRate =
+				(double)dangerLevels.Count(level => level == DangerLevel.Warning) / dangerLevels.Count,
+			DangerRate =
+				(double)dangerLevels.Count(level => level == DangerLevel.Danger) / dangerLevels.Count,
+		};
 }

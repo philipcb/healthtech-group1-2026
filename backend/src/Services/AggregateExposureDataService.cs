@@ -152,9 +152,9 @@ public class AggregateExposureDataService(
 		string? field
 	)
 	{
-		// Only groups of one occupation in one hall, like the overview
+		// Any group the user may see, like the overview
 		var sample = await GetAccessibleSamples()
-			.Where(s => s.Id == sampleId && s.LocationQualifier != null && s.JobQualifier != null)
+			.Where(s => s.Id == sampleId)
 			.FirstOrDefaultAsync();
 		if (sample == null)
 		{
@@ -229,6 +229,31 @@ public class AggregateExposureDataService(
 				Reason = "noSuchGroup",
 			};
 		}
+
+		// The aggregate job only computes the time over the thresholds of dust from PM1 TWA, so other dust fields have none
+		if (exposureType != ExposureType.Dust || field == "pm1_twa")
+		{
+			var shiftAverages = await _context
+				.AveragesPer8HourShift.Where(d =>
+					d.SampleId == sampleId
+					&& d.ExposureType == exposureType
+					&& startTime <= d.Time
+					&& d.Time < endTime
+				)
+				.ToListAsync();
+			var shiftAverageByDay = shiftAverages
+				.GroupBy(d => d.Time.Date)
+				.ToDictionary(g => g.Key, g => g.First());
+			foreach (var point in exposureAverages!)
+			{
+				if (shiftAverageByDay.TryGetValue(point.Time.Date, out var shiftAverage))
+				{
+					point.AverageTimeOverAction = shiftAverage.AverageTimeOverAction;
+					point.AverageTimeOverLimit = shiftAverage.AverageTimeOverLimit;
+				}
+			}
+		}
+
 		return new AggregatedTrendResponseDto
 		{
 			Status = "ok",
@@ -245,10 +270,9 @@ public class AggregateExposureDataService(
 		DateTime endTime
 	)
 	{
-		// Only groups of one occupation in one hall. The whole site, whole halls and whole occupations overlap them.
-		var allSamples = await GetAccessibleSamples()
-			.Where(s => s.LocationQualifier != null && s.JobQualifier != null)
-			.ToListAsync();
+		// Every group the user may see: one occupation in one hall, a whole hall, one occupation across the site and the
+		// whole site. Groups with too few people are never created in the aggregate database.
+		var allSamples = await GetAccessibleSamples().ToListAsync();
 		List<SampleDto> overviewList = new();
 		foreach (Sample s in allSamples)
 		{

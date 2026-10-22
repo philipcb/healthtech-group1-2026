@@ -257,7 +257,6 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "occupationalHealthService": "Bedriftshelsetjeneste",
       "management": "Ledelse"
     },
     "searchPlaceholder": "Søk etter brukere..."
@@ -272,11 +271,17 @@
   "aggregatedExposure": {
     "map": {
       "title": "Områdekart",
-      "description": "Anonym oversikt over yrkesgrupper og antall personer per bygg.",
-      "unavailable": {
-        "title": "Områdekartet er ikke tilgjengelig ennå",
-        "description": "Det finnes ingen data om personer og yrkesgrupper per bygg ennå."
-      }
+      "description": "Anonym oversikt over yrkesgruppene i hvert bygg.",
+      "buildings": "Bygg",
+      "selectedBuilding": "Valgt bygg",
+      "occupations": "Yrkesgrupper",
+      "peopleWorkingHere": "{{count}} personer jobber her",
+      "peopleCountUnavailable": "Antall personer er ikke tilgjengelig",
+      "selectBuilding": "Velg et bygg på kartet eller i listen for å se en anonym oversikt.",
+      "notOnMap": "Ikke på kartet",
+      "error": "Kunne ikke hente byggoversikten.",
+      "noBuildings": "Ingen bygg med yrkesgrupper ennå.",
+      "noSiteMap": "Dette verftet har ikke områdekart ennå. Velg et bygg i listen for å se en anonym oversikt."
     },
     "period": {
       "label": "Tidsperiode",
@@ -316,6 +321,7 @@
     },
     "exposureLabel": "Eksponeringstype",
     "pointsUnit": "poeng",
+    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
@@ -331,7 +337,6 @@
     "exposureUnavailable": {
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
-    "kpiUnavailable": "Nøkkeltall for tid over tiltaks- og grenseverdiene er ikke tilgjengelige ennå.",
     "overview": {
       "heading": "Grupper",
       "hallsHeading": "Bygg",
@@ -369,28 +374,39 @@
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
-      "hallsUnavailable": {
-        "title": "Hele bygg er ikke tilgjengelig ennå",
-        "description": "Bare grupper per yrke i hvert bygg kan vises."
+      "noHalls": {
+        "title": "Ingen bygg å vise",
+        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
       },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene."
+      "error": "Kunne ikke hente gruppene.",
+      "hallsError": "Kunne ikke hente byggene."
     },
     "group": {
       "back": "Tilbake til oversikten",
       "eyebrow": "Gruppe",
+      "hallEyebrow": "Bygg",
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
       "noPeriodAverage": "Ingen verdi for perioden",
-      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen. Oversikten snitter alle timer, så verdiene kan være ulike.",
+      "timeOverAction": "Tid over tiltaksverdi",
+      "timeOverLimit": "Tid over grenseverdi",
+      "timeOverActionCaption": "Andel av timene der gruppas timesnitt var minst {{action}}, inkludert over grenseverdien.",
+      "timeOverLimitCaption": "Andel av timene der gruppas timesnitt var minst {{limit}}.",
+      "timeOverOnlyForDustField": "Beregnes bare for {{dustField}}.",
+      "daysOverAction": "Dager over tiltaksverdi",
+      "daysOverLimit": "Dager over grenseverdi",
+      "daysOverActionCaption": "Andel av dagene der gruppas verdi i grafen var minst {{action}} poeng, inkludert over grenseverdien.",
+      "daysOverLimitCaption": "Andel av dagene der gruppas verdi i grafen var minst {{limit}} poeng.",
+      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen, som er arbeidernes samlede poeng per dag.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "granularity": {
         "day": "Ett punkt per dag med målinger: snittet av dagens timesverdier"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per dag med målinger: verdien for dagens siste time med målinger"
+        "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
       },
       "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
       "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
@@ -405,10 +421,6 @@
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
     }
-  },
-  "occupationalHealthServiceDashboard": {
-    "title": "Bedriftshelsetjenesten",
-    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke."
   },
   "managementDashboard": {
     "title": "Ledelse"

@@ -2,21 +2,21 @@ import type { UserRole as BackendUserRole, UserDto } from "@/lib/api/generated/m
 import { z } from "zod";
 
 /** The frontend's names for the backend's roles, see `toFrontendUser` */
-export const UserRoleSchema = z.enum(["operator", "foreman", "occupationalHealthService", "management"]);
+export const UserRoleSchema = z.enum(["operator", "foreman", "management"]);
 
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
 export const UserRole = {
 	Operator: "operator",
 	Foreman: "foreman",
-	OccupationalHealthService: "occupationalHealthService",
 	Management: "management",
 } as const satisfies Record<string, UserRole>;
 
+/** The occupational health service shares management's dashboard, so the frontend treats it as management */
 const frontendRoleByBackendRole: Record<BackendUserRole, UserRole> = {
 	operator: UserRole.Operator,
 	foreman: UserRole.Foreman,
-	ohs: UserRole.OccupationalHealthService,
+	ohs: UserRole.Management,
 	manager: UserRole.Management,
 };
 

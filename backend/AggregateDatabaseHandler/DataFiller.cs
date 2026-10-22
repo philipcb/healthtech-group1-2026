@@ -24,10 +24,29 @@ public class DataFiller
 
 	public async Task updateAggregatedDB()
 	{
+		// One transaction, so the rows removed to be computed again are kept if the update fails
+		await using var transaction = await _aggregatedContext.Database.BeginTransactionAsync();
 		await updateSamples();
 		await _aggregatedContext.SaveChangesAsync();
 		await updateAggregatedDataAsync();
 		await _aggregatedContext.SaveChangesAsync();
+		await transaction.CommitAsync();
+	}
+
+	// The job can run during a day, so the last stored day may be incomplete. It's computed again from its start, instead
+	// of continuing after its last hour, which would leave the day's daily values incomplete or insert them twice.
+	public static DateTime GetRestartTime(DateTime lastStoredTime) =>
+		DateTime.SpecifyKind(lastStoredTime.Date, DateTimeKind.Utc);
+
+	private async Task<DateTime> restartLastStoredDay(
+		Guid sampleId,
+		ExposureType exposureType,
+		DateTime lastStoredTime
+	)
+	{
+		DateTime startTime = GetRestartTime(lastStoredTime);
+		await _insertHandler.removeDataFrom(sampleId, exposureType, startTime);
+		return startTime;
 	}
 
 	public async Task updateAggregatedDataAsync()
@@ -46,6 +65,23 @@ public class DataFiller
 		}
 	}
 
+	// Warning and danger are shares of the same data points that never overlap (see `AboveThresholdRate`). Over the
+	// limit means danger only, over the action value means warning or danger, since the limit is above the action value.
+	public static AveragePer8HourShift ToShiftAverage(
+		Guid sampleId,
+		ExposureType exposureType,
+		AboveThresholdRate rate
+	) =>
+		new()
+		{
+			SampleId = sampleId,
+			Time = rate.Time,
+			ExposureType = exposureType,
+			AverageTimeInSafeLimits = 1 - rate.WarningRate - rate.DangerRate,
+			AverageTimeOverLimit = rate.DangerRate,
+			AverageTimeOverAction = rate.WarningRate + rate.DangerRate,
+		};
+
 	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
 	{
 		DateTime lowestTime = await _aggregatedContext
@@ -53,7 +89,11 @@ public class DataFiller
 			.Where(d => d.SampleId == sampleId)
 			.Select(d => d.Time)
 			.FirstOrDefaultAsync();
-		DateTime startTime = lowestTime.Date.AddDays(1).ToUniversalTime();
+		DateTime startTime = await restartLastStoredDay(
+			sampleId,
+			ExposureType.Vibration,
+			lowestTime
+		);
 
 		var (dataList, aboveThresholdDataList) =
 			await _fetchHandler.fetchAggregatedDataOverSampleUsers(
@@ -65,6 +105,7 @@ public class DataFiller
 			);
 
 		Console.WriteLine($"Update Vibration averages from {startTime} to {endTime}");
+		// One row per day: the average over the workers of their daily total of vibration points
 		List<VibrationAverage> finalAggregatedData = dataList
 			.Select(d => new VibrationAverage
 			{
@@ -75,15 +116,7 @@ public class DataFiller
 			.ToList();
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-			.Select(d => new AveragePer8HourShift
-			{
-				SampleId = sampleId,
-				Time = d.Time,
-				ExposureType = ExposureType.Vibration,
-				AverageTimeInSafeLimits = 1 - d.WarningRate - d.DangerRate,
-				AverageTimeOverLimit = d.WarningRate,
-				AverageTimeOverAction = d.DangerRate,
-			})
+			.Select(d => ToShiftAverage(sampleId, ExposureType.Vibration, d))
 			.ToList();
 
 		await _insertHandler.addDataRange(finalAggregatedData);
@@ -98,7 +131,7 @@ public class DataFiller
 			.Where(d => d.SampleId == sampleId)
 			.Select(d => d.Time)
 			.FirstOrDefaultAsync();
-		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
+		DateTime startTime = await restartLastStoredDay(sampleId, ExposureType.Noise, lowestTime);
 		Console.WriteLine($"Update Noise averages from {startTime} to {endTime}");
 
 		var (dataList, aboveThresholdDataList) =
@@ -120,15 +153,7 @@ public class DataFiller
 			.ToList();
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-			.Select(d => new AveragePer8HourShift
-			{
-				SampleId = sampleId,
-				Time = d.Time,
-				ExposureType = ExposureType.Noise,
-				AverageTimeInSafeLimits = 1 - d.WarningRate - d.DangerRate,
-				AverageTimeOverLimit = d.WarningRate,
-				AverageTimeOverAction = d.DangerRate,
-			})
+			.Select(d => ToShiftAverage(sampleId, ExposureType.Noise, d))
 			.ToList();
 
 		await _insertHandler.addDataRange(finalAggregatedData);
@@ -143,7 +168,7 @@ public class DataFiller
 			.Where(d => d.SampleId == sampleId)
 			.Select(d => d.Time)
 			.FirstOrDefaultAsync();
-		DateTime startTime = lowestTime.AddHours(1).ToUniversalTime();
+		DateTime startTime = await restartLastStoredDay(sampleId, ExposureType.Dust, lowestTime);
 		Console.WriteLine($"Update Dust averages from {startTime} to {endTime}");
 
 		var (dataListPm1Stel, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
@@ -214,15 +239,7 @@ public class DataFiller
 		var Pm10TwaDico = dataListPm10Twa.ToDictionary(g => g.Time, g => g.AvgValue);
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataListPm1Twa
-			.Select(d => new AveragePer8HourShift
-			{
-				SampleId = sampleId,
-				Time = d.Time,
-				ExposureType = ExposureType.Dust,
-				AverageTimeInSafeLimits = 1 - d.WarningRate - d.DangerRate,
-				AverageTimeOverLimit = d.WarningRate,
-				AverageTimeOverAction = d.DangerRate,
-			})
+			.Select(d => ToShiftAverage(sampleId, ExposureType.Dust, d))
 			.ToList();
 
 		var dates = dataListPm1Stel

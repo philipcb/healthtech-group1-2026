@@ -4,6 +4,7 @@ import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/
 import { GroupLevelToggle } from "@/features/aggregated-exposure/components/group-level-toggle.tsx";
 import { GroupList } from "@/features/aggregated-exposure/components/group-list.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
+import { HallList } from "@/features/aggregated-exposure/components/hall-list.tsx";
 import { OverviewFilterDialog } from "@/features/aggregated-exposure/components/overview-filter-dialog.tsx";
 import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
 import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
@@ -41,7 +42,7 @@ export function OverviewPage() {
 	const selectedYard = YardFilter && yard !== null && yards.includes(yard) ? yard : null;
 	const halls = [
 		...new Set(
-			data?.groups
+			[...(data?.groups ?? []), ...(data?.halls ?? [])]
 				.filter((group) => selectedYard === null || group.site === selectedYard)
 				.map((group) => group.hall),
 		),
@@ -105,10 +106,12 @@ export function OverviewPage() {
 				</div>
 
 				{level === "hall" ? (
-					// The aggregate API has no protected whole-building values yet
-					<EmptyState
-						title={t(($) => $.aggregatedExposure.overview.hallsUnavailable.title)}
-						description={t(($) => $.aggregatedExposure.overview.hallsUnavailable.description)}
+					<HallResults
+						params={params}
+						yard={selectedYard}
+						hall={selectedHall}
+						filter={exposureFilter}
+						showsYard={scope.site === null}
 					/>
 				) : (
 					<GroupResults
@@ -158,6 +161,31 @@ function GroupResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
 		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
 	) : (
 		<GroupList groups={groups} units={data.units} filter={filter} showsYard={showsYard} />
+	);
+}
+
+function HallResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
+	const { t } = useTranslation();
+	const { data, isPending, isError } = useGetAggregateGroups(params, {
+		query: { select: toGroupSummaries },
+	});
+	const halls = data?.halls.filter((summary) => isSelected(summary, yard, hall)) ?? [];
+
+	return isPending ? (
+		<Skeleton className="h-64 w-full" />
+	) : isError ? (
+		<EmptyState title={t(($) => $.aggregatedExposure.overview.hallsError)} />
+	) : halls.length === 0 ? (
+		<EmptyState
+			title={t(($) => $.aggregatedExposure.overview.noHalls.title)}
+			description={t(($) => $.aggregatedExposure.overview.noHalls.description)}
+		/>
+	) : filter !== "all" && isExposureUnavailable(filter) ? (
+		<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[filter])} />
+	) : halls.every((summary) => hasNoValues(summary.averages, filter)) ? (
+		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
+	) : (
+		<HallList halls={halls} units={data.units} filter={filter} showsYard={showsYard} />
 	);
 }
 

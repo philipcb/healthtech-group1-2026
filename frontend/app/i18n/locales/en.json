@@ -260,7 +260,6 @@
     "role": {
       "operator": "Operator",
       "foreman": "Foreman",
-      "occupationalHealthService": "Occupational Health Service",
       "management": "Management"
     },
     "searchPlaceholder": "Search users..."
@@ -275,11 +274,17 @@
   "aggregatedExposure": {
     "map": {
       "title": "Site map",
-      "description": "An anonymized overview of occupation groups and people per building.",
-      "unavailable": {
-        "title": "The site map isn't available yet",
-        "description": "There's no data on people and occupation groups per building yet."
-      }
+      "description": "An anonymized overview of the occupation groups in each building.",
+      "buildings": "Buildings",
+      "selectedBuilding": "Selected building",
+      "occupations": "Occupation groups",
+      "peopleWorkingHere": "{{count}} people work here",
+      "peopleCountUnavailable": "Head count isn't available",
+      "selectBuilding": "Select a building on the map or in the list to see an anonymous overview.",
+      "notOnMap": "Not on the map",
+      "error": "Could not load building overview.",
+      "noBuildings": "No buildings with occupation groups yet.",
+      "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
     },
     "period": {
       "label": "Time period",
@@ -319,6 +324,7 @@
     },
     "exposureLabel": "Exposure type",
     "pointsUnit": "points",
+    "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
@@ -334,7 +340,6 @@
     "exposureUnavailable": {
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
-    "kpiUnavailable": "Key figures for time above the action and limit values aren't available yet.",
     "overview": {
       "heading": "Groups",
       "hallsHeading": "Buildings",
@@ -372,28 +377,39 @@
         "title": "No groups to display",
         "description": "Groups with too few people are not shown, to protect privacy."
       },
-      "hallsUnavailable": {
-        "title": "Whole buildings aren't available yet",
-        "description": "Only groups per occupation in each building can be shown."
+      "noHalls": {
+        "title": "No buildings to display",
+        "description": "Buildings with too few people are not shown, to protect privacy."
       },
       "noData": "No data for the selected period.",
-      "error": "Could not load the groups."
+      "error": "Could not load the groups.",
+      "hallsError": "Could not load the buildings."
     },
     "group": {
       "back": "Back to the overview",
       "eyebrow": "Group",
+      "hallEyebrow": "Building",
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
       "noPeriodAverage": "No value for the period",
-      "vibrationPeriodAverage": "The average of the daily points in the chart. The overview averages all hours, so the values can differ.",
+      "timeOverAction": "Time above action value",
+      "timeOverLimit": "Time above limit value",
+      "timeOverActionCaption": "Share of the hours where the group's hourly average was at least {{action}}, including above the limit value.",
+      "timeOverLimitCaption": "Share of the hours where the group's hourly average was at least {{limit}}.",
+      "timeOverOnlyForDustField": "Only calculated for {{dustField}}.",
+      "daysOverAction": "Days above action value",
+      "daysOverLimit": "Days above limit value",
+      "daysOverActionCaption": "Share of the days where the group's value in the chart was at least {{action}} points, including above the limit value.",
+      "daysOverLimitCaption": "Share of the days where the group's value in the chart was at least {{limit}} points.",
+      "vibrationPeriodAverage": "The average of the daily points in the chart, which are the workers' total points per day.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "granularity": {
         "day": "One point per day with measurements: the average of the day's hourly values"
       },
       "vibrationGranularity": {
-        "day": "One point per day with measurements: the value for the day's last hour with measurements"
+        "day": "One point per day with measurements: the average of the workers' total points for the day"
       },
       "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
       "colorsNotice": "The line colors show where the group average lies compared to a single person's action value ({{action}}) and limit value ({{limit}}) for the selected exposure and, for dust, the selected fraction. They aren't a professional assessment of the group.",
@@ -408,10 +424,6 @@
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
     }
-  },
-  "occupationalHealthServiceDashboard": {
-    "title": "Occupational Health Service",
-    "description": "An anonymized overview of workplace exposure, per building and occupation."
   },
   "managementDashboard": {
     "title": "Management"

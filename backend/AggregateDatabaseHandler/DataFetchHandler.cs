@@ -135,7 +135,8 @@ public class DataFetchHandler(AppDbContext _context)
 			);
 			// Vibration points add up over the day, so each worker gets one value per day, their total. Averaging the
 			// workers per hour and taking the day's last hour would leave out workers without a session in that hour.
-			var dataFlat = exposureType == ExposureType.Vibration ? ToDailyTotals(userData) : userData;
+			var dataFlat =
+				exposureType == ExposureType.Vibration ? ToDailyTotals(userData) : userData;
 
 			rawDataList.AddRange(dataFlat);
 		}
@@ -164,7 +165,9 @@ public class DataFetchHandler(AppDbContext _context)
 				AboveThresholdRate.FromDangerLevels(
 					g.Key,
 					g.Select(d =>
-							ThresholdUtils.CalculateDangerLevel(exposureType, d.AvgValue, null, field).dangerLevel
+							ThresholdUtils
+								.CalculateDangerLevel(exposureType, d.AvgValue, null, field)
+								.dangerLevel
 						)
 						.ToList()
 				)
@@ -180,7 +183,11 @@ public class DataFetchHandler(AppDbContext _context)
 			.Select(d =>
 				AboveThresholdRate.FromDangerLevels(
 					d.Time,
-					[ThresholdUtils.CalculateDangerLevel(exposureType, d.AvgValue, null).dangerLevel]
+					[
+						ThresholdUtils
+							.CalculateDangerLevel(exposureType, d.AvgValue, null)
+							.dangerLevel,
+					]
 				)
 			)
 			.ToList();
@@ -278,7 +285,11 @@ public class DataFetchHandler(AppDbContext _context)
 		List<RawExposureData> rawExposureData
 	) =>
 		ExposureUtils
-			.CumulateVibrationSumValues(exposureType, GetValueFunction(exposureType), rawExposureData)
+			.CumulateVibrationSumValues(
+				exposureType,
+				GetValueFunction(exposureType),
+				rawExposureData
+			)
 			.Select(data => new TimedData
 			{
 				Time = data.Time,
@@ -314,8 +325,10 @@ public class AboveThresholdRate
 		{
 			Time = time,
 			WarningRate =
-				(double)dangerLevels.Count(level => level == DangerLevel.Warning) / dangerLevels.Count,
+				(double)dangerLevels.Count(level => level == DangerLevel.Warning)
+				/ dangerLevels.Count,
 			DangerRate =
-				(double)dangerLevels.Count(level => level == DangerLevel.Danger) / dangerLevels.Count,
+				(double)dangerLevels.Count(level => level == DangerLevel.Danger)
+				/ dangerLevels.Count,
 		};
 }

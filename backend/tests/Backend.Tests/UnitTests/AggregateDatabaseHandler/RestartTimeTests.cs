@@ -12,7 +12,9 @@ public class RestartTimeTests
 	[Fact]
 	public void GetRestartTime_IsTheStartOfTheLastStoredDay()
 	{
-		var restartTime = DataFiller.GetRestartTime(new DateTime(2026, 10, 21, 11, 0, 0, DateTimeKind.Utc));
+		var restartTime = DataFiller.GetRestartTime(
+			new DateTime(2026, 10, 21, 11, 0, 0, DateTimeKind.Utc)
+		);
 
 		Assert.Equal(new DateTime(2026, 10, 21, 0, 0, 0, DateTimeKind.Utc), restartTime);
 		Assert.Equal(DateTimeKind.Utc, restartTime.Kind);

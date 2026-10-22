@@ -10,7 +10,8 @@ public class GroupHourlyClassificationTests
 {
 	private static readonly DateTime Day = new(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
 
-	private static TimedData Value(DateTime time, double value) => new() { Time = time, AvgValue = value };
+	private static TimedData Value(DateTime time, double value) =>
+		new() { Time = time, AvgValue = value };
 
 	private static AveragePer8HourShift ClassifyDay(
 		ExposureType exposureType,
@@ -20,7 +21,9 @@ public class GroupHourlyClassificationTests
 		DataFiller.ToShiftAverage(
 			Guid.Empty,
 			exposureType,
-			Assert.Single(DataFetchHandler.ClassifyGroupHourlyValues(exposureType, field, groupHourlyValues))
+			Assert.Single(
+				DataFetchHandler.ClassifyGroupHourlyValues(exposureType, field, groupHourlyValues)
+			)
 		);
 
 	/// <summary>
@@ -31,16 +34,14 @@ public class GroupHourlyClassificationTests
 	public void ClassifyGroupHourlyValues_UsesTheGroupsAverage_NotTheWorkers()
 	{
 		var hour = Day.AddHours(8);
-		var groupHourlyValues = DataFetchHandler.AverageOverWorkers(
-			[
-				Value(hour, 90),
-				Value(hour, 90),
-				Value(hour, 78),
-				Value(hour, 78),
-				Value(hour, 78),
-				Value(hour, 78),
-			]
-		);
+		var groupHourlyValues = DataFetchHandler.AverageOverWorkers([
+			Value(hour, 90),
+			Value(hour, 90),
+			Value(hour, 78),
+			Value(hour, 78),
+			Value(hour, 78),
+			Value(hour, 78),
+		]);
 
 		var shiftAverage = ClassifyDay(ExposureType.Noise, null, groupHourlyValues);
 
@@ -57,9 +58,13 @@ public class GroupHourlyClassificationTests
 	public void ClassifyGroupHourlyValues_IgnoresOneWorkerAboveTheLimit_WhenTheGroupIsBelow()
 	{
 		var hour = Day.AddHours(8);
-		var groupHourlyValues = DataFetchHandler.AverageOverWorkers(
-			[Value(hour, 95), Value(hour, 60), Value(hour, 60), Value(hour, 60), Value(hour, 60)]
-		);
+		var groupHourlyValues = DataFetchHandler.AverageOverWorkers([
+			Value(hour, 95),
+			Value(hour, 60),
+			Value(hour, 60),
+			Value(hour, 60),
+			Value(hour, 60),
+		]);
 
 		var shiftAverage = ClassifyDay(ExposureType.Noise, null, groupHourlyValues);
 
@@ -131,7 +136,11 @@ public class GroupHourlyClassificationTests
 		double expectedOverLimit
 	)
 	{
-		var shiftAverage = ClassifyDay(exposureType, field, [Value(Day.AddHours(8), groupHourlyValue)]);
+		var shiftAverage = ClassifyDay(
+			exposureType,
+			field,
+			[Value(Day.AddHours(8), groupHourlyValue)]
+		);
 
 		Assert.Equal(expectedOverAction, shiftAverage.AverageTimeOverAction);
 		Assert.Equal(expectedOverLimit, shiftAverage.AverageTimeOverLimit);

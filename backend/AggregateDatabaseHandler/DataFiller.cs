@@ -89,7 +89,11 @@ public class DataFiller
 			.Where(d => d.SampleId == sampleId)
 			.Select(d => d.Time)
 			.FirstOrDefaultAsync();
-		DateTime startTime = await restartLastStoredDay(sampleId, ExposureType.Vibration, lowestTime);
+		DateTime startTime = await restartLastStoredDay(
+			sampleId,
+			ExposureType.Vibration,
+			lowestTime
+		);
 
 		var (dataList, aboveThresholdDataList) =
 			await _fetchHandler.fetchAggregatedDataOverSampleUsers(

@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Backend.IntegrationTests.ServiceTests;
 
 [Collection(PostgresTestDbCollection.Name)]
-public sealed class DataInsertHandlerTests(PostgresTestDbFixture fixture) : IntegrationTestBase(fixture)
+public sealed class DataInsertHandlerTests(PostgresTestDbFixture fixture)
+	: IntegrationTestBase(fixture)
 {
 	private static readonly Guid SampleId = Guid.Parse("d0000000-0000-0000-0000-000000000001");
 	private static readonly DateTime PreviousDay = new(2026, 10, 20, 0, 0, 0, DateTimeKind.Utc);
@@ -73,7 +74,10 @@ public sealed class DataInsertHandlerTests(PostgresTestDbFixture fixture) : Inte
 			shiftAverages,
 			d => d.ExposureType == ExposureType.Noise && d.Time == PreviousDay
 		);
-		Assert.Contains(shiftAverages, d => d.ExposureType == ExposureType.Dust && d.Time == LastDay);
+		Assert.Contains(
+			shiftAverages,
+			d => d.ExposureType == ExposureType.Dust && d.Time == LastDay
+		);
 	}
 
 	[Fact]
@@ -84,14 +88,19 @@ public sealed class DataInsertHandlerTests(PostgresTestDbFixture fixture) : Inte
 		var handler = new DataInsertHandler(context);
 
 		await handler.removeDataFrom(SampleId, ExposureType.Noise, LastDay);
-		await handler.addDataRange([NoiseHour(LastDay.AddHours(10)), NoiseHour(LastDay.AddHours(12))]);
+		await handler.addDataRange([
+			NoiseHour(LastDay.AddHours(10)),
+			NoiseHour(LastDay.AddHours(12)),
+		]);
 		await handler.addDataRange([ShiftAverage(ExposureType.Noise, LastDay)]);
 		await context.SaveChangesAsync();
 
 		Assert.Equal(3, await context.NoiseAverages.CountAsync());
 		Assert.Equal(
 			2,
-			await context.AveragesPer8HourShift.CountAsync(d => d.ExposureType == ExposureType.Noise)
+			await context.AveragesPer8HourShift.CountAsync(d =>
+				d.ExposureType == ExposureType.Noise
+			)
 		);
 	}
 }

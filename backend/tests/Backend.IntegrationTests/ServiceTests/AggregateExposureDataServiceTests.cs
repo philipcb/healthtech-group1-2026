@@ -49,7 +49,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			? site == OwnSite
 				? OwnSiteGroupId
 				: OtherSiteGroupId
-			: Guid.Parse($"c000000{(int)level}-0000-0000-0000-00000000000{(site == OwnSite ? 1 : 2)}");
+			: Guid.Parse(
+				$"c000000{(int)level}-0000-0000-0000-00000000000{(site == OwnSite ? 1 : 2)}"
+			);
 
 	private async Task SeedGroupsAsync()
 	{
@@ -142,7 +144,10 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 
 		var occupationInHall = Assert.Single(groups, g => g.Hall != null && g.Occupation != null);
 		var wholeHall = Assert.Single(groups, g => g.Hall != null && g.Occupation == null);
-		var occupationAcrossSite = Assert.Single(groups, g => g.Hall == null && g.Occupation != null);
+		var occupationAcrossSite = Assert.Single(
+			groups,
+			g => g.Hall == null && g.Occupation != null
+		);
 		var wholeSite = Assert.Single(groups, g => g.Hall == null && g.Occupation == null);
 		Assert.Equal(GetGroupId(OwnSite, Level.OccupationInHall), occupationInHall.GroupId);
 		Assert.Equal(GetGroupId(OwnSite, Level.WholeHall), wholeHall.GroupId);
@@ -336,7 +341,15 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Equal("noSuchGroup", trend.Reason);
 	}
 
-	private static readonly DateTime DayWithShiftAverage = new(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc);
+	private static readonly DateTime DayWithShiftAverage = new(
+		2026,
+		9,
+		15,
+		0,
+		0,
+		0,
+		DateTimeKind.Utc
+	);
 	private static readonly DateTime DayWithoutShiftAverage = new(
 		2026,
 		9,

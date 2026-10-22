@@ -16,13 +16,22 @@ public class VibrationDailyTotalTests
 	{
 		var userId = Guid.NewGuid();
 		return hours
-			.Select(h => new RawExposureData(h.time, h.points, h.points, h.points, h.points, userId))
+			.Select(h => new RawExposureData(
+				h.time,
+				h.points,
+				h.points,
+				h.points,
+				h.points,
+				userId
+			))
 			.ToList();
 	}
 
 	private static List<TimedData> DailyTotals(List<RawExposureData> hours) =>
 		DataFetchHandler
-			.ToDailyTotals(DataFetchHandler.CalculateUserExposureData(ExposureType.Vibration, hours))
+			.ToDailyTotals(
+				DataFetchHandler.CalculateUserExposureData(ExposureType.Vibration, hours)
+			)
 			.ToList();
 
 	/// <summary>
@@ -31,8 +40,14 @@ public class VibrationDailyTotalTests
 	[Fact]
 	public void GetValueFunction_UsesSumForVibrationOnly()
 	{
-		Assert.Equal(AggregationFunction.Sum, DataFetchHandler.GetValueFunction(ExposureType.Vibration));
-		Assert.Equal(AggregationFunction.Avg, DataFetchHandler.GetValueFunction(ExposureType.Noise));
+		Assert.Equal(
+			AggregationFunction.Sum,
+			DataFetchHandler.GetValueFunction(ExposureType.Vibration)
+		);
+		Assert.Equal(
+			AggregationFunction.Avg,
+			DataFetchHandler.GetValueFunction(ExposureType.Noise)
+		);
 		Assert.Equal(AggregationFunction.Avg, DataFetchHandler.GetValueFunction(ExposureType.Dust));
 	}
 
@@ -115,7 +130,11 @@ public class VibrationDailyTotalTests
 	[Fact]
 	public void DailyTotals_StartOverEachDay()
 	{
-		var worker = Hours((Day.AddHours(8), 50), (Day.AddHours(9), 20), (Day.AddDays(1).AddHours(8), 30));
+		var worker = Hours(
+			(Day.AddHours(8), 50),
+			(Day.AddHours(9), 20),
+			(Day.AddDays(1).AddHours(8), 30)
+		);
 
 		var totals = DailyTotals(worker);
 

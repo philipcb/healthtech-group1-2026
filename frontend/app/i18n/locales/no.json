@@ -257,7 +257,6 @@
     "role": {
       "operator": "Operatør",
       "foreman": "Formann",
-      "occupationalHealthService": "Bedriftshelsetjeneste",
       "management": "Ledelse"
     },
     "searchPlaceholder": "Søk etter brukere..."
@@ -422,10 +421,6 @@
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
     }
-  },
-  "occupationalHealthServiceDashboard": {
-    "title": "Bedriftshelsetjenesten",
-    "description": "Anonymisert oversikt over eksponering på arbeidsplassen, per bygg og yrke."
   },
   "managementDashboard": {
     "title": "Ledelse"

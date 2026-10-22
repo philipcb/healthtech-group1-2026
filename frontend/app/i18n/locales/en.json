@@ -260,7 +260,6 @@
     "role": {
       "operator": "Operator",
       "foreman": "Foreman",
-      "occupationalHealthService": "Occupational Health Service",
       "management": "Management"
     },
     "searchPlaceholder": "Search users..."
@@ -425,10 +424,6 @@
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
     }
-  },
-  "occupationalHealthServiceDashboard": {
-    "title": "Occupational Health Service",
-    "description": "An anonymized overview of workplace exposure, per building and occupation."
   },
   "managementDashboard": {
     "title": "Management"

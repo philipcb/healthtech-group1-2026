@@ -51,4 +51,15 @@ public sealed class TrendPointDto
 	// Null means the measurement is hidden for privacy
 	[JsonPropertyName("value")]
 	public double? Value { get; set; }
+
+	// Share (0 to 1) over the action value, including over the limit, always from the group's values in the chart. For
+	// noise and dust the share of the day's hours where the group's hourly average was over it. For vibration 1 when the
+	// group's daily value, the average of the workers' daily totals, was over it, and 0 otherwise, so the period's average
+	// is the share of the days. Null when there is none.
+	[JsonPropertyName("averageTimeOverAction")]
+	public double? AverageTimeOverAction { get; set; }
+
+	// Share (0 to 1) over the limit, measured like `AverageTimeOverAction`. Null when there is none.
+	[JsonPropertyName("averageTimeOverLimit")]
+	public double? AverageTimeOverLimit { get; set; }
 }

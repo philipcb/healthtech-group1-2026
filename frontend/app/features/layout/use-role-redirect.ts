@@ -7,7 +7,6 @@ import { useLocation, useNavigate } from "react-router";
 const homeByRole: Record<User["role"], string> = {
 	operator: "/operator",
 	foreman: "/foreman",
-	occupationalHealthService: "/occupational-health-service",
 	management: "/management",
 };
 

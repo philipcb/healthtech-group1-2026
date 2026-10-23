@@ -41,13 +41,6 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 			];
 		}
 
-		case "occupationalHealthService": {
-			return [
-				{ to: href("/occupational-health-service"), label: t(($) => $.layout.home) },
-				{ to: href("/occupational-health-service/map"), label: t(($) => $.layout.map) },
-			];
-		}
-
 		case "management": {
 			return [
 				{ to: href("/management"), label: t(($) => $.layout.home) },

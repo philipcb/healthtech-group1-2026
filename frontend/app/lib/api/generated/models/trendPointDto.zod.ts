@@ -9,7 +9,9 @@ import { tzDateSchema } from '@/lib/date.ts';
 
 export const TrendPointDto = zod.object({
   "time": tzDateSchema,
-  "value": zod.number().nullable()
+  "value": zod.number().nullable(),
+  "averageTimeOverAction": zod.number().nullable(),
+  "averageTimeOverLimit": zod.number().nullable()
 })
 
 export type TrendPointDto = zod.output<typeof TrendPointDto>;

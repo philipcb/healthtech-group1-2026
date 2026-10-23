@@ -20,5 +20,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\backend.csproj" />
+		<ProjectReference Include="..\..\AggregateDatabaseHandler\healthtech.AggregateDatabaseHandler.csproj" />
 	</ItemGroup>
 </Project>

@@ -545,5 +545,11 @@
   "datePicker": {
     "openLabel": "Velg dato og visning",
     "dialogTitle": "Dato og visning"
+  },
+  "chartDownload": {
+    "downloadCsv": "Last ned som CSV",
+    "columns": {
+      "date": "Dato"
+    }
   }
 }

@@ -548,5 +548,11 @@
   "datePicker": {
     "openLabel": "Choose date and view",
     "dialogTitle": "Date and view"
+  },
+  "chartDownload": {
+    "downloadCsv": "Download as CSV",
+    "columns": {
+      "date": "Date"
+    }
   }
 }

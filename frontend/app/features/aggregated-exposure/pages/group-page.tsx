@@ -1,3 +1,4 @@
+import { ChartDownload } from "@/components/chart-download.tsx";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
@@ -13,21 +14,30 @@ import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposur
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
 	formatGroupValue,
+	type GroupSummary,
 	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getHallName,
+	getOccupationLabel,
+	type HallSummary,
 	isExposureUnavailable,
 	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import {
+	type PeriodSelection,
+	toPeriodFilenamePart,
+	toPeriodParams,
+} from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
-import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
+import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { type CsvColumn, toCsvFilename } from "@/lib/plot-to-csv.ts";
 import { cn } from "@/lib/utils.ts";
-import { ArrowLeft } from "lucide-react";
+import { format } from "date-fns";
+import { ArrowLeft, Rows } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 
@@ -134,7 +144,12 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					}
 				/>
 			) : (
-				<GroupDetails trend={trendQuery.data} exposure={exposure} dustField={dustField} />
+				<GroupDetails 
+						trend={trendQuery.data}
+						group={group}
+						periodSelection={periodSelection}
+						exposure={exposure} 
+						dustField={dustField} />
 			)}
 		</div>
 	);
@@ -142,10 +157,14 @@ export function GroupPage({ groupId }: { groupId: string }) {
 
 function GroupDetails({
 	trend,
+	group,
+	periodSelection,
 	exposure,
 	dustField,
 }: {
 	trend: AggregatedTrendOkDto;
+	group: GroupSummary | HallSummary;
+	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
 }) {
@@ -190,6 +209,22 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
+	const csvFilename = toCsvFilename([
+		group.site,
+		group.hall,
+		"occupation" in group ? getOccupationLabel(group.occupation, t) : t(($) => $.aggregatedExposure.wholeHall),
+		t(($) => $.exposures[exposure]),
+		exposure === "dust" ? `${dustFieldLabel} ${dustField.split("_")[1].toUpperCase()}` : null,
+		toPeriodFilenamePart(periodSelection),
+	]);
+	const csvColumns: Array<CsvColumn<TrendPointDto>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (point) => format(point.time, "yyyy-MM-dd") },
+		{ header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`, value: (point) => point.value },
+		...(timeOverUnavailableCaption === undefined ? [
+			{ header: `${kpiText.action} (%)`, value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction)},
+			{ header: `${kpiText.limit} (%)`, value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit)},
+		] : []),
+	];
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -220,12 +255,14 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart
-						points={trend.points}
-						unit={trend.unit}
-						label={metricLabel}
-						threshold={threshold}
-					/>
+					<ChartDownload filename={csvFilename} columns={csvColumns} rows={trend.points}>
+						<GroupTrendChart
+							points={trend.points}
+							unit={trend.unit}
+							label={metricLabel}
+							threshold={threshold}
+						/>
+					</ChartDownload>
 				)}
 				{isColored && <ThresholdBarLegend />}
 			</Card>
@@ -270,4 +307,9 @@ function formatAverageShare(shares: Array<number | null>) {
 
 	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
 	return `${Math.round(average * 100)} %`;
+}
+
+// For the CSV file's percentage columns
+function toPercent(share: number | null) {
+        return share === null ? null : Math.round(share * 1000) / 10;
 }

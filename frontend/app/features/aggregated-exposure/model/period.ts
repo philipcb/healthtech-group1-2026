@@ -47,3 +47,8 @@ export function getPeriodLabel(
 export function toPeriodParams({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
 	return { period, year, month: period === "month" ? month : undefined };
 }
+
+/** The period for file names */
+export function toPeriodFilenamePart({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
+	return period === "month" ? `${year}-${String(month + 1).padStart(2, "0")}` : year.toString();
+}

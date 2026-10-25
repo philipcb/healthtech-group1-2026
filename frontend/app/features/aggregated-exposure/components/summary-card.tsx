@@ -33,7 +33,7 @@ export function SummaryCard({
 	return (
 		<Card variant="labeled" className="h-full rounded-lg">
 			<div className="border-b px-4 py-2 sm:py-3">{header}</div>
-			<ul className="flex flex-col gap-1 p-2">
+			<ul className="flex flex-col gap-4.5 p-2">
 				{shownExposures.map((exposure) => (
 					<li key={exposure}>
 						<ExposureLink
@@ -92,7 +92,7 @@ function ExposureLink({
 				group: name,
 				value: levelLabel ? `${value}, ${levelLabel.toLowerCase()}` : value,
 			})}
-			className="flex flex-col gap-1.5 rounded-md p-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+			className="flex flex-col gap-4 rounded-md p-2 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 		>
 			<span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
 				<span className="flex min-w-0 grow items-center gap-2">
@@ -104,7 +104,6 @@ function ExposureLink({
 				</span>
 				<span className="ml-auto flex shrink-0 items-center gap-1 tabular-nums">
 					{level && <DangerLevelBadge dangerLevel={level} />}
-					{levelLabel && <span className="mr-1 text-muted-foreground text-xs">{levelLabel}</span>}
 					{value}
 					<ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
 				</span>

@@ -71,6 +71,12 @@ export function DangerLevelBadgeLegend() {
 					{labels[level]}
 				</li>
 			))}
+			<li className="flex items-center gap-1.5">
+				<span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center">
+					<span className="h-3 w-0.5 bg-foreground/70" />
+				</span>
+				{t(($) => $.aggregatedExposure.overview.thresholdMarks)}
+			</li>
 		</ul>
 	);
 }

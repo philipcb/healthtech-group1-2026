@@ -353,6 +353,7 @@
         "hall": "Whole building"
       },
       "belowActionValue": "Below action value",
+      "thresholdMarks": "Action and limit value",
       "aggregationNotice": "Values are group averages. Individual exposure may vary.",
       "info": {
         "trigger": "Overview guide",

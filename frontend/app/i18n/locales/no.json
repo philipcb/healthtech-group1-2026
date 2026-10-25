@@ -350,6 +350,7 @@
         "hall": "Hele bygget"
       },
       "belowActionValue": "Under tiltaksverdi",
+      "thresholdMarks": "Tiltaks- og grenseverdi",
       "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
       "info": {
         "trigger": "Oversiktsguide",

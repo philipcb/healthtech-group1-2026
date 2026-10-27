@@ -1,7 +1,7 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { DangerLevelBadge, ThresholdBar } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
-import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
+import { useGroupDetailsLink } from "@/features/aggregated-exposure/hooks/use-group-details-link.ts";
 import {
 	formatGroupValue,
 	isExposureUnavailable,
@@ -13,7 +13,7 @@ import type { Exposure } from "@/lib/exposures.ts";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 
 export function SummaryCard({
 	header,
@@ -64,8 +64,7 @@ function ExposureLink({
 	unit: MeasurementUnitsDto[Exposure];
 }) {
 	const { t } = useTranslation();
-	const { search } = useLocation();
-	const { getGroupPath } = useDashboardScope();
+	const getDetailsLink = useGroupDetailsLink();
 
 	const value = isExposureUnavailable(exposure)
 		? t(($) => $.aggregatedExposure.unavailableValue)
@@ -78,15 +77,9 @@ function ExposureLink({
 	// no level, so a missing value never looks like a safe one.
 	const levelLabel = level === "warning" || level === "danger" ? t(($) => $.lineChart[level]) : null;
 
-	const searchParams = new URLSearchParams(search);
-	searchParams.set("exposure", exposure);
-
 	return (
 		<Link
-			to={{
-				pathname: getGroupPath(groupId),
-				search: `?${searchParams}`,
-			}}
+			to={getDetailsLink(groupId, exposure)}
 			aria-label={t(($) => $.aggregatedExposure.overview.openDetails, {
 				exposure: t(($) => $.exposures[exposure]),
 				group: name,

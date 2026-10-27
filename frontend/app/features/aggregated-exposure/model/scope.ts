@@ -7,6 +7,8 @@ export type YardFilterProps = {
 	onValueChange: (yard: string | null) => void;
 	/** Whether every yard can be picked at once, which the site map can't show */
 	allowsAll?: boolean;
+	inline?: boolean;
+	hidesLabel?: boolean;
 };
 
 /**

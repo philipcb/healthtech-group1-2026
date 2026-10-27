@@ -85,7 +85,8 @@
     "exportPdfDescription": "Select time period for PDF export",
     "theme": "Theme",
     "language": "Language",
-    "map": "Map"
+    "map": "Map",
+    "compare": "Compare"
   },
   "live": {
     "timeRange": {
@@ -443,6 +444,90 @@
       "allSuppressed": "No values for the selected period.",
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
+    },
+    "compare": {
+      "title": "Compare groups",
+      "wholeYard": "Whole yard",
+      "periodNotStarted": "{{period}} hasn't started yet.",
+      "level": {
+        "label": "Compare",
+        "yard": "Yards",
+        "hall": "Buildings",
+        "yardOccupation": "Occupations per yard",
+        "hallOccupation": "Occupations per building",
+        "perOccupation": "Split by occupation",
+        "current": "Comparing: {{level}}"
+      },
+      "picker": {
+        "label": "Groups",
+        "add": "Add group",
+        "search": "Search groups",
+        "addAll": "Add all {{count}}",
+        "remove": "Remove {{group}}",
+        "clear": "Clear all",
+        "cleared": "Removed all groups.",
+        "undo": "Undo",
+        "addOneMore": "Add at least one more group to compare.",
+        "addAtLeastTwo": "Add at least two groups to compare.",
+        "noneLeft": "Every group at this level is already added.",
+        "noMatches": "No groups match “{{query}}”.",
+        "count": "{{count}} groups",
+        "count_one": "{{count}} group",
+        "count_other": "{{count}} groups",
+        "loading": "Loading groups…",
+        "hiddenFromLink": "{{count}} groups from the link can't be shown at this level.",
+        "hiddenFromLink_one": "{{count}} group from the link can't be shown at this level.",
+        "hiddenFromLink_other": "{{count}} groups from the link can't be shown at this level."
+      },
+      "intro": {
+        "title": "What you can compare",
+        "description": "Choose the kind of group under “Compare”, then add at least two groups with “Add group”. Every group is shown for the same exposure and period.",
+        "yard": {
+          "title": "Yards",
+          "description": "Everyone measured at a yard counts as one group. Shows which yard has the highest exposure overall, and whether one stands out from the others.",
+          "how": "Compare: Yards"
+        },
+        "hall": {
+          "title": "Buildings",
+          "description": "Everyone in one building against everyone in another. Shows where at the yard the exposure is highest, and which buildings to follow up.",
+          "how": "Compare: Buildings"
+        },
+        "occupation": {
+          "title": "Occupation groups",
+          "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed.",
+          "how": "Compare: Yards or Buildings, and tick “Split by occupation”"
+        }
+      },
+      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
+      "chartHint": "Daily values. Hover over the chart, or focus it and use the arrow keys, to read each day.",
+      "notInChart": "Not in the chart: {{groups}}.",
+      "reasons": {
+        "noData": "no measurements",
+        "notEnoughData": "not enough data",
+        "unavailable": "not available"
+      },
+      "notEnoughData": "Not enough data",
+      "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
+      "noData": "No measurements",
+      "noDataDescription": "The group has no measurements in {{period}}.",
+      "unavailableDescription": "This exposure can't be calculated for the group yet.",
+      "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
+      "noGroupHasData": "None of the groups have measurements in {{period}}.",
+      "retry": "Try again",
+      "tableCaption": "{{exposure}} per group, {{period}}",
+      "group": "Group",
+      "setupLabel": "What to compare",
+      "hiddenDays": "{{count}} days hidden for privacy",
+      "hiddenDays_one": "{{count}} day hidden for privacy",
+      "hiddenDays_other": "{{count}} days hidden for privacy",
+      "hiddenDaysLegend": "Days hidden for privacy",
+      "values": {
+        "week": "Values per week",
+        "month": "Values per month",
+        "weekLabel": "Week {{week}}",
+        "bucketColumn": "Period",
+        "caption": "Average per week or month for each group, {{period}}"
+      }
     }
   },
   "managementDashboard": {

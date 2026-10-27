@@ -1,5 +1,6 @@
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { getThresholdStrokeDasharray } from "@/lib/thresholds.ts";
+import { cn } from "@/lib/utils.ts";
 import { useTranslation } from "react-i18next";
 
 export type ThresholdLegendItem = {
@@ -7,11 +8,11 @@ export type ThresholdLegendItem = {
 	color: string;
 };
 
-export function ThresholdLegend({ items }: { items: Array<ThresholdLegendItem> }) {
+export function ThresholdLegend({ items, className }: { items: Array<ThresholdLegendItem>; className?: string }) {
 	const { t } = useTranslation();
 
 	return (
-		<div className="mt-4 flex items-center gap-6 text-muted-foreground text-xs">
+		<div className={cn("mt-4 flex items-center gap-6 text-muted-foreground text-xs", className)}>
 			{items.map((item) => {
 				const strokeDasharray = getThresholdStrokeDasharray(item.dangerLevel);
 

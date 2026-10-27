@@ -28,6 +28,10 @@ export function isExposureUnavailable(exposure: Exposure): exposure is Unavailab
 	return (unavailableExposures as ReadonlyArray<Exposure>).includes(exposure);
 }
 
+export function hideUnavailableAverages(averages: SampleDto["averages"]): SampleDto["averages"] {
+	return { ...averages, ...Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null])) };
+}
+
 /** One occupation in one hall */
 export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string; occupation: string };
 
@@ -45,8 +49,7 @@ export type HallSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: strin
  *   hours, and the trend shows each day's last hour.
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
-	const hiddenAverages = Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null]));
-	const summaries = groups.map((group) => ({ ...group, averages: { ...group.averages, ...hiddenAverages } }));
+	const summaries = groups.map((group) => ({ ...group, averages: hideUnavailableAverages(group.averages) }));
 
 	return {
 		units,
@@ -140,4 +143,42 @@ export function getOccupationLabel(occupation: string, t: TranslateFn) {
 		default:
 			return occupation;
 	}
+}
+
+export const NO_VALUE = "—";
+
+export function formatAverageShare(shares: Array<number | null>) {
+	const present = shares.filter((share) => share !== null);
+	if (present.length === 0) {
+		return NO_VALUE;
+	}
+
+	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
+	return `${Math.round(average * 100)} %`;
+}
+
+export function getMetricLabel(exposure: Exposure, dustField: DustField, t: TranslateFn) {
+	return exposure === "dust"
+		? t(($) => $.aggregatedExposure.metrics.dust, { dustField: t(($) => $.exposures.dustFields[dustField]) })
+		: t(($) => $.aggregatedExposure.metrics[exposure]);
+}
+
+export function getShareLabels(exposure: Exposure, t: TranslateFn) {
+	return exposure === "vibration"
+		? {
+				action: t(($) => $.aggregatedExposure.group.daysOverAction),
+				limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
+			}
+		: {
+				action: t(($) => $.aggregatedExposure.group.timeOverAction),
+				limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+			};
+}
+
+export function hasTimeOverThresholds(exposure: Exposure, dustField: DustField) {
+	return exposure !== "dust" || dustField === "pm1_twa";
+}
+
+export function getThresholdNumberFormat(language: string) {
+	return new Intl.NumberFormat(language === "no" ? "nb-NO" : "en-US");
 }

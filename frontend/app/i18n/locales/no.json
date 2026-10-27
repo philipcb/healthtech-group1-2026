@@ -82,7 +82,8 @@
     "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
     "theme": "Fargetema",
     "language": "Språk",
-    "map": "Kart"
+    "map": "Kart",
+    "compare": "Sammenlign"
   },
   "live": {
     "timeRange": {
@@ -440,6 +441,90 @@
       "allSuppressed": "Ingen verdier for valgt periode.",
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
+    },
+    "compare": {
+      "title": "Sammenlign grupper",
+      "wholeYard": "Hele verftet",
+      "periodNotStarted": "{{period}} har ikke startet ennå.",
+      "level": {
+        "label": "Sammenlign",
+        "yard": "Verft",
+        "hall": "Bygg",
+        "yardOccupation": "Yrker per verft",
+        "hallOccupation": "Yrker per bygg",
+        "perOccupation": "Del opp etter yrkesgruppe",
+        "current": "Sammenligner: {{level}}"
+      },
+      "picker": {
+        "label": "Grupper",
+        "add": "Legg til gruppe",
+        "search": "Søk etter grupper",
+        "addAll": "Legg til alle {{count}}",
+        "remove": "Fjern {{group}}",
+        "clear": "Fjern alle",
+        "cleared": "Fjernet alle gruppene.",
+        "undo": "Angre",
+        "addOneMore": "Legg til minst én gruppe til for å sammenligne.",
+        "addAtLeastTwo": "Legg til minst to grupper for å sammenligne.",
+        "noneLeft": "Alle gruppene på dette nivået er allerede lagt til.",
+        "noMatches": "Ingen grupper passer med «{{query}}».",
+        "count": "{{count}} grupper",
+        "count_one": "{{count}} gruppe",
+        "count_other": "{{count}} grupper",
+        "loading": "Laster grupper …",
+        "hiddenFromLink": "{{count}} grupper fra lenken kan ikke vises på dette nivået.",
+        "hiddenFromLink_one": "{{count}} gruppe fra lenken kan ikke vises på dette nivået.",
+        "hiddenFromLink_other": "{{count}} grupper fra lenken kan ikke vises på dette nivået."
+      },
+      "intro": {
+        "title": "Dette kan du sammenligne",
+        "description": "Velg type gruppe under «Sammenlign», og legg så til minst to grupper med «Legg til gruppe». Alle gruppene vises for samme eksponering og periode.",
+        "yard": {
+          "title": "Verft",
+          "description": "Alle som er målt på et verft, regnes som én gruppe. Viser hvilket verft som har høyest eksponering totalt, og om ett skiller seg ut fra de andre.",
+          "how": "Sammenlign: Verft"
+        },
+        "hall": {
+          "title": "Bygg",
+          "description": "Alle i ett bygg mot alle i et annet. Viser hvor på verftet eksponeringen er høyest, og hvilke bygg som bør følges opp.",
+          "how": "Sammenlign: Bygg"
+        },
+        "occupation": {
+          "title": "Yrkesgrupper",
+          "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt.",
+          "how": "Sammenlign: Verft eller Bygg, og kryss av for «Del opp etter yrkesgruppe»"
+        }
+      },
+      "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
+      "chartHint": "Daglige verdier. Hold pekeren over grafen, eller marker den og bruk piltastene, for å lese hver dag.",
+      "notInChart": "Ikke i grafen: {{groups}}.",
+      "reasons": {
+        "noData": "ingen målinger",
+        "notEnoughData": "ikke nok data",
+        "unavailable": "ikke tilgjengelig"
+      },
+      "notEnoughData": "Ikke nok data",
+      "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
+      "noData": "Ingen målinger",
+      "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
+      "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
+      "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
+      "noGroupHasData": "Ingen av gruppene har målinger i {{period}}.",
+      "retry": "Prøv igjen",
+      "tableCaption": "{{exposure}} per gruppe, {{period}}",
+      "group": "Gruppe",
+      "setupLabel": "Hva som sammenlignes",
+      "hiddenDays": "{{count}} dager skjult av personvernhensyn",
+      "hiddenDays_one": "{{count}} dag skjult av personvernhensyn",
+      "hiddenDays_other": "{{count}} dager skjult av personvernhensyn",
+      "hiddenDaysLegend": "Dager skjult av personvernhensyn",
+      "values": {
+        "week": "Verdier per uke",
+        "month": "Verdier per måned",
+        "weekLabel": "Uke {{week}}",
+        "bucketColumn": "Periode",
+        "caption": "Snitt per uke eller måned for hver gruppe, {{period}}"
+      }
     }
   },
   "managementDashboard": {

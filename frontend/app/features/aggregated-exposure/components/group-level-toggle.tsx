@@ -1,7 +1,6 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
-import { type GroupLevel, groupLevels } from "@/features/aggregated-exposure/model/groups.ts";
+import { OptionToggle } from "@/features/aggregated-exposure/components/option-toggle.tsx";
+import type { GroupLevel } from "@/features/aggregated-exposure/model/groups.ts";
 import { Factory, UsersRound } from "lucide-react";
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 export function GroupLevelToggle({
@@ -12,35 +11,24 @@ export function GroupLevelToggle({
 	onValueChange: (level: GroupLevel) => void;
 }) {
 	const { t } = useTranslation();
-	const labelId = useId();
 
 	return (
-		<div className="flex flex-col gap-1.5">
-			<p id={labelId} className="font-medium text-sm">
-				{t(($) => $.aggregatedExposure.overview.level.label)}
-			</p>
-			<ToggleGroup
-				aria-labelledby={labelId}
-				type="single"
-				value={value}
-				variant="outline"
-				className="w-full sm:w-fit"
-				onValueChange={(selected: string) => {
-					const level = groupLevels.find((candidate) => candidate === selected);
-					if (level) onValueChange(level);
-				}}
-			>
-				<ToggleGroupItem value="hall" className="grow px-2 sm:grow-0 lg:px-3">
-					<Factory aria-hidden="true" className="size-4" />
-					<span className="text-xs lg:text-sm">{t(($) => $.aggregatedExposure.overview.level.hall)}</span>
-				</ToggleGroupItem>
-				<ToggleGroupItem value="occupation" className="grow px-2 sm:grow-0 lg:px-3">
-					<UsersRound aria-hidden="true" className="size-4" />
-					<span className="text-xs lg:text-sm">
-						{t(($) => $.aggregatedExposure.overview.level.occupation)}
-					</span>
-				</ToggleGroupItem>
-			</ToggleGroup>
-		</div>
+		<OptionToggle<GroupLevel>
+			label={t(($) => $.aggregatedExposure.overview.level.label)}
+			value={value}
+			onValueChange={onValueChange}
+			options={[
+				{
+					value: "hall",
+					label: t(($) => $.aggregatedExposure.overview.level.hall),
+					icon: <Factory aria-hidden="true" className="size-4" />,
+				},
+				{
+					value: "occupation",
+					label: t(($) => $.aggregatedExposure.overview.level.occupation),
+					icon: <UsersRound aria-hidden="true" className="size-4" />,
+				},
+			]}
+		/>
 	);
 }

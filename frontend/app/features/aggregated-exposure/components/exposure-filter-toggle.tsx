@@ -7,15 +7,19 @@ import { useTranslation } from "react-i18next";
 export function ExposureFilterToggle({
 	value,
 	onValueChange,
+	labelledBy,
 }: {
 	value: ExposureFilter;
 	onValueChange: (filter: ExposureFilter) => void;
+	labelledBy?: string;
 }) {
 	const { t } = useTranslation();
 
 	return (
 		<OptionToggle<ExposureFilter>
 			label={t(($) => $.aggregatedExposure.overview.exposureFilter.label)}
+			labelledBy={labelledBy}
+			fillsWidth={false}
 			value={value}
 			onValueChange={onValueChange}
 			options={[

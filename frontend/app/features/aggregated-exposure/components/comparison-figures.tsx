@@ -8,7 +8,6 @@ import {
 	type ComparedEntry,
 	getComparableGroupContext,
 	getComparableGroupName,
-	hasDetailsPage,
 } from "@/features/aggregated-exposure/model/compare.ts";
 import {
 	formatAverageShare,
@@ -170,16 +169,12 @@ function GroupName({
 				{result.status === "ok" ? <SeriesKey slot={slot} /> : <span className="block w-5.5" />}
 			</span>
 			<div className="min-w-0">
-				{hasDetailsPage(group) ? (
-					<Link
-						to={getDetailsLink(group.groupId, exposure)}
-						className="font-medium text-foreground underline-offset-3 hover:underline"
-					>
-						{name}
-					</Link>
-				) : (
-					<span className="font-medium text-foreground">{name}</span>
-				)}
+				<Link
+					to={getDetailsLink(group.groupId, exposure)}
+					className="font-medium text-foreground underline-offset-3 hover:underline"
+				>
+					{name}
+				</Link>
 				<p className="text-muted-foreground text-xs">{getComparableGroupContext(group, t)}</p>
 			</div>
 		</div>

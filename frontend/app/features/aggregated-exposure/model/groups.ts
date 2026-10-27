@@ -7,9 +7,6 @@ import { formatExposureValue } from "@/lib/utils.ts";
 /** Groups with fewer people than this are never returned by the backend */
 export const MIN_GROUP_SIZE = 5;
 
-export const groupLevels = ["occupation", "hall"] as const;
-export type GroupLevel = (typeof groupLevels)[number];
-
 export const exposureFilters = ["all", ...exposures] as const;
 export type ExposureFilter = (typeof exposureFilters)[number];
 
@@ -35,9 +32,6 @@ export function hideUnavailableAverages(averages: SampleDto["averages"]): Sample
 /** One occupation in one hall */
 export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string; occupation: string };
 
-/** A whole hall, every occupation in it */
-export type HallSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string };
-
 /**
  * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
  * the occupational health service its own, management every site. Where each value comes from in the aggregate
@@ -53,14 +47,10 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
 
 	return {
 		units,
-		// The backend also sends one occupation across the site and the whole site, which have no hall and aren't shown
+		// The backend also sends whole sites, whole halls and one occupation across a site, which the site map doesn't show
 		groups: summaries.flatMap(
 			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
 				hall === null || occupation === null ? [] : [{ groupId, site, hall, occupation, averages }],
-		),
-		halls: summaries.flatMap(
-			({ groupId, site, hall, occupation, averages }): Array<HallSummary> =>
-				hall === null || occupation !== null ? [] : [{ groupId, site, hall, averages }],
 		),
 	};
 }
@@ -98,10 +88,6 @@ export function formatGroupValue(value: number, unit: ExposureUnit, t: Translate
 	return `${formatGroupNumber(value, unit)} ${getGroupUnitLabel(unit, t)}`;
 }
 
-export function getGroupName({ hall, occupation }: { hall: string; occupation: string }, t: TranslateFn) {
-	return `${hall} · ${getOccupationLabel(occupation, t)}`;
-}
-
 function compareAverages(averageA: number | null, averageB: number | null) {
 	if (averageA === averageB) {
 		return 0;
@@ -124,10 +110,6 @@ export function compareByExposureFilter(
 	filter: ExposureFilter,
 ) {
 	return filter === "all" ? 0 : compareAverages(averagesA[filter], averagesB[filter]);
-}
-
-export function getHallName(hall: string, t: TranslateFn) {
-	return `${hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 export function getOccupationLabel(occupation: string, t: TranslateFn) {

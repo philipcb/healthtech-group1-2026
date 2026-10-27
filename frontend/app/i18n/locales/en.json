@@ -344,6 +344,7 @@
       "fitter": "Fitter"
     },
     "exposureLabel": "Exposure type",
+    "perOccupation": "Split by occupation",
     "pointsUnit": "points",
     "wholeHall": "Whole building",
     "metrics": {
@@ -362,16 +363,12 @@
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "heading": "Groups",
-      "hallsHeading": "Buildings",
       "exposureFilter": {
         "label": "Show exposure",
         "all": "All"
       },
       "level": {
-        "label": "View",
-        "occupation": "Per occupation",
-        "hall": "Whole building"
+        "label": "View"
       },
       "belowActionValue": "Below action value",
       "aggregationNotice": "Values are group averages. Individual exposure may vary.",
@@ -381,13 +378,8 @@
         "title": "No groups to display",
         "description": "Groups with too few people are not shown, to protect privacy."
       },
-      "noHalls": {
-        "title": "No buildings to display",
-        "description": "Buildings with too few people are not shown, to protect privacy."
-      },
       "noData": "No data for the selected period.",
-      "error": "Could not load the groups.",
-      "hallsError": "Could not load the buildings."
+      "error": "Could not load the groups."
     },
     "group": {
       "back": "Back to the overview",
@@ -435,7 +427,6 @@
         "hall": "Buildings",
         "yardOccupation": "Occupations per yard",
         "hallOccupation": "Occupations per building",
-        "perOccupation": "Split by occupation",
         "current": "Comparing: {{level}}"
       },
       "picker": {
@@ -520,7 +511,7 @@
       "missing": "When figures are missing"
     },
     "source": {
-      "groups": "Each group is one occupation group in one hall. With “{{wholeHall}}”, the group is everyone measured in the hall.",
+      "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
       "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
     },
     "calculation": {

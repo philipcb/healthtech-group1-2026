@@ -18,7 +18,7 @@ export function OverviewInfoDialog({ exposures }: { exposures: ReadonlyArray<Exp
 				<>
 					<AboutFiguresText>
 						{t(($) => $.aboutFigures.source.groups, {
-							wholeHall: t(($) => $.aggregatedExposure.overview.level.hall),
+							perOccupation: t(($) => $.aggregatedExposure.perOccupation),
 						})}
 					</AboutFiguresText>
 					<AboutFiguresText>{t(($) => $.aboutFigures.source.hourly)}</AboutFiguresText>

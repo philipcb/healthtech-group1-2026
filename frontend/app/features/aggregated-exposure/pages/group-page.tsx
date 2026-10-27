@@ -12,21 +12,25 @@ import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/th
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
+	type ComparableGroup,
+	getComparableGroupName,
+	isPerOccupation,
+	toComparableGroups,
+} from "@/features/aggregated-exposure/model/compare.ts";
+import {
 	formatAverageShare,
 	formatGroupValue,
-	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
-	getHallName,
 	getMetricLabel,
 	getShareLabels,
 	getThresholdNumberFormat,
 	hasTimeOverThresholds,
 	isExposureUnavailable,
-	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
+import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
@@ -44,13 +48,11 @@ export function GroupPage({ groupId }: { groupId: string }) {
 		useAggregatedExposureSearchParams();
 	const periodParams = toPeriodParams(periodSelection);
 	const groupsQuery = useGetAggregateGroups(periodParams, {
-		query: { select: toGroupSummaries },
+		query: { select: toComparableGroups },
 	});
 	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
 	// unavailable exposure
-	const occupationGroup = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
-	const hallGroup = groupsQuery.data?.halls.find((summary) => summary.groupId === groupId);
-	const group = occupationGroup ?? hallGroup;
+	const group = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
 	const trendQuery = useGetAggregateGroupTrend(
 		group?.groupId ?? "",
 		{ exposure, dustField: exposure === "dust" ? dustField : undefined, ...periodParams },
@@ -87,20 +89,15 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
-							{hallGroup
-								? t(($) => $.aggregatedExposure.group.hallEyebrow)
+							{group
+								? getEyebrow(group, scope.site === null, t)
 								: t(($) => $.aggregatedExposure.group.eyebrow)}
-							{scope.site === null && group && ` · ${group.site}`}
 						</p>
 						{groupsQuery.isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{occupationGroup
-									? getGroupName(occupationGroup, t)
-									: hallGroup
-										? getHallName(hallGroup.hall, t)
-										: t(($) => $.aggregatedExposure.group.fallbackTitle)}
+								{group ? getTitle(group, t) : t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
 					</div>
@@ -143,6 +140,29 @@ export function GroupPage({ groupId }: { groupId: string }) {
 			)}
 		</div>
 	);
+}
+
+function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
+	if (group.level === "yard") {
+		return t(($) => $.aggregatedExposure.filters.yard);
+	}
+
+	const eyebrow =
+		group.level === "hall"
+			? t(($) => $.aggregatedExposure.group.hallEyebrow)
+			: t(($) => $.aggregatedExposure.group.eyebrow);
+	// A group in a yard already names the yard in its title
+	return showsYard && group.level !== "yardOccupation" ? `${eyebrow} · ${group.site}` : eyebrow;
+}
+
+function getTitle(group: ComparableGroup, t: TranslateFn) {
+	if (isPerOccupation(group.level)) {
+		return getComparableGroupName(group, t);
+	}
+
+	return group.hall === null
+		? `${group.site} · ${t(($) => $.aggregatedExposure.compare.wholeYard)}`
+		: `${group.hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 function GroupDetails({

@@ -124,7 +124,3 @@ export function getComparableGroupContext(group: ComparableGroup, t: TranslateFn
 export function getComparableGroupSection(group: ComparableGroup, t: TranslateFn) {
 	return isPerOccupation(group.level) ? getOccupationLabel(group.occupation ?? "", t) : group.site;
 }
-
-export function hasDetailsPage(group: ComparableGroup) {
-	return group.level === "hall" || group.level === "hallOccupation";
-}

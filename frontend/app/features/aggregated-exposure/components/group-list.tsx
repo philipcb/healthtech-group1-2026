@@ -1,18 +1,22 @@
 import { SummaryCard } from "@/features/aggregated-exposure/components/summary-card.tsx";
 import {
+	type ComparableGroup,
+	getComparableGroupName,
+	isPerOccupation,
+} from "@/features/aggregated-exposure/model/compare.ts";
+import {
 	compareByExposureFilter,
 	type ExposureFilter,
-	type GroupSummary,
-	getGroupName,
 	getOccupationLabel,
 	getShownExposures,
 } from "@/features/aggregated-exposure/model/groups.ts";
+import type { TranslateFn } from "@/i18n/config.ts";
 import type { MeasurementUnitsDto } from "@/lib/api/generated/models/index.ts";
-import { Factory } from "lucide-react";
+import { Factory, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 type GroupListProps = {
-	groups: Array<GroupSummary>;
+	groups: Array<ComparableGroup>;
 	units: MeasurementUnitsDto;
 	filter: ExposureFilter;
 	showsYard: boolean;
@@ -27,17 +31,9 @@ export function GroupList({ groups, units, filter, showsYard }: GroupListProps) 
 			{sortedGroups.map((group) => (
 				<li key={group.groupId}>
 					<SummaryCard
-						header={
-							<>
-								<p className="flex items-center gap-2 text-muted-foreground text-xs">
-									<Factory aria-hidden="true" className="size-3.5" />
-									{showsYard ? `${group.site} · ${group.hall}` : group.hall}
-								</p>
-								<h3 className="mt-1 font-semibold">{getOccupationLabel(group.occupation, t)}</h3>
-							</>
-						}
+						header={<GroupHeader group={group} showsYard={showsYard} />}
 						groupId={group.groupId}
-						name={getGroupName(group, t)}
+						name={getComparableGroupName(group, t)}
 						averages={group.averages}
 						units={units}
 						shownExposures={getShownExposures(filter)}
@@ -48,11 +44,51 @@ export function GroupList({ groups, units, filter, showsYard }: GroupListProps) 
 	);
 }
 
-function compareGroups(a: GroupSummary, b: GroupSummary, filter: ExposureFilter) {
+function GroupHeader({ group, showsYard }: { group: ComparableGroup; showsYard: boolean }) {
+	const { t } = useTranslation();
+	const Icon = group.hall === null ? MapPin : Factory;
+	const place = getPlace(group, showsYard, t);
+
+	// An occupation is named under its place, a whole place is named itself
+	return isPerOccupation(group.level) ? (
+		<>
+			<p className="flex items-center gap-2 text-muted-foreground text-xs">
+				<Icon aria-hidden="true" className="size-3.5" />
+				{place}
+			</p>
+			<h3 className="mt-1 font-semibold">{getOccupationLabel(group.occupation ?? "", t)}</h3>
+		</>
+	) : (
+		<>
+			<h3 className="flex items-center gap-2 font-semibold">
+				<Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+				{group.hall ?? group.site}
+			</h3>
+			<p className="mt-1 text-muted-foreground text-xs">{place}</p>
+		</>
+	);
+}
+
+function getPlace(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
+	switch (group.level) {
+		case "yard":
+			return t(($) => $.aggregatedExposure.compare.wholeYard);
+		case "hall":
+			return showsYard
+				? `${group.site} · ${t(($) => $.aggregatedExposure.wholeHall)}`
+				: t(($) => $.aggregatedExposure.wholeHall);
+		case "yardOccupation":
+			return `${group.site} · ${t(($) => $.aggregatedExposure.filters.allHalls)}`;
+		case "hallOccupation":
+			return showsYard ? `${group.site} · ${group.hall}` : (group.hall ?? group.site);
+	}
+}
+
+function compareGroups(a: ComparableGroup, b: ComparableGroup, filter: ExposureFilter) {
 	return (
 		compareByExposureFilter(a.averages, b.averages, filter) ||
 		a.site.localeCompare(b.site) ||
-		a.hall.localeCompare(b.hall) ||
-		a.occupation.localeCompare(b.occupation)
+		(a.hall ?? "").localeCompare(b.hall ?? "") ||
+		(a.occupation ?? "").localeCompare(b.occupation ?? "")
 	);
 }

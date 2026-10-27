@@ -341,6 +341,7 @@
       "fitter": "Industrirørlegger"
     },
     "exposureLabel": "Eksponeringstype",
+    "perOccupation": "Del opp etter yrkesgruppe",
     "pointsUnit": "poeng",
     "wholeHall": "Hele bygget",
     "metrics": {
@@ -359,16 +360,12 @@
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
     "overview": {
-      "heading": "Grupper",
-      "hallsHeading": "Bygg",
       "exposureFilter": {
         "label": "Vis eksponering",
         "all": "Alle"
       },
       "level": {
-        "label": "Visning",
-        "occupation": "Per yrkesgruppe",
-        "hall": "Hele bygget"
+        "label": "Visning"
       },
       "belowActionValue": "Under tiltaksverdi",
       "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
@@ -378,13 +375,8 @@
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
-      "noHalls": {
-        "title": "Ingen bygg å vise",
-        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
-      },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene.",
-      "hallsError": "Kunne ikke hente byggene."
+      "error": "Kunne ikke hente gruppene."
     },
     "group": {
       "back": "Tilbake til oversikten",
@@ -432,7 +424,6 @@
         "hall": "Bygg",
         "yardOccupation": "Yrker per verft",
         "hallOccupation": "Yrker per bygg",
-        "perOccupation": "Del opp etter yrkesgruppe",
         "current": "Sammenligner: {{level}}"
       },
       "picker": {
@@ -517,7 +508,7 @@
       "missing": "Når tall mangler"
     },
     "source": {
-      "groups": "Hver gruppe er én yrkesgruppe i ett bygg. Med «{{wholeHall}}» er gruppen alle som er målt i bygget.",
+      "groups": "Hver gruppe er alle som er målt i ett verft eller bygg. Med «{{perOccupation}}» er hver yrkesgruppe der en egen gruppe.",
       "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
     },
     "calculation": {

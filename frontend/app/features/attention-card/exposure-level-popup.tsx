@@ -5,7 +5,7 @@ import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { exposures } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 const getExposureBadges = (worker: UserWithStatusDto, popupStatus: DangerLevel) => {
 	const entries = exposures.map((exposure) => ({
@@ -30,6 +30,12 @@ const getExposureBadges = (worker: UserWithStatusDto, popupStatus: DangerLevel) 
 
 const WorkerRow = ({ worker, status }: { worker: UserWithStatusDto; status: DangerLevel }) => {
 	const { t } = useTranslation();
+	const [searchParams] = useSearchParams();
+
+	// Keeps the selected date and view, like the team table's links
+	const search = new URLSearchParams(searchParams);
+	search.set("userId", worker.id);
+	search.delete("exposure");
 
 	const exposureBadges = getExposureBadges(worker, status).map(({ exposure, data }) => (
 		<ExposureBadge key={exposure} exposure={exposure} dangerLevel={data?.dangerLevel ?? "safe"}>
@@ -40,7 +46,7 @@ const WorkerRow = ({ worker, status }: { worker: UserWithStatusDto; status: Dang
 	return (
 		<TableRow key={worker.id}>
 			<TableCell>
-				<Link to={`/foreman/?userId=${worker.id}`} className="flex w-full items-center justify-between">
+				<Link to={{ search: search.toString() }} className="flex w-full items-center justify-between">
 					<p>{worker.name}</p>
 					<div className="flex gap-2">{exposureBadges}</div>
 				</Link>

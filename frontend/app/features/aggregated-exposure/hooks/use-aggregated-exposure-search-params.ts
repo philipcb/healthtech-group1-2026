@@ -39,9 +39,7 @@ const searchParams = {
 };
 
 export function useAggregatedExposureSearchParams() {
-	// Not shallow, so React Router sees every change, and links built from its location, like going back from a group's
-	// details or opening them from the overview, keep the current selection
-	const [params, setParams] = useQueryStates(searchParams, { shallow: false });
+	const [params, setParams] = useQueryStates(searchParams);
 
 	const periodSelection: PeriodSelection = {
 		period: params.period,

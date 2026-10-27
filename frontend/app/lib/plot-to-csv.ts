@@ -1,52 +1,58 @@
-import { createElement } from "react";
+import { format } from "date-fns";
+import type { ExportColumn, ExportValue } from "./plot-export.ts";
 
 export type CsvValue = string | number | null | undefined;
 
 export type CsvColumn<Row> = {
 	header: string;
 	value: (row: Row) => CsvValue;
+	/** Rounds the column's numbers to at most this many decimals */
+	fractionDigits?: number;
 };
 
-const SEPERATOR = ";";
-const DECIMAL_MARK = ",";
+// The standard CSV format, which VS Code, Google Sheets and pandas split into columns. Excel only does when Windows' list
+// separator is ",".
+const SEPARATOR = ",";
 const LINE_BREAK = "\r\n";
 
+// Without it Excel reads the file as ANSI and garbles "µg/m³" and "æøå"
 const BYTE_ORDER_MARK = "\uFEFF";
-const FORMULA_PREFIXES = ["=", "++", "-", "@", "\t", "\r"];
-const INVALID_FILENAME_CHARACTERS = /[<>:"/\\|?*\p{Cc}]/gu;
+// Excel runs a cell that starts with one of these as a formula, so a text like "=HYPERLINK(...)" is escaped
+const FORMULA_PREFIXES = ["=", "+", "-", "@", "\t", "\r"];
 
-function toCell(value: CsvValue): string {
-	if (value == null || value === undefined) {
+function toCell(value: ExportValue, fractionDigits?: number): string {
+	if (value === null || value === undefined) {
 		return "";
 	}
+	if (value instanceof Date) {
+		return format(value, "yyyy-MM-dd");
+	}
 	if (typeof value === "number") {
-		return Number.isFinite(value) ? value.toString().replace(".", DECIMAL_MARK) : "";
+		if (!Number.isFinite(value)) {
+			return "";
+		}
+		return (fractionDigits === undefined ? value : Number(value.toFixed(fractionDigits))).toString();
 	}
 
 	const text = FORMULA_PREFIXES.some((prefix) => value.startsWith(prefix)) ? `'${value}` : value;
-	const needsQuotes = text.includes(SEPERATOR) || /["\r\n]/.test(text);
+	const needsQuotes = text.includes(SEPARATOR) || /["\r\n]/.test(text);
 
 	return needsQuotes ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-export function toCsv<Row>(columns: ReadonlyArray<CsvColumn<Row>>, rows: ReadonlyArray<Row>): string {
+export function toCsv<Row>(columns: ReadonlyArray<ExportColumn<Row>>, rows: ReadonlyArray<Row>): string {
 	const header = columns.map((column) => toCell(column.header));
-	const lines = rows.map((row) => columns.map((column) => toCell(column.value(row))));
+	const lines = rows.map((row) => columns.map((column) => toCell(column.value(row), column.fractionDigits)));
 
-	return [header, ...lines].map((cells) => cells.join(SEPERATOR)).join(LINE_BREAK);
+	return [header, ...lines].map((cells) => cells.join(SEPARATOR)).join(LINE_BREAK);
 }
 
-export function toCsvFilename(parts: ReadonlyArray<string | number | null | undefined>): string {
-	const name = parts
-		.flatMap((part) => (part === null || part === undefined ? [] : [part.toString()]))
-		.map((part) => part.replace(INVALID_FILENAME_CHARACTERS, "").trim().replace(/\s+/g, "-"))
-		.filter((part) => part !== "")
-		.join("_");
-	return `${name || "data"}.csv`;
-}
-
-export function downloadCsv(filename: string, csv: string) {
-	const blob = new Blob([BYTE_ORDER_MARK, csv], { type: "text/csv;charset=utf-8" });
+export function downloadCsv<Row>(
+	filename: string,
+	columns: ReadonlyArray<ExportColumn<Row>>,
+	rows: ReadonlyArray<Row>,
+) {
+	const blob = new Blob([BYTE_ORDER_MARK, toCsv(columns, rows)], { type: "text/csv;charset=utf-8" });
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement("a");
 

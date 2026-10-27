@@ -547,7 +547,15 @@
     "dialogTitle": "Dato og visning"
   },
   "chartDownload": {
-    "downloadCsv": "Last ned som CSV",
+    "download": "Last ned data",
+    "excel": {
+      "title": "Excel (.xlsx)",
+      "description": "Anbefalt for Excel"
+    },
+    "csv": {
+      "title": "CSV (.csv)",
+      "description": "Ren tekst, skilt med komma"
+    },
     "columns": {
       "date": "Dato"
     }

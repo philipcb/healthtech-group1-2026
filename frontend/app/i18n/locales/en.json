@@ -550,7 +550,15 @@
     "dialogTitle": "Date and view"
   },
   "chartDownload": {
-    "downloadCsv": "Download as CSV",
+    "download": "Download data",
+    "excel": {
+      "title": "Excel (.xlsx)",
+      "description": "Recommended for Excel"
+    },
+    "csv": {
+      "title": "CSV (.csv)",
+      "description": "Plain text, separated by commas"
+    },
     "columns": {
       "date": "Date"
     }

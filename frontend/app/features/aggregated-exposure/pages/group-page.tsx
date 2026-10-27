@@ -34,12 +34,14 @@ import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/gene
 import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
-import { type CsvColumn, toCsvFilename } from "@/lib/plot-to-csv.ts";
+import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 import { cn } from "@/lib/utils.ts";
-import { format } from "date-fns";
-import { ArrowLeft, Rows } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
+
+// The downloaded files' decimals. Dust gets two, since its values are often below 1 µg/m³.
+const DOWNLOAD_FRACTION_DIGITS: Record<AggregatedTrendOkDto["unit"], number> = { ug: 2, db: 1, points: 1 };
 
 export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
@@ -144,12 +146,13 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					}
 				/>
 			) : (
-				<GroupDetails 
-						trend={trendQuery.data}
-						group={group}
-						periodSelection={periodSelection}
-						exposure={exposure} 
-						dustField={dustField} />
+				<GroupDetails
+					trend={trendQuery.data}
+					group={group}
+					periodSelection={periodSelection}
+					exposure={exposure}
+					dustField={dustField}
+				/>
 			)}
 		</div>
 	);
@@ -209,21 +212,38 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
-	const csvFilename = toCsvFilename([
+	const exposureLabel = t(($) => $.exposures[exposure]);
+	// The labels of TWA and STEL fractions are the same, like "PM1", so the file says which one it is
+	const dustFieldName = exposure === "dust" ? `${dustFieldLabel} ${dustField.split("_")[1].toUpperCase()}` : null;
+	const downloadFilename = toDownloadFilename([
 		group.site,
 		group.hall,
 		"occupation" in group ? getOccupationLabel(group.occupation, t) : t(($) => $.aggregatedExposure.wholeHall),
-		t(($) => $.exposures[exposure]),
-		exposure === "dust" ? `${dustFieldLabel} ${dustField.split("_")[1].toUpperCase()}` : null,
+		exposureLabel,
+		dustFieldName,
 		toPeriodFilenamePart(periodSelection),
 	]);
-	const csvColumns: Array<CsvColumn<TrendPointDto>> = [
-		{ header: t(($) => $.chartDownload.columns.date), value: (point) => format(point.time, "yyyy-MM-dd") },
-		{ header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`, value: (point) => point.value },
-		...(timeOverUnavailableCaption === undefined ? [
-			{ header: `${kpiText.action} (%)`, value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction)},
-			{ header: `${kpiText.limit} (%)`, value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit)},
-		] : []),
+	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (point) => point.time },
+		{
+			header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`,
+			value: (point) => point.value,
+			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
+		},
+		...(timeOverUnavailableCaption === undefined
+			? [
+					{
+						header: `${kpiText.action} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction),
+						fractionDigits: 1,
+					},
+					{
+						header: `${kpiText.limit} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit),
+						fractionDigits: 1,
+					},
+				]
+			: []),
 	];
 
 	return (
@@ -255,7 +275,12 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
-					<ChartDownload filename={csvFilename} columns={csvColumns} rows={trend.points}>
+					<ChartDownload
+						filename={downloadFilename}
+						sheetName={dustFieldName === null ? exposureLabel : `${exposureLabel} ${dustFieldName}`}
+						columns={downloadColumns}
+						rows={trend.points}
+					>
 						<GroupTrendChart
 							points={trend.points}
 							unit={trend.unit}
@@ -309,7 +334,7 @@ function formatAverageShare(shares: Array<number | null>) {
 	return `${Math.round(average * 100)} %`;
 }
 
-// For the CSV file's percentage columns
+// A share like 0.125 as 12.5, for the downloaded files' percentage columns. The download code rounds it.
 function toPercent(share: number | null) {
-        return share === null ? null : Math.round(share * 1000) / 10;
+	return share === null ? null : share * 100;
 }

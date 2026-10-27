@@ -93,7 +93,7 @@ export function OverviewPage() {
 								? t(($) => $.aggregatedExposure.overview.hallsHeading)
 								: t(($) => $.aggregatedExposure.overview.heading)}
 						</h2>
-						<OverviewInfoDialog />
+						<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} />
 					</div>
 					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
 						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />

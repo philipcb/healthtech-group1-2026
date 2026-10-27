@@ -346,12 +346,12 @@
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
-      "vibration": "Gjennomsnittlige vibrasjonspoeng per verktøyøkt"
+      "vibration": "Gjennomsnittlige vibrasjonspoeng"
     },
     "metricsShort": {
       "dust": "PM1 TWA",
       "noise": "LAeq",
-      "vibration": "Poeng per verktøyøkt"
+      "vibration": "Poeng"
     },
     "privacyNotice": "Grupper med færre enn {{count}} registrerte personer vises ikke.",
     "unavailableValue": "Ikke tilgjengelig",
@@ -372,23 +372,6 @@
       },
       "belowActionValue": "Under tiltaksverdi",
       "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
-      "info": {
-        "trigger": "Oversiktsguide",
-        "title": "Oversiktsguide",
-        "description": "Hva gruppeverdiene betyr, og hva stolpene og fargene viser.",
-        "groupData": {
-          "title": "Gruppedata",
-          "aggregation": "Hver verdi bygger på gruppens timessnitt: for hver time, snittet av målingene til gruppemedlemmene som ble målt den timen. En dags verdi er snittet av timene, og oversikten viser snittet av dagene i perioden. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
-        },
-        "scale": {
-          "title": "Stolpene og fargene",
-          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien.",
-          "assessment": "Tiltaks- og grenseverdiene gjelder én persons daglige eksponering, mens verdiene som vises er gruppesnitt av timesverdier. Fargene er derfor bare veiledende og er ikke en faglig vurdering av gruppen."
-        },
-        "thresholds": {
-          "title": "Tiltaks- og grenseverdier"
-        }
-      },
       "noValue": "Ingen verdi",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
@@ -429,9 +412,6 @@
       "vibrationGranularity": {
         "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
       },
-      "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
-      "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
-      "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
       "suppressed": "Ingen verdi",
       "unavailable": {
         "noSuchGroup": "Gruppen finnes ikke."
@@ -496,7 +476,6 @@
         }
       },
       "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
-      "chartHint": "Daglige verdier. Hold pekeren over grafen, eller marker den og bruk piltastene, for å lese hver dag.",
       "notInChart": "Ikke i grafen: {{groups}}.",
       "reasons": {
         "noData": "ingen målinger",
@@ -525,6 +504,35 @@
         "bucketColumn": "Periode",
         "caption": "Snitt per uke eller måned for hver gruppe, {{period}}"
       }
+    }
+  },
+  "aboutFigures": {
+    "trigger": "Om tallene",
+    "title": "Om tallene",
+    "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
+    "headings": {
+      "source": "Kilde",
+      "calculation": "Beregning",
+      "comparedWith": "Sammenlignet med",
+      "missing": "Når tall mangler"
+    },
+    "source": {
+      "groups": "Hver gruppe er én yrkesgruppe i ett bygg. Med «{{wholeHall}}» er gruppen alle som er målt i bygget.",
+      "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
+    },
+    "calculation": {
+      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet på kortet er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "exposure": {
+        "dust": "{{dustField}} TWA i {{unit}}.",
+        "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
+        "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
+      }
+    },
+    "comparedWith": {
+      "unconfirmed": "Ikke bekreftet"
+    },
+    "missing": {
+      "suppressed": "Grupper med færre enn {{count}} registrerte personer finnes ikke i dataene, og vises derfor ikke."
     }
   },
   "managementDashboard": {

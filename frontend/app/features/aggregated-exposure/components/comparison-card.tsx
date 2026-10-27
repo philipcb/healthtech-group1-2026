@@ -151,27 +151,24 @@ export function ComparisonCard({ exposure, dustField, unit, entries, periodParam
 			)}
 
 			{series.length > 0 && (
-				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t px-4 py-2 text-muted-foreground text-xs">
-					<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-						<ThresholdLegend
-							items={[
-								{ dangerLevel: "warning", color: "var(--warning)" },
-								{ dangerLevel: "danger", color: "var(--danger)" },
-							]}
-							className="mt-0 gap-x-4"
-						/>
-						{hasHiddenDays && (
-							<span className="flex items-center gap-2">
-								<ThresholdLegendLine
-									label={t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
-									color="var(--muted-foreground)"
-									strokeDasharray="2 4"
-								/>
-								{t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
-							</span>
-						)}
-					</div>
-					<p>{t(($) => $.aggregatedExposure.compare.chartHint)}</p>
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-4 py-2 text-muted-foreground text-xs">
+					<ThresholdLegend
+						items={[
+							{ dangerLevel: "warning", color: "var(--warning)" },
+							{ dangerLevel: "danger", color: "var(--danger)" },
+						]}
+						className="mt-0 gap-x-4"
+					/>
+					{hasHiddenDays && (
+						<span className="flex items-center gap-2">
+							<ThresholdLegendLine
+								label={t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+								color="var(--muted-foreground)"
+								strokeDasharray="2 4"
+							/>
+							{t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+						</span>
+					)}
 				</div>
 			)}
 		</Card>

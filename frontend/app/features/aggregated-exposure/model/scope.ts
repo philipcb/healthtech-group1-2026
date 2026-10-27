@@ -23,7 +23,7 @@ export type DashboardScope = {
 	site: string | null;
 	title: string;
 	description?: string;
-	/** Whether the overview guide's introduction, its note on what the colors aren't and the site map's hint are shown */
+	/** Whether the site map's hint is shown */
 	showsGuidance: boolean;
 	overviewPath: string;
 	getGroupPath: (groupId: string) => string;

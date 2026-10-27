@@ -73,8 +73,8 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
  *   professional assessment.
  * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
  *   the measurement basis isn't the same and needs a professional assessment.
- * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average points per
- *   tool session, so the measurement basis isn't the same and needs a professional assessment.
+ * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average of its hourly
+ *   points, so the measurement basis isn't the same and needs a professional assessment.
  */
 export const thresholdByExposure: Record<Exposure, Threshold> = {
 	dust: getThreshold("dust", "pm1_twa"),

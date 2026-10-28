@@ -61,7 +61,7 @@ export function ChartDownload<Row>({
 							<Button
 								type="button"
 								variant="ghost"
-								size="icon-sm"
+								size="lg"
 								aria-label={label}
 								disabled={rows.length === 0}
 								onFocus={(event) => {
@@ -69,9 +69,9 @@ export function ChartDownload<Row>({
                                                                                 event.preventDefault()
                                                                         }
                                                                 }}
-								className="absolute top-0 right-0 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+								className="absolute top-5 right-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
 							>
-								<Download aria-hidden="true" />
+								<Download aria-hidden="true" className="size-7" />
 							</Button>
 						</DropdownMenuTrigger>
 					</TooltipTrigger>

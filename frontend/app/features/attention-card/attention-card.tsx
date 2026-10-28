@@ -1,10 +1,10 @@
 import { ExposureRiskCard } from "@/components/exposure-level-card.tsx";
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { AtRiskPopup } from "@/features/attention-card/exposure-level-popup.tsx";
+import { AtRiskPopup, type PopupStatus } from "@/features/attention-card/exposure-level-popup.tsx";
+import { hasNoActiveSensors } from "@/features/attention-card/inactive-sensors.ts";
 import { StatCard } from "@/features/attention-card/stat-card.tsx";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
-import type { DangerLevel } from "@/lib/danger-levels.ts";
 import { parseAsExposure } from "@/lib/exposures.ts";
 import type { ThresholdSummary } from "@/lib/threshold-summary.ts";
 import { parseAsString, useQueryState } from "nuqs";
@@ -28,10 +28,12 @@ export const AttentionCard = ({
 	const [exposure] = useQueryState("exposure", parseAsExposure);
 	const [, setSelectedUserId] = useQueryState("userId", parseAsString);
 
-	const [selectedStatus, setSelectedStatus] = useState<DangerLevel | null>(null);
-	const [popupStatus, setPopupStatus] = useState<DangerLevel | null>(null);
+	const [selectedStatus, setSelectedStatus] = useState<PopupStatus | null>(null);
+	const [popupStatus, setPopupStatus] = useState<PopupStatus | null>(null);
 
-	const openForStatus = (status: DangerLevel) => {
+	const noActiveSensorsCount = subordinates.filter(hasNoActiveSensors).length;
+
+	const openForStatus = (status: PopupStatus) => {
 		setPopupStatus(status);
 		setSelectedStatus(status);
 	};
@@ -120,8 +122,20 @@ export const AttentionCard = ({
 									label={t(($) => $.foremanDashboard.overview.statCards.safe.label)}
 									dangerLevel="safe"
 									onClick={() => openForStatus("safe")}
-									value={thresholdSummary[selectedExposureKey].safe}
+									// The backend counts users without any data as safe
+									value={Math.max(
+										0,
+										thresholdSummary[selectedExposureKey].safe - noActiveSensorsCount,
+									)}
 								/>
+
+								{noActiveSensorsCount > 0 && (
+									<StatCard
+										label={t(($) => $.foremanDashboard.overview.statCards.noActiveSensors.label)}
+										onClick={() => openForStatus("inactive")}
+										value={noActiveSensorsCount}
+									/>
+								)}
 							</>
 						)}
 
@@ -151,7 +165,7 @@ export const AttentionCard = ({
 				</CardContent>
 			</div>
 
-			{(popupStatus === "warning" || popupStatus === "danger" || popupStatus === "safe") && (
+			{popupStatus !== null && (
 				<AtRiskPopup
 					open={selectedStatus !== null}
 					onClose={closePopup}

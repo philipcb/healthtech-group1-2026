@@ -20,9 +20,20 @@ export type PieChartCardProps = {
 	label: string;
 	data: Record<DangerLevel, number>;
 	exposureType: Exposure;
+	/** Users without data for this exposure in the period. Not part of the pie chart */
+	inactive: number;
+	onInactiveClick: () => void;
 };
 
-export const PieChartCard = ({ className, to, label, data, exposureType }: PieChartCardProps) => {
+export const PieChartCard = ({
+	className,
+	to,
+	label,
+	data,
+	exposureType,
+	inactive,
+	onInactiveClick,
+}: PieChartCardProps) => {
 	const { t } = useTranslation();
 
 	const hasData = DangerLevelSchema.options.some((level) => data[level] && data[level] > 0);
@@ -70,6 +81,23 @@ export const PieChartCard = ({ className, to, label, data, exposureType }: PieCh
 									</div>
 								</div>
 							))}
+						<button
+							type="button"
+							className="cursor-pointer text-left"
+							onClick={(event) => {
+								// The card is a link, so don't navigate when opening the list
+								event.preventDefault();
+								event.stopPropagation();
+								onInactiveClick();
+							}}
+						>
+							<div className="border-muted-foreground border-l-4 pl-1.5">
+								<p className="pb-1 text-neutral-500 text-xs dark:text-zinc-400">
+									{t(($) => $.foremanDashboard.overview.statCards.inactive.label)}
+								</p>
+								<p className="text-2xl text-muted-foreground tabular-nums leading-6">{inactive}</p>
+							</div>
+						</button>
 					</div>
 					<div className="min-h-0">
 						<UserStatusPieChart data={data} hoverable={true} />

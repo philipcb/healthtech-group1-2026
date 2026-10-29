@@ -71,7 +71,7 @@ export function ChartDownload<Row>({
                                                                 }}
 								className="absolute top-5 right-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
 							>
-								<Download aria-hidden="true" className="size-7" />
+								<Download aria-hidden="true" className="size-6" />
 							</Button>
 						</DropdownMenuTrigger>
 					</TooltipTrigger>

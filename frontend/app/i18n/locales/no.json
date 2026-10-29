@@ -193,6 +193,7 @@
     "inDanger": "Arbeidere over grenseverdi",
     "warning": "Arbeidere over tiltaksverdi",
     "safe": "Arbeidere innenfor trygge grenseverdier",
+    "inactive": "Arbeidere uten aktive sensorer",
     "noInDanger": "Ingen arbeidere i denne kategorien"
   },
   "interactiveCard": {
@@ -208,7 +209,8 @@
         "email": "E-post",
         "status": "Status",
         "jobDescription": "Stillingsbeskrivelse",
-        "action": "Handling"
+        "action": "Handling",
+        "noData": "Ingen data"
       },
       "action": {
         "removeSubordinate": "Fjern fra teamet",
@@ -242,6 +244,12 @@
         "safe": {
           "label": "Innenfor trygge grenseverdier",
           "noOperators": "Ingen innenfor trygge grenseverdier"
+        },
+        "inactive": {
+          "label": "Inaktive sensorer"
+        },
+        "noActiveSensors": {
+          "label": "Ingen aktive sensorer"
         }
       },
       "selectUserPlaceholder": "Velg et teammedlem",

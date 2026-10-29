@@ -7,6 +7,7 @@ export default [
 		layout("routes/management/management-layout.tsx", [
 			route("/management/", "routes/management/overview.tsx"),
 			route("/management/map", "routes/management/map.tsx"),
+			route("/management/compare", "routes/management/compare.tsx"),
 			route("/management/groups/:groupId", "routes/management/group.tsx"),
 		]),
 		route("/foreman/", "routes/foreman/overview.tsx"),

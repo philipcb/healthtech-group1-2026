@@ -7,9 +7,6 @@ import { formatExposureValue } from "@/lib/utils.ts";
 /** Groups with fewer people than this are never returned by the backend */
 export const MIN_GROUP_SIZE = 5;
 
-export const groupLevels = ["occupation", "hall"] as const;
-export type GroupLevel = (typeof groupLevels)[number];
-
 export const exposureFilters = ["all", ...exposures] as const;
 export type ExposureFilter = (typeof exposureFilters)[number];
 
@@ -28,36 +25,32 @@ export function isExposureUnavailable(exposure: Exposure): exposure is Unavailab
 	return (unavailableExposures as ReadonlyArray<Exposure>).includes(exposure);
 }
 
+export function hideUnavailableAverages(averages: SampleDto["averages"]): SampleDto["averages"] {
+	return { ...averages, ...Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null])) };
+}
+
 /** One occupation in one hall */
 export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string; occupation: string };
-
-/** A whole hall, every occupation in it */
-export type HallSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: string };
 
 /**
  * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
  * the occupational health service its own, management every site. Where each value comes from in the aggregate
  * database:
- * - dust: average PM1 TWA, `DustAverage.AveragePm1Twa`.
+ * - dust: the average TWA of the `dustField` asked for, PM1 by default, such as `DustAverage.AveragePm1Twa`.
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
  * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's
  *   hours, and the trend shows each day's last hour.
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
-	const hiddenAverages = Object.fromEntries(unavailableExposures.map((exposure) => [exposure, null]));
-	const summaries = groups.map((group) => ({ ...group, averages: { ...group.averages, ...hiddenAverages } }));
+	const summaries = groups.map((group) => ({ ...group, averages: hideUnavailableAverages(group.averages) }));
 
 	return {
 		units,
-		// The backend also sends one occupation across the site and the whole site, which have no hall and aren't shown
+		// The backend also sends whole sites, whole halls and one occupation across a site, which the site map doesn't show
 		groups: summaries.flatMap(
 			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
 				hall === null || occupation === null ? [] : [{ groupId, site, hall, occupation, averages }],
-		),
-		halls: summaries.flatMap(
-			({ groupId, site, hall, occupation, averages }): Array<HallSummary> =>
-				hall === null || occupation !== null ? [] : [{ groupId, site, hall, averages }],
 		),
 	};
 }
@@ -70,8 +63,8 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
  *   professional assessment.
  * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
  *   the measurement basis isn't the same and needs a professional assessment.
- * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average points per
- *   tool session, so the measurement basis isn't the same and needs a professional assessment.
+ * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average of its hourly
+ *   points, so the measurement basis isn't the same and needs a professional assessment.
  */
 export const thresholdByExposure: Record<Exposure, Threshold> = {
 	dust: getThreshold("dust", "pm1_twa"),
@@ -93,10 +86,6 @@ export function getGroupUnitLabel(unit: ExposureUnit, t: TranslateFn) {
 
 export function formatGroupValue(value: number, unit: ExposureUnit, t: TranslateFn) {
 	return `${formatGroupNumber(value, unit)} ${getGroupUnitLabel(unit, t)}`;
-}
-
-export function getGroupName({ hall, occupation }: { hall: string; occupation: string }, t: TranslateFn) {
-	return `${hall} · ${getOccupationLabel(occupation, t)}`;
 }
 
 function compareAverages(averageA: number | null, averageB: number | null) {
@@ -123,10 +112,6 @@ export function compareByExposureFilter(
 	return filter === "all" ? 0 : compareAverages(averagesA[filter], averagesB[filter]);
 }
 
-export function getHallName(hall: string, t: TranslateFn) {
-	return `${hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
-}
-
 export function getOccupationLabel(occupation: string, t: TranslateFn) {
 	switch (occupation) {
 		case "Welder":
@@ -140,4 +125,42 @@ export function getOccupationLabel(occupation: string, t: TranslateFn) {
 		default:
 			return occupation;
 	}
+}
+
+export const NO_VALUE = "—";
+
+export function formatAverageShare(shares: Array<number | null>) {
+	const present = shares.filter((share) => share !== null);
+	if (present.length === 0) {
+		return NO_VALUE;
+	}
+
+	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
+	return `${Math.round(average * 100)} %`;
+}
+
+export function getMetricLabel(exposure: Exposure, dustField: DustField, t: TranslateFn) {
+	return exposure === "dust"
+		? t(($) => $.aggregatedExposure.metrics.dust, { dustField: t(($) => $.exposures.dustFields[dustField]) })
+		: t(($) => $.aggregatedExposure.metrics[exposure]);
+}
+
+export function getShareLabels(exposure: Exposure, t: TranslateFn) {
+	return exposure === "vibration"
+		? {
+				action: t(($) => $.aggregatedExposure.group.daysOverAction),
+				limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
+			}
+		: {
+				action: t(($) => $.aggregatedExposure.group.timeOverAction),
+				limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+			};
+}
+
+export function hasTimeOverThresholds(exposure: Exposure, dustField: DustField) {
+	return exposure !== "dust" || dustField === "pm1_twa";
+}
+
+export function getThresholdNumberFormat(language: string) {
+	return new Intl.NumberFormat(language === "no" ? "nb-NO" : "en-US");
 }

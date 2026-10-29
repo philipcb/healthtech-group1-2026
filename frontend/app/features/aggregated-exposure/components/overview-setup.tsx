@@ -1,3 +1,4 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
@@ -17,6 +18,8 @@ export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: Over
 	const {
 		exposureFilter,
 		setExposureFilter,
+		dustField,
+		setDustField,
 		setYard,
 		setHall,
 		level,
@@ -26,6 +29,7 @@ export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: Over
 	} = useAggregatedExposureSearchParams();
 	// A building can only be picked when the groups are buildings
 	const showsHallFilter = getComparePlace(level) === "hall";
+	const showsDust = exposureFilter === "all" || exposureFilter === "dust";
 
 	return (
 		<FilterPanel
@@ -33,7 +37,20 @@ export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: Over
 			periodSelection={periodSelection}
 			onReset={resetOverviewFilters}
 			exposure={(labelId) => (
-				<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} labelledBy={labelId} />
+				<div className="flex flex-wrap items-center gap-2">
+					<ExposureFilterToggle
+						value={exposureFilter}
+						onValueChange={setExposureFilter}
+						labelledBy={labelId}
+					/>
+					{showsDust && (
+						<DustFieldTabs
+							value={dustField}
+							onValueChange={setDustField}
+							ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
+						/>
+					)}
+				</div>
 			)}
 			yards={yards}
 			selectedYard={selectedYard}

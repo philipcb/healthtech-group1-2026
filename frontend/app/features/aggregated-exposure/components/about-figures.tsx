@@ -2,10 +2,10 @@ import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table.tsx";
 import { InfoDialog, InfoSection } from "@/features/aggregated-exposure/components/info-dialog.tsx";
 import {
+	getGroupThreshold,
 	getGroupUnitLabel,
 	getThresholdNumberFormat,
 	MIN_GROUP_SIZE,
-	thresholdByExposure,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { type DustField, defaultDustField, type Exposure, exposureUnitByExposure } from "@/lib/exposures.ts";
 import type { ReactNode } from "react";
@@ -88,7 +88,13 @@ export function ExposureCalculations({
 }
 
 /** The action and limit values the bars and colors compare each exposure's value to */
-export function ThresholdComparison({ exposures }: { exposures: ReadonlyArray<Exposure> }) {
+export function ThresholdComparison({
+	exposures,
+	dustField = defaultDustField,
+}: {
+	exposures: ReadonlyArray<Exposure>;
+	dustField?: DustField;
+}) {
 	const { t, i18n } = useTranslation();
 	const numberFormat = getThresholdNumberFormat(i18n.language);
 	const formatThreshold = (value: number, exposure: Exposure) =>
@@ -116,7 +122,7 @@ export function ThresholdComparison({ exposures }: { exposures: ReadonlyArray<Ex
 				</TableHeader>
 				<TableBody>
 					{exposures.map((exposure) => {
-						const { warning, danger } = thresholdByExposure[exposure];
+						const { warning, danger } = getGroupThreshold(exposure, dustField);
 
 						return (
 							<TableRow key={exposure}>

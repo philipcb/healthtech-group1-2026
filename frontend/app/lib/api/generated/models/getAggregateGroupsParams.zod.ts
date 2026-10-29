@@ -9,7 +9,8 @@ import * as zod from 'zod';
 export const GetAggregateGroupsParams = zod.object({
   "period": zod.enum(['month', 'year']),
   "year": zod.int(),
-  "month": zod.int().optional()
+  "month": zod.int().optional(),
+  "dustField": zod.string().optional()
 })
 
 export type GetAggregateGroupsParams = zod.output<typeof GetAggregateGroupsParams>;

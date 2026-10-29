@@ -36,7 +36,7 @@ export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: stri
  * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
  * the occupational health service its own, management every site. Where each value comes from in the aggregate
  * database:
- * - dust: average PM1 TWA, `DustAverage.AveragePm1Twa`.
+ * - dust: the average TWA of the `dustField` asked for, PM1 by default, such as `DustAverage.AveragePm1Twa`.
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
  * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's

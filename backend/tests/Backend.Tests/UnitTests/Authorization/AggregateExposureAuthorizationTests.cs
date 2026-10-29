@@ -53,7 +53,13 @@ public class AggregateExposureAuthorizationTests : IClassFixture<WebApplicationF
 
 		var aggregateService = new Mock<IAggregateExposureDataService>();
 		aggregateService
-			.Setup(s => s.GetOverviewAggregateDataAsync(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+			.Setup(s =>
+				s.GetOverviewAggregateDataAsync(
+					It.IsAny<DateTime>(),
+					It.IsAny<DateTime>(),
+					It.IsAny<string?>()
+				)
+			)
 			.ReturnsAsync(new List<SampleDto>());
 		aggregateService
 			.Setup(s =>

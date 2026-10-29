@@ -350,7 +350,7 @@
       "vibration": "Gjennomsnittlige vibrasjonspoeng"
     },
     "metricsShort": {
-      "dust": "PM1 TWA",
+      "dust": "{{dustField}} TWA",
       "noise": "LAeq",
       "vibration": "Poeng"
     },
@@ -370,6 +370,8 @@
       "belowActionValue": "Under tiltaksverdi",
       "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
       "noValue": "Ingen verdi",
+      "groupColumn": "Gruppe",
+      "sortedByStatus": "Sortert etter verste status først",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
         "title": "Ingen grupper å vise",

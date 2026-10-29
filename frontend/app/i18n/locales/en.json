@@ -353,7 +353,7 @@
       "vibration": "Average vibration points"
     },
     "metricsShort": {
-      "dust": "PM1 TWA",
+      "dust": "{{dustField}} TWA",
       "noise": "LAeq",
       "vibration": "Points"
     },
@@ -373,6 +373,8 @@
       "belowActionValue": "Below action value",
       "aggregationNotice": "Values are group averages. Individual exposure may vary.",
       "noValue": "No value",
+      "groupColumn": "Group",
+      "sortedByStatus": "Sorted by worst status first",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
         "title": "No groups to display",

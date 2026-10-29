@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
-import { GroupList } from "@/features/aggregated-exposure/components/group-list.tsx";
+import { GroupTable } from "@/features/aggregated-exposure/components/group-table.tsx";
 import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
 import { OverviewSetup } from "@/features/aggregated-exposure/components/overview-setup.tsx";
 import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
@@ -23,6 +23,7 @@ import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
+import type { DustField } from "@/lib/exposures.ts";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,8 +33,8 @@ export function OverviewPage() {
 	const headingId = useId();
 	const scope = useDashboardScope();
 	const { YardFilter } = scope;
-	const { exposureFilter, yard, hall, level, periodSelection } = useAggregatedExposureSearchParams();
-	const params = toPeriodParams(periodSelection);
+	const { exposureFilter, dustField, yard, hall, level, periodSelection } = useAggregatedExposureSearchParams();
+	const params = { ...toPeriodParams(periodSelection), dustField };
 	const { data } = useGetAggregateGroups(params, {
 		query: { select: toComparableGroups },
 	});
@@ -76,7 +77,7 @@ export function OverviewPage() {
 						<h2 id={headingId} className="font-semibold">
 							{t(($) => $.aggregatedExposure.compare.level[level])}
 						</h2>
-						<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} />
+						<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
 					</div>
 					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
 						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />
@@ -85,7 +86,12 @@ export function OverviewPage() {
 							{t(($) => $.aggregatedExposure.privacyNotice, { count: MIN_GROUP_SIZE })}
 						</span>
 					</p>
-					<DangerLevelBadgeLegend />
+					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1">
+						<DangerLevelBadgeLegend />
+						<p className="text-muted-foreground text-xs">
+							{t(($) => $.aggregatedExposure.overview.sortedByStatus)}
+						</p>
+					</div>
 				</div>
 
 				<GroupResults
@@ -94,7 +100,9 @@ export function OverviewPage() {
 					yard={selectedYard}
 					hall={selectedHall}
 					filter={exposureFilter}
+					dustField={dustField}
 					showsYard={scope.site === null}
+					labelledBy={headingId}
 				/>
 			</section>
 		</div>
@@ -107,14 +115,16 @@ type ResultsProps = {
 	yard: string | null;
 	hall: string | null;
 	filter: ExposureFilter;
+	dustField: DustField;
 	showsYard: boolean;
+	labelledBy: string;
 };
 
 function isSelected(group: ComparableGroup, level: CompareLevel, yard: string | null, hall: string | null) {
 	return group.level === level && (yard === null || group.site === yard) && (hall === null || group.hall === hall);
 }
 
-function GroupResults({ params, level, yard, hall, filter, showsYard }: ResultsProps) {
+function GroupResults({ params, level, yard, hall, filter, dustField, showsYard, labelledBy }: ResultsProps) {
 	const { t } = useTranslation();
 	const { data, isPending, isError } = useGetAggregateGroups(params, {
 		query: { select: toComparableGroups },
@@ -135,7 +145,14 @@ function GroupResults({ params, level, yard, hall, filter, showsYard }: ResultsP
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
 		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
 	) : (
-		<GroupList groups={groups} units={data.units} filter={filter} showsYard={showsYard} />
+		<GroupTable
+			groups={groups}
+			units={data.units}
+			filter={filter}
+			dustField={dustField}
+			showsYard={showsYard}
+			labelledBy={labelledBy}
+		/>
 	);
 }
 

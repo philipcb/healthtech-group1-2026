@@ -62,33 +62,34 @@ public class AggregateExposureDataController(
 	public async Task<ActionResult<AggregatedOverviewResponseDto>> GetAggregateOverview(
 		[FromQuery] string period,
 		[FromQuery] int year,
-		[FromQuery] int? month
+		[FromQuery] int? month,
+		[FromQuery] string? dustField = null
 	)
 	{
-		(DateTime startTime, DateTime endTime) timeLimits;
 		try
 		{
-			timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+
+			return new AggregatedOverviewResponseDto
+			{
+				Units = new MeasurementUnitsDto()
+				{
+					Dust = "ug",
+					Noise = "db",
+					Vibration = "points",
+				},
+				Groups =
+					(List<SampleDto>)
+						await _aggregateExposureDataService.GetOverviewAggregateDataAsync(
+							timeLimits.startTime,
+							timeLimits.endTime,
+							dustField
+						),
+			};
 		}
 		catch (ArgumentException ex)
 		{
 			return BadRequest($"The request is invalid: {ex.Message}");
 		}
-
-		return new AggregatedOverviewResponseDto
-		{
-			Units = new MeasurementUnitsDto()
-			{
-				Dust = "ug",
-				Noise = "db",
-				Vibration = "points",
-			},
-			Groups =
-				(List<SampleDto>)
-					await _aggregateExposureDataService.GetOverviewAggregateDataAsync(
-						timeLimits.startTime,
-						timeLimits.endTime
-					),
-		};
 	}
 }

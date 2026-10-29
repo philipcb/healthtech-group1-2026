@@ -1,27 +1,29 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
-import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
-import { GroupLevelToggle } from "@/features/aggregated-exposure/components/group-level-toggle.tsx";
-import { GroupList } from "@/features/aggregated-exposure/components/group-list.tsx";
-import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
-import { HallList } from "@/features/aggregated-exposure/components/hall-list.tsx";
-import { OverviewFilterDialog } from "@/features/aggregated-exposure/components/overview-filter-dialog.tsx";
+import { GroupTable } from "@/features/aggregated-exposure/components/group-table.tsx";
 import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
+import { OverviewSetup } from "@/features/aggregated-exposure/components/overview-setup.tsx";
 import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { DangerLevelBadgeLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
+	type ComparableGroup,
+	type CompareLevel,
+	getComparePlace,
+	toComparableGroups,
+} from "@/features/aggregated-exposure/model/compare.ts";
+import {
 	type ExposureFilter,
 	getShownExposures,
 	isExposureUnavailable,
 	MIN_GROUP_SIZE,
-	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
+import type { DustField } from "@/lib/exposures.ts";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,35 +33,35 @@ export function OverviewPage() {
 	const headingId = useId();
 	const scope = useDashboardScope();
 	const { YardFilter } = scope;
-	const { exposureFilter, setExposureFilter, yard, setYard, hall, setHall, level, setLevel, periodSelection } =
-		useAggregatedExposureSearchParams();
-	const params = toPeriodParams(periodSelection);
+	const { exposureFilter, dustField, yard, hall, level, periodSelection } = useAggregatedExposureSearchParams();
+	const params = { ...toPeriodParams(periodSelection), dustField };
 	const { data } = useGetAggregateGroups(params, {
-		query: { select: toGroupSummaries },
+		query: { select: toComparableGroups },
 	});
 
 	const yards = getYards(data?.groups);
 	const selectedYard = YardFilter && yard !== null && yards.includes(yard) ? yard : null;
 	const halls = [
 		...new Set(
-			[...(data?.groups ?? []), ...(data?.halls ?? [])]
-				.filter((group) => selectedYard === null || group.site === selectedYard)
-				.map((group) => group.hall),
+			(data?.groups ?? []).flatMap((group) =>
+				group.hall !== null && (selectedYard === null || group.site === selectedYard) ? [group.hall] : [],
+			),
 		),
 	];
-	const selectedHall = hall !== null && halls.includes(hall) ? hall : null;
+	// A building only narrows the groups when they're buildings
+	const selectedHall = getComparePlace(level) === "hall" && hall !== null && halls.includes(hall) ? hall : null;
 
 	return (
-		<div className="flex w-full min-w-0 flex-col gap-5 sm:gap-7">
-			<header className="flex flex-col gap-4 border-b pb-5 md:flex-row md:items-end md:justify-between">
-				<div className="space-y-1 sm:space-y-2">
-					<p className="flex items-center gap-2 text-muted-foreground text-sm">
+		<div className="flex w-full min-w-0 flex-col gap-4">
+			<header className="flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+					<h1 className="font-medium text-2xl">{scope.title}</h1>
+					<p className="flex items-center gap-1.5 text-muted-foreground text-sm">
 						<MapPin aria-hidden="true" className="size-4" />
 						{selectedYard ?? scope.site ?? t(($) => $.aggregatedExposure.filters.allYards)}
 					</p>
-					<h1 className="font-medium text-2xl">{scope.title}</h1>
 					{scope.description && (
-						<p className="max-w-prose text-muted-foreground text-sm">{scope.description}</p>
+						<p className="max-w-prose basis-full text-muted-foreground text-sm">{scope.description}</p>
 					)}
 				</div>
 				<div className="hidden sm:block">
@@ -67,33 +69,15 @@ export function OverviewPage() {
 				</div>
 			</header>
 
-			<OverviewFilterDialog
-				yards={yards}
-				selectedYard={selectedYard}
-				halls={halls}
-				selectedHall={selectedHall}
-				className="sm:hidden"
-			/>
-			<div className="hidden flex-wrap items-end justify-between gap-4 sm:flex">
-				<div className="flex flex-wrap items-end gap-4">
-					<GroupLevelToggle value={level} onValueChange={setLevel} />
-					<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} />
-				</div>
-				<div className="flex flex-wrap items-end gap-4">
-					{YardFilter && <YardFilter yards={yards} value={yard} onValueChange={setYard} />}
-					<HallFilter halls={halls} value={hall} onValueChange={setHall} />
-				</div>
-			</div>
+			<OverviewSetup yards={yards} selectedYard={selectedYard} halls={halls} selectedHall={selectedHall} />
 
 			<section aria-labelledby={headingId} className="flex flex-col gap-3">
 				<div className="space-y-1">
 					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
 						<h2 id={headingId} className="font-semibold">
-							{level === "hall"
-								? t(($) => $.aggregatedExposure.overview.hallsHeading)
-								: t(($) => $.aggregatedExposure.overview.heading)}
+							{t(($) => $.aggregatedExposure.compare.level[level])}
 						</h2>
-						<OverviewInfoDialog />
+						<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
 					</div>
 					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
 						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />
@@ -102,26 +86,24 @@ export function OverviewPage() {
 							{t(($) => $.aggregatedExposure.privacyNotice, { count: MIN_GROUP_SIZE })}
 						</span>
 					</p>
-					<DangerLevelBadgeLegend />
+					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1">
+						<DangerLevelBadgeLegend />
+						<p className="text-muted-foreground text-xs">
+							{t(($) => $.aggregatedExposure.overview.sortedByStatus)}
+						</p>
+					</div>
 				</div>
 
-				{level === "hall" ? (
-					<HallResults
-						params={params}
-						yard={selectedYard}
-						hall={selectedHall}
-						filter={exposureFilter}
-						showsYard={scope.site === null}
-					/>
-				) : (
-					<GroupResults
-						params={params}
-						yard={selectedYard}
-						hall={selectedHall}
-						filter={exposureFilter}
-						showsYard={scope.site === null}
-					/>
-				)}
+				<GroupResults
+					params={params}
+					level={level}
+					yard={selectedYard}
+					hall={selectedHall}
+					filter={exposureFilter}
+					dustField={dustField}
+					showsYard={scope.site === null}
+					labelledBy={headingId}
+				/>
 			</section>
 		</div>
 	);
@@ -129,22 +111,25 @@ export function OverviewPage() {
 
 type ResultsProps = {
 	params: GetAggregateGroupsParams;
+	level: CompareLevel;
 	yard: string | null;
 	hall: string | null;
 	filter: ExposureFilter;
+	dustField: DustField;
 	showsYard: boolean;
+	labelledBy: string;
 };
 
-function isSelected(summary: { site: string; hall: string }, yard: string | null, hall: string | null) {
-	return (yard === null || summary.site === yard) && (hall === null || summary.hall === hall);
+function isSelected(group: ComparableGroup, level: CompareLevel, yard: string | null, hall: string | null) {
+	return group.level === level && (yard === null || group.site === yard) && (hall === null || group.hall === hall);
 }
 
-function GroupResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
+function GroupResults({ params, level, yard, hall, filter, dustField, showsYard, labelledBy }: ResultsProps) {
 	const { t } = useTranslation();
 	const { data, isPending, isError } = useGetAggregateGroups(params, {
-		query: { select: toGroupSummaries },
+		query: { select: toComparableGroups },
 	});
-	const groups = data?.groups.filter((group) => isSelected(group, yard, hall)) ?? [];
+	const groups = data?.groups.filter((group) => isSelected(group, level, yard, hall)) ?? [];
 
 	return isPending ? (
 		<Skeleton className="h-64 w-full" />
@@ -160,32 +145,14 @@ function GroupResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
 		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
 	) : (
-		<GroupList groups={groups} units={data.units} filter={filter} showsYard={showsYard} />
-	);
-}
-
-function HallResults({ params, yard, hall, filter, showsYard }: ResultsProps) {
-	const { t } = useTranslation();
-	const { data, isPending, isError } = useGetAggregateGroups(params, {
-		query: { select: toGroupSummaries },
-	});
-	const halls = data?.halls.filter((summary) => isSelected(summary, yard, hall)) ?? [];
-
-	return isPending ? (
-		<Skeleton className="h-64 w-full" />
-	) : isError ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.hallsError)} />
-	) : halls.length === 0 ? (
-		<EmptyState
-			title={t(($) => $.aggregatedExposure.overview.noHalls.title)}
-			description={t(($) => $.aggregatedExposure.overview.noHalls.description)}
+		<GroupTable
+			groups={groups}
+			units={data.units}
+			filter={filter}
+			dustField={dustField}
+			showsYard={showsYard}
+			labelledBy={labelledBy}
 		/>
-	) : filter !== "all" && isExposureUnavailable(filter) ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[filter])} />
-	) : halls.every((summary) => hasNoValues(summary.averages, filter)) ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
-	) : (
-		<HallList halls={halls} units={data.units} filter={filter} showsYard={showsYard} />
 	);
 }
 

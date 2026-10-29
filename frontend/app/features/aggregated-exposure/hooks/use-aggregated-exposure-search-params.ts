@@ -1,9 +1,5 @@
-import {
-	type ExposureFilter,
-	exposureFilters,
-	type GroupLevel,
-	groupLevels,
-} from "@/features/aggregated-exposure/model/groups.ts";
+import { type CompareLevel, compareLevels } from "@/features/aggregated-exposure/model/compare.ts";
+import { type ExposureFilter, exposureFilters } from "@/features/aggregated-exposure/model/groups.ts";
 import {
 	aggregatedExposurePeriods,
 	getSelectableYears,
@@ -35,7 +31,8 @@ const searchParams = {
 	year: parseAsNumberLiteral(getSelectableYears()).withDefault(today.getFullYear()),
 	yard: parseAsString,
 	hall: parseAsString,
-	level: parseAsStringLiteral(groupLevels).withDefault("occupation"),
+	/** What the overview's groups are, picked like the compare page's groups */
+	level: parseAsStringLiteral(compareLevels).withDefault("hallOccupation"),
 };
 
 export function useAggregatedExposureSearchParams() {
@@ -62,7 +59,7 @@ export function useAggregatedExposureSearchParams() {
 		hall: params.hall,
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,
-		setLevel: (level: GroupLevel) => void setParams({ level }),
+		setLevel: (level: CompareLevel) => void setParams({ level }),
 		resetOverviewFilters: () =>
 			void setParams({
 				period: null,

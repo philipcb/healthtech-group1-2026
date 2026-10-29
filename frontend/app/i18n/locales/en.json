@@ -85,7 +85,8 @@
     "exportPdfDescription": "Select time period for PDF export",
     "theme": "Theme",
     "language": "Language",
-    "map": "Map"
+    "map": "Map",
+    "compare": "Compare"
   },
   "live": {
     "timeRange": {
@@ -343,17 +344,18 @@
       "fitter": "Fitter"
     },
     "exposureLabel": "Exposure type",
+    "perOccupation": "Split by occupation",
     "pointsUnit": "points",
     "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
-      "vibration": "Average vibration points per tool session"
+      "vibration": "Average vibration points"
     },
     "metricsShort": {
-      "dust": "PM1 TWA",
+      "dust": "{{dustField}} TWA",
       "noise": "LAeq",
-      "vibration": "Points per tool session"
+      "vibration": "Points"
     },
     "privacyNotice": "Groups with fewer than {{count}} registered people aren't shown.",
     "unavailableValue": "Not available",
@@ -361,49 +363,25 @@
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "heading": "Groups",
-      "hallsHeading": "Buildings",
       "exposureFilter": {
         "label": "Show exposure",
         "all": "All"
       },
       "level": {
-        "label": "View",
-        "occupation": "Per occupation",
-        "hall": "Whole building"
+        "label": "View"
       },
       "belowActionValue": "Below action value",
       "aggregationNotice": "Values are group averages. Individual exposure may vary.",
-      "info": {
-        "trigger": "Overview guide",
-        "title": "Overview guide",
-        "description": "What the group values mean, and what the bars and colors show.",
-        "groupData": {
-          "title": "Group data",
-          "aggregation": "Each value is based on the group's hourly averages: for every hour, the average of the measurements of the group members who were measured that hour. A day's value is the average of its hours, and the overview shows the average of the period's days. Individual exposure may vary, so the group average may not represent any individual."
-        },
-        "scale": {
-          "title": "Bars and colors",
-          "colors": "Green is the range below the action value, yellow from the action value to the limit value, and red above the limit value. The thin lines mark the action and limit values. The dots next to the value say the same without color: one dot below the action value, two above it, and three above the limit value.",
-          "assessment": "The action and limit values apply to one person's daily exposure, while the values shown are group averages of hourly values, so the colors are only indicative and aren't a professional assessment of the group."
-        },
-        "thresholds": {
-          "title": "Action and limit values"
-        }
-      },
       "noValue": "No value",
+      "groupColumn": "Group",
+      "sortedByStatus": "Sorted by worst status first",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
         "title": "No groups to display",
         "description": "Groups with too few people are not shown, to protect privacy."
       },
-      "noHalls": {
-        "title": "No buildings to display",
-        "description": "Buildings with too few people are not shown, to protect privacy."
-      },
       "noData": "No data for the selected period.",
-      "error": "Could not load the groups.",
-      "hallsError": "Could not load the buildings."
+      "error": "Could not load the groups."
     },
     "group": {
       "back": "Back to the overview",
@@ -431,9 +409,6 @@
       "vibrationGranularity": {
         "day": "One point per day with measurements: the average of the workers' total points for the day"
       },
-      "gapsNotice": "The line runs straight between the days that are shown. Days without measurements, and days hidden because too few people contributed, have no value.",
-      "colorsNotice": "The line colors show where the group average lies compared to a single person's action value ({{action}}) and limit value ({{limit}}) for the selected exposure and, for dust, the selected fraction. They aren't a professional assessment of the group.",
-      "comparisonNotice": "A group average can't be compared directly to individual action and limit values. A low average doesn't mean that nobody in the group had high exposure.",
       "suppressed": "No value",
       "unavailable": {
         "noSuchGroup": "The group doesn't exist."
@@ -443,6 +418,117 @@
       "allSuppressed": "No values for the selected period.",
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
+    },
+    "compare": {
+      "title": "Compare groups",
+      "wholeYard": "Whole yard",
+      "periodNotStarted": "{{period}} hasn't started yet.",
+      "level": {
+        "label": "Compare",
+        "yard": "Yards",
+        "hall": "Buildings",
+        "yardOccupation": "Occupations per yard",
+        "hallOccupation": "Occupations per building",
+        "current": "Comparing: {{level}}"
+      },
+      "picker": {
+        "label": "Groups",
+        "add": "Add group",
+        "search": "Search groups",
+        "addAll": "Add all {{count}}",
+        "remove": "Remove {{group}}",
+        "clear": "Clear all",
+        "cleared": "Removed all groups.",
+        "undo": "Undo",
+        "addOneMore": "Add at least one more group to compare.",
+        "addAtLeastTwo": "Add at least two groups to compare.",
+        "noneLeft": "Every group at this level is already added.",
+        "noMatches": "No groups match “{{query}}”.",
+        "count": "{{count}} groups",
+        "count_one": "{{count}} group",
+        "count_other": "{{count}} groups",
+        "loading": "Loading groups…",
+        "hiddenFromLink": "{{count}} groups from the link can't be shown at this level.",
+        "hiddenFromLink_one": "{{count}} group from the link can't be shown at this level.",
+        "hiddenFromLink_other": "{{count}} groups from the link can't be shown at this level."
+      },
+      "intro": {
+        "title": "What you can compare",
+        "description": "Choose the kind of group under “Compare”, then add at least two groups with “Add group”. Every group is shown for the same exposure and period.",
+        "yard": {
+          "title": "Yards",
+          "description": "Everyone measured at a yard counts as one group. Shows which yard has the highest exposure overall, and whether one stands out from the others.",
+          "how": "Compare: Yards"
+        },
+        "hall": {
+          "title": "Buildings",
+          "description": "Everyone in one building against everyone in another. Shows where at the yard the exposure is highest, and which buildings to follow up.",
+          "how": "Compare: Buildings"
+        },
+        "occupation": {
+          "title": "Occupation groups",
+          "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed.",
+          "how": "Compare: Yards or Buildings, and tick “Split by occupation”"
+        }
+      },
+      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
+      "notInChart": "Not in the chart: {{groups}}.",
+      "reasons": {
+        "noData": "no measurements",
+        "notEnoughData": "not enough data",
+        "unavailable": "not available"
+      },
+      "notEnoughData": "Not enough data",
+      "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
+      "noData": "No measurements",
+      "noDataDescription": "The group has no measurements in {{period}}.",
+      "unavailableDescription": "This exposure can't be calculated for the group yet.",
+      "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
+      "noGroupHasData": "None of the groups have measurements in {{period}}.",
+      "retry": "Try again",
+      "tableCaption": "{{exposure}} per group, {{period}}",
+      "group": "Group",
+      "setupLabel": "What to compare",
+      "hiddenDays": "{{count}} days hidden for privacy",
+      "hiddenDays_one": "{{count}} day hidden for privacy",
+      "hiddenDays_other": "{{count}} days hidden for privacy",
+      "hiddenDaysLegend": "Days hidden for privacy",
+      "values": {
+        "week": "Values per week",
+        "month": "Values per month",
+        "weekLabel": "Week {{week}}",
+        "bucketColumn": "Period",
+        "caption": "Average per week or month for each group, {{period}}"
+      }
+    }
+  },
+  "aboutFigures": {
+    "trigger": "About the figures",
+    "title": "About the figures",
+    "description": "Where the figures on this page come from, and how they're calculated.",
+    "headings": {
+      "source": "Source",
+      "calculation": "Calculation",
+      "comparedWith": "Compared with",
+      "missing": "When figures are missing"
+    },
+    "source": {
+      "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
+      "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
+    },
+    "calculation": {
+      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure on the card is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "exposure": {
+        "dust": "{{dustField}} TWA in {{unit}}.",
+        "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
+        "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
+      }
+    },
+    "comparedWith": {
+      "unconfirmed": "Not confirmed"
+    },
+    "missing": {
+      "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."
     }
   },
   "managementDashboard": {

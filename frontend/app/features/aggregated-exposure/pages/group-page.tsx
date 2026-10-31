@@ -1,4 +1,5 @@
 import { ChartDownload } from "@/components/chart-download.tsx";
+import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
@@ -47,8 +48,6 @@ import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 
-// The downloaded files' decimals. Dust gets two, since its values are often below 1 µg/m³.
-const DOWNLOAD_FRACTION_DIGITS: Record<AggregatedTrendOkDto["unit"], number> = { ug: 2, db: 1, points: 1 };
 
 export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
@@ -229,15 +228,12 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
-	const exposureLabel = t(($) => $.exposures[exposure]);
-	// The labels of TWA and STEL fractions are the same, like "PM1", so the file says which one it is
-	const dustFieldName = exposure === "dust" ? `${dustFieldLabel} ${dustField.split("_")[1].toUpperCase()}` : null;
+	const exposureName = getDownloadExposureName(exposure, dustField, t)
 	const downloadFilename = toDownloadFilename([
 		group.site,
 		group.hall,
 		getWholeGroupPart(group, t),
-		exposureLabel,
-		dustFieldName,
+		exposureName, 
 		toPeriodFilenamePart(periodSelection),
 	]);
 	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
@@ -294,7 +290,7 @@ function GroupDetails({
 				) : (
 					<ChartDownload
 						filename={downloadFilename}
-						sheetName={dustFieldName === null ? exposureLabel : `${exposureLabel} ${dustFieldName}`}
+						sheetName={exposureName}
 						columns={downloadColumns}
 						rows={trend.points}
 					>

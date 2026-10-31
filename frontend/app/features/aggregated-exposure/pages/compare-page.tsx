@@ -8,7 +8,7 @@ import { PeriodPicker } from "@/features/aggregated-exposure/components/period-p
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useComparison } from "@/features/aggregated-exposure/hooks/use-comparison.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { getPeriodLabel, getPeriodState, toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import { getPeriodLabel, getPeriodState, toPeriodFilenamePart, toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { MapPin, RotateCw } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
@@ -73,6 +73,7 @@ export function ComparePage() {
 						entries: comparison.entries,
 						periodParams: toPeriodParams(periodSelection),
 						periodLabel: getPeriodLabel(periodSelection, t),
+						periodFilenamePart: toPeriodFilenamePart(periodSelection)
 					}
 				}
 			/>

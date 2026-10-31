@@ -634,6 +634,7 @@
   },
   "chartDownload": {
     "download": "Last ned data",
+    "comparison": "Sammenligning",
     "excel": {
       "title": "Excel (.xlsx)",
       "description": "Anbefalt for Excel"

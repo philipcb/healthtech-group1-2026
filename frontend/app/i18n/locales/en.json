@@ -637,6 +637,7 @@
   },
   "chartDownload": {
     "download": "Download data",
+    "comparison": "Comparison",
     "excel": {
       "title": "Excel (.xlsx)",
       "description": "Recommended for Excel"

@@ -43,25 +43,6 @@ public class AggregateExposureDataService(
 	private readonly AggregateDbContext _context = context;
 	private readonly SignedInUserContext _signedInUserContext = signedInUserContext;
 
-	// public async Task<SampleDTOs?> getSampleFromQualifiers(string? locationId, string? job)
-	// {
-	// 	var sample = await _context.Samples.Where(s => s.Site.Equals(_signedInUserContext.User.Location.Site)
-	// 	&& ((locationId == null && s.LocationQualifier == null) || (s.LocationQualifier != null && s.LocationQualifier.Equals(locationId)))
-	// 	&& ((job == null && s.JobQualifier == null) || (s.JobQualifier != null && s.JobQualifier.Equals(job)))).FirstOrDefaultAsync();
-
-	// 	if (sample != null)
-	// 	{
-	// 		return new SampleDTOs
-	// 		{
-	// 			Id = sample.Id,
-	// 			SampleCount = sample.SampleCount,
-	// 			Site = sample.Site,
-	// 			LocationQualifier = sample.LocationQualifier,
-	// 			JobQualifier = sample.JobQualifier
-	// 		};
-	// 	}
-	// 	return null;
-	// }
 
 	// The groups the signed-in user may see. The occupational health service only sees its own site, management every
 	// site. Any other role sees nothing, even if an endpoint lets it through.
@@ -108,36 +89,32 @@ public class AggregateExposureDataService(
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
-					{
-						Time = g.Key,
-						Value = g.AsQueryable().Average(dustValue),
-					})
-					.Average(d => d.Value);
+					.Select(g => g.AsQueryable().Average(dustValue))
+					.Average();
 			case ExposureType.Noise:
 				return _context
 					.NoiseAverages.Where(d =>
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
-					{
-						Time = g.Key,
-						Value = g.Average(d => d.AverageLaeq),
-					})
-					.Average(d => d.Value);
+					.Select(g =>  g.Average(d => d.AverageLaeq))
+					.Average();
 			case ExposureType.Vibration:
+				//For vibration, we have to take the last average hour
 				return _context
-					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					.VibrationAverages
+					.Where(d =>
+						d.Sample.Id == sampleId &&
+						startTime <= d.Time &&
+						d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
-					{
-						Time = g.Key,
-						Value = g.Average(d => d.AverageExposure),
-					})
-					.Average(d => d.Value);
+					.Select(g => g
+						.OrderByDescending(d => d.Time)
+						.Select(d => d.AverageExposure)
+						.First()
+					)
+					.Average();
 			default:
 				return null;
 		}

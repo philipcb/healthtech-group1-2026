@@ -131,15 +131,48 @@ public class DataFetchHandler(AppDbContext _context)
 	{
 		var rawDataList = new List<TimedData>();
 		var rateList = new List<AboveThresholdRate>();
+		
+		
 		foreach (var user in users)
 		{
-			var userData = await fetchUserAggregatedDataAsync(
+			List<ExposureDataDto> userData = (await fetchUserAggregatedDataAsync(
 				user.Id,
 				startTime,
 				endTime,
 				exposureType,
 				field
-			);
+			)).ToList();
+
+
+			if (exposureType == ExposureType.Vibration)
+			{
+				var dataByTime = userData.ToDictionary(d => d.Time);
+
+				ExposureDataDto? previous = null;
+
+				for (
+					var time = startTime;
+					time < endTime;
+					time = time.AddHours(1)
+				)
+				{
+					if (dataByTime.TryGetValue(time, out var current))
+					{
+						previous = current;
+					}
+					else if (previous != null)
+					{						
+						userData.Add(new ExposureDataDto
+						{
+							Time = time,
+							Value = previous.Value,
+							PeakValue = previous.PeakValue,
+							DangerLevel = previous.DangerLevel,
+							PeakDangerLevel = previous.PeakDangerLevel
+						});
+					}
+				}
+			}
 			
 			var dataFlat = userData.Select(d => new TimedData
 				{

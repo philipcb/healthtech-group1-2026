@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Backend;
+using Backend.DTOs;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -70,6 +71,7 @@ public class DataFiller
 	public static AveragePer8HourShift ToShiftAverage(
 		Guid sampleId,
 		ExposureType exposureType,
+		string? field,
 		AboveThresholdRate rate
 	) =>
 		new()
@@ -80,6 +82,7 @@ public class DataFiller
 			AverageTimeInSafeLimits = 1 - rate.WarningRate - rate.DangerRate,
 			AverageTimeOverLimit = rate.DangerRate,
 			AverageTimeOverAction = rate.WarningRate + rate.DangerRate,
+			Field = field ?? "not specified"
 		};
 
 	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
@@ -116,7 +119,7 @@ public class DataFiller
 			.ToList();
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-			.Select(d => ToShiftAverage(sampleId, ExposureType.Vibration, d))
+			.Select(d => ToShiftAverage(sampleId, ExposureType.Vibration, null, d))
 			.ToList();
 
 		await _insertHandler.addDataRange(finalAggregatedData);
@@ -153,7 +156,7 @@ public class DataFiller
 			.ToList();
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-			.Select(d => ToShiftAverage(sampleId, ExposureType.Noise, d))
+			.Select(d => ToShiftAverage(sampleId, ExposureType.Noise, null, d))
 			.ToList();
 
 		await _insertHandler.addDataRange(finalAggregatedData);
@@ -171,110 +174,74 @@ public class DataFiller
 		DateTime startTime = await restartLastStoredDay(sampleId, ExposureType.Dust, lowestTime);
 		Console.WriteLine($"Update Dust averages from {startTime} to {endTime}");
 
-		var (dataListPm1Stel, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm1_stel
-		);
-		var Pm1StelDico = dataListPm1Stel.ToDictionary(g => g.Time, g => g.AvgValue);
-
-		var (dataListPm25Stel, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm25_stel
-		);
-		var Pm25StelDico = dataListPm25Stel.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm4Stel, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm4_stel
-		);
-		var Pm4StelDico = dataListPm4Stel.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm10Stel, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm10_stel
-		);
-		var Pm10StelDico = dataListPm10Stel.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm1Twa, aboveThresholdDataListPm1Twa) =
-			await _fetchHandler.fetchAggregatedDataOverSampleUsers(
+		var dustDataDico = new Dictionary<Field, Dictionary<DateTime, double>>();
+		var aboveThresholdDataDico = new Dictionary<Field, Dictionary<DateTime, AveragePer8HourShift>>();
+		
+		foreach (Field field in Enum.GetValues<Field>())
+		{
+			var (dataList, thresholds) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
 				users,
 				startTime,
 				endTime,
 				ExposureType.Dust,
-				Backend.DTOs.Field.Pm1_twa
+				field
 			);
-		var Pm1TwaDico = dataListPm1Twa.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm25Twa, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm25_twa
-		);
-		var Pm25TwaDico = dataListPm25Twa.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm4Twa, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm4_twa
-		);
-		var Pm4TwaDico = dataListPm4Twa.ToDictionary(g => g.Time, g => g.AvgValue);
-		var (dataListPm10Twa, _) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-			users,
-			startTime,
-			endTime,
-			ExposureType.Dust,
-			Backend.DTOs.Field.Pm10_twa
-		);
-		var Pm10TwaDico = dataListPm10Twa.ToDictionary(g => g.Time, g => g.AvgValue);
+			dustDataDico[field] = dataList.ToDictionary(g => g.Time, g => g.AvgValue);
+			aboveThresholdDataDico[field] = thresholds.ToDictionary(g => g.Time, g => ToShiftAverage(sampleId, ExposureType.Dust, field.ToString(), g));
+		}
 
-		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataListPm1Twa
-			.Select(d => ToShiftAverage(sampleId, ExposureType.Dust, d))
+
+		var hourlyDates = new List<DateTime>();
+		foreach (var element in dustDataDico)
+		{
+			hourlyDates = hourlyDates.Union(element.Value.Keys).ToList();
+		}
+		hourlyDates = hourlyDates
+			.Distinct()
+			.OrderBy(x => x)
 			.ToList();
 
-		var dates = dataListPm1Stel
-			.Select(d => d.Time)
-			.Union(dataListPm25Stel.Select(d => d.Time))
-			.Union(dataListPm4Stel.Select(d => d.Time))
-			.Union(dataListPm10Stel.Select(d => d.Time))
-			.Union(dataListPm1Twa.Select(d => d.Time))
-			.Union(dataListPm25Twa.Select(d => d.Time))
-			.Union(dataListPm4Twa.Select(d => d.Time))
-			.Union(dataListPm10Twa.Select(d => d.Time))
+		var dailyDates = new List<DateTime>();
+		foreach (var element in aboveThresholdDataDico)
+		{
+			dailyDates = dailyDates.Union(element.Value.Keys).ToList();
+		}
+		dailyDates = dailyDates
 			.Distinct()
 			.OrderBy(x => x)
 			.ToList();
 
 		List<DustAverage> finalAggregatedData = new List<DustAverage>();
-		foreach (DateTime date in dates)
+		List<AveragePer8HourShift> finalAggregatedDataRate = new List<AveragePer8HourShift>();
+		foreach (DateTime date in hourlyDates)
 		{
+			
 			finalAggregatedData.Add(
 				new DustAverage
 				{
 					SampleId = sampleId,
 					Time = date,
-					AveragePm1Stel = Pm1StelDico[date],
-					AveragePm25Stel = Pm25StelDico[date],
-					AveragePm4Stel = Pm4StelDico[date],
-					AveragePm10Stel = Pm10StelDico[date],
-					AveragePm1Twa = Pm1TwaDico[date],
-					AveragePm25Twa = Pm25TwaDico[date],
-					AveragePm4Twa = Pm4TwaDico[date],
-					AveragePm10Twa = Pm10TwaDico[date],
+					AveragePm1Stel = dustDataDico[Field.Pm1_stel][date],
+					AveragePm25Stel = dustDataDico[Field.Pm25_stel][date],
+					AveragePm4Stel = dustDataDico[Field.Pm4_stel][date],
+					AveragePm10Stel = dustDataDico[Field.Pm10_stel][date],
+					AveragePm1Twa = dustDataDico[Field.Pm1_twa][date],
+					AveragePm25Twa = dustDataDico[Field.Pm25_twa][date],
+					AveragePm4Twa = dustDataDico[Field.Pm4_twa][date],
+					AveragePm10Twa = dustDataDico[Field.Pm10_twa][date],
 				}
 			);
-		}
 
+
+		}
+		foreach (DateTime date in dailyDates)
+		{
+			foreach (Field field in Enum.GetValues<Field>())
+			{
+				finalAggregatedDataRate.Add(aboveThresholdDataDico[field][date]);
+			}
+		}
+		
 		await _insertHandler.addDataRange(finalAggregatedData);
 		await _insertHandler.addDataRange(finalAggregatedDataRate);
 		Console.WriteLine("Done");

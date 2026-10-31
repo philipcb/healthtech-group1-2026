@@ -71,6 +71,7 @@ public class AggregateDbContext : DbContext
 			{
 				average.SampleId,
 				average.ExposureType,
+				average.Field,
 				average.Time,
 			});
 			entity.Property(average => average.ExposureType).HasConversion<string>();

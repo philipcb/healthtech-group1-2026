@@ -5,7 +5,12 @@ import { TrendTooltip } from "@/features/aggregated-exposure/components/trend-to
 import { useTrendAxes } from "@/features/aggregated-exposure/hooks/use-trend-axes.tsx";
 import { formatGroupValue } from "@/features/aggregated-exposure/model/groups.ts";
 import { getSeriesColor, type SeriesSlot } from "@/features/aggregated-exposure/model/series.ts";
-import { fillTrendGaps, getTrendYDomain, toTrendDay } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import {
+	fillTrendGaps,
+	getComparisonChartMarginRight,
+	getTrendYDomain,
+	toTrendDay,
+} from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
@@ -15,7 +20,6 @@ import { CartesianGrid, ComposedChart, Line, usePlotArea, XAxis, YAxis } from "r
 
 const MAX_POINTS_WITH_EVERY_MARKER = 31;
 const SPARSE_MARKER_COUNT = 12;
-const END_LABEL_WIDTH = 160;
 const END_LABEL_LINE_HEIGHT = 14;
 const END_LABEL_GAP = 6;
 const END_LABEL_MAX_LINE_LENGTH = 22;
@@ -88,7 +92,7 @@ export function ComparisonTrendChart({ series, unit, threshold, className }: Com
 				<ComposedChart
 					accessibilityLayer={true}
 					data={rows}
-					margin={{ left: 12, right: isMobile ? 12 : END_LABEL_WIDTH, top: 8 }}
+					margin={{ left: 12, right: getComparisonChartMarginRight(isMobile), top: 8 }}
 				>
 					<CartesianGrid vertical={false} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
 					<XAxis {...xAxisProps} />

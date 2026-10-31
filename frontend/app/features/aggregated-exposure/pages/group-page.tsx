@@ -1,5 +1,4 @@
 import { ChartDownload } from "@/components/chart-download.tsx";
-import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
@@ -19,6 +18,7 @@ import {
 	isPerOccupation,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
+import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import {
 	formatAverageShare,
 	formatGroupValue,
@@ -47,7 +47,6 @@ import { cn } from "@/lib/utils.ts";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-
 
 export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
@@ -228,12 +227,12 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
-	const exposureName = getDownloadExposureName(exposure, dustField, t)
+	const exposureName = getDownloadExposureName(exposure, dustField, t);
 	const downloadFilename = toDownloadFilename([
 		group.site,
 		group.hall,
 		getWholeGroupPart(group, t),
-		exposureName, 
+		exposureName,
 		toPeriodFilenamePart(periodSelection),
 	]);
 	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [

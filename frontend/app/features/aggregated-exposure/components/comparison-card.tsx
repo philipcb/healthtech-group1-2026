@@ -1,3 +1,4 @@
+import { ChartDownload } from "@/components/chart-download.tsx";
 import { ThresholdLegend, ThresholdLegendLine } from "@/components/exposure-line-chart/threshold-legend.tsx";
 import { Card, CardLabelHeader } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -9,29 +10,34 @@ import {
 import { ComparisonValues } from "@/features/aggregated-exposure/components/comparison-values.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { isMissing, useComparisonTrends } from "@/features/aggregated-exposure/hooks/use-comparison-trends.ts";
-import { type ComparableGroup, type ComparedEntry, getComparableGroupName } from "@/features/aggregated-exposure/model/compare.ts";
+import {
+	type ComparableGroup,
+	type ComparedEntry,
+	getComparableGroupName,
+} from "@/features/aggregated-exposure/model/compare.ts";
+import {
+	type ComparisonDownloadRow,
+	DOWNLOAD_FRACTION_DIGITS,
+	getDownloadExposureName,
+	toComparisonDownloadRows,
+} from "@/features/aggregated-exposure/model/download.ts";
 import {
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getMetricLabel,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import {
-       type ComparisonDownloadRow,
-       DOWNLOAD_FRACTION_DIGITS,
-       getDownloadExposureName,
-       toComparisonDownloadRows,
-} from "@/features/aggregated-exposure/model/download.ts";
 import type { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import { getComparisonChartMarginRight } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { useIsMobile } from "@/hooks/use-mobile.ts";
+import type { TranslateFn } from "@/i18n/config.ts";
 import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 import { cn } from "@/lib/utils.ts";
 import { Info } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import type { TranslateFn } from "@/i18n/config.ts";
-import { ChartDownload } from "@/components/chart-download.tsx";
-import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 
 const CHART_HEIGHT_CLASSNAME = "h-64 lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)]";
 
@@ -45,9 +51,18 @@ type ComparisonCardProps = {
 	periodFilenamePart: string;
 };
 
-export function ComparisonCard({ exposure, dustField, unit, entries, periodParams, periodLabel, periodFilenamePart }: ComparisonCardProps) {
+export function ComparisonCard({
+	exposure,
+	dustField,
+	unit,
+	entries,
+	periodParams,
+	periodLabel,
+	periodFilenamePart,
+}: ComparisonCardProps) {
 	const { t } = useTranslation();
 	const headingId = useId();
+	const isMobile = useIsMobile();
 	const isUnavailable = isExposureUnavailable(exposure);
 	const results = useComparisonTrends({ entries, exposure, dustField, periodParams });
 
@@ -68,27 +83,27 @@ export function ComparisonCard({ exposure, dustField, unit, entries, periodParam
 	const hasHiddenDays = series.some(({ points }) => points.some((point) => point.value === null));
 	const isPending = results.some((result) => result.status === "pending");
 	const hasErrors = results.some((result) => result.status === "error");
-        const yards = [...new Set(entries.map(({ group }) => group.site))];
-        const groupBySlot = new Map(entries.map(({ group, slot }) => [slot, group]));
-        const exposureName = getDownloadExposureName(exposure, dustField, t);
-        const downloadFilename = toDownloadFilename([
-                ...yards,
-                t(($) => $.chartDownload.comparison),
-                exposureName,
-                periodFilenamePart,
-        ]);
-        const downloadColumns: Array<ExportColumn<ComparisonDownloadRow>> = [
-                { header: t(($) => $.chartDownload.columns.date), value: (row) => row.day },
-                ...series.map(({ slot, name }) => {
-                        const group = groupBySlot.get(slot);
+	const yards = [...new Set(entries.map(({ group }) => group.site))];
+	const groupBySlot = new Map(entries.map(({ group, slot }) => [slot, group]));
+	const exposureName = getDownloadExposureName(exposure, dustField, t);
+	const downloadFilename = toDownloadFilename([
+		...yards,
+		t(($) => $.chartDownload.comparison),
+		exposureName,
+		periodFilenamePart,
+	]);
+	const downloadColumns: Array<ExportColumn<ComparisonDownloadRow>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (row) => row.day },
+		...series.map(({ slot, name }) => {
+			const group = groupBySlot.get(slot);
 
-                        return {
-                                header: `${group ? getDownloadGroupName(group, yards.length > 1, t) : name} (${unitLabel})`,
-                                value: (row: ComparisonDownloadRow) => row.values.get(slot),
-                                fractionDigits: DOWNLOAD_FRACTION_DIGITS[unit],
-                        };
-                }),
-        ];
+			return {
+				header: `${group ? getDownloadGroupName(group, yards.length > 1, t) : name} (${unitLabel})`,
+				value: (row: ComparisonDownloadRow) => row.values.get(slot),
+				fractionDigits: DOWNLOAD_FRACTION_DIGITS[unit],
+			};
+		}),
+	];
 
 	return (
 		<Card
@@ -125,13 +140,14 @@ export function ComparisonCard({ exposure, dustField, unit, entries, periodParam
 									sheetName={exposureName}
 									columns={downloadColumns}
 									rows={toComparisonDownloadRows(series)}
-									>
-										<ComparisonTrendChart
-											series={series}
-											unit={unit}
-											threshold={threshold}
-											className={CHART_HEIGHT_CLASSNAME}
-										/>
+									plotMarginRight={getComparisonChartMarginRight(isMobile)}
+								>
+									<ComparisonTrendChart
+										series={series}
+										unit={unit}
+										threshold={threshold}
+										className={CHART_HEIGHT_CLASSNAME}
+									/>
 								</ChartDownload>
 							</figure>
 						) : hasErrors ? (
@@ -214,6 +230,6 @@ export function ComparisonCard({ exposure, dustField, unit, entries, periodParam
 }
 
 function getDownloadGroupName(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
-        const name = getComparableGroupName(group, t);
-        return showsYard && group.hall !== null ? `${group.site} · ${name}` : name;
+	const name = getComparableGroupName(group, t);
+	return showsYard && group.hall !== null ? `${group.site} · ${name}` : name;
 }

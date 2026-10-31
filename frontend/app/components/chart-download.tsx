@@ -16,6 +16,10 @@ import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { type PropsWithChildren, type ReactNode, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+const DEFAULT_PLOT_MARGIN_RIGHT = 12;
+// How far inside the plot's corner the button sits
+const BUTTON_INSET = 8;
+
 type ChartDownloadProps<Row> = PropsWithChildren<{
 	/** From `toDownloadFilename`, without an extension */
 	filename: string;
@@ -24,6 +28,8 @@ type ChartDownloadProps<Row> = PropsWithChildren<{
 	columns: ReadonlyArray<ExportColumn<Row>>;
 	rows: ReadonlyArray<Row>;
 	className?: string;
+	/** The chart's right margin in pixels, so the button sits in the plot's corner. */
+	plotMarginRight?: number;
 }>;
 
 /**
@@ -37,6 +43,7 @@ export function ChartDownload<Row>({
 	columns,
 	rows,
 	className,
+	plotMarginRight = DEFAULT_PLOT_MARGIN_RIGHT,
 	children,
 }: ChartDownloadProps<Row>) {
 	const { t, i18n } = useTranslation();
@@ -69,7 +76,8 @@ export function ChartDownload<Row>({
 										event.preventDefault();
 									}
 								}}
-								className="absolute top-5 right-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+								style={{ right: plotMarginRight + BUTTON_INSET }}
+								className="absolute top-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
 							>
 								<Download aria-hidden="true" className="size-6" />
 							</Button>

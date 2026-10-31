@@ -7,6 +7,13 @@ import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay, startOf
 
 const Y_AXIS_PADDING = 0.1;
 const MAX_DAYS_WITH_DAY_TICKS = 62;
+// The room the comparison chart keeps right of its plot, for the groups' names at the end of their lines
+const END_LABEL_WIDTH = 160;
+
+/** The comparison chart's right margin. Phones have no room for the names, so they're listed under the chart instead. */
+export function getComparisonChartMarginRight(isMobile: boolean) {
+	return isMobile ? 12 : END_LABEL_WIDTH;
+}
 
 // The backend sends the start of each UTC day, which is the same day in the app's time zone
 export function toTrendDay(time: Date) {

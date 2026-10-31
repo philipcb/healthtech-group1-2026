@@ -21,15 +21,13 @@ import {
 import {
 	formatAverageShare,
 	formatGroupValue,
-	type GroupSummary,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getMetricLabel,
+	getOccupationLabel,
 	getShareLabels,
 	getThresholdNumberFormat,
 	hasTimeOverThresholds,
-	getOccupationLabel,
-	type HallSummary,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import {
@@ -191,7 +189,7 @@ function GroupDetails({
 	dustField,
 }: {
 	trend: AggregatedTrendOkDto;
-	group: GroupSummary | HallSummary;
+	group: ComparableGroup;
 	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
@@ -237,7 +235,7 @@ function GroupDetails({
 	const downloadFilename = toDownloadFilename([
 		group.site,
 		group.hall,
-		"occupation" in group ? getOccupationLabel(group.occupation, t) : t(($) => $.aggregatedExposure.wholeHall),
+		getWholeGroupPart(group, t),
 		exposureLabel,
 		dustFieldName,
 		toPeriodFilenamePart(periodSelection),
@@ -344,4 +342,12 @@ function GroupDetails({
 // A share like 0.125 as 12.5, for the downloaded files' percentage columns. The download code rounds it.
 function toPercent(share: number | null) {
 	return share === null ? null : share * 100;
+}
+
+function getWholeGroupPart({ hall, occupation }: ComparableGroup, t: TranslateFn) {
+	if (occupation !== null) {
+		return getOccupationLabel(occupation, t);
+	}
+
+	return hall === null ? t(($) => $.aggregatedExposure.compare.wholeYard) : t(($) => $.aggregatedExposure.wholeHall);
 }

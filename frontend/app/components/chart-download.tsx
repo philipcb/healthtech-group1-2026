@@ -41,7 +41,7 @@ export function ChartDownload<Row>({
 }: ChartDownloadProps<Row>) {
 	const { t, i18n } = useTranslation();
 	const label = t(($) => $.chartDownload.download);
-        const isReturningFocus = useRef(false);
+	const isReturningFocus = useRef(false);
 
 	const downloadExcel = () => {
 		downloadXlsx(filename, columns, rows, {
@@ -65,10 +65,10 @@ export function ChartDownload<Row>({
 								aria-label={label}
 								disabled={rows.length === 0}
 								onFocus={(event) => {
-                                                                        if (isReturningFocus.current) {
-                                                                                event.preventDefault()
-                                                                        }
-                                                                }}
+									if (isReturningFocus.current) {
+										event.preventDefault();
+									}
+								}}
 								className="absolute top-5 right-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
 							>
 								<Download aria-hidden="true" className="size-6" />
@@ -77,14 +77,16 @@ export function ChartDownload<Row>({
 					</TooltipTrigger>
 					<TooltipContent side="left">{label}</TooltipContent>
 				</Tooltip>
-				<DropdownMenuContent align="end" 
-                                        className="w-64"
-                                        onCloseAutoFocus={() => {
-                                                isReturningFocus.current = true;
-                                                queueMicrotask(() => {
-                                                        isReturningFocus.current = false;
-                                                })
-                                        }}>
+				<DropdownMenuContent
+					align="end"
+					className="w-64"
+					onCloseAutoFocus={() => {
+						isReturningFocus.current = true;
+						queueMicrotask(() => {
+							isReturningFocus.current = false;
+						});
+					}}
+				>
 					<DropdownMenuLabel className="text-muted-foreground text-xs">{label}</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<DownloadOption
@@ -104,7 +106,6 @@ export function ChartDownload<Row>({
 		</div>
 	);
 }
-
 
 function DownloadOption({
 	icon,

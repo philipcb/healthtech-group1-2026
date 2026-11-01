@@ -69,7 +69,7 @@ public class DataFetchHandler(AppDbContext _context)
 			}
 			if (sumOfUserUnderThreshold < 5)
 			{
-				users = users.Where(u => !jobUnderThreshold.Contains(u.JobDescription)).ToList();
+				users = users.Where(u => !jobUnderThreshold.Contains(u.JobDescription!)).ToList();
 			}
 		}
 
@@ -96,7 +96,7 @@ public class DataFetchHandler(AppDbContext _context)
 			if (sumOfUserUnderThreshold < 5)
 			{
 				users = users
-					.Where(u => !locationIdUnderThreshold.Contains(u.Location.Id))
+					.Where(u => !locationIdUnderThreshold.Contains(u.Location!.Id))
 					.ToList();
 			}
 		}
@@ -120,7 +120,8 @@ public class DataFetchHandler(AppDbContext _context)
 
 	public async Task<(
 		List<TimedData> dataList,
-		List<AboveThresholdRate> aboveThresholdDataList
+		List<AboveThresholdRate> hoursAboveThresholdDataList,
+		List<AboveThresholdRate> daysAboveThresholdDataList
 	)> fetchAggregatedDataOverSampleUsers(
 		List<User> users,
 		DateTime startTime,
@@ -131,7 +132,6 @@ public class DataFetchHandler(AppDbContext _context)
 	{
 		var rawDataList = new List<TimedData>();
 		var rateList = new List<AboveThresholdRate>();
-		
 		
 		foreach (var user in users)
 		{
@@ -188,8 +188,9 @@ public class DataFetchHandler(AppDbContext _context)
 				.Select(g => new AboveThresholdRate
 				{
 					Time = g.Key,
-					WarningRate = g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-					DangerRate = g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+					WarningRate = (double)g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+					DangerRate = (double)g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+				
 				});
 
 			rateList.AddRange(aboveThresholdData);
@@ -213,9 +214,19 @@ public class DataFetchHandler(AppDbContext _context)
 				DangerRate = g.Average(d => d.DangerRate),
 			});
 
+		var dailyRates = rateList
+			.GroupBy(d => d.Time)
+			.Select(g => new AboveThresholdRate
+			{
+				Time = g.Key,
+				WarningRate =  (double)g.Count(d => d.WarningRate > 0)/g.Count(),
+				DangerRate = (double)g.Count(d => d.DangerRate > 0)/g.Count()
+			});
+
 		return (
 			dataList: averageDataList.ToList(),
-			aboveThresholdDataList: averageRateList.ToList()
+			hoursAboveThresholdDataList: averageRateList.ToList(),
+			dailyRates.ToList()
 		);
 	}
 
@@ -311,6 +322,7 @@ public class DataFetchHandler(AppDbContext _context)
 			Time = item.data.Time,
 			Value = item.data.Value,
 			PeakValue = exposureType == ExposureType.Noise ? item.data.MaxValue : null,
+			//Unfortunate naming
 			DangerLevel = item.dangerLevels.dangerLevel,
 			PeakDangerLevel = item.dangerLevels.peakDangerLevel,
 		});

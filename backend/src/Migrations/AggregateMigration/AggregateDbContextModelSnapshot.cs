@@ -35,12 +35,6 @@ namespace backend.Migrations.AggregateMigration
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("AmountOfWorkerOverAction")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("AmountOfWorkerOverLimit")
-                        .HasColumnType("integer");
-
                     b.Property<double>("AverageTimeInSafeLimits")
                         .HasColumnType("double precision");
 
@@ -48,6 +42,12 @@ namespace backend.Migrations.AggregateMigration
                         .HasColumnType("double precision");
 
                     b.Property<double>("AverageTimeOverLimit")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("DailyRateOfWorkerOverAction")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("DailyRateOfWorkerOverLimit")
                         .HasColumnType("double precision");
 
                     b.HasKey("SampleId", "ExposureType", "Field", "Time");

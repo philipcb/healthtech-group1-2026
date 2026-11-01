@@ -10,19 +10,31 @@ import type { ExposureDataDto } from "@/lib/api/generated/models/exposureDataDto
 import { today, toTZDate } from "@/lib/date.ts";
 import { aggregationFor, defaultDustField, type Exposure, exposures } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
+import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { useQueries } from "@tanstack/react-query";
-import { getISOWeek, startOfMonth, startOfWeek, subMilliseconds, subMonths, subWeeks } from "date-fns";
+import {
+	getISOWeek,
+	startOfDay,
+	startOfMonth,
+	startOfWeek,
+	subDays,
+	subMilliseconds,
+	subMonths,
+	subWeeks,
+} from "date-fns";
 import { ActivityIcon, ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /** Feature flag: set to false to hide the card everywhere. */
 const SHOW_MY_TRENDS: boolean = true;
 
-/** Number of previous periods the selected period is compared against. */
-const BASELINE_WEEKS = 4;
-const BASELINE_MONTHS = 3;
-/** Relative change within ±10 % counts as "as usual". */
+/**
+ * How many periods back to look for the previous period with data.
+ * Days look up to a week back, so that e.g. Monday is compared with Friday when the weekend has no data.
+ */
+const LOOKBACK_PERIODS: Record<View, number> = { day: 7, week: 1, month: 1 };
+/** Relative change within ±10 % counts as "same as". */
 const SAME_THRESHOLD = 0.1;
 /** Minimum measured time, as a share of normal, required to show a trend. */
 const MIN_COVERAGE = 0.5;
@@ -50,39 +62,25 @@ interface TrendRow {
 	trend: Trend;
 }
 
-/** Returns the start of the week or month containing the given date. */
-type StartOfPeriod = (value: TZDate) => TZDate;
-
-/**
- * Counts how many distinct periods contain at least one data point.
- * @param times Timestamps (ms) of the data points.
- * @param startOfPeriod Maps a date to the start of its period.
- */
-function countPeriodsWithData(times: Array<number>, startOfPeriod: StartOfPeriod) {
-	return new Set(times.map((time) => startOfPeriod(toTZDate(time)).getTime())).size;
-}
-
 /**
  * Computes the trend for one exposure type.
- * Measured time is the number of hourly buckets with data; periods without data are skipped.
- * @param data Hourly buckets for the selected period and the baseline periods.
- * @param periodStart Start of the selected period; earlier buckets belong to the baseline.
+ * Measured time is the number of hourly buckets with data.
+ * @param data Hourly buckets for the selected period and the periods before it.
+ * @param periodStart Start of the selected period.
+ * @param baselineStart Start of the previous period with data, or null if there is none.
  * @returns Share of measured time above the action value, highest zone and trend.
  */
 function buildRow(
 	exposure: Exposure,
 	data: Array<ExposureDataDto>,
 	periodStart: TZDate,
-	startOfPeriod: StartOfPeriod,
+	baselineStart: TZDate | null,
 ): TrendRow {
 	const last = data.filter((point) => point.time >= periodStart);
-	const baseline = data.filter((point) => point.time < periodStart);
+	const baseline =
+		baselineStart === null ? [] : data.filter((point) => point.time >= baselineStart && point.time < periodStart);
 
-	const baselinePeriods = countPeriodsWithData(
-		baseline.map((point) => point.time.getTime()),
-		startOfPeriod,
-	);
-	const normalHours = baselinePeriods > 0 ? baseline.length / baselinePeriods : 0;
+	const normalHours = baseline.length;
 
 	/** Share of points that are above the action value (warning or danger). */
 	const overShare = (points: Array<ExposureDataDto>) =>
@@ -119,7 +117,7 @@ function buildRow(
 const trendIcon = { higher: ArrowUpIcon, same: ArrowRightIcon, lower: ArrowDownIcon };
 
 /**
- * "My trends" card: compares the operator's exposure in the selected week/month with the periods before.
+ * "My trends" card: compares the operator's exposure in the selected day/week/month with the previous one.
  * Shown only in the operator's own view. Hidden when SHOW_MY_TRENDS is false.
  */
 export function MyTrendsCard({ className }: { className?: string }) {
@@ -137,24 +135,35 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 	const { date } = useDate();
 	const formatDate = useFormatDate();
 
-	const isMonth = view === "month";
-	/** Start of the week (Monday) or month containing the date. */
-	const startOfPeriod: StartOfPeriod = (value) =>
-		toTZDate(isMonth ? startOfMonth(value) : startOfWeek(value, { weekStartsOn: 1 }));
-	/** Moves the date the given number of weeks/months back (negative moves forward). */
+	/** Start of the day, week (Monday) or month containing the date. */
+	const startOfPeriod = (value: TZDate) =>
+		toTZDate(
+			view === "month"
+				? startOfMonth(value)
+				: view === "week"
+					? startOfWeek(value, { weekStartsOn: 1 })
+					: startOfDay(value),
+		);
+	/** Moves the date the given number of days/weeks/months back (negative moves forward). */
 	const subPeriods = (value: TZDate, amount: number) =>
-		toTZDate(isMonth ? subMonths(value, amount) : subWeeks(value, amount));
+		toTZDate(
+			view === "month"
+				? subMonths(value, amount)
+				: view === "week"
+					? subWeeks(value, amount)
+					: subDays(value, amount),
+		);
 
 	const currentStart = startOfPeriod(today());
 	const selectedStart = startOfPeriod(date);
 	const periodStart = selectedStart < currentStart ? selectedStart : subPeriods(currentStart, 1);
-	const baselineStart = subPeriods(periodStart, isMonth ? BASELINE_MONTHS : BASELINE_WEEKS);
+	const lookbackStart = subPeriods(periodStart, LOOKBACK_PERIODS[view]);
 	const endTime = toTZDate(subMilliseconds(subPeriods(periodStart, -1), 1));
 
 	const responses = useQueries({
 		queries: exposures.map((exposure) =>
 			getGetExposureDataQueryOptions(exposure, user.id, {
-				startTime: baselineStart,
+				startTime: lookbackStart,
 				endTime,
 				granularity: "hour",
 				function: aggregationFor(exposure, false),
@@ -192,26 +201,32 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 		return null;
 	}
 
-	const rows = withSensor.map(({ exposure, data }) => buildRow(exposure, data, periodStart, startOfPeriod));
-
 	const allTimes = new Set(withSensor.flatMap(({ data }) => data.map((point) => point.time.getTime())));
 	const lastHours = [...allTimes].filter((time) => time >= periodStart.getTime()).length;
-	const baselineTimes = [...allTimes].filter((time) => time < periodStart.getTime());
-	const baselinePeriods = countPeriodsWithData(baselineTimes, startOfPeriod);
-	const normalHours = baselinePeriods > 0 ? Math.round(baselineTimes.length / baselinePeriods) : 0;
+	const earlierTimes = [...allTimes].filter((time) => time < periodStart.getTime());
+	/** The same previous period is used for every exposure type: the latest one with any data. */
+	const baselineStart = earlierTimes.length > 0 ? startOfPeriod(toTZDate(Math.max(...earlierTimes))) : null;
+	const normalHours =
+		baselineStart === null ? 0 : earlierTimes.filter((time) => time >= baselineStart.getTime()).length;
 
-	const periodType = isMonth ? "month" : "week";
-	/** Label for a period: ISO week number or month name. */
-	const periodLabel = (value: TZDate) => (isMonth ? formatDate(value, "LLLL") : String(getISOWeek(value)));
+	const rows = withSensor.map(({ exposure, data }) => buildRow(exposure, data, periodStart, baselineStart));
+
+	/** Label for a period: date, ISO week number or month name. */
+	const periodLabel = (value: TZDate) =>
+		view === "month"
+			? formatDate(value, "LLLL")
+			: view === "week"
+				? String(getISOWeek(value))
+				: formatDate(value, "d MMMM");
 	const period = periodLabel(periodStart);
+	const previous = t(($) => $.myTrends.previous[view]);
 
 	return (
 		<TrendsShell title={title} className={className}>
 			<p className="text-muted-foreground text-xs">
-				{t(($) => $.myTrends.period[periodType], {
+				{t(($) => $.myTrends.period[view], {
 					period: period.charAt(0).toUpperCase() + period.slice(1),
-					baselineStart: periodLabel(baselineStart),
-					baselineEnd: periodLabel(subPeriods(periodStart, 1)),
+					baseline: periodLabel(baselineStart ?? subPeriods(periodStart, 1)),
 				})}
 			</p>
 
@@ -230,7 +245,7 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 									{row.enoughData && (
 										<span className="flex items-center gap-1 text-muted-foreground text-xs">
 											<TrendIcon className="size-3.5" />
-											{t(($) => $.myTrends.trend[row.trend])}
+											{t(($) => $.myTrends.trend[row.trend], { previous })}
 										</span>
 									)}
 								</span>
@@ -246,6 +261,7 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 											{t(($) => $.myTrends.share, {
 												percent: Math.round(row.share * 100),
 												normal: Math.round(row.baselineShare * 100),
+												previous,
 											})}
 										</span>
 										{row.trend === "higher" && (
@@ -266,7 +282,9 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 			</ul>
 
 			<div className="flex flex-col gap-0.5 border-t pt-2 text-muted-foreground text-xs">
-				<p>{t(($) => $.myTrends.coverage[periodType], { hours: lastHours, period, normal: normalHours })}</p>
+				<p>
+					{t(($) => $.myTrends.coverage[view], { hours: lastHours, period, normal: normalHours, previous })}
+				</p>
 				<p>{t(($) => $.myTrends.private)}</p>
 			</div>
 		</TrendsShell>

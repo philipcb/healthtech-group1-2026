@@ -20,11 +20,6 @@ export default function Page() {
 			return;
 		}
 
-		if (user.role === UserRole.OccupationalHealthService) {
-			navigate("/occupational-health-service/");
-			return;
-		}
-
 		if (user.role === UserRole.Management) {
 			navigate("/management/");
 			return;

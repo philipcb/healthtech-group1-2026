@@ -46,6 +46,9 @@ jobs:
           COMPOSE="docker compose --env-file ./backend/.env --env-file ./frontend/.env -f docker-compose.prd.yml"
 
           echo "Rebuilding and deploying..."
+          # rebuilding aggregate-filler to be sure any manual run will work
+          $COMPOSE --profile tools build aggregate-filler
+
           # `up` starts db -> db-init (creates login/aggregate databases) -> db-migrator (3 contexts) -> backend.
           # If db-init or db-migrator fails, `up` fails and the backend is never started.
           if ! $COMPOSE up --build -d; then

@@ -4,11 +4,6 @@ import { index, layout, route } from "@react-router/dev/routes";
 export default [
 	layout("routes/layout.tsx", [
 		index("routes/landing.tsx"),
-		layout("routes/occupational-health-service/occupational-health-service-layout.tsx", [
-			route("/occupational-health-service/", "routes/occupational-health-service/overview.tsx"),
-			route("/occupational-health-service/map", "routes/occupational-health-service/map.tsx"),
-			route("/occupational-health-service/groups/:groupId", "routes/occupational-health-service/group.tsx"),
-		]),
 		layout("routes/management/management-layout.tsx", [
 			route("/management/", "routes/management/overview.tsx"),
 			route("/management/map", "routes/management/map.tsx"),

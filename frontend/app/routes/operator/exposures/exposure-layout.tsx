@@ -3,6 +3,7 @@ import { NotesCard } from "@/components/notes-card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
+import { MyTrendsCard } from "@/features/my-trends-card.tsx";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { PdfExport } from "@/features/sidebar/pdf-export.tsx";
 import { ExposureSummary } from "@/features/summary-card.tsx";
@@ -76,10 +77,12 @@ export default function ExposureLayout() {
 
 			<aside className="flex flex-col gap-4 lg:col-start-3 lg:row-start-2">
 				<DateAndViewPicker />
+				<MyTrendsCard className="hidden lg:flex" />
 			</aside>
 
 			<article className="flex flex-col gap-4 lg:col-start-2 lg:row-start-2">
 				<ExposureSummary exposureType={exposure ?? "all"} />
+				<MyTrendsCard className="lg:hidden" />
 				<Outlet />
 			</article>
 

@@ -133,14 +133,10 @@
       "same": "Same as {{previous}}",
       "lower": "Lower than {{previous}}"
     },
-    "share": "{{percent}}% of measured time above action value ({{previous}}: {{normal}}%)",
+    "share": "{{value}}%",
+    "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "higherHint": "Have you changed tools or tasks? Feel free to add a note.",
-    "coverage": {
-      "day": "Measured {{hours}} h on {{period}} ({{previous}}: {{normal}} h)",
-      "week": "Measured {{hours}} h in week {{period}} ({{previous}}: {{normal}} h)",
-      "month": "Measured {{hours}} h in {{period}} ({{previous}}: {{normal}} h)"
-    },
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)",
     "private": "Only you can see this"
   },
   "dangerLevelStatus": {

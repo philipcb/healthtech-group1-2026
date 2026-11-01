@@ -130,14 +130,10 @@
       "same": "Samme som {{previous}}",
       "lower": "Lavere enn {{previous}}"
     },
-    "share": "{{percent}} % av måletiden over tiltaksverdi ({{previous}}: {{normal}} %)",
+    "share": "{{value}} %",
+    "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
-    "higherHint": "Har du byttet verktøy eller oppgave? Legg gjerne til et notat.",
-    "coverage": {
-      "day": "Målt {{hours}} t den {{period}} ({{previous}}: {{normal}} t)",
-      "week": "Målt {{hours}} t i uke {{period}} ({{previous}}: {{normal}} t)",
-      "month": "Målt {{hours}} t i {{period}} ({{previous}}: {{normal}} t)"
-    },
+    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)",
     "private": "Bare du ser dette"
   },
   "dangerLevelStatus": {

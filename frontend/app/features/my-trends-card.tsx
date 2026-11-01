@@ -23,7 +23,7 @@ import {
 	subMonths,
 	subWeeks,
 } from "date-fns";
-import { ActivityIcon, ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react";
+import { ActivityIcon, ArrowDownIcon, ArrowRightIcon, ArrowUpIcon, MoveRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /** Feature flag: set to false to hide the card everywhere. */
@@ -235,56 +235,46 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 					const TrendIcon = trendIcon[row.trend];
 
 					return (
-						<li key={row.exposure}>
-							<div className="flex flex-col gap-1 p-2">
-								<span className="flex items-center justify-between gap-2">
-									<span className="flex items-center gap-2 font-medium text-sm">
-										<ExposureIcon type={row.exposure} />
-										{t(($) => $.exposures[row.exposure])}
-									</span>
-									{row.enoughData && (
-										<span className="flex items-center gap-1 text-muted-foreground text-xs">
-											<TrendIcon className="size-3.5" />
-											{t(($) => $.myTrends.trend[row.trend], { previous })}
-										</span>
-									)}
+						<li key={row.exposure} className="flex flex-col gap-1 p-2">
+							<span className="flex items-center justify-between gap-2">
+								<span className="flex items-center gap-2 font-medium text-sm">
+									<ExposureIcon type={row.exposure} />
+									{t(($) => $.exposures[row.exposure])}
 								</span>
-
-								{row.enoughData && row.zone ? (
-									<>
-										<span
-											className={cn("w-fit rounded-md px-2 py-0.5 text-xs", zoneClass[row.zone])}
-										>
-											{t(($) => $.exposureSummary.aggregated[row.zone as DangerLevel])}
-										</span>
-										<span className="text-muted-foreground text-xs">
-											{t(($) => $.myTrends.share, {
-												percent: Math.round(row.share * 100),
-												normal: Math.round(row.baselineShare * 100),
-												previous,
-											})}
-										</span>
-										{row.trend === "higher" && (
-											<span className="text-muted-foreground text-xs">
-												{t(($) => $.myTrends.higherHint)}
-											</span>
-										)}
-									</>
-								) : (
-									<span className="text-muted-foreground text-xs">
-										{t(($) => $.myTrends.notEnoughData)}
+								{row.enoughData && row.zone && (
+									<span
+										className={cn("shrink-0 rounded-md px-2 py-0.5 text-xs", zoneClass[row.zone])}
+									>
+										{t(($) => $.exposureSummary.aggregated[row.zone as DangerLevel])}
 									</span>
 								)}
-							</div>
+							</span>
+
+							{row.enoughData && row.zone ? (
+								<span className="flex flex-col gap-0.5 text-muted-foreground text-xs">
+									<span className="flex items-center gap-1">
+										<TrendIcon className="size-3.5 shrink-0" />
+										{t(($) => $.myTrends.trend[row.trend], { previous })}
+									</span>
+									<span className="flex items-center gap-1 font-medium text-foreground tabular-nums">
+										{t(($) => $.myTrends.share, { value: Math.round(row.baselineShare * 100) })}
+										<MoveRightIcon className="size-3.5 text-muted-foreground" />
+										{t(($) => $.myTrends.share, { value: Math.round(row.share * 100) })}
+									</span>
+								</span>
+							) : (
+								<span className="text-muted-foreground text-xs">
+									{t(($) => $.myTrends.notEnoughData)}
+								</span>
+							)}
 						</li>
 					);
 				})}
 			</ul>
 
 			<div className="flex flex-col gap-0.5 border-t pt-2 text-muted-foreground text-xs">
-				<p>
-					{t(($) => $.myTrends.coverage[view], { hours: lastHours, period, normal: normalHours, previous })}
-				</p>
+				<p>{t(($) => $.myTrends.shareExplanation)}</p>
+				<p>{t(($) => $.myTrends.coverage, { hours: lastHours, normal: normalHours, previous })}</p>
 				<p>{t(($) => $.myTrends.private)}</p>
 			</div>
 		</TrendsShell>

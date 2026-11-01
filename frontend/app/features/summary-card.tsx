@@ -118,6 +118,9 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 	const safeDuration = formatMinutesAsDuration(data.safeMinutes, locale);
 	const warningDuration = formatMinutesAsDuration(data.warningMinutes, locale);
 	const dangerDuration = formatMinutesAsDuration(data.dangerMinutes, locale);
+	// Every measured bucket falls in exactly one zone, so the zones add up to the total measured time
+	const totalMinutes = data.safeMinutes + data.warningMinutes + data.dangerMinutes;
+	const totalDuration = totalMinutes > 0 ? formatMinutesAsDuration(totalMinutes, locale) : null;
 
 	return (
 		// Mobile: stacked bars. Desktop: plain grid-cols-3 boxes matching main.
@@ -130,7 +133,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 				)}
 			>
 				<span className="text-xs">{safeLabel}</span>
-				<span className="font-medium text-sm tabular-nums">{safeDuration}</span>
+				<DurationValue duration={safeDuration} totalDuration={totalDuration} className="items-end" />
 			</p>
 			<p
 				title={`${safeLabel}: ${safeDuration}`}
@@ -140,7 +143,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 				)}
 			>
 				<span className="text-xs">{safeLabel}</span>
-				<span className="font-medium text-sm tabular-nums">{safeDuration}</span>
+				<DurationValue duration={safeDuration} totalDuration={totalDuration} />
 			</p>
 
 			<p
@@ -160,7 +163,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 						description={actionValueDescription}
 					/>
 				</span>
-				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
+				<DurationValue duration={warningDuration} totalDuration={totalDuration} className="items-end" />
 			</p>
 			<p
 				title={`${warningLabel}: ${warningDuration}`}
@@ -181,7 +184,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 						triggerClassName="lg:hidden"
 					/>
 				</span>
-				<span className="font-medium text-sm tabular-nums">{warningDuration}</span>
+				<DurationValue duration={warningDuration} totalDuration={totalDuration} />
 			</p>
 
 			<p
@@ -199,7 +202,7 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 						description={limitValueDescription}
 					/>
 				</span>
-				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
+				<DurationValue duration={dangerDuration} totalDuration={totalDuration} className="items-end" />
 			</p>
 			<p
 				title={`${dangerLabel}: ${dangerDuration}`}
@@ -218,9 +221,32 @@ export function ExposureSummary({ exposureType, selectedDate, selectedView }: Ex
 						triggerClassName="lg:hidden"
 					/>
 				</span>
-				<span className="font-medium text-sm tabular-nums">{dangerDuration}</span>
+				<DurationValue duration={dangerDuration} totalDuration={totalDuration} />
 			</p>
 		</div>
+	);
+}
+
+function DurationValue({
+	duration,
+	totalDuration,
+	className,
+}: {
+	duration: string;
+	totalDuration: string | null;
+	className?: string;
+}) {
+	const { t } = useTranslation();
+
+	return (
+		<span className={cn("flex flex-col", className)}>
+			<span className="font-medium text-sm tabular-nums">{duration}</span>
+			{totalDuration !== null && (
+				<span className="font-normal text-muted-foreground text-xs tabular-nums">
+					{t(($) => $.exposureSummary.ofTotal, { total: totalDuration })}
+				</span>
+			)}
+		</span>
 	);
 }
 

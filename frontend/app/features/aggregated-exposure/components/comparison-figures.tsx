@@ -203,7 +203,9 @@ function Average({
 
 	const level = getDangerLevel(average, threshold.warning, threshold.danger);
 	const levelLabel =
-		level === "safe" ? t(($) => $.aggregatedExposure.overview.belowActionValue) : t(($) => $.lineChart[level]);
+		level === "safe"
+			? t(($) => $.aggregatedExposure.overview.belowActionValue)
+			: t(($) => $.dangerLevelStatus[level]);
 
 	return (
 		<div className="flex max-w-48 flex-col gap-1.5">

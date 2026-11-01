@@ -135,10 +135,14 @@
     },
     "private": "Only you can see this"
   },
-  "lineChart": {
+  "dangerLevelStatus": {
     "danger": "Above limit value",
     "warning": "Above action value",
     "safe": "Within safe limits"
+  },
+  "thresholds": {
+    "warning": "Action value",
+    "danger": "Limit value"
   },
   "notes": {
     "interactive": {

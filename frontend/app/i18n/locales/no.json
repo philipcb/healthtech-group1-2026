@@ -132,10 +132,14 @@
     },
     "private": "Bare du ser dette"
   },
-  "lineChart": {
+  "dangerLevelStatus": {
     "danger": "Over grenseverdi",
     "warning": "Over tiltaksverdi",
     "safe": "Innenfor trygge grenseverdier"
+  },
+  "thresholds": {
+    "warning": "Tiltaksverdi",
+    "danger": "Grenseverdi"
   },
   "notes": {
     "interactive": {

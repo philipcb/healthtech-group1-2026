@@ -24,6 +24,8 @@ import { ExposureTrendTooltip } from "./exposure-trend-tooltip.tsx";
 type TrendGranularity = "day" | "week";
 
 const Y_AXIS_WIDTH = 60;
+// Room for dust in mg, which is shown with four decimals
+const MG_Y_AXIS_WIDTH = 76;
 const MOBILE_MAX_X_TICKS = 4;
 
 export type TrendSeries = {
@@ -75,7 +77,7 @@ export function TrendLineChart({
 	const chartData = buildChartData(bucketDates, seriesDefinitions, granularity, formatDate, t);
 
 	const isMobileBreakout = breakoutOnMobile && isMobile;
-	const yAxisWidth = isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
+	const yAxisWidth = isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : unit === "mg" ? MG_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
 	const xAxisInterval = isMobileBreakout
 		? Math.max(0, Math.ceil(chartData.length / MOBILE_MAX_X_TICKS) - 1)
 		: undefined;
@@ -173,7 +175,7 @@ export function TrendLineChart({
 							: {
 									value: t(($) => $.exposures.units[unit]),
 									position: "inside",
-									dx: -32,
+									dx: -yAxisWidth / 2 - 2,
 									angle: -90,
 									className: "text-lg mr-4",
 									fill: "var(--color-muted-foreground)",

@@ -108,6 +108,7 @@
     }
   },
   "exposureSummary": {
+    "ofTotal": "of {{total}}",
     "title": "Exposure",
     "aggregated": {
       "safe": "Within safe limits",

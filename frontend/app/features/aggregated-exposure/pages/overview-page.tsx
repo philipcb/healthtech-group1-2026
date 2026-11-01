@@ -1,3 +1,4 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { GroupTable } from "@/features/aggregated-exposure/components/group-table.tsx";
@@ -126,10 +127,18 @@ function isSelected(group: ComparableGroup, level: CompareLevel, yard: string | 
 
 function GroupResults({ params, level, yard, hall, filter, dustField, showsYard, labelledBy }: ResultsProps) {
 	const { t } = useTranslation();
+	const { setDustField } = useAggregatedExposureSearchParams();
 	const { data, isPending, isError } = useGetAggregateGroups(params, {
 		query: { select: toComparableGroups },
 	});
 	const groups = data?.groups.filter((group) => isSelected(group, level, yard, hall)) ?? [];
+	const dustFieldTabs = (
+		<DustFieldTabs
+			value={dustField}
+			onValueChange={setDustField}
+			ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
+		/>
+	);
 
 	return isPending ? (
 		<Skeleton className="h-64 w-full" />
@@ -143,13 +152,18 @@ function GroupResults({ params, level, yard, hall, filter, dustField, showsYard,
 	) : filter !== "all" && isExposureUnavailable(filter) ? (
 		<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[filter])} />
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
+		// The fraction is otherwise picked in the table, so without one it's offered here to switch back to one with data
+		<EmptyState
+			title={t(($) => $.aggregatedExposure.overview.noData)}
+			action={filter === "dust" && <div className="pt-2">{dustFieldTabs}</div>}
+		/>
 	) : (
 		<GroupTable
 			groups={groups}
 			units={data.units}
 			filter={filter}
 			dustField={dustField}
+			onDustFieldChange={setDustField}
 			showsYard={showsYard}
 			labelledBy={labelledBy}
 		/>

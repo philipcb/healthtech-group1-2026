@@ -1,3 +1,4 @@
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { DangerLevelBadge, ThresholdBar } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useGroupDetailsLink } from "@/features/aggregated-exposure/hooks/use-group-details-link.ts";
@@ -6,10 +7,8 @@ import {
 	type ExposureFilter,
 	formatGroupValue,
 	getGroupThreshold,
-	getGroupUnitLabel,
 	getOccupationLabel,
 	getShownExposures,
-	getThresholdNumberFormat,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
@@ -26,12 +25,22 @@ type GroupTableProps = {
 	filter: ExposureFilter;
 	/** The dust fraction the dust column shows, and is compared to the thresholds of */
 	dustField: DustField;
+	/** Picked in the dust column's header, so the choice sits next to the values it changes */
+	onDustFieldChange: (field: DustField) => void;
 	showsYard: boolean;
 	labelledBy: string;
 };
 
 /** One row per group and one column per shown exposure, the worst status first */
-export function GroupTable({ groups, units, filter, dustField, showsYard, labelledBy }: GroupTableProps) {
+export function GroupTable({
+	groups,
+	units,
+	filter,
+	dustField,
+	onDustFieldChange,
+	showsYard,
+	labelledBy,
+}: GroupTableProps) {
 	const { t } = useTranslation();
 	const exposures = getShownExposures(filter);
 	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, exposures, dustField));
@@ -43,12 +52,17 @@ export function GroupTable({ groups, units, filter, dustField, showsYard, labell
 					<tr>
 						<th
 							scope="col"
-							className="sticky left-0 z-10 min-w-40 bg-secondary px-4 py-3 align-bottom font-medium"
+							className="sticky left-0 z-10 min-w-40 bg-secondary px-4 py-2.5 align-middle font-medium"
 						>
 							{t(($) => $.aggregatedExposure.overview.groupColumn)}
 						</th>
 						{exposures.map((exposure) => (
-							<ExposureHeader key={exposure} exposure={exposure} dustField={dustField} units={units} />
+							<ExposureHeader
+								key={exposure}
+								exposure={exposure}
+								dustField={dustField}
+								onDustFieldChange={onDustFieldChange}
+							/>
 						))}
 					</tr>
 				</thead>
@@ -78,33 +92,34 @@ export function GroupTable({ groups, units, filter, dustField, showsYard, labell
 	);
 }
 
+/** The exposure's name only. The metric and thresholds are in "About the figures", the status in each cell. */
 function ExposureHeader({
 	exposure,
 	dustField,
-	units,
+	onDustFieldChange,
 }: {
 	exposure: Exposure;
 	dustField: DustField;
-	units: MeasurementUnitsDto;
+	onDustFieldChange: (field: DustField) => void;
 }) {
-	const { t, i18n } = useTranslation();
-	const threshold = getGroupThreshold(exposure, dustField);
-	const metric =
-		exposure === "dust"
-			? t(($) => $.aggregatedExposure.metricsShort.dust, {
-					dustField: t(($) => $.exposures.dustFields[dustField]),
-				})
-			: t(($) => $.aggregatedExposure.metricsShort[exposure]);
-	const numberFormat = getThresholdNumberFormat(i18n.language);
-	const thresholds = `${numberFormat.format(threshold.warning)} / ${numberFormat.format(threshold.danger)} ${getGroupUnitLabel(units[exposure], t)}`;
+	const { t } = useTranslation();
 
 	return (
-		<th scope="col" className="min-w-56 px-4 py-3 align-bottom font-normal">
-			<span className="flex items-center gap-1.5 font-medium">
-				<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
-				{t(($) => $.exposures[exposure])}
+		<th scope="col" className="min-w-56 px-4 py-2.5 align-middle font-medium">
+			<span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+				<span className="flex items-center gap-1.5">
+					<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
+					{t(($) => $.exposures[exposure])}
+				</span>
+				{exposure === "dust" && !isExposureUnavailable(exposure) && (
+					<DustFieldTabs
+						value={dustField}
+						onValueChange={onDustFieldChange}
+						ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
+						isCompact={true}
+					/>
+				)}
 			</span>
-			<span className="block text-muted-foreground text-xs tabular-nums">{`${metric} · ${thresholds}`}</span>
 		</th>
 	);
 }

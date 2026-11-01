@@ -365,11 +365,6 @@
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
       "vibration": "Gjennomsnittlige vibrasjonspoeng"
     },
-    "metricsShort": {
-      "dust": "{{dustField}} TWA",
-      "noise": "LAeq",
-      "vibration": "Poeng"
-    },
     "privacyNotice": "Grupper med færre enn {{count}} registrerte personer vises ikke.",
     "unavailableValue": "Ikke tilgjengelig",
     "exposureUnavailable": {
@@ -516,7 +511,7 @@
     }
   },
   "aboutFigures": {
-    "trigger": "Om tallene",
+    "trigger": "Grenseverdier og beregning",
     "title": "Om tallene",
     "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
     "headings": {

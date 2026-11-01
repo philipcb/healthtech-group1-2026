@@ -368,11 +368,6 @@
       "noise": "Average sound level (LAeq, arithmetic average)",
       "vibration": "Average vibration points"
     },
-    "metricsShort": {
-      "dust": "{{dustField}} TWA",
-      "noise": "LAeq",
-      "vibration": "Points"
-    },
     "privacyNotice": "Groups with fewer than {{count}} registered people aren't shown.",
     "unavailableValue": "Not available",
     "exposureUnavailable": {
@@ -519,7 +514,7 @@
     }
   },
   "aboutFigures": {
-    "trigger": "About the figures",
+    "trigger": "Limits and calculation",
     "title": "About the figures",
     "description": "Where the figures on this page come from, and how they're calculated.",
     "headings": {

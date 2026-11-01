@@ -5,11 +5,17 @@ import { exposures } from "@/lib/exposures.ts";
 import type { OverviewChartRow } from "@/lib/time-bucket-types.ts";
 import { cn } from "@/lib/utils.ts";
 import { setHours, startOfDay } from "date-fns";
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, type To } from "react-router";
 import { DangerLevelDots } from "../../components/danger-level-dots.tsx";
 import { ExposureIcon } from "../../components/exposure-icon.tsx";
+
+// Pixel sizes matching the hour slot classes below: size-12, gap-1.5 and px-2
+const SLOT_SIZE = 48;
+const SLOT_GAP = 6;
+const ROW_PADDING_X = 16;
+const LAST_HOUR_OF_DAY = 23;
 
 const getDangerLevelClasses = (dangerLevel: DangerLevel | null) => {
 	if (dangerLevel) {
@@ -43,7 +49,23 @@ export function DayWidget({
 	const date = selectedDate ?? contextDate;
 	const formatDate = useFormatDate();
 
-	const totalHours = endHour - startHour + 1;
+	// Fill the available width with empty hour slots after the data, but never past the end of the day
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const [fittingHours, setFittingHours] = useState(0);
+
+	useLayoutEffect(() => {
+		const el = scrollContainerRef.current;
+		if (!el) return;
+
+		const observer = new ResizeObserver(() => {
+			setFittingHours(Math.floor((el.clientWidth - ROW_PADDING_X + SLOT_GAP) / (SLOT_SIZE + SLOT_GAP)));
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
+
+	const filledEndHour = Math.min(LAST_HOUR_OF_DAY, Math.max(endHour, startHour + fittingHours - 1));
+	const totalHours = filledEndHour - startHour + 1;
 
 	const hours = useMemo(() => Array.from({ length: totalHours }, (_, i) => startHour + i), [startHour, totalHours]);
 
@@ -83,7 +105,7 @@ export function DayWidget({
 		<div className={cn("relative", headerRight && "")}>
 			{headerRight && <div className="absolute top-0 right-0 z-20 flex items-center gap-2">{headerRight}</div>}
 
-			<div className="overflow-x-auto">
+			<div ref={scrollContainerRef} className="overflow-x-auto">
 				<div className="w-max min-w-full space-y-1">
 					{exposureTypes.map((exposure) => {
 						const rowData = dataByExposure[exposure];

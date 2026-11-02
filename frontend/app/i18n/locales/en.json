@@ -368,7 +368,6 @@
       "noise": "Average sound level (LAeq, arithmetic average)",
       "vibration": "Average vibration points"
     },
-    "privacyNotice": "Groups with fewer than {{count}} registered people aren't shown.",
     "unavailableValue": "Not available",
     "exposureUnavailable": {
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
@@ -382,7 +381,6 @@
         "label": "View"
       },
       "belowActionValue": "Below action value",
-      "aggregationNotice": "Values are group averages. Individual exposure may vary.",
       "noValue": "No value",
       "groupColumn": "Group",
       "sortedByStatus": "Sorted by worst status first",
@@ -534,9 +532,6 @@
         "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
         "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
       }
-    },
-    "comparedWith": {
-      "unconfirmed": "Not confirmed"
     },
     "missing": {
       "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."

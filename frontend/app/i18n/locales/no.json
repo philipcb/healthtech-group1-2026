@@ -365,7 +365,6 @@
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
       "vibration": "Gjennomsnittlige vibrasjonspoeng"
     },
-    "privacyNotice": "Grupper med færre enn {{count}} registrerte personer vises ikke.",
     "unavailableValue": "Ikke tilgjengelig",
     "exposureUnavailable": {
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
@@ -379,7 +378,6 @@
         "label": "Visning"
       },
       "belowActionValue": "Under tiltaksverdi",
-      "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
       "noValue": "Ingen verdi",
       "groupColumn": "Gruppe",
       "sortedByStatus": "Sortert etter verste status først",
@@ -531,9 +529,6 @@
         "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
         "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
       }
-    },
-    "comparedWith": {
-      "unconfirmed": "Ikke bekreftet"
     },
     "missing": {
       "suppressed": "Grupper med færre enn {{count}} registrerte personer finnes ikke i dataene, og vises derfor ikke."

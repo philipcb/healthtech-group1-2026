@@ -7,7 +7,7 @@ import { EmptyState } from "@/features/aggregated-exposure/components/empty-stat
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
-import { PeriodAndPrivacyNotice } from "@/features/aggregated-exposure/components/notices.tsx";
+import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
 import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
@@ -118,7 +118,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				</FilterDialog>
 				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-				<PeriodAndPrivacyNotice periodSelection={periodSelection} />
+				<PeriodNotice periodSelection={periodSelection} />
 
 				{groupsQuery.isPending ? (
 					<Skeleton className="h-96 w-full" />

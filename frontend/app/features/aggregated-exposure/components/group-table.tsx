@@ -71,9 +71,11 @@ export function GroupTable({
 						<tr key={group.groupId} className="border-t">
 							<th scope="row" className="sticky left-0 z-10 bg-card px-4 py-2.5 align-top font-normal">
 								<span className="block font-medium">{getRowName(group, t)}</span>
-								<span className="block text-muted-foreground text-xs">
-									{getRowContext(group, showsYard, t)}
-								</span>
+								{getRowContext(group, showsYard) && (
+									<span className="block text-muted-foreground text-xs">
+										{getRowContext(group, showsYard)}
+									</span>
+								)}
 							</th>
 							{exposures.map((exposure) => (
 								<ExposureCell
@@ -211,16 +213,14 @@ function getRowName(group: ComparableGroup, t: TranslateFn) {
 	return group.occupation === null ? (group.hall ?? group.site) : getOccupationLabel(group.occupation, t);
 }
 
-function getRowContext(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
+function getRowContext(group: ComparableGroup, showsYard: boolean) {
 	switch (group.level) {
 		case "yard":
-			return t(($) => $.aggregatedExposure.compare.wholeYard);
+			return null;
 		case "hall":
-			return showsYard
-				? `${group.site} · ${t(($) => $.aggregatedExposure.wholeHall)}`
-				: t(($) => $.aggregatedExposure.wholeHall);
+			return showsYard ? group.site : null;
 		case "yardOccupation":
-			return `${group.site} · ${t(($) => $.aggregatedExposure.filters.allHalls)}`;
+			return group.site;
 		case "hallOccupation":
 			return showsYard ? `${group.site} · ${group.hall}` : (group.hall ?? group.site);
 	}

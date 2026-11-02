@@ -15,7 +15,6 @@ import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dash
 import {
 	type ComparableGroup,
 	getComparableGroupName,
-	isPerOccupation,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
 import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
@@ -105,7 +104,9 @@ export function GroupPage({ groupId }: { groupId: string }) {
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{group ? getTitle(group, t) : t(($) => $.aggregatedExposure.group.fallbackTitle)}
+								{group
+									? getComparableGroupName(group, t)
+									: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
 					</div>
@@ -166,16 +167,6 @@ function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) 
 			: t(($) => $.aggregatedExposure.group.eyebrow);
 	// A group in a yard already names the yard in its title
 	return showsYard && group.level !== "yardOccupation" ? `${eyebrow} · ${group.site}` : eyebrow;
-}
-
-function getTitle(group: ComparableGroup, t: TranslateFn) {
-	if (isPerOccupation(group.level)) {
-		return getComparableGroupName(group, t);
-	}
-
-	return group.hall === null
-		? `${group.site} · ${t(($) => $.aggregatedExposure.compare.wholeYard)}`
-		: `${group.hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 function GroupDetails({

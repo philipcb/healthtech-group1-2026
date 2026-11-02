@@ -108,17 +108,9 @@ export function getComparableGroupName(group: ComparableGroup, t: TranslateFn) {
 	}
 }
 
-export function getComparableGroupContext(group: ComparableGroup, t: TranslateFn) {
-	switch (group.level) {
-		case "yard":
-			return t(($) => $.aggregatedExposure.compare.wholeYard);
-		case "hall":
-			return `${group.site} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
-		case "yardOccupation":
-			return `${group.site} · ${t(($) => $.aggregatedExposure.filters.allHalls)}`;
-		case "hallOccupation":
-			return group.site;
-	}
+/** The yard a building's group is in, or `null` when the group's name already names the yard */
+export function getComparableGroupContext(group: ComparableGroup) {
+	return getComparePlace(group.level) === "hall" ? group.site : null;
 }
 
 export function getComparableGroupSection(group: ComparableGroup, t: TranslateFn) {

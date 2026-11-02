@@ -49,18 +49,13 @@ export function CompareGroupPicker({
 		.map((group) => ({
 			group,
 			name: getComparableGroupName(group, t),
-			context: getComparableGroupContext(group, t),
+			context: getComparableGroupContext(group),
 			section: getComparableGroupSection(group, t),
 		}))
-		.filter(({ name, context }) => `${name} ${context}`.toLocaleLowerCase().includes(normalizedQuery))
+		.filter(({ name, context }) => `${name} ${context ?? ""}`.toLocaleLowerCase().includes(normalizedQuery))
 		.toSorted((a, b) => a.section.localeCompare(b.section) || a.name.localeCompare(b.name));
 	const sections = [...new Set(available.map(({ section }) => section))];
-	const hint =
-		entries.length === 0
-			? t(($) => $.aggregatedExposure.compare.picker.addAtLeastTwo)
-			: entries.length === 1
-				? t(($) => $.aggregatedExposure.compare.picker.addOneMore)
-				: undefined;
+	const hint = entries.length === 1 ? t(($) => $.aggregatedExposure.compare.picker.addOneMore) : undefined;
 
 	useEffect(() => {
 		const target = pendingFocus.current;
@@ -163,9 +158,11 @@ export function CompareGroupPicker({
 															onClick={() => add([group.groupId])}
 														>
 															<span className="truncate">{name}</span>
-															<span className="shrink-0 text-muted-foreground text-xs">
-																{context}
-															</span>
+															{context && (
+																<span className="shrink-0 text-muted-foreground text-xs">
+																	{context}
+																</span>
+															)}
 														</button>
 													</li>
 												))}
@@ -180,6 +177,7 @@ export function CompareGroupPicker({
 				<ul aria-labelledby={labelledBy} className="flex min-w-0 grow flex-wrap items-center gap-2">
 					{entries.map(({ group, slot }, index) => {
 						const name = getComparableGroupName(group, t);
+						const context = getComparableGroupContext(group);
 
 						return (
 							<li
@@ -189,7 +187,9 @@ export function CompareGroupPicker({
 								<SeriesKey slot={slot} width={16} />
 								<p className="min-w-0 grow truncate text-sm">
 									<span className="font-medium">{name}</span>
-									<span className="text-muted-foreground text-xs">{` · ${getComparableGroupContext(group, t)}`}</span>
+									{context && (
+										<span className="text-muted-foreground text-xs">{` · ${context}`}</span>
+									)}
 								</p>
 								<Button
 									ref={(element) => {

@@ -359,7 +359,6 @@
     "exposureLabel": "Eksponeringstype",
     "perOccupation": "Del opp etter yrkesgruppe",
     "pointsUnit": "poeng",
-    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
@@ -426,7 +425,6 @@
     },
     "compare": {
       "title": "Sammenlign grupper",
-      "wholeYard": "Hele verftet",
       "periodNotStarted": "{{period}} har ikke startet ennå.",
       "level": {
         "label": "Sammenlign",
@@ -446,7 +444,6 @@
         "cleared": "Fjernet alle gruppene.",
         "undo": "Angre",
         "addOneMore": "Legg til minst én gruppe til for å sammenligne.",
-        "addAtLeastTwo": "Legg til minst to grupper for å sammenligne.",
         "noneLeft": "Alle gruppene på dette nivået er allerede lagt til.",
         "noMatches": "Ingen grupper passer med «{{query}}».",
         "count": "{{count}} grupper",
@@ -458,8 +455,6 @@
         "hiddenFromLink_other": "{{count}} grupper fra lenken kan ikke vises på dette nivået."
       },
       "intro": {
-        "title": "Dette kan du sammenligne",
-        "description": "Velg type gruppe under «Sammenlign», og legg så til minst to grupper med «Legg til gruppe». Alle gruppene vises for samme eksponering og periode.",
         "yard": {
           "title": "Verft",
           "description": "Alle som er målt på et verft, regnes som én gruppe. Viser hvilket verft som har høyest eksponering totalt, og om ett skiller seg ut fra de andre."

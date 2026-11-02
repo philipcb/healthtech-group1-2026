@@ -362,7 +362,6 @@
     "exposureLabel": "Exposure type",
     "perOccupation": "Split by occupation",
     "pointsUnit": "points",
-    "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
@@ -429,7 +428,6 @@
     },
     "compare": {
       "title": "Compare groups",
-      "wholeYard": "Whole yard",
       "periodNotStarted": "{{period}} hasn't started yet.",
       "level": {
         "label": "Compare",
@@ -449,7 +447,6 @@
         "cleared": "Removed all groups.",
         "undo": "Undo",
         "addOneMore": "Add at least one more group to compare.",
-        "addAtLeastTwo": "Add at least two groups to compare.",
         "noneLeft": "Every group at this level is already added.",
         "noMatches": "No groups match “{{query}}”.",
         "count": "{{count}} groups",
@@ -461,8 +458,6 @@
         "hiddenFromLink_other": "{{count}} groups from the link can't be shown at this level."
       },
       "intro": {
-        "title": "What you can compare",
-        "description": "Choose the kind of group under “Compare”, then add at least two groups with “Add group”. Every group is shown for the same exposure and period.",
         "yard": {
           "title": "Yards",
           "description": "Everyone measured at a yard counts as one group. Shows which yard has the highest exposure overall, and whether one stands out from the others."

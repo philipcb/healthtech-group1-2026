@@ -4,11 +4,13 @@ import { NavTabs } from "@/features/layout/nav-tabs.tsx";
 import { NotificationBell } from "@/features/layout/notification-bell.tsx";
 import { useRoleRedirect } from "@/features/layout/use-role-redirect.ts";
 import { UserDropdown } from "@/features/layout/user-dropdown.tsx";
+import { useUser } from "@/features/user/user-context.tsx";
 import { Outlet } from "react-router";
 import "leaflet/dist/leaflet.css";
 
 export default function Layout() {
 	useRoleRedirect();
+	const { user } = useUser();
 
 	return (
 		<SidebarProvider defaultOpen={false}>
@@ -23,7 +25,8 @@ export default function Layout() {
 							</nav>
 
 							<div className="flex flex-row items-center gap-4">
-								<NotificationBell />
+								{/* Management doesn't see live data, which the notifications are about */}
+								{user?.role !== "management" && <NotificationBell />}
 
 								<UserDropdown />
 							</div>

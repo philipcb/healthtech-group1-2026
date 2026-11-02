@@ -77,11 +77,8 @@ export function OverviewPage() {
 							</h2>
 							<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
 						</div>
-						<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1">
+						<div className="pt-1">
 							<DangerLevelBadgeLegend />
-							<p className="text-muted-foreground text-xs">
-								{t(($) => $.aggregatedExposure.overview.sortedByStatus)}
-							</p>
 						</div>
 					</div>
 

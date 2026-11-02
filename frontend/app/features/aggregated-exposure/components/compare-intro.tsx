@@ -36,9 +36,6 @@ export function CompareIntro() {
 									{t(($) => $.aggregatedExposure.compare.intro[kind].description)}
 								</p>
 							</div>
-							<p className="mt-auto border-t pt-3 text-muted-foreground text-xs">
-								{t(($) => $.aggregatedExposure.compare.intro[kind].how)}
-							</p>
 						</li>
 					);
 				})}

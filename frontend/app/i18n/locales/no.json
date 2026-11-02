@@ -380,7 +380,6 @@
       "belowActionValue": "Under tiltaksverdi",
       "noValue": "Ingen verdi",
       "groupColumn": "Gruppe",
-      "sortedByStatus": "Sortert etter verste status først",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
         "title": "Ingen grupper å vise",
@@ -463,18 +462,15 @@
         "description": "Velg type gruppe under «Sammenlign», og legg så til minst to grupper med «Legg til gruppe». Alle gruppene vises for samme eksponering og periode.",
         "yard": {
           "title": "Verft",
-          "description": "Alle som er målt på et verft, regnes som én gruppe. Viser hvilket verft som har høyest eksponering totalt, og om ett skiller seg ut fra de andre.",
-          "how": "Sammenlign: Verft"
+          "description": "Alle som er målt på et verft, regnes som én gruppe. Viser hvilket verft som har høyest eksponering totalt, og om ett skiller seg ut fra de andre."
         },
         "hall": {
           "title": "Bygg",
-          "description": "Alle i ett bygg mot alle i et annet. Viser hvor på verftet eksponeringen er høyest, og hvilke bygg som bør følges opp.",
-          "how": "Sammenlign: Bygg"
+          "description": "Alle i ett bygg mot alle i et annet. Viser hvor på verftet eksponeringen er høyest, og hvilke bygg som bør følges opp."
         },
         "occupation": {
           "title": "Yrkesgrupper",
-          "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt.",
-          "how": "Sammenlign: Verft eller Bygg, og kryss av for «Del opp etter yrkesgruppe»"
+          "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt."
         }
       },
       "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",

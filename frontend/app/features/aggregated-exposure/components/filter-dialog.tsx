@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 type FilterDialogProps = {
 	periodSelection: PeriodSelection;
 	showsPeriod?: boolean;
-	onReset: () => void;
+	onReset?: () => void;
 	children: ReactNode;
 	className?: string;
 };

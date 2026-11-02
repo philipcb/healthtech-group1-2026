@@ -125,7 +125,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.OHS);
 
-		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime)).ToList();
+		var groups = (
+			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
+		).ToList();
 
 		Assert.Equal(Enum.GetValues<Level>().Length, groups.Count);
 		Assert.All(groups, g => Assert.Equal(OwnSite, g.Site));
@@ -140,7 +142,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.OHS);
 
-		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime)).ToList();
+		var groups = (
+			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
+		).ToList();
 
 		var occupationInHall = Assert.Single(groups, g => g.Hall != null && g.Occupation != null);
 		var wholeHall = Assert.Single(groups, g => g.Hall != null && g.Occupation == null);
@@ -166,7 +170,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.Manager);
 
-		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime)).ToList();
+		var groups = (
+			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
+		).ToList();
 
 		Assert.Equal(2 * Enum.GetValues<Level>().Length, groups.Count);
 		Assert.Contains(groups, g => g.GroupId == OwnSiteGroupId && g.Site == OwnSite);
@@ -186,9 +192,50 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, role);
 
-		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime);
+		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null);
 
 		Assert.Empty(groups);
+	}
+
+	[Theory]
+	[InlineData(null, 1)]
+	[InlineData("pm25_twa", 2.5)]
+	[InlineData("pm10_twa", 10)]
+	public async Task GetOverviewAggregateDataAsync_ReturnsDustForField(
+		string? dustField,
+		double expected
+	)
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		context.DustAverages.Add(
+			new DustAverage
+			{
+				SampleId = OwnSiteGroupId,
+				Time = new DateTime(2026, 9, 15, 10, 0, 0, DateTimeKind.Utc),
+				AveragePm1Twa = 1,
+				AveragePm25Twa = 2.5,
+				AveragePm10Twa = 10,
+			}
+		);
+		await context.SaveChangesAsync();
+		var service = CreateService(context, UserRole.OHS);
+
+		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, dustField);
+
+		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
+		Assert.Equal(expected, group.Averages.Dust);
+	}
+
+	[Fact]
+	public async Task GetOverviewAggregateDataAsync_Throws_ForUnsupportedDustField()
+	{
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+
+		await Assert.ThrowsAsync<ArgumentException>(() =>
+			service.GetOverviewAggregateDataAsync(StartTime, EndTime, "pm4_twa")
+		);
 	}
 
 	[Fact]

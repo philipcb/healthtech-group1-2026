@@ -6,10 +6,12 @@ export function HallFilter({
 	halls,
 	value,
 	onValueChange,
+	hidesLabel,
 }: {
 	halls: Array<string>;
 	value: string | null;
 	onValueChange: (hall: string | null) => void;
+	hidesLabel?: boolean;
 }) {
 	const { t } = useTranslation();
 
@@ -21,6 +23,7 @@ export function HallFilter({
 			value={value}
 			onValueChange={onValueChange}
 			allLabel={t(($) => $.aggregatedExposure.filters.allHalls)}
+			hidesLabel={hidesLabel}
 		/>
 	);
 }

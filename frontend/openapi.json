@@ -131,6 +131,13 @@
               ],
               "format": "int32"
             }
+          },
+          {
+            "name": "dustField",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

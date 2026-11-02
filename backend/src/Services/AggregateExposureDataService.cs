@@ -31,7 +31,8 @@ public interface IAggregateExposureDataService
 
 	Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
 		DateTime startTime,
-		DateTime endTime
+		DateTime endTime,
+		string? dustField
 	);
 }
 
@@ -267,9 +268,15 @@ public class AggregateExposureDataService(
 
 	public async Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
 		DateTime startTime,
-		DateTime endTime
+		DateTime endTime,
+		string? dustField
 	)
 	{
+		// PM1 TWA unless another fraction is asked for. Checked before the loop, so an unsupported field is rejected even
+		// when the user has no groups.
+		var field = dustField ?? "pm1_twa";
+		GetCorrectDustValue(field);
+
 		// Every group the user may see: one occupation in one hall, a whole hall, one occupation across the site and the
 		// whole site. Groups with too few people are never created in the aggregate database.
 		var allSamples = await GetAccessibleSamples().ToListAsync();
@@ -281,7 +288,7 @@ public class AggregateExposureDataService(
 				endTime,
 				s.Id,
 				ExposureType.Dust,
-				"pm1_twa"
+				field
 			);
 			var averageNoiseValues = await GetWholeAverage(
 				startTime,

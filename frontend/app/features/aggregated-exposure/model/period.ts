@@ -43,6 +43,14 @@ export function getPeriodLabel(
 	return period === "month" ? `${getMonthLabel(month, t)} ${year}` : year.toString();
 }
 
+export function getPeriodState({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
+	const now = new Date();
+	const start = period === "month" ? new Date(year, month, 1) : new Date(year, 0, 1);
+	const end = period === "month" ? new Date(year, month + 1, 1) : new Date(year + 1, 0, 1);
+
+	return now < start ? "notStarted" : now < end ? "inProgress" : "complete";
+}
+
 /** The aggregate API's period parameters. It only reads `month` for the month period, zero-based like the frontend's. */
 export function toPeriodParams({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
 	return { period, year, month: period === "month" ? month : undefined };

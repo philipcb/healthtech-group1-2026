@@ -1,25 +1,20 @@
-import { CollapsedYAxisTick } from "@/components/exposure-line-chart/collapsed-y-axis-tick.tsx";
-import { COLLAPSED_Y_AXIS_WIDTH } from "@/components/exposure-line-chart/collapsed-y-axis-width.ts";
 import { ExposureDot } from "@/components/exposure-line-chart/exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "@/components/exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
-import { formatGroupNumber, formatGroupValue, getGroupUnitLabel } from "@/features/aggregated-exposure/model/groups.ts";
-import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { useIsMobile } from "@/hooks/use-mobile.ts";
+import { TrendTooltip } from "@/features/aggregated-exposure/components/trend-tooltip.tsx";
+import { useTrendAxes } from "@/features/aggregated-exposure/hooks/use-trend-axes.tsx";
+import { formatGroupValue } from "@/features/aggregated-exposure/model/groups.ts";
+import { getTrendYDomain, toTrendDay } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
-import { differenceInCalendarDays, eachMonthOfInterval, format, max, parseISO } from "date-fns";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis, type YAxisTickContentProps } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Dot, Line, XAxis, YAxis } from "recharts";
 
-const Y_AXIS_PADDING = 0.1;
-const MAX_DAYS_WITH_DAY_TICKS = 62;
 const MAX_POINTS_WITH_DOTS = 31;
-const Y_AXIS_WIDTH = 60;
 const NEUTRAL_COLOR = "var(--chart-1)";
 
 type ChartRow = {
@@ -37,34 +32,25 @@ type GroupTrendChartProps = {
 
 export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendChartProps) {
 	const { t } = useTranslation();
-	const formatDate = useFormatDate();
 	const gradientId = useId();
-	const isMobile = useIsMobile();
 	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
-	const rows: Array<ChartRow> = points.map((point) => {
-		// The backend sends the start of each UTC day, which is the same day in the app's time zone. Its local date is
-		// drawn at local midnight.
-		const date = parseISO(format(point.time, "yyyy-MM-dd"));
-
-		return { timestamp: date.getTime(), tooltipLabel: formatDate(date, "EEEE d. MMMM yyyy"), value: point.value };
+	const days = points.map((point) => toTrendDay(point.time));
+	const values = points.flatMap((point) => (point.value === null ? [] : [point.value]));
+	const [yMin, yMax] = getTrendYDomain(values, threshold);
+	const { xAxisProps, yAxisProps, formatDay } = useTrendAxes({
+		timestamps: days.map((day) => day.getTime()),
+		unit,
+		yDomain: [yMin, yMax],
 	});
 
-	const firstDay = rows[0]?.timestamp ?? 0;
-	const lastDay = rows.at(-1)?.timestamp ?? 0;
-	const showsMonths = differenceInCalendarDays(lastDay, firstDay) > MAX_DAYS_WITH_DAY_TICKS;
-	const ticks = showsMonths
-		? eachMonthOfInterval({ start: firstDay, end: lastDay }).map((month) => max([month, firstDay]).getTime())
-		: rows.map((row) => row.timestamp);
+	const rows: Array<ChartRow> = points.map((point, index) => ({
+		timestamp: days[index].getTime(),
+		tooltipLabel: formatDay(days[index]),
+		value: point.value,
+	}));
 	const showsEveryDot = rows.length <= MAX_POINTS_WITH_DOTS;
-	const values = rows.flatMap((row) => (row.value === null ? [] : [row.value]));
 	const hasLoneValue = values.length === 1;
-
-	const scaleValues = threshold === null ? values : [...values, threshold.warning, threshold.danger];
-	const yMin = Math.min(...scaleValues) * (1 - Y_AXIS_PADDING);
-	const yMax = Math.max(...scaleValues) * (1 + Y_AXIS_PADDING);
-
-	const formatYValue = (value: number) => formatGroupNumber(value, unit, value < 10 ? 1 : 0);
 
 	const getColor = (value: number) =>
 		threshold === null
@@ -75,49 +61,8 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 		<ChartContainer config={chartConfig} className="aspect-auto h-64 w-full sm:h-72">
 			<ComposedChart accessibilityLayer={true} data={rows} margin={{ left: 12, right: 12, top: 8 }}>
 				<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
-				<XAxis
-					dataKey="timestamp"
-					type="number"
-					scale="time"
-					domain={["dataMin", "dataMax"]}
-					ticks={ticks}
-					tickFormatter={(timestamp: number) => formatDate(timestamp, showsMonths ? "LLL" : "dd.MM")}
-					tickLine={false}
-					axisLine={false}
-					tickMargin={8}
-					interval="preserveStartEnd"
-					minTickGap={16}
-					tick={{ className: "text-sm", fill: "var(--color-muted-foreground)" }}
-				/>
-				<YAxis
-					width={isMobile ? COLLAPSED_Y_AXIS_WIDTH : Y_AXIS_WIDTH}
-					tickLine={false}
-					axisLine={false}
-					tick={
-						isMobile
-							? (tickProps: YAxisTickContentProps) => (
-									<CollapsedYAxisTick
-										y={tickProps.y}
-										label={formatYValue(Number(tickProps.payload.value))}
-									/>
-								)
-							: { className: "text-sm", fill: "var(--color-muted-foreground)" }
-					}
-					domain={[yMin, yMax]}
-					tickFormatter={formatYValue}
-					label={
-						isMobile
-							? undefined
-							: {
-									value: getGroupUnitLabel(unit, t),
-									position: "inside",
-									dx: -32,
-									angle: -90,
-									className: "text-base",
-									fill: "var(--color-muted-foreground)",
-								}
-					}
-				/>
+				<XAxis {...xAxisProps} />
+				<YAxis {...yAxisProps} />
 				<ChartTooltip
 					cursor={false}
 					content={({ active, payload }) => {
@@ -128,8 +73,7 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 						}
 
 						return (
-							<div className="rounded-md border bg-background p-3 text-sm shadow">
-								<div className="mb-1 font-medium">{row.tooltipLabel}</div>
+							<TrendTooltip title={row.tooltipLabel}>
 								{row.value === null ? (
 									<div className="text-muted-foreground">
 										{t(($) => $.aggregatedExposure.group.suppressed)}
@@ -142,7 +86,7 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 										</span>
 									</div>
 								)}
-							</div>
+							</TrendTooltip>
 						);
 					}}
 				/>

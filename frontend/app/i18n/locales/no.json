@@ -135,8 +135,7 @@
     "share": "{{value}} %",
     "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
-    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)",
-    "private": "Bare du ser dette"
+    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)"
   },
   "dangerLevelStatus": {
     "danger": "Over grenseverdi",

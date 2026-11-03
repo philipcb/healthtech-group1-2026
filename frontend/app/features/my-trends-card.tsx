@@ -275,7 +275,6 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 			<div className="flex flex-col gap-0.5 border-t pt-2 text-muted-foreground text-xs">
 				<p>{t(($) => $.myTrends.shareExplanation)}</p>
 				<p>{t(($) => $.myTrends.coverage, { hours: lastHours, normal: normalHours, previous })}</p>
-				<p>{t(($) => $.myTrends.private)}</p>
 			</div>
 		</TrendsShell>
 	);

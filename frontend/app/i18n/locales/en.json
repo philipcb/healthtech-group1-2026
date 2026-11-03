@@ -138,8 +138,7 @@
     "share": "{{value}}%",
     "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)",
-    "private": "Only you can see this"
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)"
   },
   "dangerLevelStatus": {
     "danger": "Above limit value",

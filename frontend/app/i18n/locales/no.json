@@ -359,6 +359,7 @@
     "exposureLabel": "Eksponeringstype",
     "perOccupation": "Del opp etter yrkesgruppe",
     "pointsUnit": "poeng",
+    "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
@@ -425,6 +426,7 @@
     },
     "compare": {
       "title": "Sammenlign grupper",
+      "wholeYard": "Hele verftet",
       "periodNotStarted": "{{period}} har ikke startet ennå.",
       "level": {
         "label": "Sammenlign",

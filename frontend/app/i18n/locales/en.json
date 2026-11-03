@@ -362,6 +362,7 @@
     "exposureLabel": "Exposure type",
     "perOccupation": "Split by occupation",
     "pointsUnit": "points",
+    "wholeHall": "Whole building",
     "metrics": {
       "dust": "Average {{dustField}} concentration (TWA)",
       "noise": "Average sound level (LAeq, arithmetic average)",
@@ -428,6 +429,7 @@
     },
     "compare": {
       "title": "Compare groups",
+      "wholeYard": "Whole yard",
       "periodNotStarted": "{{period}} hasn't started yet.",
       "level": {
         "label": "Compare",

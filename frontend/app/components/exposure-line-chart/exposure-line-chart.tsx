@@ -35,6 +35,8 @@ import { ThresholdLegend } from "./threshold-legend.tsx";
 export type XAxisMode = "default" | "windowed";
 
 const Y_AXIS_WIDTH = 60;
+// Room for dust in mg, which is shown with four decimals
+const MG_Y_AXIS_WIDTH = 76;
 
 const chartConfig = {
 	desktop: {
@@ -111,7 +113,13 @@ export function ExposureLineChart({
 	const compact = variant === "compact";
 	const isMobileBreakout = breakoutOnMobile && isMobile;
 	const hideYAxisLabel = compact || isMobileBreakout;
-	const yAxisWidth = compact ? Y_AXIS_WIDTH : isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : undefined;
+	const yAxisWidth = compact
+		? Y_AXIS_WIDTH
+		: isMobileBreakout
+			? COLLAPSED_Y_AXIS_WIDTH
+			: unit === "mg"
+				? MG_Y_AXIS_WIDTH
+				: Y_AXIS_WIDTH;
 
 	const rawTicks = buildTicks(xAxisMode, minTime, maxTime);
 	const ticks = limitTicks(rawTicks, isMobileBreakout ? 4 : 6);
@@ -197,7 +205,8 @@ export function ExposureLineChart({
 							: {
 									value: t(($) => $.exposures.units[unit]),
 									position: unitLabelPosition === "top" ? "insideTopLeft" : "inside",
-									dx: unitLabelPosition === "top" ? 50 : -32,
+									// The label is centered in the axis, so this keeps it at the left edge whatever the width
+									dx: unitLabelPosition === "top" ? 50 : -yAxisWidth / 2 - 2,
 									dy: unitLabelPosition === "top" ? -16 : 0,
 									angle: unitLabelPosition === "top" ? 0 : -90,
 									fontSize: unitLabelPosition === "top" ? 10 : undefined,
@@ -271,7 +280,7 @@ export function ExposureLineChart({
 						verticalAlign="bottom"
 						align="left"
 						content={() => (
-							<div style={{ marginLeft: yAxisWidth ?? Y_AXIS_WIDTH }}>
+							<div style={{ marginLeft: yAxisWidth }}>
 								<ThresholdLegend
 									items={[
 										{

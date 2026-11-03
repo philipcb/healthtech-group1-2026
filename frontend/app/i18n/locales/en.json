@@ -108,6 +108,7 @@
     }
   },
   "exposureSummary": {
+    "ofTotal": "of {{total}}",
     "title": "Exposure",
     "aggregated": {
       "safe": "Within safe limits",
@@ -118,27 +119,34 @@
   "myTrends": {
     "title": "My trends",
     "period": {
-      "week": "Week {{period}} vs. weeks {{baselineStart}}–{{baselineEnd}}",
-      "month": "{{period}} vs. {{baselineStart}}–{{baselineEnd}}"
+      "day": "{{period}} vs. {{baseline}}",
+      "week": "Week {{period}} vs. week {{baseline}}",
+      "month": "{{period}} vs. {{baseline}}"
+    },
+    "previous": {
+      "day": "previous day",
+      "week": "last week",
+      "month": "last month"
     },
     "trend": {
-      "higher": "Higher than usual",
-      "same": "As usual",
-      "lower": "Lower than usual"
+      "higher": "Higher than {{previous}}",
+      "same": "Same as {{previous}}",
+      "lower": "Lower than {{previous}}"
     },
-    "share": "{{percent}}% of measured time above action value (usual: {{normal}}%)",
+    "share": "{{value}}%",
+    "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "higherHint": "Have you changed tools or tasks? Feel free to add a note.",
-    "coverage": {
-      "week": "Measured {{hours}} h in week {{period}} (usual: {{normal}} h)",
-      "month": "Measured {{hours}} h in {{period}} (usual: {{normal}} h)"
-    },
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)",
     "private": "Only you can see this"
   },
-  "lineChart": {
+  "dangerLevelStatus": {
     "danger": "Above limit value",
     "warning": "Above action value",
     "safe": "Within safe limits"
+  },
+  "thresholds": {
+    "warning": "Action value",
+    "danger": "Limit value"
   },
   "notes": {
     "interactive": {

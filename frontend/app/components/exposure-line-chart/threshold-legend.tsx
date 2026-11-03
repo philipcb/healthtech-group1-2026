@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils.ts";
 import { useTranslation } from "react-i18next";
 
 export type ThresholdLegendItem = {
-	dangerLevel: DangerLevel;
+	// Safe has no threshold line
+	dangerLevel: Exclude<DangerLevel, "safe">;
 	color: string;
 };
 
@@ -16,7 +17,7 @@ export function ThresholdLegend({ items, className }: { items: Array<ThresholdLe
 			{items.map((item) => {
 				const strokeDasharray = getThresholdStrokeDasharray(item.dangerLevel);
 
-				const dangerLevelLabel = t(($) => $.lineChart[item.dangerLevel]);
+				const dangerLevelLabel = t(($) => $.thresholds[item.dangerLevel]);
 
 				return (
 					<div key={item.dangerLevel} className="flex items-center gap-2">

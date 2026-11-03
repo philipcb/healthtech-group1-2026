@@ -77,7 +77,9 @@ export default function ExposureLayout() {
 
 			<aside className="flex flex-col gap-4 lg:col-start-3 lg:row-start-2">
 				<DateAndViewPicker />
-				<MyTrendsCard className="hidden lg:flex" />
+				<div className="hidden lg:block">
+					<PdfExport exposureType={exposure ?? "all"} />
+				</div>
 			</aside>
 
 			<article className="flex flex-col gap-4 lg:col-start-2 lg:row-start-2">
@@ -91,7 +93,10 @@ export default function ExposureLayout() {
 				<div className="hidden lg:block">
 					<LimitExplanation />
 				</div>
-				<PdfExport exposureType={exposure ?? "all"} />
+				<div className="lg:hidden">
+					<PdfExport exposureType={exposure ?? "all"} />
+				</div>
+				<MyTrendsCard className="hidden lg:flex" />
 			</aside>
 		</div>
 	);

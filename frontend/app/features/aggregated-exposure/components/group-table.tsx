@@ -144,7 +144,7 @@ function ExposureCell({
 			: formatGroupValue(average, unit, t);
 	// Safe values are only marked by their dot, so the warnings and exceedances stand out. Without a value there's no
 	// level, so a missing value never looks like a safe one.
-	const levelLabel = level === "warning" || level === "danger" ? t(($) => $.lineChart[level]) : null;
+	const levelLabel = level === "warning" || level === "danger" ? t(($) => $.dangerLevelStatus[level]) : null;
 
 	return (
 		<td className={cn("h-px p-0 align-top", level && cellTints[level])}>

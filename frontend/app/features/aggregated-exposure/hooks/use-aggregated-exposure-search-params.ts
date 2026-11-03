@@ -25,6 +25,9 @@ const parseAsMonth = createParser<number>({
 
 const today = new Date();
 
+/** What the overview's groups are until another level is picked */
+export const defaultOverviewLevel: CompareLevel = "hallOccupation";
+
 const searchParams = {
 	exposure: parseAsExposure.withDefault("dust"),
 	dustField: parseAsDustField.withDefault(defaultDustField),
@@ -39,7 +42,7 @@ const searchParams = {
 	yard: parseAsString,
 	hall: parseAsString,
 	/** What the overview's groups are, picked like the compare page's groups */
-	level: parseAsStringLiteral(compareLevels).withDefault("hallOccupation"),
+	level: parseAsStringLiteral(compareLevels).withDefault(defaultOverviewLevel),
 };
 
 export function useAggregatedExposureSearchParams() {
@@ -67,16 +70,8 @@ export function useAggregatedExposureSearchParams() {
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,
 		setLevel: (level: CompareLevel) => void setParams({ level }),
-		resetOverviewFilters: () =>
-			void setParams({
-				period: null,
-				month: null,
-				year: null,
-				exposureFilter: null,
-				level: null,
-				yard: null,
-				hall: null,
-			}),
+		// The period has its own picker, so it isn't one of the filters this resets
+		resetOverviewFilters: () => void setParams({ exposureFilter: null, level: null, yard: null, hall: null }),
 		resetGroupFilters: () =>
 			void setParams({ period: null, month: null, year: null, exposure: null, dustField: null }),
 		periodSelection,

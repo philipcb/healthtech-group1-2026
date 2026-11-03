@@ -1,6 +1,6 @@
 import { OptionToggle } from "@/components/option-toggle.tsx";
-import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Label } from "@/components/ui/label.tsx";
+import { Switch } from "@/components/ui/switch.tsx";
 import {
 	type CompareLevel,
 	comparePlaces,
@@ -30,7 +30,7 @@ export function LevelPicker({
 	const perOccupation = isPerOccupation(level);
 
 	return (
-		<div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+		<div className="flex flex-wrap items-center gap-x-3 gap-y-3">
 			<OptionToggle
 				labelledBy={labelledBy}
 				value={place}
@@ -44,17 +44,19 @@ export function LevelPicker({
 					};
 				})}
 			/>
-			<div className="flex items-center gap-2">
-				<Checkbox
+			{/* The whole pill is the switch's label, so it toggles wherever it's clicked */}
+			<Label
+				htmlFor={perOccupationId}
+				className="h-9 cursor-pointer whitespace-nowrap rounded-md border border-input bg-background px-3 shadow-xs transition-colors hover:bg-accent/50"
+			>
+				<Switch
 					id={perOccupationId}
 					checked={perOccupation}
-					onCheckedChange={(checked) => onLevelChange(getCompareLevel(place, checked === true))}
+					onCheckedChange={(checked) => onLevelChange(getCompareLevel(place, checked))}
 				/>
-				<Label htmlFor={perOccupationId} className="font-normal">
-					<UsersRound aria-hidden="true" className="size-4 text-muted-foreground" />
-					{t(($) => $.aggregatedExposure.perOccupation)}
-				</Label>
-			</div>
+				<UsersRound aria-hidden="true" className="size-4 text-muted-foreground" />
+				{t(($) => $.aggregatedExposure.perOccupation)}
+			</Label>
 		</div>
 	);
 }

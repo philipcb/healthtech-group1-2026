@@ -370,7 +370,10 @@
       "title": "Filtre",
       "description": "Valgene gjelder med en gang.",
       "close": "Lukk",
-      "save": "Lagre"
+      "reset": "Nullstill filtre",
+      "activeCount": "{{count}} aktive",
+      "activeCount_one": "{{count}} aktiv",
+      "activeCount_other": "{{count}} aktive"
     },
     "occupations": {
       "welder": "Sveiser",
@@ -393,7 +396,7 @@
     },
     "overview": {
       "level": {
-        "label": "Visning"
+        "label": "Grupper etter"
       },
       "belowActionValue": "Under tiltaksverdi",
       "noValue": "Ingen verdi",

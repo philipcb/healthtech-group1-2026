@@ -8,11 +8,13 @@ export function ExposureFilterToggle({
 	onValueChange,
 	labelledBy,
 	hidesLabel = false,
+	compact = false,
 }: {
 	value: ExposureFilter;
 	onValueChange: (filter: ExposureFilter) => void;
 	labelledBy?: string;
 	hidesLabel?: boolean;
+	compact?: boolean;
 }) {
 	const { t } = useTranslation();
 
@@ -21,6 +23,7 @@ export function ExposureFilterToggle({
 			label={t(($) => $.exposures.filter.label)}
 			labelledBy={labelledBy}
 			hidesLabel={hidesLabel}
+			compact={compact}
 			fillsWidth={false}
 			value={value}
 			onValueChange={onValueChange}

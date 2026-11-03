@@ -373,7 +373,10 @@
       "title": "Filters",
       "description": "Changes apply right away.",
       "close": "Close",
-      "save": "Save"
+      "reset": "Reset filters",
+      "activeCount": "{{count}} active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
     },
     "occupations": {
       "welder": "Welder",
@@ -396,7 +399,7 @@
     },
     "overview": {
       "level": {
-        "label": "View"
+        "label": "Group by"
       },
       "belowActionValue": "Below action value",
       "noValue": "No value",

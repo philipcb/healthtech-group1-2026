@@ -39,7 +39,6 @@ namespace Backend.Utils
 			}
 			else if (periodType.Equals("day"))
 			{
-				
 				if (month is null || month > 11 || month < 0)
 				{
 					throw new ArgumentException(

@@ -55,16 +55,16 @@ public sealed class TrendPointDto
 	// Share (0 to 1) of worker of the group who went over action value for the day (same as number of days above action value for 1 day)
 	[JsonPropertyName("rateOfWorkerOverAction")]
 	public double? RateOfWorkerOverAction { get; set; }
-	
+
 	// Share (0 to 1) of worker of the group who went over limit for the day (same as number of days above limit for 1 day)
 	[JsonPropertyName("rateOfWorkerOverLimit")]
 	public double? RateOfWorkerLimit { get; set; }
 
-	// Share (0 to 1) of hours of the group over the action value, including over the limit, for the day of "Time" 
+	// Share (0 to 1) of hours of the group over the action value, including over the limit, for the day of "Time"
 	[JsonPropertyName("averageTimeOverAction")]
 	public double? AverageTimeOverAction { get; set; }
 
-	// Share (0 to 1) of hours over the limit, for the day of "Time" 
+	// Share (0 to 1) of hours over the limit, for the day of "Time"
 	[JsonPropertyName("averageTimeOverLimit")]
 	public double? AverageTimeOverLimit { get; set; }
 }

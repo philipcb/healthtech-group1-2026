@@ -85,7 +85,7 @@ public class DataFiller
 			AverageTimeInSafeLimits = 1 - rate.WarningRate - rate.DangerRate,
 			AverageTimeOverLimit = rate.DangerRate,
 			AverageTimeOverAction = rate.WarningRate + rate.DangerRate,
-			Field = field ?? "not specified"
+			Field = field ?? "not specified",
 		};
 
 	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
@@ -122,19 +122,14 @@ public class DataFiller
 			.ToList();
 
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-        .Join(
-            dailyWorkerThresholds,
-            threshold => threshold.Time,
-            daysAbove => daysAbove.Time,
-            (threshold, daysAbove) => ToShiftAverage(
-                sampleId,
-                ExposureType.Vibration,
-                null,
-                threshold,
-                daysAbove
-            )
-        )
-        .ToList();
+			.Join(
+				dailyWorkerThresholds,
+				threshold => threshold.Time,
+				daysAbove => daysAbove.Time,
+				(threshold, daysAbove) =>
+					ToShiftAverage(sampleId, ExposureType.Vibration, null, threshold, daysAbove)
+			)
+			.ToList();
 
 		await _insertHandler.addDataRange(finalAggregatedData);
 		await _insertHandler.addDataRange(finalAggregatedDataRate);
@@ -169,23 +164,16 @@ public class DataFiller
 			})
 			.ToList();
 
-		
-		
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
-        .Join(
-            dailyWorkerThresholds,
-            threshold => threshold.Time,
-            daysAbove => daysAbove.Time,
-            (threshold, daysAbove) => ToShiftAverage(
-                sampleId,
-                ExposureType.Noise,
-                null,
-                threshold,
-                daysAbove
-            )
-        )
-        .ToList();
-				
+			.Join(
+				dailyWorkerThresholds,
+				threshold => threshold.Time,
+				daysAbove => daysAbove.Time,
+				(threshold, daysAbove) =>
+					ToShiftAverage(sampleId, ExposureType.Noise, null, threshold, daysAbove)
+			)
+			.ToList();
+
 		await _insertHandler.addDataRange(finalAggregatedData);
 		await _insertHandler.addDataRange(finalAggregatedDataRate);
 		Console.WriteLine("Done");
@@ -202,33 +190,36 @@ public class DataFiller
 		Console.WriteLine($"Update Dust averages from {startTime} to {endTime}");
 
 		var dustDataDico = new Dictionary<Field, Dictionary<DateTime, double>>();
-		var aboveThresholdDataDico = new Dictionary<Field, Dictionary<DateTime, AveragePer8HourShift>>();
-		
+		var aboveThresholdDataDico =
+			new Dictionary<Field, Dictionary<DateTime, AveragePer8HourShift>>();
+
 		foreach (Field field in Enum.GetValues<Field>())
 		{
-			var (dataList, thresholds, dailyWorkerThresholds) = await _fetchHandler.fetchAggregatedDataOverSampleUsers(
-				users,
-				startTime,
-				endTime,
-				ExposureType.Dust,
-				field
-			);
+			var (dataList, thresholds, dailyWorkerThresholds) =
+				await _fetchHandler.fetchAggregatedDataOverSampleUsers(
+					users,
+					startTime,
+					endTime,
+					ExposureType.Dust,
+					field
+				);
 			dustDataDico[field] = dataList.ToDictionary(g => g.Time, g => g.AvgValue);
-			
-			
+
 			aboveThresholdDataDico[field] = thresholds
 				.Join(
 					dailyWorkerThresholds,
 					threshold => threshold.Time,
 					daysAbove => daysAbove.Time,
-					(threshold, daysAbove) => ToShiftAverage(
-						sampleId,
-						ExposureType.Dust,
-						field.ToString(),
-						threshold,
-						daysAbove
-        			)
-    			).ToDictionary(g => g.Time, g => g);
+					(threshold, daysAbove) =>
+						ToShiftAverage(
+							sampleId,
+							ExposureType.Dust,
+							field.ToString(),
+							threshold,
+							daysAbove
+						)
+				)
+				.ToDictionary(g => g.Time, g => g);
 		}
 
 		var hourlyDates = new List<DateTime>();
@@ -236,26 +227,19 @@ public class DataFiller
 		{
 			hourlyDates = hourlyDates.Union(element.Value.Keys).ToList();
 		}
-		hourlyDates = hourlyDates
-			.Distinct()
-			.OrderBy(x => x)
-			.ToList();
+		hourlyDates = hourlyDates.Distinct().OrderBy(x => x).ToList();
 
 		var dailyDates = new List<DateTime>();
 		foreach (var element in aboveThresholdDataDico)
 		{
 			dailyDates = dailyDates.Union(element.Value.Keys).ToList();
 		}
-		dailyDates = dailyDates
-			.Distinct()
-			.OrderBy(x => x)
-			.ToList();
+		dailyDates = dailyDates.Distinct().OrderBy(x => x).ToList();
 
 		List<DustAverage> finalAggregatedData = new List<DustAverage>();
 		List<AveragePer8HourShift> finalAggregatedDataRate = new List<AveragePer8HourShift>();
 		foreach (DateTime date in hourlyDates)
 		{
-			
 			finalAggregatedData.Add(
 				new DustAverage
 				{
@@ -271,8 +255,6 @@ public class DataFiller
 					AveragePm10Twa = dustDataDico[Field.Pm10_twa][date],
 				}
 			);
-
-
 		}
 		foreach (DateTime date in dailyDates)
 		{
@@ -281,7 +263,7 @@ public class DataFiller
 				finalAggregatedDataRate.Add(aboveThresholdDataDico[field][date]);
 			}
 		}
-		
+
 		await _insertHandler.addDataRange(finalAggregatedData);
 		await _insertHandler.addDataRange(finalAggregatedDataRate);
 		Console.WriteLine("Done");

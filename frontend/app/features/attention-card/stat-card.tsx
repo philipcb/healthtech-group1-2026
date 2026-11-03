@@ -2,7 +2,7 @@ import { DangerLevelDots } from "@/components/danger-level-dots.tsx";
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
 import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { cn } from "@/lib/utils.ts";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowDownIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export type StatCardProps = {
@@ -11,25 +11,31 @@ export type StatCardProps = {
 	label: string;
 	/** Omit for a neutral, grey card */
 	dangerLevel?: DangerLevel;
-	onClick?: () => void;
+	/** The team list is narrowed to the operators this card counts */
+	selected: boolean;
+	onClick: () => void;
 };
 
-export const StatCard = ({ className, value, label, dangerLevel, onClick }: StatCardProps) => {
+export const StatCard = ({ className, value, label, dangerLevel, selected, onClick }: StatCardProps) => {
 	const { t } = useTranslation();
 
-	const isHoverable = onClick !== undefined;
 	const visualDangerLevel = value === 0 || dangerLevel === undefined ? "none" : dangerLevel;
 	const { bgSubtle, border, text } = dangerlevelStyles[visualDangerLevel];
 
 	return (
-		<button type="button" onClick={onClick} className="w-full text-left">
+		<button
+			type="button"
+			onClick={onClick}
+			aria-pressed={selected}
+			className="group w-full rounded-xl text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+		>
 			<Card
 				className={cn(
-					"group h-full justify-between gap-4",
+					"h-full cursor-pointer justify-between gap-4 transition-all hover:brightness-95 dark:hover:brightness-85",
 					bgSubtle,
 					border,
 					text,
-					isHoverable && "cursor-pointer transition-all hover:brightness-95 dark:hover:brightness-85",
+					selected && "ring-2 ring-current ring-offset-2 ring-offset-background",
 					className,
 				)}
 			>
@@ -41,15 +47,24 @@ export const StatCard = ({ className, value, label, dangerLevel, onClick }: Stat
 						</div>
 					)}
 				</CardHeader>
-				<CardContent className="flex flex-row justify-between gap-2">
+				<CardContent className="flex flex-row items-end justify-between gap-2">
 					<p className={cn("font-medium text-4xl tabular-nums leading-none", text)}>{value}</p>
 
-					{isHoverable && (
-						<div className="mt-auto flex gap-1 text-xs">
-							<p>{t(($) => $.interactiveCard.viewDetails)}</p>
-							<ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
-						</div>
-					)}
+					<div className="flex items-center gap-1 text-xs">
+						<p>
+							{selected
+								? t(($) => $.foremanDashboard.overview.statCards.clearFilter)
+								: t(($) => $.foremanDashboard.overview.statCards.showInList)}
+						</p>
+						{selected ? (
+							<XIcon className="size-4" aria-hidden="true" />
+						) : (
+							<ArrowDownIcon
+								className="size-4 transition-transform group-hover:translate-y-0.5"
+								aria-hidden="true"
+							/>
+						)}
+					</div>
 				</CardContent>
 			</Card>
 		</button>

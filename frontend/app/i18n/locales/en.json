@@ -82,7 +82,6 @@
     "live": "Live",
     "overview": "Overview",
     "home": "Home",
-    "team": "Team",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
     "exportPdf": "Export PDF",
@@ -219,6 +218,13 @@
       "title": "Your team",
       "failedToLoadMembers": "Failed to load team members",
       "noMembersFound": "No team members found",
+      "empty": "No operators in your team yet. Add operators to follow their exposure here.",
+      "addLabel": "Add operators to your team",
+      "updateFailed": "Could not update your team. Try again.",
+      "filteredCount": "Showing {{shown}} of {{total}}",
+      "clearFilter": "Clear filter: {{filter}}",
+      "noFilterMatches": "No operators in your team match this filter.",
+      "retry": "Try again",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -229,11 +235,18 @@
       },
       "action": {
         "removeSubordinate": "Remove from team",
-        "addSubordinate": "Add to team"
+        "addSubordinate": "Add to team",
+        "manage": "Manage team",
+        "done": "Done",
+        "remove": "Remove",
+        "removeMember": "Remove {{name}} from team"
       },
       "membersCount": "{{count}} operator in team",
       "membersCount_one": "{{count}} operator in team",
       "membersCount_other": "{{count}} operators in team",
+      "memberCountShort": "{{count}} operators",
+      "memberCountShort_one": "{{count}} operator",
+      "memberCountShort_other": "{{count}} operators",
       "mapTitle": "Location map"
     },
     "overview": {
@@ -265,10 +278,17 @@
         },
         "noActiveSensors": {
           "label": "No active sensors"
-        }
+        },
+        "showInList": "Show in team list",
+        "clearFilter": "Clear filter"
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection"
+      "clearUserSelection": "Clear user selection",
+      "summaryDisplay": {
+        "label": "Show team status as",
+        "cards": "Cards",
+        "charts": "Pie charts"
+      }
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",

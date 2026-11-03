@@ -79,7 +79,6 @@
     "live": "Live",
     "overview": "Oversikt",
     "home": "Hjem",
-    "team": "Team",
     "statistics": "Statistikk",
     "export": "Eksporter oversikt som PDF",
     "exportPdf": "Eksporter PDF",
@@ -216,6 +215,13 @@
       "title": "Ditt team",
       "failedToLoadMembers": "Kunne ikke laste teammedlemmer",
       "noMembersFound": "Ingen teammedlemmer funnet",
+      "empty": "Ingen operatører i teamet ennå. Legg til operatører for å følge eksponeringen deres her.",
+      "addLabel": "Legg til operatører i teamet",
+      "updateFailed": "Kunne ikke oppdatere teamet. Prøv igjen.",
+      "filteredCount": "Viser {{shown}} av {{total}}",
+      "clearFilter": "Fjern filter: {{filter}}",
+      "noFilterMatches": "Ingen operatører i teamet passer dette filteret.",
+      "retry": "Prøv igjen",
       "table": {
         "name": "Navn",
         "email": "E-post",
@@ -226,11 +232,18 @@
       },
       "action": {
         "removeSubordinate": "Fjern fra teamet",
-        "addSubordinate": "Legg til i teamet"
+        "addSubordinate": "Legg til i teamet",
+        "manage": "Administrer team",
+        "done": "Ferdig",
+        "remove": "Fjern",
+        "removeMember": "Fjern {{name}} fra teamet"
       },
       "membersCount": "{{count}} operatør i teamet",
       "membersCount_one": "{{count}} operatør i teamet",
       "membersCount_other": "{{count}} operatører i teamet",
+      "memberCountShort": "{{count}} operatører",
+      "memberCountShort_one": "{{count}} operatør",
+      "memberCountShort_other": "{{count}} operatører",
       "mapTitle": "Lokasjonskart"
     },
     "overview": {
@@ -262,10 +275,17 @@
         },
         "noActiveSensors": {
           "label": "Ingen aktive sensorer"
-        }
+        },
+        "showInList": "Vis i teamlisten",
+        "clearFilter": "Fjern filter"
       },
       "selectUserPlaceholder": "Velg et teammedlem",
-      "clearUserSelection": "Fjern brukervalg"
+      "clearUserSelection": "Fjern brukervalg",
+      "summaryDisplay": {
+        "label": "Vis teamstatus som",
+        "cards": "Kort",
+        "charts": "Sektordiagram"
+      }
     },
     "actionCard": {
       "safe": "Teamstatus: Innenfor eksponeringsgrenser",

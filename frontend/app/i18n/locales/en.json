@@ -40,6 +40,10 @@
       "mg": "mg/m³",
       "points": "Points",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Show exposure",
+      "all": "All"
     }
   },
   "dangerLevels": {
@@ -264,8 +268,7 @@
         }
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection",
-      "clearExposureFilter": "Clear exposure filter"
+      "clearUserSelection": "Clear user selection"
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",
@@ -373,10 +376,6 @@
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Show exposure",
-        "all": "All"
-      },
       "level": {
         "label": "View"
       },

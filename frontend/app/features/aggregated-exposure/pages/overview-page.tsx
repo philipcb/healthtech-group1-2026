@@ -13,16 +13,12 @@ import {
 	getComparePlace,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
-import {
-	type ExposureFilter,
-	getShownExposures,
-	isExposureUnavailable,
-} from "@/features/aggregated-exposure/model/groups.ts";
+import { getShownExposures, isExposureUnavailable } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
-import type { DustField } from "@/lib/exposures.ts";
+import type { DustField, ExposureFilter } from "@/lib/exposures.ts";
 import { MapPin } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";

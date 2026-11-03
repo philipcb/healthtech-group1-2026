@@ -4,7 +4,6 @@ import { DangerLevelBadge, ThresholdBar } from "@/features/aggregated-exposure/c
 import { useGroupDetailsLink } from "@/features/aggregated-exposure/hooks/use-group-details-link.ts";
 import { type ComparableGroup, getComparableGroupName } from "@/features/aggregated-exposure/model/compare.ts";
 import {
-	type ExposureFilter,
 	formatGroupValue,
 	getGroupThreshold,
 	getOccupationLabel,
@@ -14,7 +13,7 @@ import {
 import type { TranslateFn } from "@/i18n/config.ts";
 import type { MeasurementUnitsDto } from "@/lib/api/generated/models/index.ts";
 import { DANGER_LEVEL_SEVERITY, type DangerLevel, getDangerLevel } from "@/lib/danger-levels.ts";
-import type { DustField, Exposure } from "@/lib/exposures.ts";
+import type { DustField, Exposure, ExposureFilter } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";

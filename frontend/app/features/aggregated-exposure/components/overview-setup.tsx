@@ -1,4 +1,4 @@
-import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
+import { ExposureFilterToggle } from "@/components/exposure-filter-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";

@@ -1,11 +1,18 @@
 import { type CompareLevel, compareLevels } from "@/features/aggregated-exposure/model/compare.ts";
-import { type ExposureFilter, exposureFilters } from "@/features/aggregated-exposure/model/groups.ts";
 import {
 	aggregatedExposurePeriods,
 	getSelectableYears,
 	type PeriodSelection,
 } from "@/features/aggregated-exposure/model/period.ts";
-import { type DustField, defaultDustField, type Exposure, parseAsDustField, parseAsExposure } from "@/lib/exposures.ts";
+import {
+	type DustField,
+	defaultDustField,
+	type Exposure,
+	type ExposureFilter,
+	exposureFilters,
+	parseAsDustField,
+	parseAsExposure,
+} from "@/lib/exposures.ts";
 import { createParser, parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 
 const parseAsMonth = createParser<number>({

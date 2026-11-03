@@ -1,6 +1,6 @@
+import { OptionToggle } from "@/components/option-toggle.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Label } from "@/components/ui/label.tsx";
-import { OptionToggle } from "@/features/aggregated-exposure/components/option-toggle.tsx";
 import {
 	type CompareLevel,
 	comparePlaces,

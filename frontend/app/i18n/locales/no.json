@@ -37,6 +37,10 @@
       "mg": "mg/m³",
       "points": "Poeng",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Vis eksponering",
+      "all": "Alle"
     }
   },
   "dangerLevels": {
@@ -261,8 +265,7 @@
         }
       },
       "selectUserPlaceholder": "Velg et teammedlem",
-      "clearUserSelection": "Fjern brukervalg",
-      "clearExposureFilter": "Fjern eksponeringsfilter"
+      "clearUserSelection": "Fjern brukervalg"
     },
     "actionCard": {
       "safe": "Teamstatus: Innenfor eksponeringsgrenser",
@@ -370,10 +373,6 @@
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Vis eksponering",
-        "all": "Alle"
-      },
       "level": {
         "label": "Visning"
       },

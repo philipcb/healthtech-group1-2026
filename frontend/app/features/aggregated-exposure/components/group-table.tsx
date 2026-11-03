@@ -206,10 +206,11 @@ function ExposureHeader({
 	const { t } = useTranslation();
 
 	return (
-		// Top-aligned, so every exposure's name is on one line with the others above the dust column's fraction tabs
-		<th scope="col" className="px-4 py-2.5 align-top font-medium">
-			<span className="flex flex-col items-start gap-1.5">
-				<span className="flex items-center gap-1.5">
+		// The dust column's fraction tabs sit next to its name, and wrap below it when the column is too narrow. Every name
+		// is as tall as the tabs and top-aligned, so the names stay on one line with each other and the group column's.
+		<th scope="col" className="px-4 py-1 align-top font-medium">
+			<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+				<span className="flex h-8 items-center gap-1.5">
 					<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
 					{t(($) => $.exposures[exposure])}
 				</span>

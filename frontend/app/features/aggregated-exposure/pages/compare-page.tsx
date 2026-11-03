@@ -4,7 +4,7 @@ import { CompareIntro } from "@/features/aggregated-exposure/components/compare-
 import { CompareSetup } from "@/features/aggregated-exposure/components/compare-setup.tsx";
 import { ComparisonCard } from "@/features/aggregated-exposure/components/comparison-card.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useComparison } from "@/features/aggregated-exposure/hooks/use-comparison.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
@@ -40,48 +40,45 @@ export function ComparePage() {
 								t(($) => $.aggregatedExposure.filters.allYards))}
 					</p>
 				</div>
-				<div className="hidden sm:block">
-					<PeriodPicker selection={periodSelection} />
-				</div>
 			</header>
 
-			<CompareSetup
-				exposure={exposure}
-				onExposureChange={setExposure}
-				dustField={dustField}
-				onDustFieldChange={setDustField}
-				level={comparison.level}
-				onLevelChange={comparison.changeLevel}
-				yards={comparison.yards}
-				selectedYard={comparison.selectedYard}
-				onYardChange={comparison.setYard}
-				entries={comparison.entries}
-				options={comparison.options}
-				isLoading={comparison.status === "pending"}
-				onAdd={comparison.addGroups}
-				onRemove={comparison.removeGroup}
-				onClear={comparison.clearGroups}
-				lastChange={comparison.lastChange}
-				hiddenFromLink={comparison.hiddenFromLink}
-				periodSelection={periodSelection}
-			/>
+			<PeriodPickerLayout selection={periodSelection}>
+				<CompareSetup
+					exposure={exposure}
+					onExposureChange={setExposure}
+					level={comparison.level}
+					onLevelChange={comparison.changeLevel}
+					yards={comparison.yards}
+					selectedYard={comparison.selectedYard}
+					onYardChange={comparison.setYard}
+					entries={comparison.entries}
+					options={comparison.options}
+					isLoading={comparison.status === "pending"}
+					onAdd={comparison.addGroups}
+					onRemove={comparison.removeGroup}
+					onClear={comparison.clearGroups}
+					lastChange={comparison.lastChange}
+					hiddenFromLink={comparison.hiddenFromLink}
+				/>
 
-			<ComparisonResults
-				status={comparison.status}
-				onRetry={comparison.retry}
-				isPeriodNotStarted={periodState === "notStarted"}
-				card={
-					comparison.units && {
-						exposure,
-						dustField,
-						unit: comparison.units[exposure],
-						entries: comparison.entries,
-						periodParams: toPeriodParams(periodSelection),
-						periodLabel: getPeriodLabel(periodSelection, t),
-						periodFilenamePart: toPeriodFilenamePart(periodSelection),
+				<ComparisonResults
+					status={comparison.status}
+					onRetry={comparison.retry}
+					isPeriodNotStarted={periodState === "notStarted"}
+					card={
+						comparison.units && {
+							exposure,
+							dustField,
+							onDustFieldChange: setDustField,
+							unit: comparison.units[exposure],
+							entries: comparison.entries,
+							periodParams: toPeriodParams(periodSelection),
+							periodLabel: getPeriodLabel(periodSelection, t),
+							periodFilenamePart: toPeriodFilenamePart(periodSelection),
+						}
 					}
-				}
-			/>
+				/>
+			</PeriodPickerLayout>
 		</div>
 	);
 }

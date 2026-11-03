@@ -3,7 +3,7 @@ import { EmptyState } from "@/features/aggregated-exposure/components/empty-stat
 import { GroupTable } from "@/features/aggregated-exposure/components/group-table.tsx";
 import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
 import { OverviewSetup } from "@/features/aggregated-exposure/components/overview-setup.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { DangerLevelBadgeLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
@@ -17,14 +17,13 @@ import {
 	type ExposureFilter,
 	getShownExposures,
 	isExposureUnavailable,
-	MIN_GROUP_SIZE,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { GetAggregateGroupsParams, SampleAveragesDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField } from "@/lib/exposures.ts";
-import { MapPin, ShieldCheck } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -64,47 +63,36 @@ export function OverviewPage() {
 						<p className="max-w-prose basis-full text-muted-foreground text-sm">{scope.description}</p>
 					)}
 				</div>
-				<div className="hidden sm:block">
-					<PeriodPicker selection={periodSelection} />
-				</div>
 			</header>
 
-			<OverviewSetup yards={yards} selectedYard={selectedYard} halls={halls} selectedHall={selectedHall} />
+			<PeriodPickerLayout selection={periodSelection}>
+				<OverviewSetup yards={yards} selectedYard={selectedYard} halls={halls} selectedHall={selectedHall} />
 
-			<section aria-labelledby={headingId} className="flex flex-col gap-3">
-				<div className="space-y-1">
-					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-						<h2 id={headingId} className="font-semibold">
-							{t(($) => $.aggregatedExposure.compare.level[level])}
-						</h2>
-						<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
+				<section aria-labelledby={headingId} className="flex flex-col gap-3">
+					<div className="space-y-1">
+						<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+							<h2 id={headingId} className="font-semibold">
+								{t(($) => $.aggregatedExposure.compare.level[level])}
+							</h2>
+							<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
+						</div>
+						<div className="pt-1">
+							<DangerLevelBadgeLegend />
+						</div>
 					</div>
-					<p className="flex max-w-prose items-start gap-1.5 text-muted-foreground text-xs">
-						<ShieldCheck aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-						<span>
-							{t(($) => $.aggregatedExposure.overview.aggregationNotice)}{" "}
-							{t(($) => $.aggregatedExposure.privacyNotice, { count: MIN_GROUP_SIZE })}
-						</span>
-					</p>
-					<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1">
-						<DangerLevelBadgeLegend />
-						<p className="text-muted-foreground text-xs">
-							{t(($) => $.aggregatedExposure.overview.sortedByStatus)}
-						</p>
-					</div>
-				</div>
 
-				<GroupResults
-					params={params}
-					level={level}
-					yard={selectedYard}
-					hall={selectedHall}
-					filter={exposureFilter}
-					dustField={dustField}
-					showsYard={scope.site === null}
-					labelledBy={headingId}
-				/>
-			</section>
+					<GroupResults
+						params={params}
+						level={level}
+						yard={selectedYard}
+						hall={selectedHall}
+						filter={exposureFilter}
+						dustField={dustField}
+						showsYard={scope.site === null}
+						labelledBy={headingId}
+					/>
+				</section>
+			</PeriodPickerLayout>
 		</div>
 	);
 }
@@ -126,6 +114,7 @@ function isSelected(group: ComparableGroup, level: CompareLevel, yard: string | 
 
 function GroupResults({ params, level, yard, hall, filter, dustField, showsYard, labelledBy }: ResultsProps) {
 	const { t } = useTranslation();
+	const { setDustField } = useAggregatedExposureSearchParams();
 	const { data, isPending, isError } = useGetAggregateGroups(params, {
 		query: { select: toComparableGroups },
 	});
@@ -150,6 +139,7 @@ function GroupResults({ params, level, yard, hall, filter, dustField, showsYard,
 			units={data.units}
 			filter={filter}
 			dustField={dustField}
+			onDustFieldChange={setDustField}
 			showsYard={showsYard}
 			labelledBy={labelledBy}
 		/>

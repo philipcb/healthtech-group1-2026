@@ -1,4 +1,3 @@
-import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
@@ -15,42 +14,18 @@ type OverviewSetupProps = {
 
 export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: OverviewSetupProps) {
 	const { t } = useTranslation();
-	const {
-		exposureFilter,
-		setExposureFilter,
-		dustField,
-		setDustField,
-		setYard,
-		setHall,
-		level,
-		setLevel,
-		resetOverviewFilters,
-		periodSelection,
-	} = useAggregatedExposureSearchParams();
+	const { exposureFilter, setExposureFilter, setYard, setHall, level, setLevel, resetOverviewFilters } =
+		useAggregatedExposureSearchParams();
 	// A building can only be picked when the groups are buildings
 	const showsHallFilter = getComparePlace(level) === "hall";
-	const showsDust = exposureFilter === "all" || exposureFilter === "dust";
 
 	return (
 		<FilterPanel
 			label={t(($) => $.aggregatedExposure.filters.title)}
-			periodSelection={periodSelection}
 			onReset={resetOverviewFilters}
+			// The dust fraction is picked in the dust column's header, or above the list on phones, next to the values it changes
 			exposure={(labelId) => (
-				<div className="flex flex-wrap items-center gap-2">
-					<ExposureFilterToggle
-						value={exposureFilter}
-						onValueChange={setExposureFilter}
-						labelledBy={labelId}
-					/>
-					{showsDust && (
-						<DustFieldTabs
-							value={dustField}
-							onValueChange={setDustField}
-							ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
-						/>
-					)}
-				</div>
+				<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} labelledBy={labelId} />
 			)}
 			yards={yards}
 			selectedYard={selectedYard}

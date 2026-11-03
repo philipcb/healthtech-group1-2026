@@ -129,15 +129,7 @@ export function ThresholdComparison({
 								<TableCell>
 									<span className="flex items-center gap-2">
 										<ExposureIcon type={exposure} size="xs" />
-										<span className="flex flex-col">
-											{t(($) => $.exposures[exposure])}
-											{/* See `thresholdByExposure`: the dust thresholds have no documented source */}
-											{exposure === "dust" && (
-												<span className="text-muted-foreground text-xs">
-													{t(($) => $.aboutFigures.comparedWith.unconfirmed)}
-												</span>
-											)}
-										</span>
+										{t(($) => $.exposures[exposure])}
 									</span>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">

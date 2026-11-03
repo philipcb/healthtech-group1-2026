@@ -7,15 +7,14 @@ import { EmptyState } from "@/features/aggregated-exposure/components/empty-stat
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
-import { PeriodAndPrivacyNotice } from "@/features/aggregated-exposure/components/notices.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
 	type ComparableGroup,
 	getComparableGroupName,
-	isPerOccupation,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
 import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
@@ -105,53 +104,54 @@ export function GroupPage({ groupId }: { groupId: string }) {
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{group ? getTitle(group, t) : t(($) => $.aggregatedExposure.group.fallbackTitle)}
+								{group
+									? getComparableGroupName(group, t)
+									: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
-					</div>
-					<div className="hidden sm:block">
-						<PeriodPicker selection={periodSelection} />
 					</div>
 				</header>
 			</div>
 
-			<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
-				{exposurePickers}
-			</FilterDialog>
-			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
+			<PeriodPickerLayout selection={periodSelection}>
+				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
+					{exposurePickers}
+				</FilterDialog>
+				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
+				<PeriodNotice periodSelection={periodSelection} />
 
-			{groupsQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : groupsQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
-			) : group === undefined ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
-			) : isExposureUnavailable(exposure) ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
-			) : trendQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : trendQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
-			) : trendQuery.data.status === "unavailable" ? (
-				// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
-				<EmptyState
-					title={
-						exposure === "dust"
-							? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
-							: t(($) => $.aggregatedExposure.group.noData)
-					}
-				/>
-			) : (
-				<GroupDetails
-					trend={trendQuery.data}
-					group={group}
-					periodSelection={periodSelection}
-					exposure={exposure}
-					dustField={dustField}
-				/>
-			)}
+				{groupsQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : groupsQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
+				) : group === undefined ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
+				) : isExposureUnavailable(exposure) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
+				) : trendQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : trendQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
+				) : trendQuery.data.status === "unavailable" ? (
+					// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
+					<EmptyState
+						title={
+							exposure === "dust"
+								? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
+								: t(($) => $.aggregatedExposure.group.noData)
+						}
+					/>
+				) : (
+					<GroupDetails
+						trend={trendQuery.data}
+						group={group}
+						periodSelection={periodSelection}
+						exposure={exposure}
+						dustField={dustField}
+					/>
+				)}
+			</PeriodPickerLayout>
 		</div>
 	);
 }
@@ -167,16 +167,6 @@ function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) 
 			: t(($) => $.aggregatedExposure.group.eyebrow);
 	// A group in a yard already names the yard in its title
 	return showsYard && group.level !== "yardOccupation" ? `${eyebrow} · ${group.site}` : eyebrow;
-}
-
-function getTitle(group: ComparableGroup, t: TranslateFn) {
-	if (isPerOccupation(group.level)) {
-		return getComparableGroupName(group, t);
-	}
-
-	return group.hall === null
-		? `${group.site} · ${t(($) => $.aggregatedExposure.compare.wholeYard)}`
-		: `${group.hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
 }
 
 function GroupDetails({

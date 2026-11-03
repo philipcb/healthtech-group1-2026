@@ -2,14 +2,12 @@ import { FilterDialog } from "@/features/aggregated-exposure/components/filter-d
 import { LevelPicker } from "@/features/aggregated-exposure/components/level-picker.tsx";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import type { CompareLevel } from "@/features/aggregated-exposure/model/compare.ts";
-import type { PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
 import { cn } from "@/lib/utils.ts";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
 type FilterPanelProps = {
 	label: string;
-	periodSelection: PeriodSelection;
 	onReset?: () => void;
 	/** The exposure row, the one filter that's also shown on phones */
 	exposure: FilterRowProps["children"];
@@ -31,7 +29,6 @@ type FilterPanelProps = {
  */
 export function FilterPanel({
 	label,
-	periodSelection,
 	onReset,
 	exposure,
 	yards,
@@ -49,7 +46,7 @@ export function FilterPanel({
 
 	return (
 		<>
-			<FilterDialog periodSelection={periodSelection} showsPeriod={true} onReset={onReset} className="sm:hidden">
+			<FilterDialog onReset={onReset} className="sm:hidden">
 				{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
 				<div className="flex flex-col gap-1.5">
 					<p id={dialogLevelLabelId} className="font-medium text-sm">

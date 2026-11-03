@@ -12,7 +12,8 @@ namespace Backend.Utils
 		public static (DateTime startTime, DateTime endTime) GetPeriodLimit(
 			string periodType,
 			int year,
-			int? month
+			int? month,
+			int? day
 		)
 		{
 			DateTime startTime;
@@ -34,6 +35,27 @@ namespace Backend.Utils
 				}
 				startTime = new DateTime(year, month.Value + 1, 1).ToUniversalTime();
 				endTime = startTime.AddMonths(1);
+				return (startTime, endTime);
+			}
+			else if (periodType.Equals("day"))
+			{
+				
+				if (month is null || month > 11 || month < 0)
+				{
+					throw new ArgumentException(
+						"Month given is invalid and the period is of type month.",
+						nameof(month)
+					);
+				}
+				if (day is null || day < 1 || day > DateTime.DaysInMonth(year, month.Value + 1))
+				{
+					throw new ArgumentException(
+						"Day given is invalid and the period is of type day.",
+						nameof(day)
+					);
+				}
+				startTime = new DateTime(year, month.Value + 1, day.Value).ToUniversalTime();
+				endTime = startTime.AddDays(1);
 				return (startTime, endTime);
 			}
 			else

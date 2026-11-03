@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Backend.DTOs;
 using Backend.Middleware;
@@ -26,7 +27,8 @@ public interface IAggregateExposureDataService
 		DateTime endTime,
 		Guid? sampleId,
 		ExposureType exposureType,
-		string? field
+		string? field,
+		bool isHourly
 	);
 
 	Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
@@ -67,7 +69,13 @@ public class AggregateExposureDataService(
 		{
 			"pm1_twa" => d => d.AveragePm1Twa,
 			"pm25_twa" => d => d.AveragePm25Twa,
+			"Pm4_twa" => d => d.AveragePm4Twa,
 			"pm10_twa" => d => d.AveragePm10Twa,
+
+			"Pm1_stel" => d => d.AveragePm1Stel,
+			"Pm25_stel" => d => d.AveragePm25Stel,	
+			"Pm4_stel" => d => d.AveragePm4Stel,
+			"Pm10_stel" => d => d.AveragePm10Stel,
 			_ => throw new ArgumentException($"Unsupported dust field: {field}", nameof(field)),
 		};
 
@@ -120,13 +128,13 @@ public class AggregateExposureDataService(
 		}
 	}
 
-	//function to get the averages of each user each day, and the average, of a given time period and a given exposure type
 	public async Task<AggregatedTrendResponseDto> GetTrendAsync(
 		DateTime startTime,
 		DateTime endTime,
 		Guid? sampleId,
 		ExposureType exposureType,
-		string? field
+		string? field,
+		bool isHourly
 	)
 	{
 		// Any group the user may see, like the overview
@@ -150,49 +158,91 @@ public class AggregateExposureDataService(
 			case ExposureType.Dust:
 				var dustValue = GetCorrectDustValue(field);
 				unit = "ug";
-				exposureAverages = await _context
-					.DustAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
+				var hourlyDustAggregates = await _context.DustAverages
+				.Where(d =>d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
+				.ToListAsync();
+
+				if (isHourly)
+				{
+					exposureAverages = hourlyDustAggregates
+					.Select(d => new TrendPointDto
 					{
-						Time = g.Key,
-						Value = g.AsQueryable().Average(dustValue),
+						Time = d.Time,
+						Value = dustValue.Compile().Invoke(d),
 					})
 					.OrderBy(d => d.Time)
-					.ToListAsync();
+					.ToList();
+				} else {
+					exposureAverages = hourlyDustAggregates
+						.GroupBy(d => d.Time.Date)
+						.Select(g => new TrendPointDto
+						{
+							Time = g.Key,
+							Value = g.AsQueryable().Average(dustValue),
+						})
+						.OrderBy(d => d.Time)
+						.ToList();
+				}
 				break;
 			case ExposureType.Noise:
 				unit = "db";
-				exposureAverages = await _context
-					.NoiseAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
+
+				var hourlyNoiseAggregates = await _context.NoiseAverages
+				.Where(d =>d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
+				.ToListAsync();
+
+				if (isHourly)
+				{
+					exposureAverages = hourlyNoiseAggregates
+					.Select(d => new TrendPointDto
 					{
-						Time = g.Key,
-						Value = g.Average(d => d.AverageLaeq),
+						Time = d.Time,
+						Value = d.AverageLaeq
 					})
 					.OrderBy(d => d.Time)
-					.ToListAsync();
+					.ToList();
+	
+				} else {
+					exposureAverages = hourlyNoiseAggregates
+						.GroupBy(d => d.Time.Date)
+						.Select(g => new TrendPointDto
+						{
+							Time = g.Key,
+							Value = g.Average(d => d.AverageLaeq),
+						})
+						.OrderBy(d => d.Time)
+						.ToList();
+				}
 				break;
+			
 			case ExposureType.Vibration:
 				unit = "points";
-				exposureAverages = await _context
-					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g => new TrendPointDto
+				var hourlyVibrationAggregates = await _context.VibrationAverages
+				.Where(d =>d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime)
+				.ToListAsync();
+
+				if (isHourly)
+				{
+					exposureAverages = hourlyVibrationAggregates
+					.Select(d => new TrendPointDto
 					{
-						Time = g.Key,
-						Value = g.OrderByDescending(d => d.Time).FirstOrDefault()!.AverageExposure,
+						Time = d.Time,
+						Value = d.AverageExposure,
 					})
 					.OrderBy(d => d.Time)
-					.ToListAsync();
-				break;
+					.ToList();
+				} else {
+					exposureAverages = hourlyVibrationAggregates
+						.GroupBy(d => d.Time.Date)
+						.Select(g => new TrendPointDto
+						{
+							Time = g.Key,
+							Value = g.OrderByDescending(d => d.Time).FirstOrDefault()!.AverageExposure,
+						})
+						.OrderBy(d => d.Time)
+						.ToList();
+				}
+					break;
 			default:
 				unit = null;
 				exposureAverages = null;
@@ -219,12 +269,15 @@ public class AggregateExposureDataService(
 		var shiftAverageByDay = shiftAverages
 			.GroupBy(d => d.Time.Date)
 			.ToDictionary(g => g.Key, g => g.First());
+		
 		foreach (var point in exposureAverages!)
 		{
 			if (shiftAverageByDay.TryGetValue(point.Time.Date, out var shiftAverage))
 			{
 				point.AverageTimeOverAction = shiftAverage.AverageTimeOverAction;
+				point.RateOfWorkerOverAction = shiftAverage.DailyRateOfWorkerOverAction;
 				point.AverageTimeOverLimit = shiftAverage.AverageTimeOverLimit;
+				point.RateOfWorkerLimit = shiftAverage.DailyRateOfWorkerOverLimit;
 			}
 		}
 

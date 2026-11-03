@@ -1,3 +1,4 @@
+import { ChartDownload } from "@/components/chart-download.tsx";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
@@ -17,24 +18,31 @@ import {
 	isPerOccupation,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
+import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import {
 	formatAverageShare,
 	formatGroupValue,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getMetricLabel,
+	getOccupationLabel,
 	getShareLabels,
 	getThresholdNumberFormat,
 	hasTimeOverThresholds,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import {
+	type PeriodSelection,
+	toPeriodFilenamePart,
+	toPeriodParams,
+} from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
-import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
+import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 import { cn } from "@/lib/utils.ts";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -136,7 +144,13 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					}
 				/>
 			) : (
-				<GroupDetails trend={trendQuery.data} exposure={exposure} dustField={dustField} />
+				<GroupDetails
+					trend={trendQuery.data}
+					group={group}
+					periodSelection={periodSelection}
+					exposure={exposure}
+					dustField={dustField}
+				/>
 			)}
 		</div>
 	);
@@ -167,10 +181,14 @@ function getTitle(group: ComparableGroup, t: TranslateFn) {
 
 function GroupDetails({
 	trend,
+	group,
+	periodSelection,
 	exposure,
 	dustField,
 }: {
 	trend: AggregatedTrendOkDto;
+	group: ComparableGroup;
+	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
 }) {
@@ -209,6 +227,36 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
+	const exposureName = getDownloadExposureName(exposure, dustField, t);
+	const downloadFilename = toDownloadFilename([
+		group.site,
+		group.hall,
+		getWholeGroupPart(group, t),
+		exposureName,
+		toPeriodFilenamePart(periodSelection),
+	]);
+	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (point) => point.time },
+		{
+			header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`,
+			value: (point) => point.value,
+			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
+		},
+		...(timeOverUnavailableCaption === undefined
+			? [
+					{
+						header: `${kpiText.action} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction),
+						fractionDigits: 1,
+					},
+					{
+						header: `${kpiText.limit} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit),
+						fractionDigits: 1,
+					},
+				]
+			: []),
+	];
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -239,12 +287,19 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart
-						points={trend.points}
-						unit={trend.unit}
-						label={metricLabel}
-						threshold={threshold}
-					/>
+					<ChartDownload
+						filename={downloadFilename}
+						sheetName={exposureName}
+						columns={downloadColumns}
+						rows={trend.points}
+					>
+						<GroupTrendChart
+							points={trend.points}
+							unit={trend.unit}
+							label={metricLabel}
+							threshold={threshold}
+						/>
+					</ChartDownload>
 				)}
 				{isColored && <ThresholdBarLegend />}
 			</Card>
@@ -277,4 +332,17 @@ function GroupDetails({
 			</div>
 		</div>
 	);
+}
+
+// A share like 0.125 as 12.5, for the downloaded files' percentage columns. The download code rounds it.
+function toPercent(share: number | null) {
+	return share === null ? null : share * 100;
+}
+
+function getWholeGroupPart({ hall, occupation }: ComparableGroup, t: TranslateFn) {
+	if (occupation !== null) {
+		return getOccupationLabel(occupation, t);
+	}
+
+	return hall === null ? t(($) => $.aggregatedExposure.compare.wholeYard) : t(($) => $.aggregatedExposure.wholeHall);
 }

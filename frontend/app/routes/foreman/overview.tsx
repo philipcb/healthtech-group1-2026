@@ -29,6 +29,7 @@ import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 
 export default function ForemanOverview() {
 	const { t } = useTranslation();
@@ -238,6 +239,14 @@ function ExposureSummaryGrid({
 }) {
 	const { t } = useTranslation();
 	const [inactiveExposure, setInactiveExposure] = useState<Exposure | null>(null);
+	const [searchParams] = useSearchParams();
+
+	// Keeps the selected date and view
+	const toExposure = (exposure: Exposure) => {
+		const search = new URLSearchParams(searchParams);
+		search.set("exposure", exposure);
+		return `?${search}`;
+	};
 
 	if (thresholdSummary === undefined) {
 		return null;
@@ -255,7 +264,7 @@ function ExposureSummaryGrid({
 							danger: thresholdSummary[exposureType].danger,
 						}}
 						label={t(($) => $.exposures[exposureType])}
-						to={`?exposure=${exposureType}`}
+						to={toExposure(exposureType)}
 						key={exposureType}
 						exposureType={exposureType}
 						inactive={subordinates.filter((sub) => hasInactiveSensor(sub, exposureType)).length}

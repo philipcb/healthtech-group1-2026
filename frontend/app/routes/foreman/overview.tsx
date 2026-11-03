@@ -141,7 +141,7 @@ export default function ForemanOverview() {
 				</aside>
 
 				<div className="contents lg:grid lg:w-full lg:grid-cols-[minmax(0,3fr)_calc(var(--spacing)*73)] lg:gap-6">
-					<div className="order-3 flex flex-col gap-8 p-4 sm:p-6 lg:order-none lg:gap-12 lg:p-0">
+					<div className="order-3 flex flex-col gap-8 p-4 sm:p-6 lg:order-none lg:p-0">
 						{/* TODO: Redo the loading logic here */}
 						{isUserSelected ? (
 							<UserDetails selectedUser={selectedUser} exposure={exposure} />

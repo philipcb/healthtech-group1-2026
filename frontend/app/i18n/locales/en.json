@@ -81,7 +81,6 @@
   "layout": {
     "live": "Live",
     "overview": "Overview",
-    "home": "Home",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
     "exportPdf": "Export PDF",

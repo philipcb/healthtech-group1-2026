@@ -111,7 +111,7 @@
     "ofTotal": "of {{total}}",
     "title": "Exposure",
     "aggregated": {
-      "safe": "Within safe limits",
+      "safe": "Below action value",
       "warning": "Above action value",
       "danger": "Above limit value"
     }

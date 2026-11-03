@@ -269,7 +269,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.KariId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -283,14 +283,14 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.TrondId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
 				Id = SeedIds.GjertrudId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -332,7 +332,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.User17Id,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -346,7 +346,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.User19Id,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -430,7 +430,6 @@ public class DatabaseSeeder
 			(SeedIds.OlaId, SeedIds.User18Id),
 			(SeedIds.OlaId, SeedIds.User19Id),
 			(SeedIds.OlaId, SeedIds.User20Id),
-			(SeedIds.OlaId, SeedIds.User21Id),
 			(SeedIds.AstridId, SeedIds.ErikId),
 			(SeedIds.AstridId, SeedIds.MagnusId),
 			(SeedIds.AstridId, SeedIds.HakonId),

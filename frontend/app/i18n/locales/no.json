@@ -647,5 +647,20 @@
   "datePicker": {
     "openLabel": "Velg dato og visning",
     "dialogTitle": "Dato og visning"
+  },
+  "chartDownload": {
+    "download": "Last ned data",
+    "comparison": "Sammenligning",
+    "excel": {
+      "title": "Excel (.xlsx)",
+      "description": "Anbefalt for Excel"
+    },
+    "csv": {
+      "title": "CSV (.csv)",
+      "description": "Ren tekst, skilt med komma"
+    },
+    "columns": {
+      "date": "Dato"
+    }
   }
 }

@@ -9,7 +9,7 @@ export function SeriesMarker({ slot, x, y, size }: { slot: SeriesSlot; x: number
 export function SeriesKey({ slot, width = 22 }: { slot: SeriesSlot; width?: number }) {
 	return (
 		<svg aria-hidden="true" width={width} height={12} className="shrink-0 overflow-visible">
-			<line x1={0} x2={width} y1={6} y2={6} stroke={getSeriesColor(slot)} strokeWidth={2} />
+			<line x1={0} x2={width} y1={6} y2={6} stroke={getSeriesColor(slot)} strokeWidth={1.25} />
 			<SeriesMarker slot={slot} x={width / 2} y={6} />
 		</svg>
 	);

@@ -149,7 +149,7 @@ export function ComparisonTrendChart({ series, unit, threshold, className }: Com
 										dataKey={getBridgeKey(slot)}
 										type="linear"
 										stroke={getSeriesColor(slot)}
-										strokeWidth={1.5}
+										strokeWidth={1}
 										strokeDasharray="2 4"
 										strokeOpacity={0.7}
 										dot={false}
@@ -167,7 +167,8 @@ export function ComparisonTrendChart({ series, unit, threshold, className }: Com
 							dataKey={getLineKey(slot)}
 							type="linear"
 							stroke={getSeriesColor(slot)}
-							strokeWidth={2}
+							// As thin as the operator's and foreman's line charts
+							strokeWidth={1.25}
 							strokeLinejoin="round"
 							dot={({ cx, cy, payload, index }) =>
 								typeof (payload as ChartRow)[getDataKey(slot)] === "number" &&

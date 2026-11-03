@@ -114,7 +114,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 			</div>
 
 			<PeriodPickerLayout selection={periodSelection}>
-				<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
+				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
 					{exposurePickers}
 				</FilterDialog>
 				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>

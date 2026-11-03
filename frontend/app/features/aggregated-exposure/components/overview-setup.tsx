@@ -14,25 +14,16 @@ type OverviewSetupProps = {
 
 export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: OverviewSetupProps) {
 	const { t } = useTranslation();
-	const {
-		exposureFilter,
-		setExposureFilter,
-		setYard,
-		setHall,
-		level,
-		setLevel,
-		resetOverviewFilters,
-		periodSelection,
-	} = useAggregatedExposureSearchParams();
+	const { exposureFilter, setExposureFilter, setYard, setHall, level, setLevel, resetOverviewFilters } =
+		useAggregatedExposureSearchParams();
 	// A building can only be picked when the groups are buildings
 	const showsHallFilter = getComparePlace(level) === "hall";
 
 	return (
 		<FilterPanel
 			label={t(($) => $.aggregatedExposure.filters.title)}
-			periodSelection={periodSelection}
 			onReset={resetOverviewFilters}
-			// The dust fraction is picked in the dust column's header, next to the values it changes
+			// The dust fraction is picked in the dust column's header, or above the list on phones, next to the values it changes
 			exposure={(labelId) => (
 				<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} labelledBy={labelId} />
 			)}

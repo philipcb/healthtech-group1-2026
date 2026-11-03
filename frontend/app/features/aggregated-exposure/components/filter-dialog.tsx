@@ -9,31 +9,22 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog.tsx";
-import { getPeriodLabel, type PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
-import { cn } from "@/lib/utils.ts";
-import { CalendarDays, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 type FilterDialogProps = {
-	periodSelection: PeriodSelection;
-	showsPeriod?: boolean;
 	onReset?: () => void;
 	children: ReactNode;
 	className?: string;
 };
 
-export function FilterDialog({
-	periodSelection,
-	showsPeriod = false,
-	onReset,
-	children,
-	className,
-}: FilterDialogProps) {
+/** The filters that don't fit on phones, behind a button. The period picker's own button shows the period. */
+export function FilterDialog({ onReset, children, className }: FilterDialogProps) {
 	const { t } = useTranslation();
 
 	return (
-		<div className={cn("flex items-center gap-3", className)}>
+		<div className={className}>
 			<Dialog>
 				<DialogTrigger asChild={true}>
 					<Button variant="outline" className="bg-background">
@@ -62,13 +53,6 @@ export function FilterDialog({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-
-			{showsPeriod && (
-				<p className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm">
-					<CalendarDays aria-hidden="true" className="size-4 shrink-0" />
-					<span>{getPeriodLabel(periodSelection, t)}</span>
-				</p>
-			)}
 		</div>
 	);
 }

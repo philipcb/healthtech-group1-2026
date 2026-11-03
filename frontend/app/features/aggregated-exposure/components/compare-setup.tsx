@@ -2,7 +2,6 @@ import { CompareGroupPicker } from "@/features/aggregated-exposure/components/co
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import type { ComparableGroup, ComparedEntry, CompareLevel } from "@/features/aggregated-exposure/model/compare.ts";
-import type { PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +21,6 @@ type CompareSetupProps = {
 	onClear: () => void;
 	lastChange?: { message: string; undo: () => void };
 	hiddenFromLink: number;
-	periodSelection: PeriodSelection;
 };
 
 export function CompareSetup({
@@ -41,7 +39,6 @@ export function CompareSetup({
 	onClear,
 	lastChange,
 	hiddenFromLink,
-	periodSelection,
 }: CompareSetupProps) {
 	const { t } = useTranslation();
 	const notice = lastChange
@@ -53,7 +50,6 @@ export function CompareSetup({
 	return (
 		<FilterPanel
 			label={t(($) => $.aggregatedExposure.compare.setupLabel)}
-			periodSelection={periodSelection}
 			// The dust fraction is picked in the comparison card's header, next to the chart it changes
 			exposure={
 				<ExposureToggle

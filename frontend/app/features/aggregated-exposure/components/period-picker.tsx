@@ -6,6 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
 	type AggregatedExposurePeriod,
 	aggregatedExposurePeriods,
+	getPeriodLabel,
 	getSelectableYears,
 	type PeriodSelection,
 } from "@/features/aggregated-exposure/model/period.ts";
@@ -158,10 +159,13 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 		<>
 			<div className="lg:hidden">
 				<Dialog>
+					{/* Shows the period, which nothing else on a smaller screen does. The accessible name keeps the action
+					    and includes the visible text. */}
 					<DialogTrigger asChild={true}>
-						<Button variant="outline" className="w-full" aria-label={t(($) => $.datePicker.openLabel)}>
-							<CalendarIcon className="size-4" />
-							{t(($) => $.datePicker.openLabel)}
+						<Button variant="outline" className="w-full">
+							<CalendarIcon aria-hidden="true" className="size-4" />
+							<span className="sr-only">{`${t(($) => $.datePicker.openLabel)}: `}</span>
+							<span className="tabular-nums">{getPeriodLabel(selection, t)}</span>
 						</Button>
 					</DialogTrigger>
 					<DialogContent>

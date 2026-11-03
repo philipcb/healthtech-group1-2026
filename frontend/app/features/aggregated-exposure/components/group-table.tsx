@@ -16,6 +16,7 @@ import type { MeasurementUnitsDto } from "@/lib/api/generated/models/index.ts";
 import { DANGER_LEVEL_SEVERITY, type DangerLevel, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { cn } from "@/lib/utils.ts";
+import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
@@ -46,51 +47,149 @@ export function GroupTable({
 	const sortedGroups = groups.toSorted((a, b) => compareGroups(a, b, exposures, dustField));
 
 	return (
-		<div className="overflow-x-auto rounded-xl border bg-card">
-			<table aria-labelledby={labelledBy} className="w-full border-collapse text-left text-sm">
-				<thead className="bg-secondary">
-					<tr>
-						<th
-							scope="col"
-							className="sticky left-0 z-10 min-w-40 bg-secondary px-4 py-2.5 align-middle font-medium"
-						>
-							{t(($) => $.aggregatedExposure.overview.groupColumn)}
-						</th>
+		<>
+			<GroupList
+				groups={sortedGroups}
+				units={units}
+				exposures={exposures}
+				dustField={dustField}
+				onDustFieldChange={onDustFieldChange}
+				showsYard={showsYard}
+				labelledBy={labelledBy}
+				className="md:hidden"
+			/>
+			<div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
+				{/* Fixed, so the exposures share the width equally whatever their content. Below the minimum, each exposure
+				    still fits the dust column's fraction tabs, and the table scrolls. */}
+				<table
+					aria-labelledby={labelledBy}
+					className="w-full min-w-(--table-min-width) table-fixed border-collapse text-left text-sm"
+					style={{ "--table-min-width": `${10 + exposures.length * 12}rem` } as CSSProperties}
+				>
+					<colgroup>
+						<col className="w-40" />
 						{exposures.map((exposure) => (
-							<ExposureHeader
-								key={exposure}
-								exposure={exposure}
-								dustField={dustField}
-								onDustFieldChange={onDustFieldChange}
-							/>
+							<col key={exposure} />
 						))}
-					</tr>
-				</thead>
-				<tbody>
-					{sortedGroups.map((group) => (
-						<tr key={group.groupId} className="border-t">
-							<th scope="row" className="sticky left-0 z-10 bg-card px-4 py-2.5 align-top font-normal">
-								<span className="block font-medium">{getRowName(group, t)}</span>
-								{getRowContext(group, showsYard) && (
-									<span className="block text-muted-foreground text-xs">
-										{getRowContext(group, showsYard)}
-									</span>
-								)}
+					</colgroup>
+					<thead className="bg-secondary">
+						<tr>
+							<th
+								scope="col"
+								className="sticky left-0 z-10 bg-secondary px-4 py-2.5 align-top font-medium"
+							>
+								{t(($) => $.aggregatedExposure.overview.groupColumn)}
 							</th>
 							{exposures.map((exposure) => (
-								<ExposureCell
+								<ExposureHeader
 									key={exposure}
-									group={group}
 									exposure={exposure}
 									dustField={dustField}
-									unit={units[exposure]}
+									onDustFieldChange={onDustFieldChange}
 								/>
 							))}
 						</tr>
-					))}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{sortedGroups.map((group) => (
+							<tr key={group.groupId} className="border-t">
+								<th
+									scope="row"
+									className="sticky left-0 z-10 bg-card px-4 py-2.5 align-top font-normal"
+								>
+									<GroupName group={group} showsYard={showsYard} />
+								</th>
+								{exposures.map((exposure) => (
+									<td
+										key={exposure}
+										className={cn("h-px p-0 align-top", getLevelTint(group, exposure, dustField))}
+									>
+										<ExposureLink
+											group={group}
+											exposure={exposure}
+											dustField={dustField}
+											unit={units[exposure]}
+										/>
+									</td>
+								))}
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</>
+	);
+}
+
+/**
+ * The table on phones, where the exposures don't fit side by side: a block per group, in the same order, with a row per
+ * shown exposure. The dust fraction is picked above the list, since there's no column header to pick it in.
+ */
+function GroupList({
+	groups,
+	units,
+	exposures,
+	dustField,
+	onDustFieldChange,
+	showsYard,
+	labelledBy,
+	className,
+}: Omit<GroupTableProps, "filter"> & { exposures: ReadonlyArray<Exposure>; className?: string }) {
+	const { t } = useTranslation();
+	const dustFieldLabel = t(($) => $.aggregatedExposure.group.dustFieldLabel);
+
+	return (
+		<div className={cn("overflow-hidden rounded-xl border bg-card", className)}>
+			{exposures.includes("dust") && !isExposureUnavailable("dust") && (
+				<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-secondary px-4 py-2">
+					{/* The tabs are named by their own label, so this one isn't read twice */}
+					<span aria-hidden="true" className="flex items-center gap-1.5 font-medium text-sm">
+						<ExposureIcon type="dust" iconOnly={true} iconClassName="size-4" />
+						{dustFieldLabel}
+					</span>
+					<DustFieldTabs
+						value={dustField}
+						onValueChange={onDustFieldChange}
+						ariaLabel={dustFieldLabel}
+						isCompact={true}
+					/>
+				</div>
+			)}
+			<ul aria-labelledby={labelledBy} className="divide-y text-sm">
+				{groups.map((group) => (
+					<li key={group.groupId}>
+						<div className="px-4 pt-3 pb-1">
+							<GroupName group={group} showsYard={showsYard} />
+						</div>
+						<ul>
+							{exposures.map((exposure) => (
+								<li key={exposure} className={getLevelTint(group, exposure, dustField)}>
+									<ExposureLink
+										group={group}
+										exposure={exposure}
+										dustField={dustField}
+										unit={units[exposure]}
+										showsName={true}
+									/>
+								</li>
+							))}
+						</ul>
+					</li>
+				))}
+			</ul>
 		</div>
+	);
+}
+
+function GroupName({ group, showsYard }: { group: ComparableGroup; showsYard: boolean }) {
+	const { t } = useTranslation();
+	const context = getRowContext(group, showsYard);
+
+	return (
+		<>
+			<span className="block font-medium">{getRowName(group, t)}</span>
+			{context && <span className="block text-muted-foreground text-xs">{context}</span>}
+		</>
 	);
 }
 
@@ -107,8 +206,9 @@ function ExposureHeader({
 	const { t } = useTranslation();
 
 	return (
-		<th scope="col" className="min-w-56 px-4 py-2.5 align-middle font-medium">
-			<span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+		// Top-aligned, so every exposure's name is on one line with the others above the dust column's fraction tabs
+		<th scope="col" className="px-4 py-2.5 align-top font-medium">
+			<span className="flex flex-col items-start gap-1.5">
 				<span className="flex items-center gap-1.5">
 					<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
 					{t(($) => $.exposures[exposure])}
@@ -132,22 +232,26 @@ const cellTints: Record<DangerLevel, string | undefined> = {
 	safe: undefined,
 };
 
-const labelTones: Record<DangerLevel, string | undefined> = {
-	danger: "text-danger-text",
-	warning: "text-warning-text",
-	safe: undefined,
-};
+/** On the cell or row around the link, so the link's hover shows on top of it */
+function getLevelTint(group: ComparableGroup, exposure: Exposure, dustField: DustField) {
+	const level = getLevel(group, exposure, dustField);
+	return level ? cellTints[level] : undefined;
+}
 
-function ExposureCell({
+/** An exposure's value for a group, linking to its details */
+function ExposureLink({
 	group,
 	exposure,
 	dustField,
 	unit,
+	showsName = false,
 }: {
 	group: ComparableGroup;
 	exposure: Exposure;
 	dustField: DustField;
 	unit: MeasurementUnitsDto[Exposure];
+	/** For the list on phones, which has no column header to name the exposure */
+	showsName?: boolean;
 }) {
 	const { t } = useTranslation();
 	const getDetailsLink = useGroupDetailsLink();
@@ -159,44 +263,47 @@ function ExposureCell({
 		: average === null
 			? t(($) => $.aggregatedExposure.overview.noValue)
 			: formatGroupValue(average, unit, t);
-	// Safe values are only marked by their dot, so the warnings and exceedances stand out. Without a value there's no
-	// level, so a missing value never looks like a safe one.
+	// Only for screen readers: the badge, the cell's tint and the legend above the table show the status. Without a
+	// value there's no level, so a missing value never looks like a safe one.
 	const levelLabel = level === "warning" || level === "danger" ? t(($) => $.dangerLevelStatus[level]) : null;
 
 	return (
-		<td className={cn("h-px p-0 align-top", level && cellTints[level])}>
-			<Link
-				to={getDetailsLink(group.groupId, exposure)}
-				aria-label={t(($) => $.aggregatedExposure.overview.openDetails, {
-					exposure: t(($) => $.exposures[exposure]),
-					group: getComparableGroupName(group, t),
-					value: levelLabel ? `${value}, ${levelLabel.toLowerCase()}` : value,
-				})}
-				className="flex h-full flex-col gap-2 px-4 py-2.5 transition-colors hover:bg-foreground/4 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset"
-			>
-				<span className="flex items-center gap-2">
-					{level ? (
-						<DangerLevelBadge dangerLevel={level} />
-					) : (
-						<span aria-hidden="true" className="size-5 shrink-0 rounded-full border border-dashed" />
-					)}
-					<span
-						className={cn(
-							"font-medium tabular-nums",
-							average === null && "font-normal text-muted-foreground",
-						)}
-					>
-						{value}
+		<Link
+			to={getDetailsLink(group.groupId, exposure)}
+			aria-label={t(($) => $.aggregatedExposure.overview.openDetails, {
+				exposure: t(($) => $.exposures[exposure]),
+				group: getComparableGroupName(group, t),
+				value: levelLabel ? `${value}, ${levelLabel.toLowerCase()}` : value,
+			})}
+			className={cn(
+				"flex h-full flex-col gap-2 px-4 py-2.5 transition-colors hover:bg-foreground/4 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset",
+				// A taller row on phones, for a touch target
+				showsName && "py-3",
+			)}
+		>
+			<span className="flex items-center gap-2">
+				{showsName && (
+					<span className="mr-auto flex min-w-0 items-center gap-1.5">
+						<ExposureIcon type={exposure} iconOnly={true} iconClassName="size-4" />
+						<span className="truncate">{t(($) => $.exposures[exposure])}</span>
 					</span>
-					{levelLabel && (
-						<span className={cn("ml-auto text-right font-medium text-xs", level && labelTones[level])}>
-							{levelLabel}
-						</span>
+				)}
+				{level ? (
+					<DangerLevelBadge dangerLevel={level} />
+				) : (
+					<span aria-hidden="true" className="size-5 shrink-0 rounded-full border border-dashed" />
+				)}
+				<span
+					className={cn(
+						"whitespace-nowrap font-medium tabular-nums",
+						average === null && "font-normal text-muted-foreground",
 					)}
+				>
+					{value}
 				</span>
-				<ThresholdBar value={average} threshold={threshold} />
-			</Link>
-		</td>
+			</span>
+			<ThresholdBar value={average} threshold={threshold} />
+		</Link>
 	);
 }
 

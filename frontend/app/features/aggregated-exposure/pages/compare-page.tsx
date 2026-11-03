@@ -59,7 +59,6 @@ export function ComparePage() {
 					onClear={comparison.clearGroups}
 					lastChange={comparison.lastChange}
 					hiddenFromLink={comparison.hiddenFromLink}
-					periodSelection={periodSelection}
 				/>
 
 				<ComparisonResults

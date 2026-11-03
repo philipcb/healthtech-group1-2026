@@ -1,4 +1,5 @@
 import { ChartDownload } from "@/components/chart-download.tsx";
+import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { ThresholdLegend, ThresholdLegendLine } from "@/components/exposure-line-chart/threshold-legend.tsx";
 import { Card, CardLabelHeader } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
@@ -44,6 +45,8 @@ const CHART_HEIGHT_CLASSNAME = "h-64 lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)
 type ComparisonCardProps = {
 	exposure: Exposure;
 	dustField: DustField;
+	/** Picked in the card's header, so the choice sits next to the chart it changes */
+	onDustFieldChange: (dustField: DustField) => void;
 	unit: ExposureUnit;
 	entries: Array<ComparedEntry>;
 	periodParams: ReturnType<typeof toPeriodParams>;
@@ -54,6 +57,7 @@ type ComparisonCardProps = {
 export function ComparisonCard({
 	exposure,
 	dustField,
+	onDustFieldChange,
 	unit,
 	entries,
 	periodParams,
@@ -111,11 +115,19 @@ export function ComparisonCard({
 			aria-labelledby={headingId}
 			className={cn("relative w-full", MOBILE_BREAKOUT_CARD_CLASSNAME)}
 		>
-			<CardLabelHeader className="rounded-none">
+			<CardLabelHeader className="flex-wrap justify-between gap-x-3 gap-y-1.5 rounded-none">
 				<h2 id={headingId} className="font-medium text-sm">
 					{metricLabel}
 					<span className="font-normal text-muted-foreground">{` · ${unitLabel}`}</span>
 				</h2>
+				{exposure === "dust" && !isUnavailable && (
+					<DustFieldTabs
+						value={dustField}
+						onValueChange={onDustFieldChange}
+						ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
+						isCompact={true}
+					/>
+				)}
 			</CardLabelHeader>
 
 			{isUnavailable ? (

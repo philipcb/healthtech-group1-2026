@@ -48,8 +48,6 @@ export function ComparePage() {
 			<CompareSetup
 				exposure={exposure}
 				onExposureChange={setExposure}
-				dustField={dustField}
-				onDustFieldChange={setDustField}
 				level={comparison.level}
 				onLevelChange={comparison.changeLevel}
 				yards={comparison.yards}
@@ -74,6 +72,7 @@ export function ComparePage() {
 					comparison.units && {
 						exposure,
 						dustField,
+						onDustFieldChange: setDustField,
 						unit: comparison.units[exposure],
 						entries: comparison.entries,
 						periodParams: toPeriodParams(periodSelection),

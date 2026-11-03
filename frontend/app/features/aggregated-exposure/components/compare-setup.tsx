@@ -1,17 +1,14 @@
-import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { CompareGroupPicker } from "@/features/aggregated-exposure/components/compare-group-picker.tsx";
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import type { ComparableGroup, ComparedEntry, CompareLevel } from "@/features/aggregated-exposure/model/compare.ts";
 import type { PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
-import type { DustField, Exposure } from "@/lib/exposures.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 
 type CompareSetupProps = {
 	exposure: Exposure;
 	onExposureChange: (exposure: Exposure) => void;
-	dustField: DustField;
-	onDustFieldChange: (dustField: DustField) => void;
 	level: CompareLevel;
 	onLevelChange: (level: CompareLevel) => void;
 	yards: Array<string>;
@@ -31,8 +28,6 @@ type CompareSetupProps = {
 export function CompareSetup({
 	exposure,
 	onExposureChange,
-	dustField,
-	onDustFieldChange,
 	level,
 	onLevelChange,
 	yards,
@@ -59,22 +54,14 @@ export function CompareSetup({
 		<FilterPanel
 			label={t(($) => $.aggregatedExposure.compare.setupLabel)}
 			periodSelection={periodSelection}
+			// The dust fraction is picked in the comparison card's header, next to the chart it changes
 			exposure={
-				<div className="flex flex-wrap items-center gap-2">
-					<ExposureToggle
-						label={t(($) => $.aggregatedExposure.exposureLabel)}
-						hidesLabel={true}
-						value={exposure}
-						onValueChange={onExposureChange}
-					/>
-					{exposure === "dust" && (
-						<DustFieldTabs
-							value={dustField}
-							onValueChange={onDustFieldChange}
-							ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
-						/>
-					)}
-				</div>
+				<ExposureToggle
+					label={t(($) => $.aggregatedExposure.exposureLabel)}
+					hidesLabel={true}
+					value={exposure}
+					onValueChange={onExposureChange}
+				/>
 			}
 			yards={yards}
 			selectedYard={selectedYard}

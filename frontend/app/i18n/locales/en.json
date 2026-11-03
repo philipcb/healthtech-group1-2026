@@ -204,6 +204,7 @@
     "inDanger": "Workers above limit value",
     "warning": "Workers above action value",
     "safe": "Workers Within Safe Limits",
+    "inactive": "Workers Without Active Sensors",
     "noInDanger": "No workers in this category"
   },
   "interactiveCard": {
@@ -219,7 +220,8 @@
         "email": "Email",
         "status": "Status",
         "jobDescription": "Job description",
-        "action": "Action"
+        "action": "Action",
+        "noData": "No data"
       },
       "action": {
         "removeSubordinate": "Remove from team",
@@ -253,6 +255,12 @@
         "safe": {
           "label": "Within safe limits",
           "noOperators": "No operators within safe limits"
+        },
+        "inactive": {
+          "label": "Inactive sensors"
+        },
+        "noActiveSensors": {
+          "label": "No active sensors"
         }
       },
       "selectUserPlaceholder": "Select team member",

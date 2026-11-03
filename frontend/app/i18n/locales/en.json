@@ -642,5 +642,63 @@
   "datePicker": {
     "openLabel": "Choose date and view",
     "dialogTitle": "Date and view"
+  },
+  "safetyJourney": {
+    "title": "My Safety Journey",
+    "chipLabel": "My Safety Journey: {{points}} points, {{days}} day streak",
+    "level": "Level {{number}}",
+    "levels": {
+      "aware": "Aware",
+      "observer": "Observer",
+      "preventer": "Preventer",
+      "improver": "Improver",
+      "safetyChampion": "Safety Champion"
+    },
+    "streak": "{{days}} working days",
+    "streakExplanation": "Working days in a row with at least one engagement action.",
+    "pointsToNext": "{{points}} to {{level}}",
+    "points": "{{points}} points",
+    "badgesTitle": "Badges",
+    "earned": "Earned",
+    "badgeInfo": {
+      "sharpEye": "Write notes about 3 observations",
+      "noiseDetective": "Log an action after a noise alert",
+      "preventer": "Log actions after 10 alerts",
+      "improvementMaker": "Submit an improvement suggestion",
+      "consistentLogger": "Log actions on 5 working days in a row",
+      "quickResponder": "Respond to 5 alerts"
+    },
+    "days": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "badges": {
+      "sharpEye": "Sharp Eye",
+      "noiseDetective": "Noise Detective",
+      "preventer": "Preventer",
+      "improvementMaker": "Improvement Maker",
+      "consistentLogger": "Consistent Logger",
+      "quickResponder": "Quick Responder"
+    },
+    "recentTitle": "Recent activity",
+    "events": {
+      "loggedVibrationAction": "Logged action after vibration alert",
+      "observationNote": "Wrote a note about an observation",
+      "improvementSuggestion": "Submitted an improvement suggestion"
+    },
+    "howToEarnTitle": "How do I earn points?",
+    "rules": {
+      "respondedToAlert": "Responded to an alert and logged what you did",
+      "observationNote": "Note about an observation",
+      "improvementSuggestion": "Improvement suggestion",
+      "learningChallenge": "Completed learning challenge"
+    },
+    "maxPerDay": "(max {{max}} per day)",
+    "onlyYou": "Only you can see this",
+    "nextStepTitle": "Closest badge",
+    "nextStep": {
+      "consistentLogger": "Log actions on {{count}} more working days in a row",
+      "quickResponder": "Respond to {{count}} more alerts"
+    }
   }
 }

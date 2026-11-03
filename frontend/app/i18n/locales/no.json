@@ -639,5 +639,63 @@
   "datePicker": {
     "openLabel": "Velg dato og visning",
     "dialogTitle": "Dato og visning"
+  },
+  "safetyJourney": {
+    "title": "Min sikkerhetsreise",
+    "chipLabel": "Min sikkerhetsreise: {{points}} poeng, {{days}} dager på rad",
+    "level": "Nivå {{number}}",
+    "levels": {
+      "aware": "Bevisst",
+      "observer": "Observatør",
+      "preventer": "Forebygger",
+      "improver": "Forbedrer",
+      "safetyChampion": "Sikkerhetsmester"
+    },
+    "streak": "{{days}} arbeidsdager",
+    "streakExplanation": "Arbeidsdager på rad med minst én engasjementshandling.",
+    "pointsToNext": "{{points}} til {{level}}",
+    "points": "{{points}} poeng",
+    "badgesTitle": "Merker",
+    "earned": "Opptjent",
+    "badgeInfo": {
+      "sharpEye": "Skriv notat om 3 observasjoner",
+      "noiseDetective": "Loggfør en handling etter et støyvarsel",
+      "preventer": "Loggfør handlinger etter 10 varsler",
+      "improvementMaker": "Send inn et forbedringsforslag",
+      "consistentLogger": "Loggfør handlinger 5 arbeidsdager på rad",
+      "quickResponder": "Svar på 5 varsler"
+    },
+    "days": {
+      "today": "I dag",
+      "yesterday": "I går"
+    },
+    "badges": {
+      "sharpEye": "Skarpt øye",
+      "noiseDetective": "Støydetektiv",
+      "preventer": "Forebygger",
+      "improvementMaker": "Forbedringsskaper",
+      "consistentLogger": "Stødig loggfører",
+      "quickResponder": "Rask responder"
+    },
+    "recentTitle": "Siste hendelser",
+    "events": {
+      "loggedVibrationAction": "Loggførte handling etter vibrasjonsvarsel",
+      "observationNote": "Skrev notat om en observasjon",
+      "improvementSuggestion": "Sendte inn et forbedringsforslag"
+    },
+    "howToEarnTitle": "Hvordan tjener jeg poeng?",
+    "rules": {
+      "respondedToAlert": "Svarte på varsel og loggførte hva du gjorde",
+      "observationNote": "Notat om en observasjon",
+      "improvementSuggestion": "Forbedringsforslag",
+      "learningChallenge": "Fullført læringsutfordring"
+    },
+    "maxPerDay": "(maks {{max}} per dag)",
+    "onlyYou": "Bare du kan se dette",
+    "nextStepTitle": "Nærmeste badge",
+    "nextStep": {
+      "consistentLogger": "Loggfør handlinger {{count}} arbeidsdager til på rad",
+      "quickResponder": "Svar på {{count}} varsler til"
+    }
   }
 }

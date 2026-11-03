@@ -45,7 +45,7 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 			id: exposure,
 			header: t(($) => $.exposures[exposure]),
 			cell: ({ row }) => {
-				const status = row.original.status[exposure]?.dangerLevel ?? "safe";
+				const status = row.original.status[exposure]?.dangerLevel ?? null;
 
 				return (
 					<OperatorExposureStatusExposureCell
@@ -75,7 +75,7 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 						</Link>
 						<div className="mt-3 flex flex-wrap items-center gap-2">
 							{exposures.map((exposure) => {
-								const status = teamMember.status[exposure]?.dangerLevel ?? "safe";
+								const status = teamMember.status[exposure]?.dangerLevel ?? null;
 
 								return (
 									<OperatorExposureStatusExposureCell
@@ -96,12 +96,13 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 
 interface OperatorExposureStatusCellProps {
 	search: string;
-	status: DangerLevel;
+	/** `null` when the user has no data for the exposure in the period */
+	status: DangerLevel | null;
 	exposure: Exposure;
 }
 
 function OperatorExposureStatusExposureCell({ search, status, exposure }: OperatorExposureStatusCellProps) {
-	const label = mapDangerLevelToLabel(status);
+	const label = status === null ? t(($) => $.foremanDashboard.team.table.noData) : mapDangerLevelToLabel(status);
 
 	return (
 		<Link

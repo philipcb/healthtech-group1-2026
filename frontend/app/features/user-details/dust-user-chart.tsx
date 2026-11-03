@@ -69,6 +69,10 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 	const avgPm4Twa = getAvgValue(dustTwa4Result.data?.data ?? []);
 	const avgPm10Twa = getAvgValue(dustTwa10Result.data?.data ?? []);
 
+	const hasTwaData = [dustTwa1Result, dustTwa25Result, dustTwa4Result, dustTwa10Result].some(
+		(result) => (result.data?.data?.length ?? 0) > 0,
+	);
+
 	const showTrendLineChart = view === "month" || view === "week";
 	const showDustStatistics = view === "day";
 
@@ -109,57 +113,67 @@ export function DustUserChart({ selectedUser }: { selectedUser: UserWithStatusDt
 				/>
 			)}
 
-			<Card className="w-full">
-				<CardHeader>
-					<CardTitle>
-						{t(($) => $.exposureSlider.title, {
-							view: t(($) => $.views[view]).toLowerCase(),
-						})}
-					</CardTitle>
-				</CardHeader>
-				<CardContent className="flex flex-row flex-wrap">
-					<ExposureSlider
-						className="flex-1"
-						label={t(($) => $.exposures.dustFields.pm1_twa)}
-						value={avgPm1Twa}
-						exposure={exposure}
-						unitLabel="ug"
-						dangerLevel={getDangerLevel(avgPm1Twa, dustPm1TwaThreshold.warning, dustPm1TwaThreshold.danger)}
-					/>
-					<ExposureSlider
-						className="flex-1"
-						label={t(($) => $.exposures.dustFields.pm25_twa)}
-						value={avgPm25Twa}
-						exposure={exposure}
-						unitLabel="ug"
-						dangerLevel={getDangerLevel(
-							avgPm25Twa,
-							dustPm25TwaThreshold.warning,
-							dustPm25TwaThreshold.danger,
-						)}
-					/>
-					<ExposureSlider
-						className="flex-1"
-						label={t(($) => $.exposures.dustFields.pm4_twa)}
-						value={avgPm4Twa}
-						exposure={exposure}
-						unitLabel="ug"
-						dangerLevel={getDangerLevel(avgPm4Twa, dustPm4TwaThreshold.warning, dustPm4TwaThreshold.danger)}
-					/>
-					<ExposureSlider
-						className="flex-1"
-						label={t(($) => $.exposures.dustFields.pm10_twa)}
-						value={avgPm10Twa}
-						exposure={exposure}
-						unitLabel="ug"
-						dangerLevel={getDangerLevel(
-							avgPm10Twa,
-							dustPm10TwaThreshold.warning,
-							dustPm10TwaThreshold.danger,
-						)}
-					/>
-				</CardContent>
-			</Card>
+			{hasTwaData && (
+				<Card className="w-full">
+					<CardHeader>
+						<CardTitle>
+							{t(($) => $.exposureSlider.title, {
+								view: t(($) => $.views[view]).toLowerCase(),
+							})}
+						</CardTitle>
+					</CardHeader>
+					<CardContent className="flex flex-row flex-wrap">
+						<ExposureSlider
+							className="flex-1"
+							label={t(($) => $.exposures.dustFields.pm1_twa)}
+							value={avgPm1Twa}
+							exposure={exposure}
+							unitLabel="ug"
+							dangerLevel={getDangerLevel(
+								avgPm1Twa,
+								dustPm1TwaThreshold.warning,
+								dustPm1TwaThreshold.danger,
+							)}
+						/>
+						<ExposureSlider
+							className="flex-1"
+							label={t(($) => $.exposures.dustFields.pm25_twa)}
+							value={avgPm25Twa}
+							exposure={exposure}
+							unitLabel="ug"
+							dangerLevel={getDangerLevel(
+								avgPm25Twa,
+								dustPm25TwaThreshold.warning,
+								dustPm25TwaThreshold.danger,
+							)}
+						/>
+						<ExposureSlider
+							className="flex-1"
+							label={t(($) => $.exposures.dustFields.pm4_twa)}
+							value={avgPm4Twa}
+							exposure={exposure}
+							unitLabel="ug"
+							dangerLevel={getDangerLevel(
+								avgPm4Twa,
+								dustPm4TwaThreshold.warning,
+								dustPm4TwaThreshold.danger,
+							)}
+						/>
+						<ExposureSlider
+							className="flex-1"
+							label={t(($) => $.exposures.dustFields.pm10_twa)}
+							value={avgPm10Twa}
+							exposure={exposure}
+							unitLabel="ug"
+							dangerLevel={getDangerLevel(
+								avgPm10Twa,
+								dustPm10TwaThreshold.warning,
+								dustPm10TwaThreshold.danger,
+							)}
+						/>
+					</CardContent>
+				</Card>
+			)}
 
 			{showTrendLineChart && (
 				<DustTrendLineChartCard unit={dustUnit} userId={selectedUser.id} breakoutOnMobile={true} />

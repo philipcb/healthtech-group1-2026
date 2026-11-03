@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table.tsx";
+import { hasNoActiveSensors } from "@/features/attention-card/inactive-sensors.ts";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
@@ -17,7 +18,9 @@ interface Props {
 export function ExposureRiskCard({ users, exposure, dangerLevel, onUserClick }: Props) {
 	const { t } = useTranslation();
 
-	const operators = users.filter((user) => (user.status[exposure]?.dangerLevel ?? "safe") === dangerLevel);
+	const operators = users.filter(
+		(user) => (user.status[exposure]?.dangerLevel ?? "safe") === dangerLevel && !hasNoActiveSensors(user),
+	);
 
 	const { bgSubtle, border, text } = dangerlevelStyles[dangerLevel];
 

@@ -8,7 +8,7 @@ import { ExposureToggle } from "@/features/aggregated-exposure/components/exposu
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
 import { PeriodAndPrivacyNotice } from "@/features/aggregated-exposure/components/notices.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
@@ -109,49 +109,48 @@ export function GroupPage({ groupId }: { groupId: string }) {
 							</h1>
 						)}
 					</div>
-					<div className="hidden sm:block">
-						<PeriodPicker selection={periodSelection} />
-					</div>
 				</header>
 			</div>
 
-			<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
-				{exposurePickers}
-			</FilterDialog>
-			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
+			<PeriodPickerLayout selection={periodSelection}>
+				<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
+					{exposurePickers}
+				</FilterDialog>
+				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
+				<PeriodAndPrivacyNotice periodSelection={periodSelection} />
 
-			{groupsQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : groupsQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
-			) : group === undefined ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
-			) : isExposureUnavailable(exposure) ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
-			) : trendQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : trendQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
-			) : trendQuery.data.status === "unavailable" ? (
-				// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
-				<EmptyState
-					title={
-						exposure === "dust"
-							? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
-							: t(($) => $.aggregatedExposure.group.noData)
-					}
-				/>
-			) : (
-				<GroupDetails
-					trend={trendQuery.data}
-					group={group}
-					periodSelection={periodSelection}
-					exposure={exposure}
-					dustField={dustField}
-				/>
-			)}
+				{groupsQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : groupsQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
+				) : group === undefined ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
+				) : isExposureUnavailable(exposure) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
+				) : trendQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : trendQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
+				) : trendQuery.data.status === "unavailable" ? (
+					// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
+					<EmptyState
+						title={
+							exposure === "dust"
+								? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
+								: t(($) => $.aggregatedExposure.group.noData)
+						}
+					/>
+				) : (
+					<GroupDetails
+						trend={trendQuery.data}
+						group={group}
+						periodSelection={periodSelection}
+						exposure={exposure}
+						dustField={dustField}
+					/>
+				)}
+			</PeriodPickerLayout>
 		</div>
 	);
 }

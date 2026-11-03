@@ -9,7 +9,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { getPeriodLabel, type PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
 import { cn } from "@/lib/utils.ts";
 import { CalendarDays, SlidersHorizontal } from "lucide-react";
@@ -49,12 +48,6 @@ export function FilterDialog({
 						<DialogDescription>{t(($) => $.aggregatedExposure.filters.description)}</DialogDescription>
 					</DialogHeader>
 
-					<div className="flex flex-col gap-1.5">
-						<p aria-hidden="true" className="font-medium text-sm">
-							{t(($) => $.aggregatedExposure.period.label)}
-						</p>
-						<PeriodPicker selection={periodSelection} />
-					</div>
 					{children}
 
 					<DialogFooter>

@@ -54,7 +54,6 @@
     "week": "Uke",
     "month": "Måned",
     "selectionText": "Du blir vist en {{view}}.",
-    "dateSelectionSingle": "Du har valgt {{date}}.",
     "dateSelectionMultiple": "Du har valgt {{startDate}} til {{endDate}}."
   },
   "theme": {
@@ -560,12 +559,7 @@
       "yourExposureExposure": "Din {{exposure}}eksponering"
     },
     "subtitle": {
-      "allExposureTypes": "Alle eksponeringstyper",
-      "viewDay": "Dag",
-      "viewWeek": "Uke {{week}}",
-      "viewMonth": "Måned",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "Alle eksponeringstyper"
     }
   },
   "register": {

@@ -57,7 +57,6 @@
     "week": "Week",
     "month": "Month",
     "selectionText": "You are viewing a {{view}}.",
-    "dateSelectionSingle": "You have selected {{date}}.",
     "dateSelectionMultiple": "You have selected {{startDate}} to {{endDate}}."
   },
   "theme": {
@@ -563,12 +562,7 @@
       "yourExposureExposure": "Your {{exposure}} exposure"
     },
     "subtitle": {
-      "allExposureTypes": "All exposure types",
-      "viewDay": "Day",
-      "viewWeek": "Week {{week}}",
-      "viewMonth": "Month",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "All exposure types"
     }
   },
   "register": {

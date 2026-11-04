@@ -508,7 +508,6 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								mode={localView}
 								date={localDate}
 								onDateChange={setLocalDate}
-								withFooter={true}
 								showWeekNumber={true}
 							/>
 						)}

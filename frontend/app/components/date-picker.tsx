@@ -1,4 +1,3 @@
-import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import { cn } from "@/lib/utils.ts";
 import { Calendar } from "@/ui/calendar.tsx";
@@ -15,20 +14,10 @@ type DatePickerProps = Omit<
 	onDateChange: (date: TZDate) => void;
 	date: TZDate;
 	mode?: "day" | "week" | "month";
-	withFooter?: boolean;
 };
 
-export function DatePicker({
-	mode = "day",
-	date,
-	onDateChange,
-	locale,
-	className,
-	withFooter = true,
-	...props
-}: DatePickerProps) {
-	const formatDate = useFormatDate();
-	const { t, i18n } = useTranslation();
+export function DatePicker({ mode = "day", date, onDateChange, locale, className, ...props }: DatePickerProps) {
+	const { i18n } = useTranslation();
 
 	const [month, setMonth] = useState<Date>(date);
 
@@ -97,19 +86,6 @@ export function DatePicker({
 					rangeEnd: "rounded-r-xl",
 				};
 
-	const selectionDetail = formatSelection(
-		rangeStart && rangeEnd ? [rangeStart, rangeEnd] : date,
-		i18n.language,
-		formatDate,
-	);
-
-	const selectionRecap = selectionDetail.date
-		? t(($) => $.views.dateSelectionSingle, { date: selectionDetail.date })
-		: t(($) => $.views.dateSelectionMultiple, {
-				startDate: selectionDetail.startDate,
-				endDate: selectionDetail.endDate,
-			});
-
 	return (
 		<Calendar
 			mode="single"
@@ -125,33 +101,7 @@ export function DatePicker({
 				today: "[&>button]:font-bold",
 				...modifiersClassNames,
 			}}
-			footer={
-				withFooter ? (
-					<p className="mt-2 text-wrap text-muted-foreground text-xs">{selectionRecap}</p>
-				) : undefined
-			}
 			{...calendarProps}
 		/>
 	);
-}
-
-function formatSelection(
-	dates: TZDate | [TZDate, TZDate],
-	locale: string,
-	formatDate: ReturnType<typeof useFormatDate>,
-) {
-	const isEn = locale === "en";
-
-	if (!Array.isArray(dates)) {
-		return {
-			date: formatDate(dates, isEn ? "MMM d, yyyy" : "d. MMM yyyy"),
-		};
-	}
-
-	const [start, end] = dates;
-
-	const startStr = formatDate(start, isEn ? "MMM d" : "d. MMM");
-	const endStr = formatDate(end, isEn ? "MMM d, yyyy" : "d. MMM yyyy");
-
-	return { startDate: startStr, endDate: endStr };
 }

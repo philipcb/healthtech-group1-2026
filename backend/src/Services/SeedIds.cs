@@ -25,6 +25,13 @@ public static class SeedIds
 	public static readonly Guid User21Id = Guid.Parse("10000000-0000-0000-0000-000000000021");
 	public static readonly Guid User22Id = Guid.Parse("10000000-0000-0000-0000-000000000022");
 
+	public static readonly Guid User23Id = Guid.Parse("10000000-0000-0000-0000-000000000023");
+	public static readonly Guid User24Id = Guid.Parse("10000000-0000-0000-0000-000000000024");
+	public static readonly Guid User25Id = Guid.Parse("10000000-0000-0000-0000-000000000025");
+	public static readonly Guid User26Id = Guid.Parse("10000000-0000-0000-0000-000000000026");
+	public static readonly Guid User27Id = Guid.Parse("10000000-0000-0000-0000-000000000027");
+	public static readonly Guid User28Id = Guid.Parse("10000000-0000-0000-0000-000000000028");
+
 	public static readonly Guid VerdalLocationId = Guid.Parse(
 		"11111111-1111-1111-1111-111111111111"
 	);

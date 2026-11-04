@@ -330,6 +330,7 @@ public class AggregateExposureDataService(
 					Site = s.Site,
 					Hall = s.LocationName,
 					Occupation = s.JobQualifier,
+					WorkerCount = s.SampleCount,
 					Averages = new SampleAveragesDto
 					{
 						Dust = averageDustValues,

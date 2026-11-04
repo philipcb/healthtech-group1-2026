@@ -108,7 +108,7 @@
     "ofTotal": "av {{total}}",
     "title": "Eksponering",
     "aggregated": {
-      "safe": "Innenfor trygge grenseverdier",
+      "safe": "Under tiltaksverdi",
       "warning": "Over tiltaksverdi",
       "danger": "Over grenseverdi"
     }

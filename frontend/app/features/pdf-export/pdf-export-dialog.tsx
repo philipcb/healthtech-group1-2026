@@ -46,7 +46,7 @@ import { useTranslation } from "react-i18next";
  * PDF Export Dialog Component
  *
  * This file provides a dialog UI for selecting a date range before exporting exposure data to PDF.
- * It is a popup that appears when the user clicks the "Export PDF" button in the left sidebar.
+ * It is a popup that appears when the user clicks the "Download report" button in the page header.
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
  */
@@ -412,8 +412,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		<Dialog open={open} onOpenChange={handleDialogOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{t(($) => $.layout.exportPdf)}</DialogTitle>
-					<DialogDescription>{t(($) => $.layout.exportPdfDescription)}</DialogDescription>
+					<DialogTitle>{t(($) => $.layout.downloadReport)}</DialogTitle>
+					<DialogDescription>{t(($) => $.layout.downloadReportDescription)}</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4">
@@ -524,14 +524,14 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					</div>
 				)}
 
-				{/* Footer buttons (Cancel / Export) */}
+				{/* Footer buttons (Cancel / Download) */}
 				<DialogFooter>
 					{/* Usable mid-export, except while building - that step can't be interrupted */}
 					<Button variant="outline" onClick={handleCancel} disabled={progress?.step === "building"}>
 						{t(($) => $.common.cancel)}
 					</Button>
 					<Button onClick={handleExport} disabled={isExporting}>
-						{isExporting ? "Exporting..." : t(($) => $.common.export)}
+						{isExporting ? t(($) => $.layout.creatingReport) : t(($) => $.layout.download)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

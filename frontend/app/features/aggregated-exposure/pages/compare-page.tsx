@@ -4,6 +4,7 @@ import { CompareIntro } from "@/features/aggregated-exposure/components/compare-
 import { CompareSetup } from "@/features/aggregated-exposure/components/compare-setup.tsx";
 import { ComparisonCard } from "@/features/aggregated-exposure/components/comparison-card.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
+import { FiguresInfoDialog } from "@/features/aggregated-exposure/components/figures-info-dialog.tsx";
 import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useComparison } from "@/features/aggregated-exposure/hooks/use-comparison.ts";
@@ -28,8 +29,8 @@ export function ComparePage() {
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
-			<header className="flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+			<header className="flex items-start justify-between gap-3 border-b pb-3">
+				<div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
 					<h1 className="font-medium text-2xl">{t(($) => $.aggregatedExposure.compare.title)}</h1>
 					<p className="flex items-center gap-1.5 text-muted-foreground text-sm">
 						<MapPin aria-hidden="true" className="size-4" />
@@ -40,6 +41,7 @@ export function ComparePage() {
 								t(($) => $.aggregatedExposure.filters.allYards))}
 					</p>
 				</div>
+				<FiguresInfoDialog exposures={[exposure]} dustField={dustField} />
 			</header>
 
 			<PeriodPickerLayout selection={periodSelection}>

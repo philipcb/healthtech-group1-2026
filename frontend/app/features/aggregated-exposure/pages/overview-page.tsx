@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
+import { FiguresInfoDialog } from "@/features/aggregated-exposure/components/figures-info-dialog.tsx";
 import { GroupTable } from "@/features/aggregated-exposure/components/group-table.tsx";
-import { OverviewInfoDialog } from "@/features/aggregated-exposure/components/overview-info-dialog.tsx";
 import { OverviewSetup } from "@/features/aggregated-exposure/components/overview-setup.tsx";
 import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { DangerLevelBadgeLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
@@ -48,8 +48,8 @@ export function OverviewPage() {
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
-			<header className="flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+			<header className="flex items-start justify-between gap-3 border-b pb-3">
+				<div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
 					<h1 className="font-medium text-2xl">{scope.title}</h1>
 					<p className="flex items-center gap-1.5 text-muted-foreground text-sm">
 						<MapPin aria-hidden="true" className="size-4" />
@@ -59,6 +59,7 @@ export function OverviewPage() {
 						<p className="max-w-prose basis-full text-muted-foreground text-sm">{scope.description}</p>
 					)}
 				</div>
+				<FiguresInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
 			</header>
 
 			<PeriodPickerLayout selection={periodSelection}>
@@ -66,12 +67,9 @@ export function OverviewPage() {
 
 				<section aria-labelledby={headingId} className="flex flex-col gap-3">
 					<div className="space-y-1">
-						<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-							<h2 id={headingId} className="font-semibold">
-								{t(($) => $.aggregatedExposure.compare.level[level])}
-							</h2>
-							<OverviewInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
-						</div>
+						<h2 id={headingId} className="font-semibold">
+							{t(($) => $.aggregatedExposure.compare.level[level])}
+						</h2>
 						<div className="pt-1">
 							<DangerLevelBadgeLegend />
 						</div>

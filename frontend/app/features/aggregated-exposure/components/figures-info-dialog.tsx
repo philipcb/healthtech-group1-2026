@@ -8,8 +8,8 @@ import {
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 
-/** The overview's "About the figures", for the exposures the filter shows */
-export function OverviewInfoDialog({
+/** The aggregated pages' "About the figures", for the exposures the page shows */
+export function FiguresInfoDialog({
 	exposures,
 	dustField,
 }: {

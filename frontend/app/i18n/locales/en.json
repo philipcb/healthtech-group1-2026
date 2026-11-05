@@ -280,12 +280,7 @@
         "clearFilter": "Clear filter"
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection",
-      "summaryDisplay": {
-        "label": "Show team status as",
-        "cards": "Cards",
-        "charts": "Pie charts"
-      }
+      "clearUserSelection": "Clear user selection"
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",

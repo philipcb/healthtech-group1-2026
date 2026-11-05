@@ -1,5 +1,4 @@
 import { ExposureRiskCard } from "@/components/exposure-level-card.tsx";
-import { OptionToggle } from "@/components/option-toggle.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ExposurePieGrid } from "@/features/attention-card/exposure-pie-grid.tsx";
@@ -10,8 +9,6 @@ import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { ThresholdSummary } from "@/lib/threshold-summary.ts";
-import { ChartPieIcon, LayoutGridIcon } from "lucide-react";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTranslation } from "react-i18next";
 
 interface AttentionCardProps {
@@ -27,12 +24,9 @@ interface AttentionCardProps {
 
 const dangerLevels = ["danger", "warning", "safe"] as const satisfies ReadonlyArray<DangerLevel>;
 
-const summaryDisplays = ["cards", "charts"] as const;
-type SummaryDisplay = (typeof summaryDisplays)[number];
-
 /**
  * The team's status. For all exposures it's a card per danger level, which narrows the team list to the operators it
- * counts, or a pie chart per exposure. For one exposure, the operators are listed per danger level.
+ * counts, and a pie chart per exposure. For one exposure, the operators are listed per danger level.
  */
 export const AttentionCard = ({
 	subordinates,
@@ -45,7 +39,6 @@ export const AttentionCard = ({
 	onUserClick,
 }: AttentionCardProps) => {
 	const { t } = useTranslation();
-	const [display, setDisplay] = useQueryState("summary", parseAsStringLiteral(summaryDisplays).withDefault("cards"));
 
 	if (isThresholdSummaryLoading || thresholdSummary === undefined) {
 		return (
@@ -105,52 +98,30 @@ export const AttentionCard = ({
 
 	return (
 		<section className="flex flex-col gap-4">
-			<div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-				<div className="flex min-w-0 flex-1 basis-80 flex-col gap-1">
-					{isSubordinatesLoading ? (
-						<Skeleton className="h-7 w-[50%] rounded-full bg-zinc-100 dark:bg-accent" />
-					) : (
-						<>
-							<h2 className="text-balance font-semibold text-foreground text-xl">
-								{t(($) => $.foremanDashboard.actionCard[highestDangerLevel])}
-							</h2>
-							{warningDescription && (
-								<p className="max-w-prose text-muted-foreground">{warningDescription}</p>
-							)}
-						</>
-					)}
-				</div>
-
-				{/* With one exposure, its operators are already listed per danger level, so there is nothing to switch */}
-				{exposure === null && (
-					<OptionToggle<SummaryDisplay>
-						label={t(($) => $.foremanDashboard.overview.summaryDisplay.label)}
-						hidesLabel={true}
-						fillsWidth={false}
-						value={display}
-						onValueChange={setDisplay}
-						options={[
-							{
-								value: "cards",
-								label: t(($) => $.foremanDashboard.overview.summaryDisplay.cards),
-								icon: <LayoutGridIcon className="size-4" aria-hidden="true" />,
-							},
-							{
-								value: "charts",
-								label: t(($) => $.foremanDashboard.overview.summaryDisplay.charts),
-								icon: <ChartPieIcon className="size-4" aria-hidden="true" />,
-							},
-						]}
-					/>
+			<div className="flex flex-col gap-1">
+				{isSubordinatesLoading ? (
+					<Skeleton className="h-7 w-[50%] rounded-full bg-zinc-100 dark:bg-accent" />
+				) : (
+					<>
+						<h2 className="text-balance font-semibold text-foreground text-xl">
+							{t(($) => $.foremanDashboard.actionCard[highestDangerLevel])}
+						</h2>
+						{warningDescription && (
+							<p className="max-w-prose text-muted-foreground">{warningDescription}</p>
+						)}
+					</>
 				)}
 			</div>
 
 			{exposure === null ? (
-				display === "charts" ? (
-					<ExposurePieGrid thresholdSummary={thresholdSummary} subordinates={subordinates} />
-				) : (
-					statusCards
-				)
+				<div className="flex flex-col gap-8">
+					{statusCards}
+
+					<div className="flex flex-col gap-4">
+						<h3 className="font-medium text-lg">{t(($) => $.foremanDashboard.overview.exposure)}</h3>
+						<ExposurePieGrid thresholdSummary={thresholdSummary} subordinates={subordinates} />
+					</div>
+				</div>
 			) : (
 				<div className="grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{dangerLevels.map((level) => (

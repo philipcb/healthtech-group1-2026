@@ -13,13 +13,13 @@ type ExposurePieGridProps = {
 	subordinates: Array<UserWithStatusDto>;
 };
 
-/** The team's danger levels as a pie chart per exposure, the chart alternative to the status cards */
+/** The team's danger levels as a pie chart per exposure */
 export function ExposurePieGrid({ thresholdSummary, subordinates }: ExposurePieGridProps) {
 	const { t } = useTranslation();
 	const [inactiveExposure, setInactiveExposure] = useState<Exposure | null>(null);
 	const [searchParams] = useSearchParams();
 
-	// Keeps the selected date, view and summary display
+	// Keeps the selected date and view
 	const toExposure = (exposure: Exposure) => {
 		const search = new URLSearchParams(searchParams);
 		search.set("exposure", exposure);

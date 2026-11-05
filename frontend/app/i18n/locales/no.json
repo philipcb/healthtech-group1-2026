@@ -277,12 +277,7 @@
         "clearFilter": "Fjern filter"
       },
       "selectUserPlaceholder": "Velg et teammedlem",
-      "clearUserSelection": "Fjern brukervalg",
-      "summaryDisplay": {
-        "label": "Vis teamstatus som",
-        "cards": "Kort",
-        "charts": "Sektordiagram"
-      }
+      "clearUserSelection": "Fjern brukervalg"
     },
     "actionCard": {
       "safe": "Teamstatus: Innenfor eksponeringsgrenser",

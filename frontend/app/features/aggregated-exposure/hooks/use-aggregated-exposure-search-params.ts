@@ -45,6 +45,9 @@ const searchParams = {
 	level: parseAsStringLiteral(compareLevels).withDefault(defaultOverviewLevel),
 };
 
+/** The search params of the period, which the management pages share, so it's kept when switching between them */
+export const periodSearchParamKeys = ["period", "month", "year"] as const satisfies Array<keyof typeof searchParams>;
+
 export function useAggregatedExposureSearchParams() {
 	const [params, setParams] = useQueryStates(searchParams);
 

@@ -636,7 +636,8 @@
   },
   "datePicker": {
     "openLabel": "Velg dato og visning",
-    "dialogTitle": "Dato og visning"
+    "dialogTitle": "Dato og visning",
+    "selectWeek": "Velg uke {{week}}"
   },
   "chartDownload": {
     "download": "Last ned data",

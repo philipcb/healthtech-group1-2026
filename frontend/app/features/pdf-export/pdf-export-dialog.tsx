@@ -121,6 +121,12 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 	// The months the period export covers.
 	const [localPeriod, setLocalPeriod] = useState<PdfPeriod>(getDefaultPeriod);
 
+	// Clicking a week number in the calendar switches to the week view on that week
+	const selectWeek = useCallback((weekDate: TZDate) => {
+		setLocalView("week");
+		setLocalDate(weekDate);
+	}, []);
+
 	// This component stays mounted while the dialog is closed, so reset the period
 	// each time it opens - during render, so the old period never flashes on screen.
 	const [wasOpen, setWasOpen] = useState(open);
@@ -508,6 +514,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								mode={localView}
 								date={localDate}
 								onDateChange={setLocalDate}
+								onWeekSelect={selectWeek}
 								showWeekNumber={true}
 							/>
 						)}

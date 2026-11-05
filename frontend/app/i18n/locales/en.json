@@ -639,7 +639,8 @@
   },
   "datePicker": {
     "openLabel": "Choose date and view",
-    "dialogTitle": "Date and view"
+    "dialogTitle": "Date and view",
+    "selectWeek": "Select week {{week}}"
   },
   "chartDownload": {
     "download": "Download data",

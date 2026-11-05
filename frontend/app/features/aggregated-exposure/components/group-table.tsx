@@ -192,7 +192,7 @@ function GroupName({ group, showsYard }: { group: ComparableGroup; showsYard: bo
 	);
 }
 
-/** The exposure's name only. The metric and thresholds are in "About the figures", the status in each cell. */
+/** The exposure's name only. The metric and thresholds are in "Limits and calculation", the status in each cell. */
 function ExposureHeader({
 	exposure,
 	dustField,

@@ -8,7 +8,7 @@ import {
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 
-/** The aggregated pages' "About the figures", for the exposures the page shows */
+/** The aggregated pages' "Limits and calculation", for the exposures the page shows */
 export function FiguresInfoDialog({
 	exposures,
 	dustField,

@@ -527,12 +527,12 @@
   },
   "aboutFigures": {
     "trigger": "Grenseverdier og beregning",
-    "title": "Om tallene",
-    "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
+    "title": "Grenseverdier og beregning",
+    "description": "Tiltaks- og grenseverdiene tallene sammenlignes med, hvordan tallene er regnet ut, og hvor de kommer fra.",
     "headings": {
       "source": "Kilde",
       "calculation": "Beregning",
-      "comparedWith": "Sammenlignet med",
+      "comparedWith": "Tiltaks- og grenseverdier",
       "missing": "Når tall mangler"
     },
     "source": {
@@ -540,11 +540,11 @@
       "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
     },
     "calculation": {
-      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet på kortet er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet som vises, er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
       "exposure": {
         "dust": "{{dustField}} TWA i {{unit}}.",
-        "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
-        "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
+        "noise": "LAeq i {{unit}}, som et vanlig snitt av desibelverdiene. Desibel er logaritmisk, så dette snittet blir aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
+        "vibration": "Vibrasjonspoeng. Timesverdiene regnes om til snitt på samme måte som for støy og støv."
       }
     },
     "missing": {

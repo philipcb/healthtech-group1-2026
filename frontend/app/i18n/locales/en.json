@@ -530,12 +530,12 @@
   },
   "aboutFigures": {
     "trigger": "Limits and calculation",
-    "title": "About the figures",
-    "description": "Where the figures on this page come from, and how they're calculated.",
+    "title": "Limits and calculation",
+    "description": "The action and limit values the figures are compared with, how the figures are calculated, and where they come from.",
     "headings": {
       "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Compared with",
+      "comparedWith": "Action and limit values",
       "missing": "When figures are missing"
     },
     "source": {
@@ -543,11 +543,11 @@
       "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure on the card is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure shown is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
       "exposure": {
         "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
+        "noise": "LAeq in {{unit}}, as a plain average of the decibel values. Decibels are logarithmic, so this average is never higher than an energy average, and often lower when the sound level varies.",
+        "vibration": "Vibration points. The hourly values are averaged the same way as for noise and dust."
       }
     },
     "missing": {

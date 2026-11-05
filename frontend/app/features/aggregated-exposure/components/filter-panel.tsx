@@ -18,7 +18,7 @@ type FilterPanelProps = {
 	onReset?: () => void;
 	/** How many of the filters that are in the dialog on phones aren't the defaults */
 	activeDialogFilterCount?: number;
-	/** The exposure filter, the one filter that's also shown on phones */
+	/** The exposure row, the one filter that's also shown on phones */
 	exposure: LabelledControl;
 	yards: Array<string>;
 	selectedYard: string | null;
@@ -26,18 +26,15 @@ type FilterPanelProps = {
 	levelLabel: string;
 	level: CompareLevel;
 	onLevelChange: (level: CompareLevel) => void;
-	/** The page's own compact filters, in the row after the yard, as they narrow the place too. In the dialog on phones */
-	inlineFilters?: ReactNode;
-	/** The page's own filters in the dialog on phones, after the level */
+	/** The page's own filters in the dialog on phones, after the yard, as they narrow the place too */
 	dialogFilters?: ReactNode;
-	/** The page's own rows under the filters, like the compare page's groups */
+	/** The page's own rows, after the level */
 	children?: ReactNode;
 };
 
 /**
- * The filters the overview and compare pages share, so both pick their groups the same way. They sit in one row, with
- * the dropdowns named by their value, and only wrap on narrow screens. On phones the yard and level move into a dialog.
- * The row has no box of its own; only a page's rows under it, like the compare page's groups, are boxed with it.
+ * The filters the overview and compare pages share, so both pick their groups the same way. On phones the yard and level
+ * move into a dialog.
  */
 export function FilterPanel({
 	label,
@@ -50,7 +47,6 @@ export function FilterPanel({
 	levelLabel,
 	level,
 	onLevelChange,
-	inlineFilters,
 	dialogFilters,
 	children,
 }: FilterPanelProps) {
@@ -59,65 +55,34 @@ export function FilterPanel({
 	const dialogLevelLabelId = useId();
 
 	return (
-		<section
-			aria-label={label}
-			className={cn("flex flex-col gap-3", children !== undefined && "rounded-xl border bg-card p-3")}
-		>
-			<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-				<FilterDialog onReset={onReset} activeCount={activeDialogFilterCount} className="sm:hidden">
-					{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
-					{dialogFilters}
-					<div className="flex flex-col gap-1.5">
-						<p id={dialogLevelLabelId} className="font-medium text-sm">
-							{levelLabel}
-						</p>
-						<LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={dialogLevelLabelId} />
-					</div>
-				</FilterDialog>
+		<>
+			<FilterDialog onReset={onReset} activeCount={activeDialogFilterCount} className="sm:hidden">
+				{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
+				{dialogFilters}
+				<div className="flex flex-col gap-1.5">
+					<p id={dialogLevelLabelId} className="font-medium text-sm">
+						{levelLabel}
+					</p>
+					<LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={dialogLevelLabelId} />
+				</div>
+			</FilterDialog>
 
-				<InlineFilter label={t(($) => $.aggregatedExposure.exposureLabel)} hidesLabel={true}>
-					{exposure}
-				</InlineFilter>
-				{YardFilter && (
-					<div className="hidden sm:contents">
-						<YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} hidesLabel={true} />
-					</div>
-				)}
-				{inlineFilters && <div className="hidden sm:contents">{inlineFilters}</div>}
-				<InlineFilter label={levelLabel} hiddenOnMobile={true}>
-					{(labelId) => <LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={labelId} />}
-				</InlineFilter>
-			</div>
-
-			{children}
-		</section>
-	);
-}
-
-type InlineFilterProps = {
-	label: string;
-	/** For a control whose icons or value already say what it is. Screen readers still get the label */
-	hidesLabel?: boolean;
-	hiddenOnMobile?: boolean;
-	children: LabelledControl;
-};
-
-/** A filter in the `FilterPanel`'s row, with its label in front of it */
-function InlineFilter({ label, hidesLabel = false, hiddenOnMobile = false, children }: InlineFilterProps) {
-	const labelId = useId();
-	const isLabelling = typeof children === "function";
-
-	return (
-		<div className={cn("flex min-w-0 items-center gap-2", hiddenOnMobile && "hidden sm:flex")}>
-			<p
-				id={isLabelling ? labelId : undefined}
-				aria-hidden={isLabelling ? undefined : true}
-				className={hidesLabel ? "sr-only" : "text-muted-foreground text-sm"}
+			<section
+				aria-label={label}
+				className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start"
 			>
-				{label}
-			</p>
-			{isLabelling ? children(labelId) : children}
-		</div>
+				<FilterRow label={t(($) => $.aggregatedExposure.exposureLabel)}>{exposure}</FilterRow>
+				{YardFilter && (
+					<FilterRow label={t(($) => $.aggregatedExposure.filters.yard)} hiddenOnMobile={true}>
+						<YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} hidesLabel={true} />
+					</FilterRow>
+				)}
+				<FilterRow label={levelLabel} hiddenOnMobile={true}>
+					{(labelId) => <LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={labelId} />}
+				</FilterRow>
+				{children}
+			</section>
+		</>
 	);
 }
 
@@ -129,14 +94,14 @@ type FilterRowProps = {
 	children: LabelledControl;
 };
 
-/** A `FilterPanel` row under the filters, for a control too big for the filter row */
+/** One labeled row of a `FilterPanel` */
 export function FilterRow({ label, hint, hiddenOnMobile = false, children }: FilterRowProps) {
 	const labelId = useId();
 	const isLabelling = typeof children === "function";
 
 	return (
-		<div className={cn("flex min-w-0 flex-col gap-1.5 border-t pt-3", hiddenOnMobile && "hidden sm:flex")}>
-			<div className="flex flex-col gap-1">
+		<>
+			<div className={cn("flex flex-col gap-1 sm:pt-2", hiddenOnMobile && "hidden sm:flex")}>
 				<p
 					id={isLabelling ? labelId : undefined}
 					aria-hidden={isLabelling ? undefined : true}
@@ -146,7 +111,9 @@ export function FilterRow({ label, hint, hiddenOnMobile = false, children }: Fil
 				</p>
 				{hint && <p className="text-muted-foreground text-xs sm:hidden">{hint}</p>}
 			</div>
-			{isLabelling ? children(labelId) : children}
-		</div>
+			<div className={cn("min-w-0", hiddenOnMobile && "hidden sm:block")}>
+				{isLabelling ? children(labelId) : children}
+			</div>
+		</>
 	);
 }

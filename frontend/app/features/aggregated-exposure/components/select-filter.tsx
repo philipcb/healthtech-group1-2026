@@ -25,34 +25,19 @@ export function SelectFilter({
 	/** The option for every value at once. Left out when one value has to be picked. */
 	allLabel?: string;
 	inline?: boolean;
-	/**
-	 * For a row of filters, where the value says what it filters. Screen readers still get the label. It narrows, down
-	 * to cutting the value off, before it moves the row's next filter onto another line.
-	 */
 	hidesLabel?: boolean;
 }) {
 	const id = useId();
 	const selected = value !== null && options.includes(value) ? value : ALL;
 
 	return (
-		<div
-			className={cn(
-				"flex flex-col gap-1.5",
-				inline && "sm:flex-row sm:items-center sm:gap-2",
-				hidesLabel && "sm:min-w-0 sm:max-w-44 sm:flex-[1_1_6rem]",
-			)}
-		>
+		<div className={cn("flex flex-col gap-1.5", inline && "sm:flex-row sm:items-center sm:gap-2")}>
 			<label className={cn("flex items-center gap-2 font-medium text-sm", hidesLabel && "sr-only")} htmlFor={id}>
 				<Icon aria-hidden="true" className="size-4 text-muted-foreground" />
 				{label}
 			</label>
 			<Select value={selected} onValueChange={(option) => onValueChange(option === ALL ? null : option)}>
-				<SelectTrigger
-					id={id}
-					// The value can be cut off where the trigger is narrow
-					title={selected === ALL ? allLabel : selected}
-					className={cn("w-full bg-background", hidesLabel ? undefined : inline ? "sm:w-48" : "sm:w-60")}
-				>
+				<SelectTrigger id={id} className={cn("w-full bg-background", inline ? "sm:w-48" : "sm:w-60")}>
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>

@@ -59,7 +59,7 @@ export function OverviewPage() {
 						<p className="max-w-prose basis-full text-muted-foreground text-sm">{scope.description}</p>
 					)}
 				</div>
-				<FiguresInfoDialog exposures={getShownExposures(exposureFilter)} dustField={dustField} />
+				<FiguresInfoDialog dustField={dustField} />
 			</header>
 
 			<PeriodPickerLayout selection={periodSelection}>

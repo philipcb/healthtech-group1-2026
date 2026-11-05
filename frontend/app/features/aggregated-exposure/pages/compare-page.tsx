@@ -41,7 +41,7 @@ export function ComparePage() {
 								t(($) => $.aggregatedExposure.filters.allYards))}
 					</p>
 				</div>
-				<FiguresInfoDialog exposures={[exposure]} dustField={dustField} />
+				<FiguresInfoDialog dustField={dustField} />
 			</header>
 
 			<PeriodPickerLayout selection={periodSelection}>

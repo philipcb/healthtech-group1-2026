@@ -96,7 +96,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 							{t(($) => $.aggregatedExposure.group.back)}
 						</Link>
 					</Button>
-					<FiguresInfoDialog exposures={[exposure]} dustField={dustField} />
+					<FiguresInfoDialog dustField={dustField} />
 				</div>
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">

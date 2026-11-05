@@ -57,6 +57,7 @@
     "week": "Week",
     "month": "Month",
     "selectionText": "You are viewing a {{view}}.",
+    "dateSelectionSingle": "You have selected {{date}}.",
     "dateSelectionMultiple": "You have selected {{startDate}} to {{endDate}}."
   },
   "theme": {

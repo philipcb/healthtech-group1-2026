@@ -54,6 +54,7 @@
     "week": "Uke",
     "month": "Måned",
     "selectionText": "Du blir vist en {{view}}.",
+    "dateSelectionSingle": "Du har valgt {{date}}.",
     "dateSelectionMultiple": "Du har valgt {{startDate}} til {{endDate}}."
   },
   "theme": {

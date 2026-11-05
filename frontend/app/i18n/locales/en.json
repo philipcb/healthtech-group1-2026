@@ -640,6 +640,7 @@
     "trendPeakDescription": "Shows the maximum value per day"
   },
   "limitExplanation": {
+    "title": "Action and limit values",
     "actionValue": {
       "label": "Action value",
       "description": "Level where preventative action should be taken."

@@ -637,6 +637,7 @@
     "trendPeakDescription": "Viser maksimal verdi per dag"
   },
   "limitExplanation": {
+    "title": "Tiltaks- og grenseverdier",
     "actionValue": {
       "label": "Tiltaksverdi",
       "description": "Nivå hvor forebyggende tiltak bør iverksettes."

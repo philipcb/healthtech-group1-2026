@@ -84,7 +84,8 @@
     "theme": "Fargetema",
     "language": "Språk",
     "map": "Kart",
-    "compare": "Sammenlign"
+    "compare": "Sammenlign",
+    "teamSettings": "Teaminnstillinger"
   },
   "live": {
     "timeRange": {
@@ -212,9 +213,7 @@
       "title": "Ditt team",
       "failedToLoadMembers": "Kunne ikke laste teammedlemmer",
       "noMembersFound": "Ingen teammedlemmer funnet",
-      "empty": "Ingen operatører i teamet ennå. Legg til operatører for å følge eksponeringen deres her.",
-      "addLabel": "Legg til operatører i teamet",
-      "updateFailed": "Kunne ikke oppdatere teamet. Prøv igjen.",
+      "empty": "Ingen operatører i teamet ennå. Legg dem til i teaminnstillingene for å følge eksponeringen deres her.",
       "filteredCount": "Viser {{shown}} av {{total}}",
       "clearFilter": "Fjern filter: {{filter}}",
       "noFilterMatches": "Ingen operatører i teamet passer dette filteret.",
@@ -229,11 +228,7 @@
       },
       "action": {
         "removeSubordinate": "Fjern fra teamet",
-        "addSubordinate": "Legg til i teamet",
-        "manage": "Administrer team",
-        "done": "Ferdig",
-        "remove": "Fjern",
-        "removeMember": "Fjern {{name}} fra teamet"
+        "addSubordinate": "Legg til i teamet"
       },
       "membersCount": "{{count}} operatør i teamet",
       "membersCount_one": "{{count}} operatør i teamet",

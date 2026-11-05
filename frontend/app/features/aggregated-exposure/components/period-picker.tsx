@@ -174,7 +174,7 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 						</DialogHeader>
 						<div className="flex flex-col gap-4">
 							{viewPicker}
-							<div className="flex justify-center overflow-x-auto">{datePicker}</div>
+							<div className="flex justify-center">{datePicker}</div>
 						</div>
 					</DialogContent>
 				</Dialog>
@@ -182,7 +182,7 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 
 			<div className="hidden lg:flex lg:flex-col lg:gap-4">
 				<Card muted={true}>{viewPicker}</Card>
-				<Card muted={true} className="overflow-x-auto">
+				<Card muted={true}>
 					{datePicker}
 				</Card>
 			</div>

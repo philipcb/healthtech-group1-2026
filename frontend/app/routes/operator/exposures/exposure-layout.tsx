@@ -48,8 +48,8 @@ export default function ExposureLayout() {
 
 			<article className="flex flex-col gap-4 lg:col-start-2 lg:row-start-2">
 				<ExposureSummary exposureType={exposure ?? "all"} />
-				<MyTrendsCard className="lg:hidden" />
 				<Outlet />
+				<MyTrendsCard className="lg:hidden" />
 			</article>
 
 			<aside className="flex flex-col gap-4 lg:col-start-1 lg:row-start-2">

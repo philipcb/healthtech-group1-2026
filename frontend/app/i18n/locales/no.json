@@ -138,7 +138,19 @@
     "share": "{{value}} %",
     "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
+    "inProgress": {
+      "day": "Dagen er ikke over ennå, så siste hele dag vises.",
+      "week": "Uken er ikke over ennå, så siste hele uke vises.",
+      "month": "Måneden er ikke over ennå, så siste hele måned vises."
+    },
     "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)"
+  },
+  "exposureStatus": {
+    "noData": "Ingen data",
+    "statusDuration": "{{status}}: {{count}} t",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Vis {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Over grenseverdi",

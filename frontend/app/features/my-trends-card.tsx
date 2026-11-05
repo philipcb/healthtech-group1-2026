@@ -156,7 +156,8 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 
 	const currentStart = startOfPeriod(today());
 	const selectedStart = startOfPeriod(date);
-	const periodStart = selectedStart < currentStart ? selectedStart : subPeriods(currentStart, 1);
+	const isShowingLastFullPeriod = selectedStart >= currentStart;
+	const periodStart = isShowingLastFullPeriod ? subPeriods(currentStart, 1) : selectedStart;
 	const lookbackStart = subPeriods(periodStart, LOOKBACK_PERIODS[view]);
 	const endTime = toTZDate(subMilliseconds(subPeriods(periodStart, -1), 1));
 
@@ -229,6 +230,9 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 					baseline: periodLabel(baselineStart ?? subPeriods(periodStart, 1)),
 				})}
 			</p>
+			{isShowingLastFullPeriod && (
+				<p className="-mt-2 text-muted-foreground text-xs">{t(($) => $.myTrends.inProgress[view])}</p>
+			)}
 
 			<ul className="flex flex-col gap-2">
 				{rows.map((row) => {

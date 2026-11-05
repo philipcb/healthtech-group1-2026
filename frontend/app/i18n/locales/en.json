@@ -141,7 +141,19 @@
     "share": "{{value}}%",
     "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
+    "inProgress": {
+      "day": "Today isn't over yet, so the last full day is shown.",
+      "week": "This week isn't over yet, so the last full week is shown.",
+      "month": "This month isn't over yet, so the last full month is shown."
+    },
     "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)"
+  },
+  "exposureStatus": {
+    "noData": "No data",
+    "statusDuration": "{{status}}: {{count}} h",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Show {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Above limit value",

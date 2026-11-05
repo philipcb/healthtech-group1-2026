@@ -51,6 +51,8 @@ export interface ExposureLineChartProps extends PropsWithChildren {
 	chartData: Array<ExposureDataDto>;
 	maxY: number;
 	minY: number;
+	// Overrides the default y ticks (only dust has fixed ones)
+	yTicks?: Array<number>;
 	unit: ExposureUnit;
 	lineType?: CurveType;
 	exposure: Exposure;
@@ -74,6 +76,7 @@ export function ExposureLineChart({
 	chartData,
 	maxY,
 	minY,
+	yTicks: yTicksOverride,
 	unit,
 	lineType = "linear",
 	children,
@@ -98,7 +101,7 @@ export function ExposureLineChart({
 
 	const { warning, danger, peakDanger } = getThreshold(exposure, dustField);
 	const dangerThreshold = usePeakData && peakDanger ? peakDanger : danger;
-	const yTicks = exposure === "dust" ? buildYAxisTicks(minY, maxY, DUST_Y_AXIS_STEP) : undefined;
+	const yTicks = yTicksOverride ?? (exposure === "dust" ? buildYAxisTicks(minY, maxY, DUST_Y_AXIS_STEP) : undefined);
 	const defaultFractionDigits = exposure === "dust" ? 1 : 0;
 	const fractionDigitsPerUnit = exposure === "dust" ? { mg: 4 } : { mg: 3 };
 
@@ -112,17 +115,19 @@ export function ExposureLineChart({
 
 	const compact = variant === "compact";
 	const isMobileBreakout = breakoutOnMobile && isMobile;
+	const isMobileCompact = compact && isMobile;
 	const hideYAxisLabel = compact || isMobileBreakout;
-	const yAxisWidth = compact
-		? Y_AXIS_WIDTH
-		: isMobileBreakout
-			? COLLAPSED_Y_AXIS_WIDTH
+	const yAxisWidth = isMobileBreakout
+		? COLLAPSED_Y_AXIS_WIDTH
+		: compact
+			? Y_AXIS_WIDTH
 			: unit === "mg"
 				? MG_Y_AXIS_WIDTH
 				: Y_AXIS_WIDTH;
 
 	const rawTicks = buildTicks(xAxisMode, minTime, maxTime);
-	const ticks = limitTicks(rawTicks, isMobileBreakout ? 4 : 6);
+	// Windowed labels ("3 hours", "now") are wide, so a phone-width compact chart only fits three
+	const ticks = limitTicks(rawTicks, isMobileCompact ? 3 : isMobileBreakout ? 4 : 6);
 
 	const formatTime = (time: number) => formatDate(toTZDate(time), "HH:mm");
 	const formatYValue = (value: number) =>
@@ -139,7 +144,8 @@ export function ExposureLineChart({
 				"h-full w-full",
 				chartContainerClassName,
 				(compact || isMobileBreakout) && "!aspect-auto",
-				isMobileBreakout && "!h-[50dvh]",
+				// Compact charts keep the height their card gives them, so the live page's stack of charts stays short
+				isMobileBreakout && !compact && "!h-[50dvh]",
 			)}
 		>
 			<ComposedChart
@@ -199,6 +205,8 @@ export function ExposureLineChart({
 					}
 					domain={[minY, maxY]}
 					ticks={yTicks}
+					// Overridden ticks are already spaced for the chart, so don't let recharts drop any of them
+					interval={yTicksOverride ? 0 : undefined}
 					label={
 						hideYAxisLabel
 							? undefined

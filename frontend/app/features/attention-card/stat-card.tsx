@@ -9,7 +9,8 @@ export type StatCardProps = {
 	className?: string;
 	value: number;
 	label: string;
-	dangerLevel: DangerLevel;
+	/** Omit for a neutral, grey card */
+	dangerLevel?: DangerLevel;
 	onClick?: () => void;
 };
 
@@ -17,7 +18,7 @@ export const StatCard = ({ className, value, label, dangerLevel, onClick }: Stat
 	const { t } = useTranslation();
 
 	const isHoverable = onClick !== undefined;
-	const visualDangerLevel = value === 0 ? "none" : dangerLevel;
+	const visualDangerLevel = value === 0 || dangerLevel === undefined ? "none" : dangerLevel;
 	const { bgSubtle, border, text } = dangerlevelStyles[visualDangerLevel];
 
 	return (
@@ -34,9 +35,11 @@ export const StatCard = ({ className, value, label, dangerLevel, onClick }: Stat
 			>
 				<CardHeader className="flex justify-between gap-3 p-0">
 					<h3 className={cn("font-medium text-sm", text)}>{label}</h3>
-					<div className="flex size-2.5 items-center pt-2.5">
-						<DangerLevelDots dangerLevel={dangerLevel} horizontal={true} size="sm" />
-					</div>
+					{dangerLevel && (
+						<div className="flex size-2.5 items-center pt-2.5">
+							<DangerLevelDots dangerLevel={dangerLevel} horizontal={true} size="sm" />
+						</div>
+					)}
 				</CardHeader>
 				<CardContent className="flex flex-row justify-between gap-2">
 					<p className={cn("font-medium text-4xl tabular-nums leading-none", text)}>{value}</p>

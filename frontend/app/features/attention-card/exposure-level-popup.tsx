@@ -1,13 +1,16 @@
 import { ExposureBadge } from "@/components/exposure-badge.tsx";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table.tsx";
+import { hasInactiveSensor, hasNoActiveSensors } from "@/features/attention-card/inactive-sensors.ts";
 import { BasePopup } from "@/features/popups/base-popup.tsx";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import type { DangerLevel } from "@/lib/danger-levels.ts";
-import { exposures } from "@/lib/exposures.ts";
+import { type Exposure, exposures } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
-const getExposureBadges = (worker: UserWithStatusDto, popupStatus: DangerLevel) => {
+export type PopupStatus = DangerLevel | "inactive";
+
+const getExposureBadges = (worker: UserWithStatusDto, popupStatus: PopupStatus) => {
 	const entries = exposures.map((exposure) => ({
 		exposure,
 		data: worker.status[exposure],
@@ -28,8 +31,14 @@ const getExposureBadges = (worker: UserWithStatusDto, popupStatus: DangerLevel) 
 	});
 };
 
-const WorkerRow = ({ worker, status }: { worker: UserWithStatusDto; status: DangerLevel }) => {
+const WorkerRow = ({ worker, status }: { worker: UserWithStatusDto; status: PopupStatus }) => {
 	const { t } = useTranslation();
+	const [searchParams] = useSearchParams();
+
+	// Keeps the selected date and view, like the team table's links
+	const search = new URLSearchParams(searchParams);
+	search.set("userId", worker.id);
+	search.delete("exposure");
 
 	const exposureBadges = getExposureBadges(worker, status).map(({ exposure, data }) => (
 		<ExposureBadge key={exposure} exposure={exposure} dangerLevel={data?.dangerLevel ?? "safe"}>
@@ -40,7 +49,7 @@ const WorkerRow = ({ worker, status }: { worker: UserWithStatusDto; status: Dang
 	return (
 		<TableRow key={worker.id}>
 			<TableCell>
-				<Link to={`/foreman/?userId=${worker.id}`} className="flex w-full items-center justify-between">
+				<Link to={{ search: search.toString() }} className="flex w-full items-center justify-between">
 					<p>{worker.name}</p>
 					<div className="flex gap-2">{exposureBadges}</div>
 				</Link>
@@ -54,12 +63,15 @@ export function AtRiskPopup({
 	open,
 	onClose,
 	subordinates,
+	inactiveExposure,
 }: {
 	title: string;
-	status: DangerLevel;
+	status: PopupStatus;
 	open: boolean;
 	onClose: () => void;
 	subordinates: Array<UserWithStatusDto>;
+	/** With status "inactive": list workers inactive for this exposure, or with no active sensors if omitted */
+	inactiveExposure?: Exposure;
 }) {
 	const { t } = useTranslation();
 
@@ -68,9 +80,17 @@ export function AtRiskPopup({
 			? t((x) => x.exposureLevel.inDanger)
 			: status === "warning"
 				? t((x) => x.exposureLevel.warning)
-				: t((x) => x.exposureLevel.safe);
+				: status === "safe"
+					? t((x) => x.exposureLevel.safe)
+					: t((x) => x.exposureLevel.inactive);
 
-	const workers = subordinates.filter((sub) => sub.status.status === status);
+	const workers = subordinates.filter((sub) =>
+		status === "inactive"
+			? inactiveExposure
+				? hasInactiveSensor(sub, inactiveExposure)
+				: hasNoActiveSensors(sub)
+			: sub.status.status === status && !hasNoActiveSensors(sub),
+	);
 
 	const emptyTableBody = (
 		<TableRow>

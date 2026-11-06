@@ -1,3 +1,4 @@
+import { ChartDownload } from "@/components/chart-download.tsx";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
@@ -6,26 +7,41 @@ import { EmptyState } from "@/features/aggregated-exposure/components/empty-stat
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
-import { PeriodAndPrivacyNotice } from "@/features/aggregated-exposure/components/notices.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
+	type ComparableGroup,
+	getComparableGroupName,
+	toComparableGroups,
+} from "@/features/aggregated-exposure/model/compare.ts";
+import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
+import {
+	formatAverageShare,
 	formatGroupValue,
-	getGroupName,
 	getGroupThreshold,
 	getGroupUnitLabel,
-	getHallName,
+	getMetricLabel,
+	getOccupationLabel,
+	getShareLabels,
+	getThresholdNumberFormat,
+	hasTimeOverThresholds,
 	isExposureUnavailable,
-	toGroupSummaries,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import {
+	type PeriodSelection,
+	toPeriodFilenamePart,
+	toPeriodParams,
+} from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
+import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
-import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
+import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 import { cn } from "@/lib/utils.ts";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -39,13 +55,11 @@ export function GroupPage({ groupId }: { groupId: string }) {
 		useAggregatedExposureSearchParams();
 	const periodParams = toPeriodParams(periodSelection);
 	const groupsQuery = useGetAggregateGroups(periodParams, {
-		query: { select: toGroupSummaries },
+		query: { select: toComparableGroups },
 	});
 	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
 	// unavailable exposure
-	const occupationGroup = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
-	const hallGroup = groupsQuery.data?.halls.find((summary) => summary.groupId === groupId);
-	const group = occupationGroup ?? hallGroup;
+	const group = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
 	const trendQuery = useGetAggregateGroupTrend(
 		group?.groupId ?? "",
 		{ exposure, dustField: exposure === "dust" ? dustField : undefined, ...periodParams },
@@ -82,97 +96,111 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
-							{hallGroup
-								? t(($) => $.aggregatedExposure.group.hallEyebrow)
+							{group
+								? getEyebrow(group, scope.site === null, t)
 								: t(($) => $.aggregatedExposure.group.eyebrow)}
-							{scope.site === null && group && ` · ${group.site}`}
 						</p>
 						{groupsQuery.isPending ? (
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{occupationGroup
-									? getGroupName(occupationGroup, t)
-									: hallGroup
-										? getHallName(hallGroup.hall, t)
-										: t(($) => $.aggregatedExposure.group.fallbackTitle)}
+								{group
+									? getComparableGroupName(group, t)
+									: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
-					</div>
-					<div className="hidden sm:block">
-						<PeriodPicker selection={periodSelection} />
 					</div>
 				</header>
 			</div>
 
-			<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
-				{exposurePickers}
-			</FilterDialog>
-			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
+			<PeriodPickerLayout selection={periodSelection}>
+				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
+					{exposurePickers}
+				</FilterDialog>
+				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
+				<PeriodNotice periodSelection={periodSelection} />
 
-			{groupsQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : groupsQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
-			) : group === undefined ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
-			) : isExposureUnavailable(exposure) ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
-			) : trendQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : trendQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
-			) : trendQuery.data.status === "unavailable" ? (
-				// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
-				<EmptyState
-					title={
-						exposure === "dust"
-							? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
-							: t(($) => $.aggregatedExposure.group.noData)
-					}
-				/>
-			) : (
-				<GroupDetails trend={trendQuery.data} exposure={exposure} dustField={dustField} />
-			)}
+				{groupsQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : groupsQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
+				) : group === undefined ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
+				) : isExposureUnavailable(exposure) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
+				) : trendQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : trendQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
+				) : trendQuery.data.status === "unavailable" ? (
+					// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
+					<EmptyState
+						title={
+							exposure === "dust"
+								? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
+								: t(($) => $.aggregatedExposure.group.noData)
+						}
+					/>
+				) : (
+					<GroupDetails
+						trend={trendQuery.data}
+						group={group}
+						periodSelection={periodSelection}
+						exposure={exposure}
+						dustField={dustField}
+					/>
+				)}
+			</PeriodPickerLayout>
 		</div>
 	);
 }
 
+function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
+	if (group.level === "yard") {
+		return t(($) => $.aggregatedExposure.filters.yard);
+	}
+
+	const eyebrow =
+		group.level === "hall"
+			? t(($) => $.aggregatedExposure.group.hallEyebrow)
+			: t(($) => $.aggregatedExposure.group.eyebrow);
+	// A group in a yard already names the yard in its title
+	return showsYard && group.level !== "yardOccupation" ? `${eyebrow} · ${group.site}` : eyebrow;
+}
+
 function GroupDetails({
 	trend,
+	group,
+	periodSelection,
 	exposure,
 	dustField,
 }: {
 	trend: AggregatedTrendOkDto;
+	group: ComparableGroup;
+	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
 }) {
 	const { t, i18n } = useTranslation();
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
-	const metricLabel =
-		exposure === "dust"
-			? t(($) => $.aggregatedExposure.metrics.dust, { dustField: dustFieldLabel })
-			: t(($) => $.aggregatedExposure.metrics[exposure]);
+	const metricLabel = getMetricLabel(exposure, dustField, t);
 	const threshold = getGroupThreshold(exposure, dustField);
 	const isColored = trend.points.some((point) => point.value !== null);
-	// The backend only calculates the time above the thresholds of dust from PM1, so other fractions have none
-	const timeOverUnavailableCaption =
-		exposure === "dust" && dustField !== "pm1_twa"
-			? t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
-					dustField: t(($) => $.exposures.dustFields.pm1_twa),
-				})
-			: undefined;
+	const timeOverUnavailableCaption = hasTimeOverThresholds(exposure, dustField)
+		? undefined
+		: t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
+				dustField: t(($) => $.exposures.dustFields.pm1_twa),
+			});
 	// Like the overview's info dialog, so the thresholds keep their decimals, like 7.5 µg/m³
-	const numberFormat = new Intl.NumberFormat(i18n.language === "no" ? "nb-NO" : "en-US");
+	const numberFormat = getThresholdNumberFormat(i18n.language);
 	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(trend.unit, t)}`;
+	const shareLabels = getShareLabels(exposure, t);
 	// Vibration classifies the group's daily value in the chart instead of each hour, so its key figures are shares of days
 	const kpiText =
 		exposure === "vibration"
 			? {
-					action: t(($) => $.aggregatedExposure.group.daysOverAction),
-					limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
+					...shareLabels,
 					actionCaption: t(($) => $.aggregatedExposure.group.daysOverActionCaption, {
 						action: threshold.warning,
 					}),
@@ -181,8 +209,7 @@ function GroupDetails({
 					}),
 				}
 			: {
-					action: t(($) => $.aggregatedExposure.group.timeOverAction),
-					limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+					...shareLabels,
 					actionCaption: t(($) => $.aggregatedExposure.group.timeOverActionCaption, {
 						action: formatThreshold(threshold.warning),
 					}),
@@ -190,6 +217,36 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
+	const exposureName = getDownloadExposureName(exposure, dustField, t);
+	const downloadFilename = toDownloadFilename([
+		group.site,
+		group.hall,
+		getWholeGroupPart(group, t),
+		exposureName,
+		toPeriodFilenamePart(periodSelection),
+	]);
+	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (point) => point.time },
+		{
+			header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`,
+			value: (point) => point.value,
+			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
+		},
+		...(timeOverUnavailableCaption === undefined
+			? [
+					{
+						header: `${kpiText.action} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction),
+						fractionDigits: 1,
+					},
+					{
+						header: `${kpiText.limit} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit),
+						fractionDigits: 1,
+					},
+				]
+			: []),
+	];
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -220,12 +277,19 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart
-						points={trend.points}
-						unit={trend.unit}
-						label={metricLabel}
-						threshold={threshold}
-					/>
+					<ChartDownload
+						filename={downloadFilename}
+						sheetName={exposureName}
+						columns={downloadColumns}
+						rows={trend.points}
+					>
+						<GroupTrendChart
+							points={trend.points}
+							unit={trend.unit}
+							label={metricLabel}
+							threshold={threshold}
+						/>
+					</ChartDownload>
 				)}
 				{isColored && <ThresholdBarLegend />}
 			</Card>
@@ -260,14 +324,15 @@ function GroupDetails({
 	);
 }
 
-// The average of the days that have a share, as a whole percentage. `—` when no day has one, so missing data isn't
-// shown as 0 %.
-function formatAverageShare(shares: Array<number | null>) {
-	const present = shares.filter((share) => share !== null);
-	if (present.length === 0) {
-		return "—";
+// A share like 0.125 as 12.5, for the downloaded files' percentage columns. The download code rounds it.
+function toPercent(share: number | null) {
+	return share === null ? null : share * 100;
+}
+
+function getWholeGroupPart({ hall, occupation }: ComparableGroup, t: TranslateFn) {
+	if (occupation !== null) {
+		return getOccupationLabel(occupation, t);
 	}
 
-	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
-	return `${Math.round(average * 100)} %`;
+	return hall === null ? t(($) => $.aggregatedExposure.compare.wholeYard) : t(($) => $.aggregatedExposure.wholeHall);
 }

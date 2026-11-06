@@ -59,8 +59,8 @@ export function DangerLevelBadgeLegend() {
 	const { t } = useTranslation();
 	const labels = {
 		safe: t(($) => $.aggregatedExposure.overview.belowActionValue),
-		warning: t(($) => $.lineChart.warning),
-		danger: t(($) => $.lineChart.danger),
+		warning: t(($) => $.dangerLevelStatus.warning),
+		danger: t(($) => $.dangerLevelStatus.danger),
 	};
 
 	return (
@@ -79,8 +79,8 @@ export function ThresholdBarLegend() {
 	const { t } = useTranslation();
 	const labels = {
 		safe: t(($) => $.aggregatedExposure.overview.belowActionValue),
-		warning: t(($) => $.lineChart.warning),
-		danger: t(($) => $.lineChart.danger),
+		warning: t(($) => $.dangerLevelStatus.warning),
+		danger: t(($) => $.dangerLevelStatus.danger),
 	};
 
 	return (

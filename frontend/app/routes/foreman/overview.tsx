@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { UserStatusChart } from "@/components/users-status-chart.tsx";
 import { AttentionCard } from "@/features/attention-card/attention-card.tsx";
+import { AtRiskPopup } from "@/features/attention-card/exposure-level-popup.tsx";
+import { hasInactiveSensor } from "@/features/attention-card/inactive-sensors.ts";
 import { PieChartCard } from "@/features/attention-card/pie-chart-card.tsx";
 import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
@@ -17,6 +19,7 @@ import { UserSelect } from "@/features/user/user-select.tsx";
 import { UserDetails } from "@/features/user-details/user-details.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
+import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { useGetSubordinates, useGetThresholdSummary } from "@/lib/api/generated/user.ts";
 import { today } from "@/lib/date.ts";
 import { type Exposure, exposures, parseAsExposure } from "@/lib/exposures.ts";
@@ -24,7 +27,9 @@ import { type ThresholdSummary, withMissingCountsAsZero } from "@/lib/threshold-
 import { subDays } from "date-fns";
 import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
 
 export default function ForemanOverview() {
 	const { t } = useTranslation();
@@ -176,7 +181,10 @@ export default function ForemanOverview() {
 									/>
 								) : (
 									<>
-										<ExposureSummaryGrid thresholdSummary={thresholdSummary} />
+										<ExposureSummaryGrid
+											thresholdSummary={thresholdSummary}
+											subordinates={subordinates ?? []}
+										/>
 
 										<div className="lg:hidden">
 											<TeamSummary subordinateCount={subordinateCount} />
@@ -222,8 +230,23 @@ export default function ForemanOverview() {
 	);
 }
 
-function ExposureSummaryGrid({ thresholdSummary }: { thresholdSummary: ThresholdSummary | undefined }) {
+function ExposureSummaryGrid({
+	thresholdSummary,
+	subordinates,
+}: {
+	thresholdSummary: ThresholdSummary | undefined;
+	subordinates: Array<UserWithStatusDto>;
+}) {
 	const { t } = useTranslation();
+	const [inactiveExposure, setInactiveExposure] = useState<Exposure | null>(null);
+	const [searchParams] = useSearchParams();
+
+	// Keeps the selected date and view
+	const toExposure = (exposure: Exposure) => {
+		const search = new URLSearchParams(searchParams);
+		search.set("exposure", exposure);
+		return `?${search}`;
+	};
 
 	if (thresholdSummary === undefined) {
 		return null;
@@ -241,12 +264,25 @@ function ExposureSummaryGrid({ thresholdSummary }: { thresholdSummary: Threshold
 							danger: thresholdSummary[exposureType].danger,
 						}}
 						label={t(($) => $.exposures[exposureType])}
-						to={`?exposure=${exposureType}`}
+						to={toExposure(exposureType)}
 						key={exposureType}
 						exposureType={exposureType}
+						inactive={subordinates.filter((sub) => hasInactiveSensor(sub, exposureType)).length}
+						onInactiveClick={() => setInactiveExposure(exposureType)}
 					/>
 				))}
 			</div>
+
+			{inactiveExposure && (
+				<AtRiskPopup
+					open={true}
+					onClose={() => setInactiveExposure(null)}
+					title="Workers"
+					status="inactive"
+					inactiveExposure={inactiveExposure}
+					subordinates={subordinates}
+				/>
+			)}
 		</div>
 	);
 }

@@ -82,7 +82,8 @@
     "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
     "theme": "Fargetema",
     "language": "Språk",
-    "map": "Kart"
+    "map": "Kart",
+    "compare": "Sammenlign"
   },
   "live": {
     "timeRange": {
@@ -104,6 +105,7 @@
     }
   },
   "exposureSummary": {
+    "ofTotal": "av {{total}}",
     "title": "Eksponering",
     "aggregated": {
       "safe": "Innenfor trygge grenseverdier",
@@ -114,27 +116,34 @@
   "myTrends": {
     "title": "Mine trender",
     "period": {
-      "week": "Uke {{period}} mot uke {{baselineStart}}–{{baselineEnd}}",
-      "month": "{{period}} mot {{baselineStart}}–{{baselineEnd}}"
+      "day": "{{period}} mot {{baseline}}",
+      "week": "Uke {{period}} mot uke {{baseline}}",
+      "month": "{{period}} mot {{baseline}}"
+    },
+    "previous": {
+      "day": "forrige dag",
+      "week": "forrige uke",
+      "month": "forrige måned"
     },
     "trend": {
-      "higher": "Høyere enn vanlig",
-      "same": "Som vanlig",
-      "lower": "Lavere enn vanlig"
+      "higher": "Høyere enn {{previous}}",
+      "same": "Samme som {{previous}}",
+      "lower": "Lavere enn {{previous}}"
     },
-    "share": "{{percent}} % av måletiden over tiltaksverdi (vanlig: {{normal}} %)",
+    "share": "{{value}} %",
+    "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
-    "higherHint": "Har du byttet verktøy eller oppgave? Legg gjerne til et notat.",
-    "coverage": {
-      "week": "Målt {{hours}} t i uke {{period}} (vanlig: {{normal}} t)",
-      "month": "Målt {{hours}} t i {{period}} (vanlig: {{normal}} t)"
-    },
+    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)",
     "private": "Bare du ser dette"
   },
-  "lineChart": {
+  "dangerLevelStatus": {
     "danger": "Over grenseverdi",
     "warning": "Over tiltaksverdi",
     "safe": "Innenfor trygge grenseverdier"
+  },
+  "thresholds": {
+    "warning": "Tiltaksverdi",
+    "danger": "Grenseverdi"
   },
   "notes": {
     "interactive": {
@@ -192,6 +201,7 @@
     "inDanger": "Arbeidere over grenseverdi",
     "warning": "Arbeidere over tiltaksverdi",
     "safe": "Arbeidere innenfor trygge grenseverdier",
+    "inactive": "Arbeidere uten aktive sensorer",
     "noInDanger": "Ingen arbeidere i denne kategorien"
   },
   "interactiveCard": {
@@ -207,7 +217,8 @@
         "email": "E-post",
         "status": "Status",
         "jobDescription": "Stillingsbeskrivelse",
-        "action": "Handling"
+        "action": "Handling",
+        "noData": "Ingen data"
       },
       "action": {
         "removeSubordinate": "Fjern fra teamet",
@@ -241,6 +252,12 @@
         "safe": {
           "label": "Innenfor trygge grenseverdier",
           "noOperators": "Ingen innenfor trygge grenseverdier"
+        },
+        "inactive": {
+          "label": "Inaktive sensorer"
+        },
+        "noActiveSensors": {
+          "label": "Ingen aktive sensorer"
         }
       },
       "selectUserPlaceholder": "Velg et teammedlem",
@@ -340,67 +357,36 @@
       "fitter": "Industrirørlegger"
     },
     "exposureLabel": "Eksponeringstype",
+    "perOccupation": "Del opp etter yrkesgruppe",
     "pointsUnit": "poeng",
     "wholeHall": "Hele bygget",
     "metrics": {
       "dust": "Gjennomsnittlig {{dustField}}-konsentrasjon (TWA)",
       "noise": "Gjennomsnittlig lydnivå (LAeq, aritmetisk snitt)",
-      "vibration": "Gjennomsnittlige vibrasjonspoeng per verktøyøkt"
+      "vibration": "Gjennomsnittlige vibrasjonspoeng"
     },
-    "metricsShort": {
-      "dust": "PM1 TWA",
-      "noise": "LAeq",
-      "vibration": "Poeng per verktøyøkt"
-    },
-    "privacyNotice": "Grupper med færre enn {{count}} registrerte personer vises ikke.",
     "unavailableValue": "Ikke tilgjengelig",
     "exposureUnavailable": {
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
     "overview": {
-      "heading": "Grupper",
-      "hallsHeading": "Bygg",
       "exposureFilter": {
         "label": "Vis eksponering",
         "all": "Alle"
       },
       "level": {
-        "label": "Visning",
-        "occupation": "Per yrkesgruppe",
-        "hall": "Hele bygget"
+        "label": "Visning"
       },
       "belowActionValue": "Under tiltaksverdi",
-      "aggregationNotice": "Verdiene er gruppesnitt. Individuell eksponering kan variere.",
-      "info": {
-        "trigger": "Oversiktsguide",
-        "title": "Oversiktsguide",
-        "description": "Hva gruppeverdiene betyr, og hva stolpene og fargene viser.",
-        "groupData": {
-          "title": "Gruppedata",
-          "aggregation": "Hver verdi bygger på gruppens timessnitt: for hver time, snittet av målingene til gruppemedlemmene som ble målt den timen. En dags verdi er snittet av timene, og oversikten viser snittet av dagene i perioden. Individuell eksponering kan variere, så gruppesnittet representerer ikke nødvendigvis noen enkeltperson."
-        },
-        "scale": {
-          "title": "Stolpene og fargene",
-          "colors": "Grønt er området under tiltaksverdien, gult fra tiltaksverdien til grenseverdien, og rødt over grenseverdien. De tynne strekene markerer tiltaks- og grenseverdien. Prikkene ved verdien viser det samme uten farger: én prikk under tiltaksverdien, to over den, og tre over grenseverdien.",
-          "assessment": "Tiltaks- og grenseverdiene gjelder én persons daglige eksponering, mens verdiene som vises er gruppesnitt av timesverdier. Fargene er derfor bare veiledende og er ikke en faglig vurdering av gruppen."
-        },
-        "thresholds": {
-          "title": "Tiltaks- og grenseverdier"
-        }
-      },
       "noValue": "Ingen verdi",
+      "groupColumn": "Gruppe",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
         "title": "Ingen grupper å vise",
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
-      "noHalls": {
-        "title": "Ingen bygg å vise",
-        "description": "Bygg med for få personer vises ikke, for å beskytte personvernet."
-      },
       "noData": "Ingen data for valgt periode.",
-      "error": "Kunne ikke hente gruppene.",
-      "hallsError": "Kunne ikke hente byggene."
+      "error": "Kunne ikke hente gruppene."
     },
     "group": {
       "back": "Tilbake til oversikten",
@@ -428,9 +414,6 @@
       "vibrationGranularity": {
         "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
       },
-      "gapsNotice": "Linjen går rett mellom dagene som vises. Dager uten målinger, og dager som er skjult fordi for få personer bidro, har ingen verdi.",
-      "colorsNotice": "Linjefargene viser hvor gruppesnittet ligger i forhold til tiltaksverdien ({{action}}) og grenseverdien ({{limit}}) for én person, for valgt eksponering og, for støv, valgt fraksjon. De er ikke en faglig vurdering av gruppen.",
-      "comparisonNotice": "Et gruppesnitt kan ikke sammenlignes direkte med individuelle tiltaks- og grenseverdier. Et lavt snitt betyr ikke at ingen i gruppen har hatt høy eksponering.",
       "suppressed": "Ingen verdi",
       "unavailable": {
         "noSuchGroup": "Gruppen finnes ikke."
@@ -440,6 +423,108 @@
       "allSuppressed": "Ingen verdier for valgt periode.",
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
+    },
+    "compare": {
+      "title": "Sammenlign grupper",
+      "wholeYard": "Hele verftet",
+      "periodNotStarted": "{{period}} har ikke startet ennå.",
+      "level": {
+        "label": "Sammenlign",
+        "yard": "Verft",
+        "hall": "Bygg",
+        "yardOccupation": "Yrker per verft",
+        "hallOccupation": "Yrker per bygg",
+        "current": "Sammenligner: {{level}}"
+      },
+      "picker": {
+        "label": "Grupper",
+        "add": "Legg til gruppe",
+        "search": "Søk etter grupper",
+        "addAll": "Legg til alle {{count}}",
+        "remove": "Fjern {{group}}",
+        "clear": "Fjern alle",
+        "cleared": "Fjernet alle gruppene.",
+        "undo": "Angre",
+        "addOneMore": "Legg til minst én gruppe til for å sammenligne.",
+        "noneLeft": "Alle gruppene på dette nivået er allerede lagt til.",
+        "noMatches": "Ingen grupper passer med «{{query}}».",
+        "count": "{{count}} grupper",
+        "count_one": "{{count}} gruppe",
+        "count_other": "{{count}} grupper",
+        "loading": "Laster grupper …",
+        "hiddenFromLink": "{{count}} grupper fra lenken kan ikke vises på dette nivået.",
+        "hiddenFromLink_one": "{{count}} gruppe fra lenken kan ikke vises på dette nivået.",
+        "hiddenFromLink_other": "{{count}} grupper fra lenken kan ikke vises på dette nivået."
+      },
+      "intro": {
+        "yard": {
+          "title": "Verft",
+          "description": "Alle som er målt på et verft, regnes som én gruppe. Viser hvilket verft som har høyest eksponering totalt, og om ett skiller seg ut fra de andre."
+        },
+        "hall": {
+          "title": "Bygg",
+          "description": "Alle i ett bygg mot alle i et annet. Viser hvor på verftet eksponeringen er høyest, og hvilke bygg som bør følges opp."
+        },
+        "occupation": {
+          "title": "Yrkesgrupper",
+          "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt."
+        }
+      },
+      "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
+      "notInChart": "Ikke i grafen: {{groups}}.",
+      "reasons": {
+        "noData": "ingen målinger",
+        "notEnoughData": "ikke nok data",
+        "unavailable": "ikke tilgjengelig"
+      },
+      "notEnoughData": "Ikke nok data",
+      "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
+      "noData": "Ingen målinger",
+      "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
+      "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
+      "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
+      "noGroupHasData": "Ingen av gruppene har målinger i {{period}}.",
+      "retry": "Prøv igjen",
+      "tableCaption": "{{exposure}} per gruppe, {{period}}",
+      "group": "Gruppe",
+      "setupLabel": "Hva som sammenlignes",
+      "hiddenDays": "{{count}} dager skjult av personvernhensyn",
+      "hiddenDays_one": "{{count}} dag skjult av personvernhensyn",
+      "hiddenDays_other": "{{count}} dager skjult av personvernhensyn",
+      "hiddenDaysLegend": "Dager skjult av personvernhensyn",
+      "values": {
+        "week": "Verdier per uke",
+        "month": "Verdier per måned",
+        "weekLabel": "Uke {{week}}",
+        "bucketColumn": "Periode",
+        "caption": "Snitt per uke eller måned for hver gruppe, {{period}}"
+      }
+    }
+  },
+  "aboutFigures": {
+    "trigger": "Grenseverdier og beregning",
+    "title": "Om tallene",
+    "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
+    "headings": {
+      "source": "Kilde",
+      "calculation": "Beregning",
+      "comparedWith": "Sammenlignet med",
+      "missing": "Når tall mangler"
+    },
+    "source": {
+      "groups": "Hver gruppe er alle som er målt i ett verft eller bygg. Med «{{perOccupation}}» er hver yrkesgruppe der en egen gruppe.",
+      "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
+    },
+    "calculation": {
+      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet på kortet er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "exposure": {
+        "dust": "{{dustField}} TWA i {{unit}}.",
+        "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
+        "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
+      }
+    },
+    "missing": {
+      "suppressed": "Grupper med færre enn {{count}} registrerte personer finnes ikke i dataene, og vises derfor ikke."
     }
   },
   "managementDashboard": {
@@ -545,5 +630,20 @@
   "datePicker": {
     "openLabel": "Velg dato og visning",
     "dialogTitle": "Dato og visning"
+  },
+  "chartDownload": {
+    "download": "Last ned data",
+    "comparison": "Sammenligning",
+    "excel": {
+      "title": "Excel (.xlsx)",
+      "description": "Anbefalt for Excel"
+    },
+    "csv": {
+      "title": "CSV (.csv)",
+      "description": "Ren tekst, skilt med komma"
+    },
+    "columns": {
+      "date": "Dato"
+    }
   }
 }

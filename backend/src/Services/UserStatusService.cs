@@ -67,8 +67,7 @@ public class UserStatusService(AppDbContext _context, SignedInUserContext _signe
 			.ToListAsync();
 
 		// Vibration points add up over a day and the thresholds are per day, so sum each worker's points per day and take
-		// the worst day. Summing the whole range would add up a week's points in the week view. The days are Norwegian
-		// days, like the frontend's.
+		// the worst day. Summing the whole range would add up a week's points in the week view.
 		var vibrationRows = await _context
 			.Database.SqlQuery<UserAggRow>(
 				$"""
@@ -78,7 +77,7 @@ public class UserStatusService(AppDbContext _context, SignedInUserContext _signe
 					FROM vibration_data_minutely
 					WHERE bucket between {startTime} and {endTime}
 					  AND "user_id" = ANY({ids})
-					GROUP BY "user_id", (bucket AT TIME ZONE 'Europe/Oslo')::date
+					GROUP BY "user_id", bucket::date
 				) AS daily_sums
 				GROUP BY "UserId"
 				"""

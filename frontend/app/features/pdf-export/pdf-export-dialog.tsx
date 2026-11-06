@@ -46,7 +46,7 @@ import { useTranslation } from "react-i18next";
  * PDF Export Dialog Component
  *
  * This file provides a dialog UI for selecting a date range before exporting exposure data to PDF.
- * It is a popup that appears when the user clicks the "Download report" button in the page header.
+ * It is a popup that appears when the user clicks the "Download report" button below the calendar.
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
  */

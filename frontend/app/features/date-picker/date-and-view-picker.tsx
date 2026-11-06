@@ -92,9 +92,7 @@ export function DateAndViewPicker({ allowedViews, minDate, maxDate, lockNavigati
 
 			<div className="hidden lg:flex lg:flex-col lg:gap-4">
 				<Card muted={true}>{viewPicker}</Card>
-				<Card muted={true}>
-					{datePicker}
-				</Card>
+				<Card muted={true}>{datePicker}</Card>
 			</div>
 		</>
 	);

@@ -28,7 +28,7 @@ export default function ExposureLayout() {
 			{/* Mobile: single-column stack in reading order (title, view/date, summary, chart, legend, notes).
 			    Desktop (lg+): the grid placements below reconstruct the original 3-column layout, independent
 			    of this DOM order. */}
-			<div className="flex flex-row flex-wrap items-center gap-3 lg:col-span-3 lg:row-start-1">
+			<div className="flex flex-row items-center gap-3 lg:col-span-3 lg:row-start-1">
 				<ExposureIcon type={exposure ?? "all"} size="lg" className="ml-1" />
 				<h1 className="font-medium text-2xl md:text-3xl">
 					{exposure
@@ -37,13 +37,13 @@ export default function ExposureLayout() {
 							})
 						: t(($) => $.operatorHeader.title.yourExposure)}
 				</h1>
-				<div className="ml-auto">
-					<PdfExport exposureType={exposure ?? "all"} />
-				</div>
 			</div>
 
 			<aside className="flex flex-col gap-4 lg:col-start-3 lg:row-start-2">
 				<DateAndViewPicker />
+				<div className="hidden lg:block">
+					<PdfExport exposureType={exposure ?? "all"} />
+				</div>
 			</aside>
 
 			<article className="flex flex-col gap-4 lg:col-start-2 lg:row-start-2">
@@ -56,6 +56,9 @@ export default function ExposureLayout() {
 				<NotesCard />
 				<div className="hidden lg:block">
 					<LimitExplanation />
+				</div>
+				<div className="lg:hidden">
+					<PdfExport exposureType={exposure ?? "all"} />
 				</div>
 				<MyTrendsCard className="hidden lg:flex" />
 			</aside>

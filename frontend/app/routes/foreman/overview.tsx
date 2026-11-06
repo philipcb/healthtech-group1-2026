@@ -1,35 +1,29 @@
+import { ExposureFilterToggle } from "@/components/exposure-filter-toggle.tsx";
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
-import { OperatorExposureStatusTable } from "@/components/operator-exposure-status-table.tsx";
-import { Button } from "@/components/ui/button.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import { UserStatusChart } from "@/components/users-status-chart.tsx";
 import { AttentionCard } from "@/features/attention-card/attention-card.tsx";
-import { AtRiskPopup } from "@/features/attention-card/exposure-level-popup.tsx";
-import { hasInactiveSensor } from "@/features/attention-card/inactive-sensors.ts";
-import { PieChartCard } from "@/features/attention-card/pie-chart-card.tsx";
 import { DateAndViewPicker } from "@/features/date-picker/date-and-view-picker.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { LimitExplanation } from "@/features/sidebar/limit-explanation.tsx";
 import { TeamSummary } from "@/features/sidebar/team-summary.tsx";
+import { TeamSection } from "@/features/team/team-section.tsx";
+import { parseAsTeamStatusFilter, type TeamStatusFilter } from "@/features/team/team-status-filter.ts";
 import type { User } from "@/features/user/user.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { UserSelect } from "@/features/user/user-select.tsx";
 import { UserDetails } from "@/features/user-details/user-details.tsx";
 import { useView } from "@/features/views/use-view.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
-import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { useGetSubordinates, useGetThresholdSummary } from "@/lib/api/generated/user.ts";
 import { today } from "@/lib/date.ts";
-import { type Exposure, exposures, parseAsExposure } from "@/lib/exposures.ts";
-import { type ThresholdSummary, withMissingCountsAsZero } from "@/lib/threshold-summary.ts";
+import { type Exposure, parseAsExposure } from "@/lib/exposures.ts";
+import { withMissingCountsAsZero } from "@/lib/threshold-summary.ts";
 import { subDays } from "date-fns";
-import { XIcon } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
 
 export default function ForemanOverview() {
 	const { t } = useTranslation();
@@ -40,6 +34,10 @@ export default function ForemanOverview() {
 		selection: { start: startDate, end: endDate },
 	} = useDate();
 	const [selectedUserId, setSelectedUserId] = useQueryState("userId", parseAsString.withOptions({ history: "push" }));
+	const [statusFilter, setStatusFilter] = useQueryState(
+		"status",
+		parseAsTeamStatusFilter.withOptions({ history: "push" }),
+	);
 
 	const { view } = useView();
 	const isWeekly = view === "week";
@@ -54,6 +52,7 @@ export default function ForemanOverview() {
 		data: subordinates,
 		isLoading: isSubordinatesLoading,
 		error: subordinatesError,
+		refetch: refetchSubordinates,
 	} = useGetSubordinates(user.id, timeRange);
 	const { data: thresholdSummary, isLoading: isThresholdSummaryLoading } = useGetThresholdSummary(
 		user.id,
@@ -66,6 +65,31 @@ export default function ForemanOverview() {
 	const isUserSelected = selectedUser !== undefined;
 
 	const title = resolveForemanOverviewTitle(t, exposure, selectedUser);
+
+	const teamSectionRef = useRef<HTMLElement>(null);
+	const [isTeamScrollPending, setIsTeamScrollPending] = useState(false);
+
+	// Brings the team list into view after a status card narrows it, unless it already starts on screen
+	useEffect(() => {
+		const section = teamSectionRef.current;
+		if (!isTeamScrollPending || section === null) {
+			return;
+		}
+
+		if (section.getBoundingClientRect().top > window.innerHeight * 0.6) {
+			const reducesMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+			section.scrollIntoView({ behavior: reducesMotion ? "auto" : "smooth", block: "start" });
+		}
+
+		setIsTeamScrollPending(false);
+	}, [isTeamScrollPending]);
+
+	const changeStatusFilter = (filter: TeamStatusFilter | null) => {
+		setStatusFilter(filter);
+		if (filter !== null) {
+			setIsTeamScrollPending(true);
+		}
+	};
 
 	return (
 		<div className="flex flex-col gap-8">
@@ -81,53 +105,11 @@ export default function ForemanOverview() {
 
 				<div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-6">
 					<div className="grid w-full grid-cols-1 items-center gap-3 md:grid-cols-[auto_1fr]">
-						<div className="flex gap-1">
-							<ToggleGroup
-								type="single"
-								value={exposure ?? "all"}
-								variant="outline"
-								onValueChange={(value: Exposure | "") => {
-									setExposure(value || null);
-								}}
-							>
-								<ToggleGroupItem
-									value="dust"
-									aria-label={t(($) => $.exposures.dust)}
-									className="rounded-l-xl! px-2 lg:px-3"
-								>
-									<ExposureIcon type="dust" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.dust)}</p>
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value="noise"
-									aria-label={t(($) => $.exposures.noise)}
-									className="px-2 lg:px-3"
-								>
-									<ExposureIcon type="noise" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.noise)}</p>
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value="vibration"
-									aria-label={t(($) => $.exposures.vibration)}
-									className="rounded-r-md! px-2 lg:px-3"
-								>
-									<ExposureIcon type="vibration" iconOnly={true} iconClassName="size-4" />
-									<p className="min-w-0 text-xs lg:text-sm">{t(($) => $.exposures.vibration)}</p>
-								</ToggleGroupItem>
-							</ToggleGroup>
-
-							<Button
-								type="button"
-								aria-label={t(($) => $.foremanDashboard.overview.clearExposureFilter)}
-								variant="outline"
-								size="icon"
-								onClick={() => setExposure(null)}
-								disabled={exposure === null}
-								className="shrink-0 rounded-r-xl"
-							>
-								<XIcon className="size-4" aria-hidden="true" />
-							</Button>
-						</div>
+						<ExposureFilterToggle
+							value={exposure ?? "all"}
+							onValueChange={(filter) => setExposure(filter === "all" ? null : filter)}
+							hidesLabel={true}
+						/>
 
 						{users === undefined || isSubordinatesLoading ? (
 							<Skeleton className="h-9 w-73 justify-self-end" />
@@ -147,7 +129,7 @@ export default function ForemanOverview() {
 
 			<div className="flex w-full flex-col gap-6 lg:flex-row">
 				<aside className="contents lg:flex lg:w-1/5 lg:flex-col lg:gap-6">
-					<div className="order-1 hidden lg:block">
+					<div className="order-1">
 						<TeamSummary subordinateCount={subordinateCount} />
 					</div>
 					<div className="order-2">
@@ -159,19 +141,25 @@ export default function ForemanOverview() {
 				</aside>
 
 				<div className="contents lg:grid lg:w-full lg:grid-cols-[minmax(0,3fr)_calc(var(--spacing)*73)] lg:gap-6">
-					<div className="order-3 flex flex-col gap-8 p-4 sm:p-6 lg:order-none lg:gap-12 lg:p-0">
+					<div className="order-3 flex flex-col gap-8 p-4 sm:p-6 lg:order-none lg:p-0">
 						{/* TODO: Redo the loading logic here */}
 						{isUserSelected ? (
 							<UserDetails selectedUser={selectedUser} exposure={exposure} />
 						) : (
 							<>
+								{/* What needs attention, then who */}
 								<AttentionCard
 									subordinates={subordinates ?? []}
 									isSubordinatesLoading={isSubordinatesLoading}
 									thresholdSummary={thresholdSummary}
 									isThresholdSummaryLoading={isThresholdSummaryLoading}
+									exposure={exposure}
+									statusFilter={statusFilter}
+									onStatusFilterChange={changeStatusFilter}
+									onUserClick={setSelectedUserId}
 								/>
 
+								{/* With one exposure, the operators are listed per danger level above, so no team list */}
 								{exposure ? (
 									<UserStatusChart
 										users={subordinates ?? []}
@@ -180,35 +168,15 @@ export default function ForemanOverview() {
 										userOnClick={(id) => setSelectedUserId(id)}
 									/>
 								) : (
-									<>
-										<ExposureSummaryGrid
-											thresholdSummary={thresholdSummary}
-											subordinates={subordinates ?? []}
-										/>
-
-										<div className="lg:hidden">
-											<TeamSummary subordinateCount={subordinateCount} />
-										</div>
-
-										<div className="flex flex-col gap-4">
-											<h2 className="font-medium text-lg">
-												{t(($) => $.foremanDashboard.team.title)}
-											</h2>
-											{isSubordinatesLoading ? (
-												<div className="p-4">{t(($) => $.common.loading)}</div>
-											) : subordinatesError ? (
-												<div className="p-4 text-destructive">
-													{t(($) => $.foremanDashboard.team.failedToLoadMembers)}
-												</div>
-											) : !subordinates || subordinates.length === 0 ? (
-												<div className="p-4">
-													{t(($) => $.foremanDashboard.team.noMembersFound)}
-												</div>
-											) : (
-												<OperatorExposureStatusTable data={subordinates} />
-											)}
-										</div>
-									</>
+									<TeamSection
+										ref={teamSectionRef}
+										subordinates={subordinates ?? []}
+										isLoading={isSubordinatesLoading}
+										error={subordinatesError}
+										onRetry={() => refetchSubordinates()}
+										statusFilter={statusFilter}
+										onStatusFilterChange={setStatusFilter}
+									/>
 								)}
 							</>
 						)}
@@ -226,63 +194,6 @@ export default function ForemanOverview() {
 					</aside>
 				</div>
 			</div>
-		</div>
-	);
-}
-
-function ExposureSummaryGrid({
-	thresholdSummary,
-	subordinates,
-}: {
-	thresholdSummary: ThresholdSummary | undefined;
-	subordinates: Array<UserWithStatusDto>;
-}) {
-	const { t } = useTranslation();
-	const [inactiveExposure, setInactiveExposure] = useState<Exposure | null>(null);
-	const [searchParams] = useSearchParams();
-
-	// Keeps the selected date and view
-	const toExposure = (exposure: Exposure) => {
-		const search = new URLSearchParams(searchParams);
-		search.set("exposure", exposure);
-		return `?${search}`;
-	};
-
-	if (thresholdSummary === undefined) {
-		return null;
-	}
-
-	return (
-		<div className="flex flex-col gap-4">
-			<h2 className="font-medium text-lg">{t(($) => $.foremanDashboard.overview.exposure)}</h2>
-			<div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3">
-				{exposures.map((exposureType) => (
-					<PieChartCard
-						data={{
-							safe: thresholdSummary[exposureType].safe,
-							warning: thresholdSummary[exposureType].warning,
-							danger: thresholdSummary[exposureType].danger,
-						}}
-						label={t(($) => $.exposures[exposureType])}
-						to={toExposure(exposureType)}
-						key={exposureType}
-						exposureType={exposureType}
-						inactive={subordinates.filter((sub) => hasInactiveSensor(sub, exposureType)).length}
-						onInactiveClick={() => setInactiveExposure(exposureType)}
-					/>
-				))}
-			</div>
-
-			{inactiveExposure && (
-				<AtRiskPopup
-					open={true}
-					onClose={() => setInactiveExposure(null)}
-					title="Workers"
-					status="inactive"
-					inactiveExposure={inactiveExposure}
-					subordinates={subordinates}
-				/>
-			)}
 		</div>
 	);
 }

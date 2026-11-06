@@ -27,7 +27,7 @@ export function InfoDialog({
 	return (
 		<Dialog>
 			<DialogTrigger asChild={true}>
-				<Button variant="ghost" size="sm" className="-mr-2 text-muted-foreground">
+				<Button variant="outline" size="sm">
 					<InfoIcon aria-hidden="true" />
 					{triggerLabel}
 				</Button>

@@ -1,5 +1,5 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
-import { Card, CardContent, CardLabelHeader } from "@/components/ui/card.tsx";
+import { Card, CardContent, CardLabelHeader, CardLabelTitle } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { useUser } from "@/features/user/user-context.tsx";
@@ -230,12 +230,12 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 				})}
 			</p>
 
-			<ul className="flex flex-col gap-2">
+			<ul className="flex flex-col divide-y">
 				{rows.map((row) => {
 					const TrendIcon = trendIcon[row.trend];
 
 					return (
-						<li key={row.exposure} className="flex flex-col gap-1 p-2">
+						<li key={row.exposure} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
 							<span className="flex items-center justify-between gap-2">
 								<span className="flex items-center gap-2 font-medium text-sm">
 									<ExposureIcon type={row.exposure} />
@@ -275,7 +275,6 @@ function MyTrendsCardContent({ className }: { className?: string }) {
 			<div className="flex flex-col gap-0.5 border-t pt-2 text-muted-foreground text-xs">
 				<p>{t(($) => $.myTrends.shareExplanation)}</p>
 				<p>{t(($) => $.myTrends.coverage, { hours: lastHours, normal: normalHours, previous })}</p>
-				<p>{t(($) => $.myTrends.private)}</p>
 			</div>
 		</TrendsShell>
 	);
@@ -287,7 +286,7 @@ function TrendsShell({ title, className, children }: { title: string; className?
 		<Card muted={true} variant="labeled" className={cn("w-full", className)}>
 			<CardLabelHeader>
 				<ActivityIcon className="size-4 text-muted-foreground" />
-				<h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">{title}</h2>
+				<CardLabelTitle>{title}</CardLabelTitle>
 			</CardLabelHeader>
 			<CardContent className="flex flex-col gap-3">{children}</CardContent>
 		</Card>

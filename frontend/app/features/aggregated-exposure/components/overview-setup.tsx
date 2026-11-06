@@ -1,7 +1,10 @@
-import { ExposureFilterToggle } from "@/features/aggregated-exposure/components/exposure-filter-toggle.tsx";
+import { ExposureFilterToggle } from "@/components/exposure-filter-toggle.tsx";
 import { FilterPanel, FilterRow } from "@/features/aggregated-exposure/components/filter-panel.tsx";
 import { HallFilter } from "@/features/aggregated-exposure/components/hall-filter.tsx";
-import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
+import {
+	defaultOverviewLevel,
+	useAggregatedExposureSearchParams,
+} from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { getComparePlace } from "@/features/aggregated-exposure/model/compare.ts";
 import { useTranslation } from "react-i18next";
 
@@ -18,11 +21,17 @@ export function OverviewSetup({ yards, selectedYard, halls, selectedHall }: Over
 		useAggregatedExposureSearchParams();
 	// A building can only be picked when the groups are buildings
 	const showsHallFilter = getComparePlace(level) === "hall";
+	const activeDialogFilterCount = [
+		selectedYard !== null,
+		showsHallFilter && selectedHall !== null,
+		level !== defaultOverviewLevel,
+	].filter(Boolean).length;
 
 	return (
 		<FilterPanel
 			label={t(($) => $.aggregatedExposure.filters.title)}
 			onReset={resetOverviewFilters}
+			activeDialogFilterCount={activeDialogFilterCount}
 			// The dust fraction is picked in the dust column's header, or above the list on phones, next to the values it changes
 			exposure={(labelId) => (
 				<ExposureFilterToggle value={exposureFilter} onValueChange={setExposureFilter} labelledBy={labelId} />

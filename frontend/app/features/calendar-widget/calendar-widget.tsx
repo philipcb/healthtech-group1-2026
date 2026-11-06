@@ -6,6 +6,7 @@ import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { getLocale, TIMEZONE } from "@/i18n/locale.ts";
 import { type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import { toTZDate } from "@/lib/date.ts";
+import { describeDayStatus } from "@/lib/exposure-status-text.ts";
 import type { Exposure } from "@/lib/exposures.ts";
 import type { TimeBucketStatus } from "@/lib/time-bucket-types.ts";
 import { capitalize, cn } from "@/lib/utils.ts";
@@ -105,14 +106,8 @@ const todaySmBorderStyles: Record<DangerLevel, string> = {
 	safe: "sm:border-safe-border",
 };
 
-function getDayDangerLevel(day: TZDate, data: Array<TimeBucketStatus>): DangerLevel | null {
-	const dayStatus = data.find((d) => isSameDay(d.time, day, { in: TIMEZONE }));
-
-	if (dayStatus) {
-		return dayStatus.dangerLevel;
-	}
-
-	return null;
+function getDayStatus(day: TZDate, data: Array<TimeBucketStatus>): TimeBucketStatus | undefined {
+	return data.find((d) => isSameDay(d.time, day, { in: TIMEZONE }));
 }
 
 type CustomDayProps = {
@@ -123,9 +118,16 @@ type CustomDayProps = {
 	handleDayClick: (day: TZDate) => void;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 function CustomDay({ data, day, className, handleDayClick, ...buttonProps }: CustomDayProps) {
-	const dangerLevel = getDayDangerLevel(toTZDate(day.date), data);
+	const { t, i18n } = useTranslation();
+	const formatDate = useFormatDate();
+	const dayStatus = getDayStatus(toTZDate(day.date), data);
+	const dangerLevel = dayStatus?.dangerLevel ?? null;
 	const disabled = dangerLevel === null;
 	const isToday = buttonProps.modifiers?.today;
+	const label = t(($) => $.exposureStatus.dateAndStatus, {
+		date: formatDate(day.date, i18n.language === "en" ? "EEEE MMMM d" : "EEEE d. MMMM"),
+		status: describeDayStatus(t, dayStatus),
+	});
 
 	const bgClassname = dangerLevel
 		? cn(
@@ -142,6 +144,7 @@ function CustomDay({ data, day, className, handleDayClick, ...buttonProps }: Cus
 			disabled={disabled}
 			className={cn("relative h-full w-full rounded-lg", className)}
 			{...buttonProps}
+			aria-label={label}
 		>
 			<div
 				className={cn(
@@ -172,7 +175,7 @@ function CustomDay({ data, day, className, handleDayClick, ...buttonProps }: Cus
 			</span>
 
 			<DangerLevelDots
-				dangerLevel={dangerLevel ?? null}
+				dangerLevel={dangerLevel}
 				className="pointer-events-none absolute right-1 bottom-1 sm:right-2 sm:bottom-2"
 			/>
 		</button>

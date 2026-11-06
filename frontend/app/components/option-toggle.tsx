@@ -13,6 +13,8 @@ type OptionToggleProps<T extends string> = {
 	labelledBy?: string;
 	fillsWidth?: boolean;
 	wraps?: boolean;
+	/** Narrower options, for a row of filters */
+	compact?: boolean;
 };
 
 export function OptionToggle<T extends string>({
@@ -24,6 +26,7 @@ export function OptionToggle<T extends string>({
 	labelledBy,
 	fillsWidth = true,
 	wraps = false,
+	compact = false,
 }: OptionToggleProps<T>) {
 	const labelId = useId();
 	const toggle = (
@@ -44,7 +47,7 @@ export function OptionToggle<T extends string>({
 				<ToggleGroupItem
 					key={option.value}
 					value={option.value}
-					className={cn("px-2 lg:px-3", fillsWidth && "grow sm:grow-0")}
+					className={cn(compact ? "px-2" : "px-2 lg:px-3", fillsWidth && "grow sm:grow-0")}
 				>
 					{option.icon}
 					<span className="text-xs lg:text-sm">{option.label}</span>

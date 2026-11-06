@@ -1,11 +1,12 @@
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import { cn } from "@/lib/utils.ts";
-import { Calendar } from "@/ui/calendar.tsx";
+import { buttonVariants } from "@/ui/button.tsx";
+import { Calendar, CalendarDayButton } from "@/ui/calendar.tsx";
 import { TZDate } from "@date-fns/tz";
 import { addMonths, addWeeks, startOfMonth, startOfWeek, subMilliseconds } from "date-fns";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DayPickerProps } from "react-day-picker";
+import { type ComponentProps, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { type DayButton, type DayPickerProps, useDayPicker, type WeekNumberProps } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 
 type DatePickerProps = Omit<
@@ -16,7 +17,52 @@ type DatePickerProps = Omit<
 	date: TZDate;
 	mode?: "day" | "week" | "month";
 	withFooter?: boolean;
+	// Makes the week numbers clickable. Called with the week's first selectable day in the shown month.
+	onWeekSelect?: (date: TZDate) => void;
 };
+
+// In week and month mode the whole period is the selection, so the clicked day must not also look selected. The cell
+// keeps aria-selected; only the day's own highlight is dropped.
+function PeriodDayButton({ modifiers, ...props }: ComponentProps<typeof DayButton>) {
+	return <CalendarDayButton modifiers={{ ...modifiers, selected: false }} {...props} />;
+}
+
+const WeekSelectContext = createContext<((date: TZDate) => void) | null>(null);
+
+// Picks the week's first day inside the shown month, so a week starting in the previous month doesn't flip the calendar
+// back a month. Weeks with no selectable day (outside min/max dates) can't be clicked.
+function SelectableWeekNumber({ week, children, ...props }: WeekNumberProps) {
+	const { t } = useTranslation();
+	const { getModifiers } = useDayPicker();
+	const onWeekSelect = useContext(WeekSelectContext);
+
+	if (!onWeekSelect) {
+		return (
+			<td {...props}>
+				<div className="flex size-(--cell-size) h-full items-center justify-center text-center">{children}</div>
+			</td>
+		);
+	}
+
+	const day = week.days.find((weekDay) => !(weekDay.outside || getModifiers(weekDay).disabled));
+
+	return (
+		<td {...props}>
+			<button
+				type="button"
+				disabled={!day}
+				aria-label={t(($) => $.datePicker.selectWeek, { week: week.weekNumber })}
+				onClick={() => day && onWeekSelect(new TZDate(day.date, TIMEZONE_NAME))}
+				className={cn(
+					buttonVariants({ variant: "ghost", size: "icon" }),
+					"size-(--cell-size) font-normal text-[0.8rem] text-muted-foreground",
+				)}
+			>
+				{children}
+			</button>
+		</td>
+	);
+}
 
 export function DatePicker({
 	mode = "day",
@@ -25,6 +71,7 @@ export function DatePicker({
 	locale,
 	className,
 	withFooter = true,
+	onWeekSelect,
 	...props
 }: DatePickerProps) {
 	const formatDate = useFormatDate();
@@ -111,27 +158,33 @@ export function DatePicker({
 			});
 
 	return (
-		<Calendar
-			mode="single"
-			className={cn("w-65 bg-transparent p-0", className)}
-			required={true}
-			month={month}
-			onMonthChange={(monthDate) => setMonth(monthDate)}
-			selected={date}
-			onSelect={handleDayClick}
-			modifiers={modifiers}
-			captionLayout="dropdown"
-			modifiersClassNames={{
-				today: "[&>button]:font-bold",
-				...modifiersClassNames,
-			}}
-			footer={
-				withFooter ? (
-					<p className="mt-2 text-wrap text-muted-foreground text-xs">{selectionRecap}</p>
-				) : undefined
-			}
-			{...calendarProps}
-		/>
+		<WeekSelectContext value={onWeekSelect ?? null}>
+			<Calendar
+				mode="single"
+				className={cn("w-65 bg-transparent p-0", className)}
+				required={true}
+				month={month}
+				onMonthChange={(monthDate) => setMonth(monthDate)}
+				selected={date}
+				onSelect={handleDayClick}
+				modifiers={modifiers}
+				captionLayout="dropdown"
+				components={{
+					WeekNumber: SelectableWeekNumber,
+					...(mode === "day" ? {} : { DayButton: PeriodDayButton }),
+				}}
+				modifiersClassNames={{
+					today: "[&>button]:font-bold",
+					...modifiersClassNames,
+				}}
+				footer={
+					withFooter ? (
+						<p className="mt-2 text-wrap text-muted-foreground text-xs">{selectionRecap}</p>
+					) : undefined
+				}
+				{...calendarProps}
+			/>
+		</WeekSelectContext>
 	);
 }
 

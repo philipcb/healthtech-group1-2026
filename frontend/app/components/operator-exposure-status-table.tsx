@@ -33,12 +33,7 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 			accessorKey: "name",
 			header: t(($) => $.foremanDashboard.team.table.name),
 			cell: ({ row }) => (
-				<Link
-					to={{ search: buildSearchParams(row.original.id, undefined) }}
-					className="font-medium hover:underline"
-				>
-					{row.original.name}
-				</Link>
+				<TeamMemberName teamMember={row.original} search={buildSearchParams(row.original.id, undefined)} />
 			),
 		},
 		...exposures.map<ColumnDef<UserWithStatusDto>>((exposure) => ({
@@ -67,12 +62,7 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 			<div className="flex flex-col gap-3 lg:hidden">
 				{(data ?? []).map((teamMember) => (
 					<div className="min-w-0 rounded-lg border p-4" key={teamMember.id}>
-						<Link
-							to={{ search: buildSearchParams(teamMember.id, undefined) }}
-							className="break-words font-medium hover:underline"
-						>
-							{teamMember.name}
-						</Link>
+						<TeamMemberName teamMember={teamMember} search={buildSearchParams(teamMember.id, undefined)} />
 						<div className="mt-3 flex flex-wrap items-center gap-2">
 							{exposures.map((exposure) => {
 								const status = teamMember.status[exposure]?.dangerLevel ?? null;
@@ -91,6 +81,19 @@ export function OperatorExposureStatusTable({ data }: ExposureTableCellProps) {
 				))}
 			</div>
 		</>
+	);
+}
+
+function TeamMemberName({ teamMember, search }: { teamMember: UserWithStatusDto; search: string }) {
+	return (
+		<div className="flex min-w-0 flex-col">
+			<Link to={{ search }} className="break-words font-medium hover:underline">
+				{teamMember.name}
+			</Link>
+			{teamMember.jobDescription && (
+				<span className="break-words text-muted-foreground text-xs">{teamMember.jobDescription}</span>
+			)}
+		</div>
 	);
 }
 

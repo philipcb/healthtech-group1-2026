@@ -134,7 +134,7 @@ export default function TeamPage() {
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex flex-col gap-4">
-				<h1 className="font-bold text-2xl">{t(($) => $.foremanDashboard.team.title)}</h1>
+				<h1 className="font-bold text-2xl">{t(($) => $.layout.teamSettings)}</h1>
 				<div className="flex flex-col gap-2 sm:flex-row sm:items-start">
 					<div className="min-w-0 sm:flex-1">
 						<UserSearch

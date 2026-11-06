@@ -13,9 +13,23 @@ interface Props {
 	unitLabel: string;
 	label: string;
 	className?: string;
+	// Below lg: label and value share one row with the bar underneath, so a chart stacked below stays close
+	compactBelowLg?: boolean;
+	// Inside a section whose header already names the exposure: no icon and a lighter label, so the header leads
+	withinSection?: boolean;
 }
 
-export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel: unit, label, className }: Props) {
+export function ExposureSlider({
+	exposure,
+	field,
+	value,
+	dangerLevel,
+	unitLabel: unit,
+	label,
+	className,
+	compactBelowLg = false,
+	withinSection = false,
+}: Props) {
 	const { i18n } = useTranslation();
 	const { danger } = getThreshold(exposure, field);
 	const sliderMax = danger * 1.5;
@@ -32,16 +46,23 @@ export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel:
 	const color = dangerLevel === undefined ? undefined : dangerlevelStyles[dangerLevel].color;
 
 	return (
-		<div className={cn("flex w-full flex-col gap-1.5 rounded-xl border border-transparent p-3", className)}>
-			<div className="flex items-center gap-1.5 font-semibold text-sm">
-				<ExposureIcon type={exposure} size="xs" />
+		<div
+			className={cn(
+				"flex w-full flex-col gap-1.5 rounded-xl border border-transparent p-3",
+				// lg:items-stretch: items-center would shrink the empty bar to zero width once this is a flex column again
+				compactBelowLg && "grid grid-cols-[1fr_auto] items-center gap-x-3 lg:flex lg:items-stretch",
+				className,
+			)}
+		>
+			<div className={cn("flex items-center gap-1.5 text-sm", withinSection ? "font-medium" : "font-semibold")}>
+				{!withinSection && <ExposureIcon type={exposure} size="xs" />}
 				<span className="flex flex-row items-center gap-3">
 					<span>{label}</span>
 					<Emoji style={{ color }} size={20} />
 				</span>
 			</div>
 
-			<div className="relative flex items-center py-2">
+			<div className={cn("relative flex items-center py-2", compactBelowLg && "col-span-2 row-start-2")}>
 				<div className="relative w-full">
 					<div className="h-2.5 w-full rounded-full bg-[linear-gradient(to_right,var(--safe)_0%,var(--safe)_40%,var(--warning)_70%,var(--danger)_100%)]" />
 					{value !== undefined && (
@@ -59,7 +80,12 @@ export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel:
 				</div>
 			</div>
 
-			<p className="font-semibold text-2xl">
+			<p
+				className={cn(
+					"font-semibold text-2xl",
+					compactBelowLg && "col-start-2 row-start-1 text-xl tabular-nums lg:text-2xl",
+				)}
+			>
 				{formattedValue}
 				<span className="ml-1 font-medium text-muted-foreground text-sm">{unit}</span>
 			</p>

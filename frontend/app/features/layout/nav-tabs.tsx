@@ -1,3 +1,4 @@
+import { periodSearchParamKeys } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { getLinks } from "@/features/layout/nav-links.ts";
 import { useTabPill } from "@/features/layout/use-tab-pill.ts";
@@ -22,6 +23,15 @@ export function NavTabs({ variant = "header" }: NavTabsProps) {
 	const formatDate = useFormatDate();
 
 	const routes = getLinks(t, user?.role ?? null);
+
+	const currentSearch = new URLSearchParams(location.search);
+	const search = new URLSearchParams({ view, date: formatDate(date, "yyyy-MM-dd") });
+	for (const key of periodSearchParamKeys) {
+		const value = currentSearch.get(key);
+		if (value !== null) {
+			search.set(key, value);
+		}
+	}
 
 	const { setNavLinkRef, pillWidth, pillLeft } = useTabPill(routes, location.pathname);
 
@@ -81,7 +91,7 @@ export function NavTabs({ variant = "header" }: NavTabsProps) {
 						end={true}
 						to={{
 							pathname: route.to.toString(),
-							search: `?view=${view}&date=${formatDate(date, "yyyy-MM-dd")}`,
+							search: `?${search}`,
 						}}
 						key={route.to.toString()}
 						ref={(el) => setNavLinkRef(i, el)}

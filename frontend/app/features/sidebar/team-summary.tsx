@@ -1,4 +1,4 @@
-import { Card, CardContent, CardLabelHeader } from "@/components/ui/card.tsx";
+import { Card, CardContent, CardLabelHeader, CardLabelTitle } from "@/components/ui/card.tsx";
 import { createLocationName } from "@/features/user/user-utils.ts";
 import { MapPinIcon, ShieldUserIcon, UsersIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,10 +11,8 @@ export const TeamSummary = ({ subordinateCount }: { subordinateCount: number }) 
 	return (
 		<Card muted={true} variant="labeled">
 			<CardLabelHeader>
-				<ShieldUserIcon className="size-4" />
-				<h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-					{t(($) => $.sidebar.yourTeam)}
-				</h2>
+				<ShieldUserIcon className="size-4 text-muted-foreground" />
+				<CardLabelTitle>{t(($) => $.sidebar.yourTeam)}</CardLabelTitle>
 			</CardLabelHeader>
 
 			<CardContent>

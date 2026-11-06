@@ -18,8 +18,8 @@ export default [
 			route("/operator/", "routes/operator/home.tsx"),
 		]),
 		route("/operator/live", "routes/operator/live.tsx"),
-		route("/foreman/team", "routes/foreman/team.tsx"),
 		route("/foreman/map", "routes/foreman/map.tsx"),
+		route("/foreman/team", "routes/foreman/team.tsx"),
 	]),
 	route("/register", "routes/register.tsx"),
 ] satisfies RouteConfig;

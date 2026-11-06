@@ -27,7 +27,7 @@ import {
 } from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
 import { CollapsedYAxisTick } from "./collapsed-y-axis-tick.tsx";
-import { COLLAPSED_Y_AXIS_WIDTH } from "./collapsed-y-axis-width.ts";
+import { COLLAPSED_Y_AXIS_TOP_MARGIN, COLLAPSED_Y_AXIS_WIDTH } from "./collapsed-y-axis-width.ts";
 import { ExposureDot } from "./exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "./exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLegend } from "./threshold-legend.tsx";
@@ -153,7 +153,9 @@ export function ExposureLineChart({
 				data={transformedData}
 				margin={
 					compact
-						? undefined
+						? isMobileBreakout
+							? { left: 5, right: 5, bottom: 5, top: COLLAPSED_Y_AXIS_TOP_MARGIN }
+							: undefined
 						: {
 								left: 12,
 								right: 8,

@@ -59,7 +59,7 @@ export const HallOperatorList = ({
 											aria-label={t(($) => $.foremanDashboard.siteMap.viewUserAria, {
 												name: operator.name,
 											})}
-											className="relative block text-muted-foreground hover:text-white"
+											className="relative block text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
 										>
 											{operator.name}
 										</Link>

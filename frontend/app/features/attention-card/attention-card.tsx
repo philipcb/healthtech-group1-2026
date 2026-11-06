@@ -1,14 +1,14 @@
 import { ExposureRiskCard } from "@/components/exposure-level-card.tsx";
-import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
+import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
-import { AtRiskPopup, type PopupStatus } from "@/features/attention-card/exposure-level-popup.tsx";
+import { ExposurePieGrid } from "@/features/attention-card/exposure-pie-grid.tsx";
 import { hasNoActiveSensors } from "@/features/attention-card/inactive-sensors.ts";
 import { StatCard } from "@/features/attention-card/stat-card.tsx";
+import type { TeamStatusFilter } from "@/features/team/team-status-filter.ts";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
-import { parseAsExposure } from "@/lib/exposures.ts";
+import type { DangerLevel } from "@/lib/danger-levels.ts";
+import type { Exposure } from "@/lib/exposures.ts";
 import type { ThresholdSummary } from "@/lib/threshold-summary.ts";
-import { parseAsString, useQueryState } from "nuqs";
-import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface AttentionCardProps {
@@ -16,64 +16,31 @@ interface AttentionCardProps {
 	isSubordinatesLoading?: boolean;
 	thresholdSummary?: ThresholdSummary;
 	isThresholdSummaryLoading?: boolean;
+	exposure: Exposure | null;
+	statusFilter: TeamStatusFilter | null;
+	onStatusFilterChange: (filter: TeamStatusFilter | null) => void;
+	onUserClick: (userId: string) => void;
 }
 
+const dangerLevels = ["danger", "warning", "safe"] as const satisfies ReadonlyArray<DangerLevel>;
+
+/**
+ * The team's status. For all exposures it's a card per danger level, which narrows the team list to the operators it
+ * counts, and a pie chart per exposure. For one exposure, the operators are listed per danger level.
+ */
 export const AttentionCard = ({
 	subordinates,
 	isSubordinatesLoading,
 	thresholdSummary,
 	isThresholdSummaryLoading,
+	exposure,
+	statusFilter,
+	onStatusFilterChange,
+	onUserClick,
 }: AttentionCardProps) => {
 	const { t } = useTranslation();
-	const [exposure] = useQueryState("exposure", parseAsExposure);
-	const [, setSelectedUserId] = useQueryState("userId", parseAsString);
 
-	const [selectedStatus, setSelectedStatus] = useState<PopupStatus | null>(null);
-	const [popupStatus, setPopupStatus] = useState<PopupStatus | null>(null);
-
-	const noActiveSensorsCount = subordinates.filter(hasNoActiveSensors).length;
-
-	const openForStatus = (status: PopupStatus) => {
-		setPopupStatus(status);
-		setSelectedStatus(status);
-	};
-
-	const closePopup = () => {
-		setSelectedStatus(null);
-	};
-
-	const highestDangerLevel = useMemo(() => {
-		const exposureType = exposure ?? "total";
-		if (thresholdSummary === undefined) {
-			return null;
-		}
-
-		if (subordinates === undefined || subordinates.length === 0) {
-			return "safe";
-		}
-
-		if (thresholdSummary[exposureType].danger > 0) {
-			return "danger";
-		}
-
-		if (thresholdSummary[exposureType].warning > 0) {
-			return "warning";
-		}
-
-		return "safe";
-	}, [thresholdSummary, subordinates, exposure]);
-
-	const selectedExposureKey = exposure ?? "total";
-
-	const attentionHeaderText =
-		highestDangerLevel === null ? null : t(($) => $.foremanDashboard.actionCard[highestDangerLevel]);
-
-	const warningDescription =
-		highestDangerLevel === "danger" || highestDangerLevel === "warning"
-			? t(($) => $.foremanDashboard.actionCard[`${highestDangerLevel}Description`])
-			: null;
-
-	if (isThresholdSummaryLoading || thresholdSummary === undefined || highestDangerLevel === null) {
+	if (isThresholdSummaryLoading || thresholdSummary === undefined) {
 		return (
 			<Card className="gap-3 p-6">
 				<Skeleton className="h-8 w-[50%] rounded-full bg-zinc-100 dark:bg-accent" />
@@ -82,98 +49,92 @@ export const AttentionCard = ({
 		);
 	}
 
-	const actionCardHeader = (
-		<CardHeader className="flex flex-col gap-2">
-			{isSubordinatesLoading ? (
-				<Skeleton className="h-8 w-[50%] rounded-full bg-zinc-100 dark:bg-accent" />
-			) : (
-				<>
-					<h2 className="font-bold text-2xl text-foreground">{attentionHeaderText}</h2>
-					{warningDescription && <p className="text-muted-foreground">{warningDescription}</p>}
-				</>
+	const summary = thresholdSummary[exposure ?? "total"];
+	const highestDangerLevel: DangerLevel =
+		subordinates.length === 0 ? "safe" : summary.danger > 0 ? "danger" : summary.warning > 0 ? "warning" : "safe";
+
+	const noActiveSensorsCount = subordinates.filter(hasNoActiveSensors).length;
+
+	const countOf = (filter: TeamStatusFilter) => {
+		if (filter === "inactive") {
+			return noActiveSensorsCount;
+		}
+
+		// The backend counts users without any data as safe
+		return filter === "safe" ? Math.max(0, summary.safe - noActiveSensorsCount) : summary[filter];
+	};
+
+	const toggle = (filter: TeamStatusFilter) => onStatusFilterChange(statusFilter === filter ? null : filter);
+
+	const warningDescription =
+		highestDangerLevel === "safe"
+			? null
+			: t(($) => $.foremanDashboard.actionCard[`${highestDangerLevel}Description`]);
+
+	const statusCards = (
+		// auto-fit collapses the empty track, so three cards fill the row as well as four
+		<div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))]">
+			{dangerLevels.map((level) => (
+				<StatCard
+					key={level}
+					label={t(($) => $.foremanDashboard.overview.statCards[level].label)}
+					dangerLevel={level}
+					value={countOf(level)}
+					selected={statusFilter === level}
+					onClick={() => toggle(level)}
+				/>
+			))}
+
+			{(noActiveSensorsCount > 0 || statusFilter === "inactive") && (
+				<StatCard
+					label={t(($) => $.foremanDashboard.overview.statCards.noActiveSensors.label)}
+					value={noActiveSensorsCount}
+					selected={statusFilter === "inactive"}
+					onClick={() => toggle("inactive")}
+				/>
 			)}
-		</CardHeader>
+		</div>
 	);
 
 	return (
-		<>
-			<div className="flex flex-col gap-3 text-muted-foreground">
-				{actionCardHeader}
-
-				<CardContent className="gap-2">
-					<div className="mt-5 grid items-stretch gap-6 md:grid-cols-2 lg:col-span-3 lg:grid-cols-3">
-						{!exposure && (
-							<>
-								<StatCard
-									label={t(($) => $.foremanDashboard.overview.statCards.danger.label)}
-									dangerLevel="danger"
-									onClick={() => openForStatus("danger")}
-									value={thresholdSummary[selectedExposureKey].danger}
-								/>
-
-								<StatCard
-									label={t(($) => $.foremanDashboard.overview.statCards.warning.label)}
-									dangerLevel="warning"
-									onClick={() => openForStatus("warning")}
-									value={thresholdSummary[selectedExposureKey].warning}
-								/>
-
-								<StatCard
-									label={t(($) => $.foremanDashboard.overview.statCards.safe.label)}
-									dangerLevel="safe"
-									onClick={() => openForStatus("safe")}
-									// The backend counts users without any data as safe
-									value={Math.max(
-										0,
-										thresholdSummary[selectedExposureKey].safe - noActiveSensorsCount,
-									)}
-								/>
-
-								{noActiveSensorsCount > 0 && (
-									<StatCard
-										label={t(($) => $.foremanDashboard.overview.statCards.noActiveSensors.label)}
-										onClick={() => openForStatus("inactive")}
-										value={noActiveSensorsCount}
-									/>
-								)}
-							</>
+		<section className="flex flex-col gap-4">
+			<div className="flex flex-col gap-1">
+				{isSubordinatesLoading ? (
+					<Skeleton className="h-7 w-[50%] rounded-full bg-zinc-100 dark:bg-accent" />
+				) : (
+					<>
+						<h2 className="text-balance font-semibold text-foreground text-xl">
+							{t(($) => $.foremanDashboard.actionCard[highestDangerLevel])}
+						</h2>
+						{warningDescription && (
+							<p className="max-w-prose text-muted-foreground">{warningDescription}</p>
 						)}
-
-						{exposure && (
-							<>
-								<ExposureRiskCard
-									users={subordinates ?? []}
-									exposure={exposure}
-									dangerLevel="danger"
-									onUserClick={setSelectedUserId}
-								/>
-								<ExposureRiskCard
-									users={subordinates ?? []}
-									exposure={exposure}
-									dangerLevel="warning"
-									onUserClick={setSelectedUserId}
-								/>
-								<ExposureRiskCard
-									users={subordinates ?? []}
-									exposure={exposure}
-									dangerLevel="safe"
-									onUserClick={setSelectedUserId}
-								/>
-							</>
-						)}
-					</div>
-				</CardContent>
+					</>
+				)}
 			</div>
 
-			{popupStatus !== null && (
-				<AtRiskPopup
-					open={selectedStatus !== null}
-					onClose={closePopup}
-					title="Workers"
-					status={popupStatus}
-					subordinates={subordinates ?? []}
-				/>
+			{exposure === null ? (
+				<div className="flex flex-col gap-8">
+					{statusCards}
+
+					<div className="flex flex-col gap-4">
+						<h3 className="font-medium text-lg">{t(($) => $.foremanDashboard.overview.exposure)}</h3>
+						<ExposurePieGrid thresholdSummary={thresholdSummary} subordinates={subordinates} />
+					</div>
+				</div>
+			) : (
+				<div className="grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{dangerLevels.map((level) => (
+						<ExposureRiskCard
+							key={level}
+							users={subordinates}
+							exposure={exposure}
+							dangerLevel={level}
+							onUserClick={(userId) => userId && onUserClick(userId)}
+						/>
+					))}
+				</div>
 			)}
-		</>
+		</section>
 	);
 };

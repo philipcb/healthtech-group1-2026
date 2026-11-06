@@ -7,7 +7,7 @@ import { NotebookPenIcon } from "lucide-react";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
-import { Card, CardContent, CardLabelHeader } from "./ui/card.tsx";
+import { Card, CardContent, CardLabelHeader, CardLabelTitle } from "./ui/card.tsx";
 import { Skeleton } from "./ui/skeleton.tsx";
 import { Textarea } from "./ui/textarea.tsx";
 import { useNoteEditor } from "./use-note-editor.ts";
@@ -17,7 +17,7 @@ function NotesShell({ title, children }: PropsWithChildren<{ title: string }>) {
 		<Card muted={true} variant="labeled" className="max-h-96 w-full overflow-y-auto">
 			<CardLabelHeader>
 				<NotebookPenIcon className="size-4 text-muted-foreground" />
-				<h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">{title}</h2>
+				<CardLabelTitle>{title}</CardLabelTitle>
 			</CardLabelHeader>
 			{children}
 		</Card>

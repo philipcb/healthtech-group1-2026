@@ -37,6 +37,10 @@
       "mg": "mg/m³",
       "points": "Poeng",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Vis eksponering",
+      "all": "Alle"
     }
   },
   "dangerLevels": {
@@ -74,16 +78,17 @@
   "layout": {
     "live": "Live",
     "overview": "Oversikt",
-    "home": "Hjem",
-    "team": "Team",
     "statistics": "Statistikk",
     "export": "Eksporter oversikt som PDF",
-    "exportPdf": "Eksporter PDF",
-    "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
+    "downloadReport": "Last ned rapport",
+    "downloadReportDescription": "Velg perioden rapporten skal dekke. Den lastes ned som PDF.",
+    "download": "Last ned",
+    "creatingReport": "Lager rapport …",
     "theme": "Fargetema",
     "language": "Språk",
     "map": "Kart",
-    "compare": "Sammenlign"
+    "compare": "Sammenlign",
+    "teamSettings": "Teaminnstillinger"
   },
   "live": {
     "timeRange": {
@@ -133,8 +138,14 @@
     "share": "{{value}} %",
     "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
-    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)",
-    "private": "Bare du ser dette"
+    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)"
+  },
+  "exposureStatus": {
+    "noData": "Ingen data",
+    "statusDuration": "{{status}}: {{count}} t",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Vis {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Over grenseverdi",
@@ -212,6 +223,11 @@
       "title": "Ditt team",
       "failedToLoadMembers": "Kunne ikke laste teammedlemmer",
       "noMembersFound": "Ingen teammedlemmer funnet",
+      "empty": "Ingen operatører i teamet ennå. Legg dem til i teaminnstillingene for å følge eksponeringen deres her.",
+      "filteredCount": "Viser {{shown}} av {{total}}",
+      "clearFilter": "Fjern filter: {{filter}}",
+      "noFilterMatches": "Ingen operatører i teamet passer dette filteret.",
+      "retry": "Prøv igjen",
       "table": {
         "name": "Navn",
         "email": "E-post",
@@ -227,6 +243,9 @@
       "membersCount": "{{count}} operatør i teamet",
       "membersCount_one": "{{count}} operatør i teamet",
       "membersCount_other": "{{count}} operatører i teamet",
+      "memberCountShort": "{{count}} operatører",
+      "memberCountShort_one": "{{count}} operatør",
+      "memberCountShort_other": "{{count}} operatører",
       "mapTitle": "Lokasjonskart"
     },
     "overview": {
@@ -258,11 +277,12 @@
         },
         "noActiveSensors": {
           "label": "Ingen aktive sensorer"
-        }
+        },
+        "showInList": "Vis i teamlisten",
+        "clearFilter": "Fjern filter"
       },
       "selectUserPlaceholder": "Velg et teammedlem",
-      "clearUserSelection": "Fjern brukervalg",
-      "clearExposureFilter": "Fjern eksponeringsfilter"
+      "clearUserSelection": "Fjern brukervalg"
     },
     "actionCard": {
       "safe": "Teamstatus: Innenfor eksponeringsgrenser",
@@ -348,7 +368,10 @@
       "title": "Filtre",
       "description": "Valgene gjelder med en gang.",
       "close": "Lukk",
-      "save": "Lagre"
+      "reset": "Nullstill filtre",
+      "activeCount": "{{count}} aktive",
+      "activeCount_one": "{{count}} aktiv",
+      "activeCount_other": "{{count}} aktive"
     },
     "occupations": {
       "welder": "Sveiser",
@@ -370,12 +393,8 @@
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Vis eksponering",
-        "all": "Alle"
-      },
       "level": {
-        "label": "Visning"
+        "label": "Grupper etter"
       },
       "belowActionValue": "Under tiltaksverdi",
       "noValue": "Ingen verdi",
@@ -503,12 +522,12 @@
   },
   "aboutFigures": {
     "trigger": "Grenseverdier og beregning",
-    "title": "Om tallene",
-    "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
+    "title": "Grenseverdier og beregning",
+    "description": "Tiltaks- og grenseverdiene tallene sammenlignes med, hvordan tallene er regnet ut, og hvor de kommer fra.",
     "headings": {
       "source": "Kilde",
       "calculation": "Beregning",
-      "comparedWith": "Sammenlignet med",
+      "comparedWith": "Tiltaks- og grenseverdier",
       "missing": "Når tall mangler"
     },
     "source": {
@@ -516,11 +535,11 @@
       "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
     },
     "calculation": {
-      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet på kortet er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet som vises, er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
       "exposure": {
         "dust": "{{dustField}} TWA i {{unit}}.",
-        "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
-        "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
+        "noise": "LAeq i {{unit}}, som et vanlig snitt av desibelverdiene. Desibel er logaritmisk, så dette snittet blir aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
+        "vibration": "Vibrasjonspoeng. Timesverdiene regnes om til snitt på samme måte som for støy og støv."
       }
     },
     "missing": {
@@ -540,12 +559,7 @@
       "yourExposureExposure": "Din {{exposure}}eksponering"
     },
     "subtitle": {
-      "allExposureTypes": "Alle eksponeringstyper",
-      "viewDay": "Dag",
-      "viewWeek": "Uke {{week}}",
-      "viewMonth": "Måned",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "Alle eksponeringstyper"
     }
   },
   "register": {
@@ -618,6 +632,7 @@
     "trendPeakDescription": "Viser maksimal verdi per dag"
   },
   "limitExplanation": {
+    "title": "Tiltaks- og grenseverdier",
     "actionValue": {
       "label": "Tiltaksverdi",
       "description": "Nivå hvor forebyggende tiltak bør iverksettes."
@@ -629,7 +644,8 @@
   },
   "datePicker": {
     "openLabel": "Velg dato og visning",
-    "dialogTitle": "Dato og visning"
+    "dialogTitle": "Dato og visning",
+    "selectWeek": "Velg uke {{week}}"
   },
   "chartDownload": {
     "download": "Last ned data",

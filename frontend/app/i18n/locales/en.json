@@ -40,6 +40,10 @@
       "mg": "mg/m³",
       "points": "Points",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Show exposure",
+      "all": "All"
     }
   },
   "dangerLevels": {
@@ -77,16 +81,17 @@
   "layout": {
     "live": "Live",
     "overview": "Overview",
-    "home": "Home",
-    "team": "Team",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
-    "exportPdf": "Export PDF",
-    "exportPdfDescription": "Select time period for PDF export",
+    "downloadReport": "Download report",
+    "downloadReportDescription": "Choose the period the report covers. It downloads as a PDF.",
+    "download": "Download",
+    "creatingReport": "Creating report…",
     "theme": "Theme",
     "language": "Language",
     "map": "Map",
-    "compare": "Compare"
+    "compare": "Compare",
+    "teamSettings": "Team settings"
   },
   "live": {
     "timeRange": {
@@ -136,8 +141,14 @@
     "share": "{{value}}%",
     "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)",
-    "private": "Only you can see this"
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)"
+  },
+  "exposureStatus": {
+    "noData": "No data",
+    "statusDuration": "{{status}}: {{count}} h",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Show {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Above limit value",
@@ -215,6 +226,11 @@
       "title": "Your team",
       "failedToLoadMembers": "Failed to load team members",
       "noMembersFound": "No team members found",
+      "empty": "No operators in your team yet. Add them in the team settings to follow their exposure here.",
+      "filteredCount": "Showing {{shown}} of {{total}}",
+      "clearFilter": "Clear filter: {{filter}}",
+      "noFilterMatches": "No operators in your team match this filter.",
+      "retry": "Try again",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -230,6 +246,9 @@
       "membersCount": "{{count}} operator in team",
       "membersCount_one": "{{count}} operator in team",
       "membersCount_other": "{{count}} operators in team",
+      "memberCountShort": "{{count}} operators",
+      "memberCountShort_one": "{{count}} operator",
+      "memberCountShort_other": "{{count}} operators",
       "mapTitle": "Location map"
     },
     "overview": {
@@ -261,11 +280,12 @@
         },
         "noActiveSensors": {
           "label": "No active sensors"
-        }
+        },
+        "showInList": "Show in team list",
+        "clearFilter": "Clear filter"
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection",
-      "clearExposureFilter": "Clear exposure filter"
+      "clearUserSelection": "Clear user selection"
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",
@@ -351,7 +371,10 @@
       "title": "Filters",
       "description": "Changes apply right away.",
       "close": "Close",
-      "save": "Save"
+      "reset": "Reset filters",
+      "activeCount": "{{count}} active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
     },
     "occupations": {
       "welder": "Welder",
@@ -373,12 +396,8 @@
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Show exposure",
-        "all": "All"
-      },
       "level": {
-        "label": "View"
+        "label": "Group by"
       },
       "belowActionValue": "Below action value",
       "noValue": "No value",
@@ -506,12 +525,12 @@
   },
   "aboutFigures": {
     "trigger": "Limits and calculation",
-    "title": "About the figures",
-    "description": "Where the figures on this page come from, and how they're calculated.",
+    "title": "Limits and calculation",
+    "description": "The action and limit values the figures are compared with, how the figures are calculated, and where they come from.",
     "headings": {
       "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Compared with",
+      "comparedWith": "Action and limit values",
       "missing": "When figures are missing"
     },
     "source": {
@@ -519,11 +538,11 @@
       "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure on the card is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure shown is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
       "exposure": {
         "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
+        "noise": "LAeq in {{unit}}, as a plain average of the decibel values. Decibels are logarithmic, so this average is never higher than an energy average, and often lower when the sound level varies.",
+        "vibration": "Vibration points. The hourly values are averaged the same way as for noise and dust."
       }
     },
     "missing": {
@@ -543,12 +562,7 @@
       "yourExposureExposure": "Your {{exposure}} exposure"
     },
     "subtitle": {
-      "allExposureTypes": "All exposure types",
-      "viewDay": "Day",
-      "viewWeek": "Week {{week}}",
-      "viewMonth": "Month",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "All exposure types"
     }
   },
   "register": {
@@ -621,6 +635,7 @@
     "trendPeakDescription": "Shows the maximum value per day"
   },
   "limitExplanation": {
+    "title": "Action and limit values",
     "actionValue": {
       "label": "Action value",
       "description": "Level where preventative action should be taken."
@@ -632,7 +647,8 @@
   },
   "datePicker": {
     "openLabel": "Choose date and view",
-    "dialogTitle": "Date and view"
+    "dialogTitle": "Date and view",
+    "selectWeek": "Select week {{week}}"
   },
   "chartDownload": {
     "download": "Download data",

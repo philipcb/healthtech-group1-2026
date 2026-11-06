@@ -60,6 +60,17 @@ function CardLabelHeader({
 	);
 }
 
+// The title in a CardLabelHeader. The strongest text in the card, so each card reads as its own section.
+function CardLabelTitle({ className, ...props }: React.ComponentProps<"h2">) {
+	return (
+		<h2
+			data-slot="card-label-title"
+			className={cn("font-semibold text-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
@@ -134,6 +145,7 @@ export {
 	Card,
 	CardHeader,
 	CardLabelHeader,
+	CardLabelTitle,
 	CardFooter,
 	CardTitle,
 	CardAction,

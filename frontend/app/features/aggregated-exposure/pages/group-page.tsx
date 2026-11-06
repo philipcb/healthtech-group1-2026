@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
+import { FiguresInfoDialog } from "@/features/aggregated-exposure/components/figures-info-dialog.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
 import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
@@ -87,12 +88,16 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-7">
 			<div className="flex flex-col gap-4 border-b pb-5">
-				<Button asChild={true} variant="ghost" size="sm" className="-ml-2 w-fit">
-					<Link to={{ pathname: scope.overviewPath, search }}>
-						<ArrowLeft aria-hidden="true" className="size-4" />
-						{t(($) => $.aggregatedExposure.group.back)}
-					</Link>
-				</Button>
+				{/* The info button sits in the page's top row, like on the overview and the compare page */}
+				<div className="flex items-center justify-between gap-3">
+					<Button asChild={true} variant="ghost" size="sm" className="-ml-2 w-fit">
+						<Link to={{ pathname: scope.overviewPath, search }}>
+							<ArrowLeft aria-hidden="true" className="size-4" />
+							{t(($) => $.aggregatedExposure.group.back)}
+						</Link>
+					</Button>
+					<FiguresInfoDialog dustField={dustField} />
+				</div>
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">

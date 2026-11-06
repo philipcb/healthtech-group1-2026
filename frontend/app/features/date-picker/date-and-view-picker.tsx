@@ -8,6 +8,7 @@ import { ViewPicker } from "@/features/views/view-picker.tsx";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
 import { CalendarIcon } from "lucide-react";
+import { useCallback } from "react";
 import type { Matcher } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 
@@ -29,8 +30,18 @@ interface DateAndViewPickerProps {
 
 export function DateAndViewPicker({ allowedViews, minDate, maxDate, lockNavigation = false }: DateAndViewPickerProps) {
 	const { date, setDate } = useDate();
-	const { view } = useView();
+	const { view, setView } = useView();
 	const { t } = useTranslation();
+
+	// Clicking a week number jumps straight to that week in the week view
+	const selectWeek = useCallback(
+		(weekDate: TZDate) => {
+			void setView("week");
+			setDate(weekDate);
+		},
+		[setView, setDate],
+	);
+	const canSelectWeek = !allowedViews || allowedViews.includes("week");
 
 	const disabledDates: Array<Matcher> = [];
 
@@ -51,6 +62,7 @@ export function DateAndViewPicker({ allowedViews, minDate, maxDate, lockNavigati
 			showWeekNumber={true}
 			date={date}
 			onDateChange={setDate}
+			onWeekSelect={canSelectWeek ? selectWeek : undefined}
 			disabled={disabledDates.length > 0 ? disabledDates : undefined}
 			{...(lockNavigation ? lockedNavigationProps : {})}
 		/>
@@ -72,7 +84,7 @@ export function DateAndViewPicker({ allowedViews, minDate, maxDate, lockNavigati
 						</DialogHeader>
 						<div className="flex flex-col gap-4">
 							{viewPicker}
-							<div className="flex justify-center overflow-x-auto">{datePicker}</div>
+							<div className="flex justify-center">{datePicker}</div>
 						</div>
 					</DialogContent>
 				</Dialog>
@@ -80,9 +92,7 @@ export function DateAndViewPicker({ allowedViews, minDate, maxDate, lockNavigati
 
 			<div className="hidden lg:flex lg:flex-col lg:gap-4">
 				<Card muted={true}>{viewPicker}</Card>
-				<Card muted={true} className="overflow-x-auto">
-					{datePicker}
-				</Card>
+				<Card muted={true}>{datePicker}</Card>
 			</div>
 		</>
 	);

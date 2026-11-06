@@ -20,9 +20,15 @@ export function PdfExport({ exposureType }: PdfExportProps) {
 	return (
 		<>
 			<Card muted={true} className="p-4">
-				<Button variant="outline" className="w-full" onClick={() => setPdfDialogOpen(true)}>
+				<Button
+					variant="outline"
+					// The muted card makes its text grey; the button keeps the normal text color so it doesn't look disabled
+					className="w-full text-foreground"
+					aria-haspopup="dialog"
+					onClick={() => setPdfDialogOpen(true)}
+				>
 					<FileText className="size-4" />
-					{t(($) => $.layout.exportPdf)}
+					{t(($) => $.layout.downloadReport)}
 				</Button>
 			</Card>
 			<PdfExportDialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen} exposureType={exposureType} />

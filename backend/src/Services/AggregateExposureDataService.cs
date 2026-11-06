@@ -63,19 +63,18 @@ public class AggregateExposureDataService(
 
 	// An expression rather than a method call, so EF Core can put it into the SQL, used with
 	// `g.AsQueryable().Average(...)`. Throws for any other field, since the query would otherwise average NULL, which
-	// Postgres rejects.
 	private static Expression<Func<DustAverage, double?>> GetCorrectDustValue(string? field) =>
-		field switch
+		field?.ToLowerInvariant() switch
 		{
 			"pm1_twa" => d => d.AveragePm1Twa,
 			"pm25_twa" => d => d.AveragePm25Twa,
-			"Pm4_twa" => d => d.AveragePm4Twa,
+			"pm4_twa" => d => d.AveragePm4Twa,
 			"pm10_twa" => d => d.AveragePm10Twa,
 
-			"Pm1_stel" => d => d.AveragePm1Stel,
-			"Pm25_stel" => d => d.AveragePm25Stel,
-			"Pm4_stel" => d => d.AveragePm4Stel,
-			"Pm10_stel" => d => d.AveragePm10Stel,
+			"pm1_stel" => d => d.AveragePm1Stel,
+			"pm25_stel" => d => d.AveragePm25Stel,
+			"pm4_stel" => d => d.AveragePm4Stel,
+			"pm10_stel" => d => d.AveragePm10Stel,
 			_ => throw new ArgumentException($"Unsupported dust field: {field}", nameof(field)),
 		};
 
@@ -257,13 +256,14 @@ public class AggregateExposureDataService(
 			};
 		}
 
+		var lowercaseField = field?.ToLowerInvariant();
 		var shiftAverages = await _context
 			.AveragesPer8HourShift.Where(d =>
 				d.SampleId == sampleId
 				&& d.ExposureType == exposureType
 				&& startTime <= d.Time
 				&& d.Time < endTime
-				&& (field == null || d.Field == field)
+				&& (lowercaseField == null || d.Field.ToLower() == lowercaseField)
 			)
 			.ToListAsync();
 		var shiftAverageByDay = shiftAverages

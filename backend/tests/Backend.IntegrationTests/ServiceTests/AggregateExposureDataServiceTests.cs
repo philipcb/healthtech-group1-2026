@@ -197,26 +197,51 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Empty(groups);
 	}
 
+	// A different dust value and different shares over the thresholds for each field, so a test notices a mixed up field
+	private static double DustValue(Field field) => 10 * ((int)field + 1);
+
+	private static double TimeOverAction(Field field) => ((int)field + 1) / 10.0;
+
+	private static double TimeOverLimit(Field field) => ((int)field + 1) / 20.0;
+
+	private static double WorkersOverAction(Field field) => ((int)field + 1) / 40.0;
+
+	private static double WorkersOverLimit(Field field) => ((int)field + 1) / 80.0;
+
+	private static DustAverage DustAverageOfEveryField(DateTime time) =>
+		new()
+		{
+			SampleId = OwnSiteGroupId,
+			Time = time,
+			AveragePm1Stel = DustValue(Field.Pm1_stel),
+			AveragePm25Stel = DustValue(Field.Pm25_stel),
+			AveragePm4Stel = DustValue(Field.Pm4_stel),
+			AveragePm10Stel = DustValue(Field.Pm10_stel),
+			AveragePm1Twa = DustValue(Field.Pm1_twa),
+			AveragePm25Twa = DustValue(Field.Pm25_twa),
+			AveragePm4Twa = DustValue(Field.Pm4_twa),
+			AveragePm10Twa = DustValue(Field.Pm10_twa),
+		};
+
 	[Theory]
-	[InlineData(null, 1)]
-	[InlineData("pm25_twa", 2.5)]
-	[InlineData("pm10_twa", 10)]
+	[InlineData(null, Field.Pm1_twa)]
+	[InlineData("pm1_twa", Field.Pm1_twa)]
+	[InlineData("pm25_twa", Field.Pm25_twa)]
+	[InlineData("pm4_twa", Field.Pm4_twa)]
+	[InlineData("pm10_twa", Field.Pm10_twa)]
+	[InlineData("pm1_stel", Field.Pm1_stel)]
+	[InlineData("pm25_stel", Field.Pm25_stel)]
+	[InlineData("pm4_stel", Field.Pm4_stel)]
+	[InlineData("pm10_stel", Field.Pm10_stel)]
 	public async Task GetOverviewAggregateDataAsync_ReturnsDustForField(
 		string? dustField,
-		double expected
+		Field expectedField
 	)
 	{
 		await SeedGroupsAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
 		context.DustAverages.Add(
-			new DustAverage
-			{
-				SampleId = OwnSiteGroupId,
-				Time = new DateTime(2026, 9, 15, 10, 0, 0, DateTimeKind.Utc),
-				AveragePm1Twa = 1,
-				AveragePm25Twa = 2.5,
-				AveragePm10Twa = 10,
-			}
+			DustAverageOfEveryField(new DateTime(2026, 9, 15, 10, 0, 0, DateTimeKind.Utc))
 		);
 		await context.SaveChangesAsync();
 		var service = CreateService(context, UserRole.OHS);
@@ -224,7 +249,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, dustField);
 
 		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
-		Assert.Equal(expected, group.Averages.Dust);
+		Assert.Equal(DustValue(expectedField), group.Averages.Dust);
 	}
 
 	[Fact]
@@ -234,7 +259,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var service = CreateService(context, UserRole.OHS);
 
 		await Assert.ThrowsAsync<ArgumentException>(() =>
-			service.GetOverviewAggregateDataAsync(StartTime, EndTime, "pm4_twa")
+			service.GetOverviewAggregateDataAsync(StartTime, EndTime, "pm2_twa")
 		);
 	}
 
@@ -250,14 +275,16 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			OwnSiteGroupId,
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 		AggregatedTrendResponseDto other = await service.GetTrendAsync(
 			StartTime,
 			EndTime,
 			OtherSiteGroupId,
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("ok", own.Status);
@@ -277,7 +304,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			OtherSiteGroupId,
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("ok", other.Status);
@@ -298,7 +326,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			OwnSiteGroupId,
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("unavailable", trend.Status);
@@ -320,14 +349,16 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			GetGroupId(OwnSite, level),
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 		AggregatedTrendResponseDto other = await service.GetTrendAsync(
 			StartTime,
 			EndTime,
 			GetGroupId(OtherSite, level),
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("ok", own.Status);
@@ -355,7 +386,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			GetGroupId(OtherSite, level),
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("ok", other.Status);
@@ -381,7 +413,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			GetGroupId(OwnSite, level),
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("unavailable", trend.Status);
@@ -407,7 +440,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		DateTimeKind.Utc
 	);
 
-	// Noise on two days and dust on one, with the time over the thresholds stored for the first day only
+	// Noise on two days and dust on one, with the time over the thresholds stored for the first day only. Dust has the
+	// time over the thresholds of every field, stored with the enum's casing like the aggregate job does, e.g. `Pm1_twa`.
 	private async Task SeedShiftAveragesAsync()
 	{
 		await SeedGroupsAsync();
@@ -422,26 +456,32 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 				AverageLcpk = 120,
 			}
 		);
-		context.DustAverages.Add(
-			new DustAverage
+		context.AveragesPer8HourShift.Add(
+			new AveragePer8HourShift
 			{
 				SampleId = OwnSiteGroupId,
-				Time = DayWithShiftAverage.AddHours(10),
-				AveragePm1Twa = 1,
-				AveragePm10Twa = 10,
+				Time = DayWithShiftAverage,
+				ExposureType = ExposureType.Noise,
+				AverageTimeOverAction = 0.5,
+				AverageTimeOverLimit = 0.125,
+				AverageTimeInSafeLimits = 0.5,
 			}
 		);
-		foreach (var exposureType in new[] { ExposureType.Noise, ExposureType.Dust })
+		context.DustAverages.Add(DustAverageOfEveryField(DayWithShiftAverage.AddHours(10)));
+		foreach (var field in Enum.GetValues<Field>())
 		{
 			context.AveragesPer8HourShift.Add(
 				new AveragePer8HourShift
 				{
 					SampleId = OwnSiteGroupId,
 					Time = DayWithShiftAverage,
-					ExposureType = exposureType,
-					AverageTimeOverAction = 0.5,
-					AverageTimeOverLimit = 0.125,
-					AverageTimeInSafeLimits = 0.5,
+					ExposureType = ExposureType.Dust,
+					Field = field.ToString(),
+					AverageTimeOverAction = TimeOverAction(field),
+					AverageTimeOverLimit = TimeOverLimit(field),
+					AverageTimeInSafeLimits = 1 - TimeOverAction(field),
+					DailyRateOfWorkerOverAction = WorkersOverAction(field),
+					DailyRateOfWorkerOverLimit = WorkersOverLimit(field),
 				}
 			);
 		}
@@ -461,7 +501,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			EndTime,
 			OwnSiteGroupId,
 			ExposureType.Noise,
-			null
+			null,
+			false
 		);
 
 		Assert.Equal("ok", trend.Status);
@@ -480,29 +521,43 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Contains("\"averageTimeOverLimit\":0.125", json);
 	}
 
+	// The API's lowercase field finds the field's data, though the time over the thresholds is stored as e.g. `Pm1_twa`
 	[Theory]
-	[InlineData("pm1_twa", 0.5, 0.125)]
-	[InlineData("pm10_twa", null, null)]
-	public async Task GetTrendAsync_ReturnsTimeOverThresholds_OnlyForPm1Twa_ForDust(
-		string field,
-		double? expectedTimeOverAction,
-		double? expectedTimeOverLimit
+	[InlineData("pm1_twa", Field.Pm1_twa)]
+	[InlineData("pm25_twa", Field.Pm25_twa)]
+	[InlineData("pm4_twa", Field.Pm4_twa)]
+	[InlineData("pm10_twa", Field.Pm10_twa)]
+	[InlineData("pm1_stel", Field.Pm1_stel)]
+	[InlineData("pm25_stel", Field.Pm25_stel)]
+	[InlineData("pm4_stel", Field.Pm4_stel)]
+	[InlineData("pm10_stel", Field.Pm10_stel)]
+	public async Task GetTrendAsync_ReturnsValueAndTimeOverThresholds_ForEveryDustField(
+		string dustField,
+		Field expectedField
 	)
 	{
 		await SeedShiftAveragesAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.OHS);
 
-		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
-			StartTime,
-			EndTime,
-			OwnSiteGroupId,
-			ExposureType.Dust,
-			field
-		);
+		foreach (var isHourly in new[] { false, true })
+		{
+			AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+				StartTime,
+				EndTime,
+				OwnSiteGroupId,
+				ExposureType.Dust,
+				dustField,
+				isHourly
+			);
 
-		var point = Assert.Single(trend.Points!);
-		Assert.Equal(expectedTimeOverAction, point.AverageTimeOverAction);
-		Assert.Equal(expectedTimeOverLimit, point.AverageTimeOverLimit);
+			Assert.Equal("ok", trend.Status);
+			var point = Assert.Single(trend.Points!);
+			Assert.Equal(DustValue(expectedField), point.Value);
+			Assert.Equal(TimeOverAction(expectedField), point.AverageTimeOverAction);
+			Assert.Equal(TimeOverLimit(expectedField), point.AverageTimeOverLimit);
+			Assert.Equal(WorkersOverAction(expectedField), point.RateOfWorkerOverAction);
+			Assert.Equal(WorkersOverLimit(expectedField), point.RateOfWorkerLimit);
+		}
 	}
 }

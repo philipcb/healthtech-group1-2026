@@ -133,6 +133,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.All(groups, g => Assert.Equal(OwnSite, g.Site));
 		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
 		Assert.Equal(82, group.Averages.Noise);
+		// The groups only have noise, so the other exposures have no data instead of 0
+		Assert.Null(group.Averages.Vibration);
+		Assert.Null(group.Averages.Dust);
 	}
 
 	[Fact]
@@ -465,6 +468,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 				AverageTimeOverAction = 0.5,
 				AverageTimeOverLimit = 0.125,
 				AverageTimeInSafeLimits = 0.5,
+				DailyRateOfWorkerOverAction = 0.75,
+				DailyRateOfWorkerOverLimit = 0.25,
 			}
 		);
 		context.DustAverages.Add(DustAverageOfEveryField(DayWithShiftAverage.AddHours(10)));
@@ -509,6 +514,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var withShiftAverage = Assert.Single(trend.Points!, p => p.Time == DayWithShiftAverage);
 		Assert.Equal(0.5, withShiftAverage.AverageTimeOverAction);
 		Assert.Equal(0.125, withShiftAverage.AverageTimeOverLimit);
+		Assert.Equal(0.75, withShiftAverage.RateOfWorkerOverAction);
+		Assert.Equal(0.25, withShiftAverage.RateOfWorkerLimit);
 		var withoutShiftAverage = Assert.Single(
 			trend.Points!,
 			p => p.Time == DayWithoutShiftAverage
@@ -519,6 +526,33 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var json = System.Text.Json.JsonSerializer.Serialize(withShiftAverage);
 		Assert.Contains("\"averageTimeOverAction\":0.5", json);
 		Assert.Contains("\"averageTimeOverLimit\":0.125", json);
+		Assert.Contains("\"rateOfWorkerOverAction\":0.75", json);
+		Assert.Contains("\"rateOfWorkerOverLimit\":0.25", json);
+	}
+
+	[Theory]
+	[InlineData(false, "day")]
+	[InlineData(true, "hour")]
+	public async Task GetTrendAsync_ReturnsGranularity_ForIsHourly(
+		bool isHourly,
+		string expectedGranularity
+	)
+	{
+		await SeedShiftAveragesAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			StartTime,
+			EndTime,
+			OwnSiteGroupId,
+			ExposureType.Noise,
+			null,
+			isHourly
+		);
+
+		Assert.Equal("ok", trend.Status);
+		Assert.Equal(expectedGranularity, trend.Granularity);
 	}
 
 	// The API's lowercase field finds the field's data, though the time over the thresholds is stored as e.g. `Pm1_twa`

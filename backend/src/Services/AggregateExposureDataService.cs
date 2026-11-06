@@ -104,17 +104,20 @@ public class AggregateExposureDataService(
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
-					.Select(g => g.Average(d => d.AverageLaeq))
+					.Select(g => (double?)g.Average(d => d.AverageLaeq))
 					.Average();
 			case ExposureType.Vibration:
 				//For vibration, we have to take the last average hour
+				// Nullable, so a group without data in the period gets `null` instead of failing on the SQL `NULL`
 				return _context
 					.VibrationAverages.Where(d =>
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
 					.Select(g =>
-						g.OrderByDescending(d => d.Time).Select(d => d.AverageExposure).First()
+						g.OrderByDescending(d => d.Time)
+							.Select(d => (double?)d.AverageExposure)
+							.First()
 					)
 					.Average();
 			default:
@@ -287,7 +290,7 @@ public class AggregateExposureDataService(
 			Group = new TrendSampleDto { Hall = building, Occupation = occupation },
 			Unit = unit,
 			Average = exposureAverages!.Average(d => d.Value),
-			Granularity = "day",
+			Granularity = isHourly ? "hour" : "day",
 			Points = exposureAverages,
 		};
 	}

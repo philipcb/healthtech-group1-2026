@@ -68,7 +68,8 @@ public class AggregateExposureAuthorizationTests : IClassFixture<WebApplicationF
 					It.IsAny<DateTime>(),
 					It.IsAny<Guid?>(),
 					It.IsAny<ExposureType>(),
-					It.IsAny<string?>()
+					It.IsAny<string?>(),
+					It.IsAny<bool>()
 				)
 			)
 			.ReturnsAsync(

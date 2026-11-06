@@ -119,7 +119,7 @@ public class DataFetchHandler(AppDbContext _context)
 	public async Task<(
 		List<TimedData> dataList,
 		List<AboveThresholdRate> hoursAboveThresholdDataList,
-		List<AboveThresholdRate> daysAboveThresholdDataList
+		List<DailyWorkerRate> daysAboveThresholdDataList
 	)> fetchAggregatedDataOverSampleUsers(
 		List<User> users,
 		DateTime startTime,
@@ -139,30 +139,7 @@ public class DataFetchHandler(AppDbContext _context)
 
 			if (exposureType == ExposureType.Vibration)
 			{
-				var dataByTime = userData.ToDictionary(d => d.Time);
-
-				ExposureDataDto? previous = null;
-
-				for (var time = startTime; time < endTime; time = time.AddHours(1))
-				{
-					if (dataByTime.TryGetValue(time, out var current))
-					{
-						previous = current;
-					}
-					else if (previous != null)
-					{
-						userData.Add(
-							new ExposureDataDto
-							{
-								Time = time,
-								Value = previous.Value,
-								PeakValue = previous.PeakValue,
-								DangerLevel = previous.DangerLevel,
-								PeakDangerLevel = previous.PeakDangerLevel,
-							}
-						);
-					}
-				}
+				userData = FillVibrationHours(userData, startTime, endTime);
 			}
 
 			var dataFlat = userData.Select(d => new TimedData
@@ -174,18 +151,7 @@ public class DataFetchHandler(AppDbContext _context)
 
 			rawDataList.AddRange(dataFlat);
 
-			var aboveThresholdData = userData
-				.GroupBy(d => d.Time.Date)
-				.Select(g => new AboveThresholdRate
-				{
-					Time = g.Key,
-					WarningRate =
-						(double)g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-					DangerRate =
-						(double)g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
-				});
-
-			rateList.AddRange(aboveThresholdData);
+			rateList.AddRange(GetWorkerDailyRates(userData));
 		}
 
 		var averageDataList = rawDataList
@@ -206,21 +172,77 @@ public class DataFetchHandler(AppDbContext _context)
 				DangerRate = g.Average(d => d.DangerRate),
 			});
 
-		var dailyRates = rateList
-			.GroupBy(d => d.Time)
-			.Select(g => new AboveThresholdRate
-			{
-				Time = g.Key,
-				WarningRate = (double)g.Count(d => d.WarningRate > 0) / g.Count(),
-				DangerRate = (double)g.Count(d => d.DangerRate > 0) / g.Count(),
-			});
-
 		return (
 			dataList: averageDataList.ToList(),
 			hoursAboveThresholdDataList: averageRateList.ToList(),
-			dailyRates.ToList()
+			GetDailyWorkerRates(rateList)
 		);
 	}
+
+	// Vibration points add up over the day, so a worker's value holds until their next hour with data. Each day starts
+	// without a value, so a worker without data on a day has no hours that day instead of the day before's total.
+	public static List<ExposureDataDto> FillVibrationHours(
+		List<ExposureDataDto> userData,
+		DateTime startTime,
+		DateTime endTime
+	)
+	{
+		var filledData = new List<ExposureDataDto>(userData);
+		var dataByTime = userData.ToDictionary(d => d.Time);
+
+		ExposureDataDto? previous = null;
+
+		for (var time = startTime; time < endTime; time = time.AddHours(1))
+		{
+			if (dataByTime.TryGetValue(time, out var current))
+			{
+				previous = current;
+			}
+			else if (previous != null && previous.Time.Date == time.Date)
+			{
+				filledData.Add(
+					new ExposureDataDto
+					{
+						Time = time,
+						Value = previous.Value,
+						PeakValue = previous.PeakValue,
+						DangerLevel = previous.DangerLevel,
+						PeakDangerLevel = previous.PeakDangerLevel,
+					}
+				);
+			}
+		}
+
+		return filledData;
+	}
+
+	// One worker's share of hours at each danger level, per day
+	public static IEnumerable<AboveThresholdRate> GetWorkerDailyRates(
+		IEnumerable<ExposureDataDto> userData
+	) =>
+		userData
+			.GroupBy(d => d.Time.Date)
+			.Select(g => new AboveThresholdRate
+			{
+				Time = g.Key,
+				WarningRate =
+					(double)g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+				DangerRate = (double)g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+			});
+
+	public static List<DailyWorkerRate> GetDailyWorkerRates(
+		IEnumerable<AboveThresholdRate> workerDailyRates
+	) =>
+		workerDailyRates
+			.GroupBy(d => d.Time)
+			.Select(g => new DailyWorkerRate
+			{
+				Time = g.Key,
+				OverActionRate =
+					(double)g.Count(d => d.WarningRate > 0 || d.DangerRate > 0) / g.Count(),
+				OverLimitRate = (double)g.Count(d => d.DangerRate > 0) / g.Count(),
+			})
+			.ToList();
 
 	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(
 		Guid userId,
@@ -336,4 +358,12 @@ public class AboveThresholdRate
 	public DateTime Time { get; set; }
 	public double WarningRate { get; set; }
 	public double DangerRate { get; set; }
+}
+
+public class DailyWorkerRate
+{
+	public DateTime Time { get; set; }
+
+	public double OverActionRate { get; set; }
+	public double OverLimitRate { get; set; }
 }

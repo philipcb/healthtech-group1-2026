@@ -68,20 +68,21 @@ public class DataFiller
 
 	// Warning and danger are shares of the same data points that never overlap (see `AboveThresholdRate`). Over the
 	// limit means danger only, over the action value means warning or danger, since the limit is above the action value.
+	// The workers' shares are already over each threshold (see `DataFetchHandler.GetDailyWorkerRates`).
 	public static AveragePer8HourShift ToShiftAverage(
 		Guid sampleId,
 		ExposureType exposureType,
 		string? field,
 		AboveThresholdRate rate,
-		AboveThresholdRate dailyRate
+		DailyWorkerRate dailyRate
 	) =>
 		new()
 		{
 			SampleId = sampleId,
 			Time = rate.Time,
 			ExposureType = exposureType,
-			DailyRateOfWorkerOverAction = dailyRate.WarningRate,
-			DailyRateOfWorkerOverLimit = dailyRate.DangerRate + dailyRate.WarningRate,
+			DailyRateOfWorkerOverAction = dailyRate.OverActionRate,
+			DailyRateOfWorkerOverLimit = dailyRate.OverLimitRate,
 			AverageTimeInSafeLimits = 1 - rate.WarningRate - rate.DangerRate,
 			AverageTimeOverLimit = rate.DangerRate,
 			AverageTimeOverAction = rate.WarningRate + rate.DangerRate,

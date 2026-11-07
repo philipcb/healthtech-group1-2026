@@ -331,6 +331,8 @@ public class DataFetchHandler(AppDbContext _context)
 			rawExposureData
 		);
 
+		// Assumes the process runs in UTC, so set TZ=UTC. Otherwise `ToUniversalTime` treats the UTC hour as local time and
+		// the stored hours are shifted.
 		var dataHourly = dataWithCumulatedExposureSumValues
 			.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
 			.Select(g => new RawExposureData(

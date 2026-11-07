@@ -41,7 +41,7 @@ echo "------migrations succeeded"
 #put initial values for exposure
 echo "------start seeding"
 docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
-dotnet run --project AggregateDatabaseHandler
+TZ=UTC dotnet run --project AggregateDatabaseHandler
 
 echo "------seeding succeeded"
 

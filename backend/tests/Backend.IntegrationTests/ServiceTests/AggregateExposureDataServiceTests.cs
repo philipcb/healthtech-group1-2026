@@ -119,7 +119,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 	}
 
 	[Fact]
-	public async Task GetOverviewAggregateDataAsync_ReturnsOnlyOwnSite_ForOhs()
+	public async Task GetOverviewAggregateDataAsync_ReturnsNull_ForExposuresWithoutData()
 	{
 		await SeedGroupsAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
@@ -129,8 +129,6 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
 		).ToList();
 
-		Assert.Equal(Enum.GetValues<Level>().Length, groups.Count);
-		Assert.All(groups, g => Assert.Equal(OwnSite, g.Site));
 		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
 		Assert.Equal(82, group.Averages.Noise);
 		// The groups only have noise, so the other exposures have no data instead of 0
@@ -145,9 +143,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.OHS);
 
-		var groups = (
-			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
-		).ToList();
+		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null))
+			.Where(g => g.Site == OwnSite)
+			.ToList();
 
 		var occupationInHall = Assert.Single(groups, g => g.Hall != null && g.Occupation != null);
 		var wholeHall = Assert.Single(groups, g => g.Hall != null && g.Occupation == null);
@@ -166,12 +164,15 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Equal(88, wholeSite.Averages.Noise);
 	}
 
-	[Fact]
-	public async Task GetOverviewAggregateDataAsync_ReturnsEverySite_ForManager()
+	// Both share the management dashboard. The signed-in user is on `OwnSite`, so the other site isn't theirs.
+	[Theory]
+	[InlineData(UserRole.Manager)]
+	[InlineData(UserRole.OHS)]
+	public async Task GetOverviewAggregateDataAsync_ReturnsEverySite_ForManagerAndOhs(UserRole role)
 	{
 		await SeedGroupsAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
-		var service = CreateService(context, UserRole.Manager);
+		var service = CreateService(context, role);
 
 		var groups = (
 			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
@@ -266,41 +267,14 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		);
 	}
 
-	[Fact]
-	public async Task GetTrendAsync_ReturnsNoSuchGroup_ForOtherSite_ForOhs()
+	[Theory]
+	[InlineData(UserRole.Manager)]
+	[InlineData(UserRole.OHS)]
+	public async Task GetTrendAsync_ReturnsAnySite_ForManagerAndOhs(UserRole role)
 	{
 		await SeedGroupsAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
-		var service = CreateService(context, UserRole.OHS);
-
-		AggregatedTrendResponseDto own = await service.GetTrendAsync(
-			StartTime,
-			EndTime,
-			OwnSiteGroupId,
-			ExposureType.Noise,
-			null,
-			false
-		);
-		AggregatedTrendResponseDto other = await service.GetTrendAsync(
-			StartTime,
-			EndTime,
-			OtherSiteGroupId,
-			ExposureType.Noise,
-			null,
-			false
-		);
-
-		Assert.Equal("ok", own.Status);
-		Assert.Equal("unavailable", other.Status);
-		Assert.Equal("noSuchGroup", other.Reason);
-	}
-
-	[Fact]
-	public async Task GetTrendAsync_ReturnsAnySite_ForManager()
-	{
-		await SeedGroupsAsync();
-		await using var context = Fixture.CreateAggregateDbContext();
-		var service = CreateService(context, UserRole.Manager);
+		var service = CreateService(context, role);
 
 		AggregatedTrendResponseDto other = await service.GetTrendAsync(
 			StartTime,
@@ -341,7 +315,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 	[InlineData(Level.WholeHall)]
 	[InlineData(Level.OccupationAcrossSite)]
 	[InlineData(Level.WholeSite)]
-	public async Task GetTrendAsync_ReturnsEveryLevel_OnlyForOwnSite_ForOhs(Level level)
+	public async Task GetTrendAsync_ReturnsEveryLevel_OnEverySite_ForOhs(Level level)
 	{
 		await SeedGroupsAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
@@ -370,8 +344,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var hasOccupation = level is Level.OccupationInHall or Level.OccupationAcrossSite;
 		Assert.Equal(inHall ? OwnHall : null, own.Group!.Hall);
 		Assert.Equal(hasOccupation ? "Welder" : null, own.Group.Occupation);
-		Assert.Equal("unavailable", other.Status);
-		Assert.Equal("noSuchGroup", other.Reason);
+		Assert.Equal("ok", other.Status);
+		Assert.Equal(NoiseByLevel[level], other.Average);
 	}
 
 	[Theory]

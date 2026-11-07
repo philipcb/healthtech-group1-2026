@@ -46,20 +46,14 @@ public class AggregateExposureDataService(
 	private readonly AggregateDbContext _context = context;
 	private readonly SignedInUserContext _signedInUserContext = signedInUserContext;
 
-	// The groups the signed-in user may see. The occupational health service only sees its own site, management every
-	// site. Any other role sees nothing, even if an endpoint lets it through.
-	private IQueryable<Sample> GetAccessibleSamples()
-	{
-		var user = _signedInUserContext.User;
-		var site = user?.Location?.Site;
-
-		return user?.Role switch
+	// The groups the signed-in user may see. Management and the occupational health service share the dashboard and see
+	// every site. Any other role sees nothing, even if an endpoint lets it through.
+	private IQueryable<Sample> GetAccessibleSamples() =>
+		_signedInUserContext.User?.Role switch
 		{
-			UserRole.Manager => _context.Samples,
-			UserRole.OHS when site != null => _context.Samples.Where(s => s.Site == site),
+			UserRole.Manager or UserRole.OHS => _context.Samples,
 			_ => _context.Samples.Where(_ => false),
 		};
-	}
 
 	// An expression rather than a method call, so EF Core can put it into the SQL, used with
 	// `g.AsQueryable().Average(...)`. Throws for any other field, since the query would otherwise average NULL, which

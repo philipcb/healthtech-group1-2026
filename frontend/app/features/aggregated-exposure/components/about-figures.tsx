@@ -148,7 +148,7 @@ export function ThresholdComparison({
 	);
 }
 
-type MissingState = "suppressed";
+type MissingState = "noData" | "suppressed";
 
 /** What it means when a group or a value isn't shown */
 export function MissingStates({ states }: { states: ReadonlyArray<MissingState> }) {

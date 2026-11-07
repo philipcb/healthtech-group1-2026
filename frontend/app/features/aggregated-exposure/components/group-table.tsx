@@ -261,7 +261,7 @@ function ExposureLink({
 	const value = isExposureUnavailable(exposure)
 		? t(($) => $.aggregatedExposure.unavailableValue)
 		: average === null
-			? t(($) => $.aggregatedExposure.overview.noValue)
+			? t(($) => $.aggregatedExposure.overview.noGroupData)
 			: formatGroupValue(average, unit, t);
 	// Only for screen readers: the badge, the cell's tint and the legend above the table show the status. Without a
 	// value there's no level, so a missing value never looks like a safe one.

@@ -30,7 +30,11 @@
       "pm1_twa": "PM1",
       "pm25_twa": "PM2.5",
       "pm4_twa": "PM4",
-      "pm10_twa": "PM10"
+      "pm10_twa": "PM10",
+      "pm1_stel": "PM1",
+      "pm25_stel": "PM2.5",
+      "pm4_stel": "PM4",
+      "pm10_stel": "PM10"
     },
     "units": {
       "ug": "µg/m³",
@@ -397,7 +401,7 @@
         "label": "Grupper etter"
       },
       "belowActionValue": "Under tiltaksverdi",
-      "noValue": "Ingen verdi",
+      "noGroupData": "Ingen data",
       "groupColumn": "Gruppe",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
@@ -417,21 +421,26 @@
       "noPeriodAverage": "Ingen verdi for perioden",
       "timeOverAction": "Tid over tiltaksverdi",
       "timeOverLimit": "Tid over grenseverdi",
-      "timeOverActionCaption": "Andel av timene der gruppas timesnitt var minst {{action}}, inkludert over grenseverdien.",
-      "timeOverLimitCaption": "Andel av timene der gruppas timesnitt var minst {{limit}}.",
-      "timeOverOnlyForDustField": "Beregnes bare for {{dustField}}.",
-      "daysOverAction": "Dager over tiltaksverdi",
-      "daysOverLimit": "Dager over grenseverdi",
-      "daysOverActionCaption": "Andel av dagene der gruppas verdi i grafen var minst {{action}} poeng, inkludert over grenseverdien.",
-      "daysOverLimitCaption": "Andel av dagene der gruppas verdi i grafen var minst {{limit}} poeng.",
-      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen, som er arbeidernes samlede poeng per dag.",
+      "timeOverActionCaption": {
+        "noise": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
+        "dust": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
+        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{action}} kl. 09 og har 8 timer med målinger fra kl. 07: 6 av 8 timer = 75 %. Gruppen: snittet av arbeiderne."
+      },
+      "timeOverLimitCaption": {
+        "noise": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
+        "dust": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
+        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{limit}} kl. 11 og har 8 timer med målinger fra kl. 07: 4 av 8 timer = 50 %. Gruppen: snittet av arbeiderne."
+      },
+      "vibrationPeriodAverage": "Ola har 120 poeng og Kari 80 poeng en dag: (120 + 80) / 2 = 100. Tallet er snittet av dagene.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "Ett punkt per dag med målinger: snittet av dagens timesverdier"
+        "day": "Ett punkt per døgn (UTC): snittet av dagens timer",
+        "hour": "Ett punkt per time: snittet av dem som har målinger den timen"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
+        "day": "Ett punkt per døgn (UTC): snittet av arbeidernes dagssummer",
+        "hour": "Ett punkt per time: snittet av poengene så langt i dag, for dem som har hatt målinger til da"
       },
       "suppressed": "Ingen verdi",
       "unavailable": {
@@ -489,16 +498,16 @@
           "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt."
         }
       },
-      "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
+      "chartLabel": "{{metric}} per døgn i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
       "notInChart": "Ikke i grafen: {{groups}}.",
       "reasons": {
-        "noData": "ingen målinger",
+        "noData": "ingen data",
         "notEnoughData": "ikke nok data",
         "unavailable": "ikke tilgjengelig"
       },
       "notEnoughData": "Ikke nok data",
       "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
-      "noData": "Ingen målinger",
+      "noData": "Ingen data",
       "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
       "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
       "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
@@ -532,18 +541,21 @@
     },
     "source": {
       "groups": "Hver gruppe er alle som er målt i ett verft eller bygg. Med «{{perOccupation}}» er hver yrkesgruppe der en egen gruppe.",
-      "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
+      "hourly": "Dataene har bare tall for hele gruppen: én verdi per time og andeler per dag. Målingene til hver person lagres ikke."
     },
     "calculation": {
-      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet som vises, er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "periodAverage": "Tallet som vises, er snittet av dagene i perioden. Dager uten målinger telles ikke.",
+      "timeOver": "Tid over: Ola har målinger i 8 timer, og 2 av dem var på tiltaksverdien eller mer: 2 / 8 = 25 %. Kari: 0 / 8 = 0 %. Gruppen: (25 % + 0 %) / 2 = 12,5 %. Hver arbeider teller likt. Tid over grenseverdi regnes på samme måte.",
+      "timeOverVibration": "Vibrasjon: Ola når tiltaksverdien kl. 09 og har 8 timer med målinger fra kl. 07. Timene fra kl. 09 teller: 6 / 8 = 75 %. Timer etter at Ola har sluttet, teller ikke.",
       "exposure": {
-        "dust": "{{dustField}} TWA i {{unit}}.",
-        "noise": "LAeq i {{unit}}, som et vanlig snitt av desibelverdiene. Desibel er logaritmisk, så dette snittet blir aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
-        "vibration": "Vibrasjonspoeng. Timesverdiene regnes om til snitt på samme måte som for støy og støv."
+        "dust": "{{dustField}} TWA i {{unit}}. Kl. 08: Ola 4 og Kari 6 gir 5 for gruppen. Dagens tall er snittet av timene.",
+        "noise": "LAeq i {{unit}}. Kl. 08: Ola 80 og Kari 84 gir 82 for gruppen. Dagens tall er snittet av timene. Merk: 80 og 90 gir 85 her, selv om lydenergien tilsvarer ca. 87. Toppverdier (LCpk) er ikke med i «tid over».",
+        "vibration": "Vibrasjonspoeng. Ola: 40 + 30 + 50 = 120 poeng den dagen. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn (UTC)."
       }
     },
     "missing": {
-      "suppressed": "Grupper med færre enn {{count}} registrerte personer finnes ikke i dataene, og vises derfor ikke."
+      "noData": "«Ingen data» = ingen målinger. 0 % = det finnes målinger, men ingen var over.",
+      "suppressed": "Grupper har minst {{count}} registrerte personer. Et enkelt døgn kan likevel ha målinger fra færre."
     }
   },
   "managementDashboard": {

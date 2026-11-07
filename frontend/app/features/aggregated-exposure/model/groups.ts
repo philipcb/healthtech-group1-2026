@@ -36,8 +36,9 @@ export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: stri
  * - dust: the average TWA of the `dustField` asked for, PM1 by default, such as `DustAverage.AveragePm1Twa`.
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
- * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's
- *   hours, and the trend shows each day's last hour.
+ * - vibration: `VibrationAverage.AverageExposure`, each hour the average of the workers' total points so far that day.
+ *   A worker's total holds until midnight (UTC), so each day's last hour is the average of the workers' daily totals.
+ *   The overview averages those days, and the trend shows each day's last hour.
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
 	const summaries = groups.map((group) => ({ ...group, averages: hideUnavailableAverages(group.averages) }));
@@ -46,8 +47,10 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
 		units,
 		// The backend also sends whole sites, whole halls and one occupation across a site, which the site map doesn't show
 		groups: summaries.flatMap(
-			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
-				hall === null || occupation === null ? [] : [{ groupId, site, hall, occupation, averages }],
+			({ groupId, site, hall, occupation, workerCount, averages }): Array<GroupSummary> =>
+				hall === null || occupation === null
+					? []
+					: [{ groupId, site, hall, occupation, workerCount, averages }],
 		),
 	};
 }
@@ -60,8 +63,8 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
  *   professional assessment.
  * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
  *   the measurement basis isn't the same and needs a professional assessment.
- * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average of its hourly
- *   points, so the measurement basis isn't the same and needs a professional assessment.
+ * - vibration: 100 / 400 points apply to a person's daily points, while the value is the average of the workers' daily
+ *   totals, so a group average below a threshold can still include workers above it.
  */
 export const thresholdByExposure: Record<Exposure, Threshold> = {
 	dust: getThreshold("dust", "pm1_twa"),
@@ -142,20 +145,12 @@ export function getMetricLabel(exposure: Exposure, dustField: DustField, t: Tran
 		: t(($) => $.aggregatedExposure.metrics[exposure]);
 }
 
-export function getShareLabels(exposure: Exposure, t: TranslateFn) {
-	return exposure === "vibration"
-		? {
-				action: t(($) => $.aggregatedExposure.group.daysOverAction),
-				limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
-			}
-		: {
-				action: t(($) => $.aggregatedExposure.group.timeOverAction),
-				limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
-			};
-}
-
-export function hasTimeOverThresholds(exposure: Exposure, dustField: DustField) {
-	return exposure !== "dust" || dustField === "pm1_twa";
+// The same for every exposure, since the backend's time over the thresholds is a share of hours for all of them
+export function getShareLabels(t: TranslateFn) {
+	return {
+		action: t(($) => $.aggregatedExposure.group.timeOverAction),
+		limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+	};
 }
 
 export function getThresholdNumberFormat(language: string) {

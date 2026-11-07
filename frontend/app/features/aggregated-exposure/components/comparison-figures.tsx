@@ -14,9 +14,7 @@ import {
 	formatGroupValue,
 	getGroupThreshold,
 	getShareLabels,
-	hasTimeOverThresholds,
 	MIN_GROUP_SIZE,
-	NO_VALUE,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { countHiddenDays } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
@@ -45,8 +43,7 @@ export function ComparisonFigures({
 	periodLabel,
 }: ComparisonFiguresProps) {
 	const { t } = useTranslation();
-	const shareLabels = getShareLabels(exposure, t);
-	const hasShares = hasTimeOverThresholds(exposure, dustField);
+	const shareLabels = getShareLabels(t);
 	const rows = entries.map((entry, index) => ({ entry, result: results[index] ?? { status: "pending" as const } }));
 	const averageProps = { exposure, dustField, unit };
 
@@ -87,10 +84,10 @@ export function ComparisonFigures({
 										<Average trend={result.trend} {...averageProps} />
 									</td>
 									<td className="px-3 py-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="action" hasShares={hasShares} />
+										<Share trend={result.trend} kind="action" />
 									</td>
 									<td className="py-3 pl-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="limit" hasShares={hasShares} />
+										<Share trend={result.trend} kind="limit" />
 									</td>
 								</>
 							) : (
@@ -120,13 +117,13 @@ export function ComparisonFigures({
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.action}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="action" hasShares={hasShares} />
+										<Share trend={result.trend} kind="action" />
 									</dd>
 								</div>
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.limit}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="limit" hasShares={hasShares} />
+										<Share trend={result.trend} kind="limit" />
 									</dd>
 								</div>
 							</dl>
@@ -138,14 +135,6 @@ export function ComparisonFigures({
 					</li>
 				))}
 			</ul>
-
-			{!hasShares && (
-				<p className="text-muted-foreground text-xs">
-					{t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
-						dustField: t(($) => $.exposures.dustFields.pm1_twa),
-					})}
-				</p>
-			)}
 		</div>
 	);
 }
@@ -225,19 +214,7 @@ function Average({
 	);
 }
 
-function Share({
-	trend,
-	kind,
-	hasShares,
-}: {
-	trend: AggregatedTrendOkDto;
-	kind: "action" | "limit";
-	hasShares: boolean;
-}) {
-	if (!hasShares) {
-		return NO_VALUE;
-	}
-
+function Share({ trend, kind }: { trend: AggregatedTrendOkDto; kind: "action" | "limit" }) {
 	return formatAverageShare(
 		trend.points.map((point) => (kind === "action" ? point.averageTimeOverAction : point.averageTimeOverLimit)),
 	);

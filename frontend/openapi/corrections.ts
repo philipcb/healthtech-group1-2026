@@ -298,15 +298,20 @@ function correctBackendContract(spec: unknown) {
 	}
 
 	// `TimeWindowUtils.GetPeriodLimit` only accepts these periods, and fails without a period or year. `month` is
-	// zero-based and only used for the month period.
-	for (const path of ["/api/medical-team/groups", "/api/medical-team/groups/{groupId}/trend"]) {
+	// zero-based and used for the month and day periods, `day` is the day of the month. Only the trend passes `day` on,
+	// so the overview fails for the day period.
+	const periodsByPath: Record<string, Array<string>> = {
+		"/api/medical-team/groups": ["month", "year"],
+		"/api/medical-team/groups/{groupId}/trend": ["day", "month", "year"],
+	};
+	for (const [path, periods] of Object.entries(periodsByPath)) {
 		const parameters = at(paths, path, "get").parameters;
 		assert.ok(Array.isArray(parameters), `${path} no longer has parameters`);
 		for (const parameter of parameters) {
 			assert.ok(isObject(parameter));
 			if (parameter.name === "period") {
 				assert.deepEqual(parameter.schema, { type: "string" }, `The backend spec changed ${path}'s period`);
-				parameter.schema = { type: "string", enum: ["month", "year"] };
+				parameter.schema = { type: "string", enum: periods };
 			}
 			if (parameter.name === "period" || parameter.name === "year" || parameter.name === "exposure") {
 				parameter.required = true;
@@ -341,7 +346,8 @@ function correctBackendContract(spec: unknown) {
 			group: schemaRef("TrendSampleDto"),
 			unit: AGGREGATE_UNIT,
 			average: { type: "number" },
-			granularity: { type: "string", enum: ["day"] },
+			// `hour` when the trend is asked for with `isHourly`
+			granularity: { type: "string", enum: ["day", "hour"] },
 			points: { type: "array", items: schemaRef("TrendPointDto") },
 		},
 	};

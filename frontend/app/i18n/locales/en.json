@@ -11,6 +11,7 @@
     "noOptions": "No options available",
     "today": "Today",
     "total": "Total exposure",
+    "points": "Points",
     "notifications": "Notifications",
     "exportAsPdf": "Export as PDF",
     "weekNumber": "Week {{week}}",
@@ -400,7 +401,7 @@
         "label": "Group by"
       },
       "belowActionValue": "Below action value",
-      "noValue": "No value",
+      "noGroupData": "No data",
       "groupColumn": "Group",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
@@ -420,21 +421,26 @@
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
-      "timeOverActionCaption": "Share of the hours where the group's hourly average was at least {{action}}, including above the limit value.",
-      "timeOverLimitCaption": "Share of the hours where the group's hourly average was at least {{limit}}.",
-      "timeOverOnlyForDustField": "Only calculated for {{dustField}}.",
-      "daysOverAction": "Days above action value",
-      "daysOverLimit": "Days above limit value",
-      "daysOverActionCaption": "Share of the days where the group's value in the chart was at least {{action}} points, including above the limit value.",
-      "daysOverLimitCaption": "Share of the days where the group's value in the chart was at least {{limit}} points.",
-      "vibrationPeriodAverage": "The average of the daily points in the chart, which are the workers' total points per day.",
+      "timeOverActionCaption": {
+        "noise": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
+        "dust": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
+        "vibration": "Points add up over the day. Ola reaches {{action}} at 09:00 and has 8 hours of measurements from 07:00: 6 of 8 hours = 75 %. The group: the average of the workers."
+      },
+      "timeOverLimitCaption": {
+        "noise": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
+        "dust": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
+        "vibration": "Points add up over the day. Ola reaches {{limit}} at 11:00 and has 8 hours of measurements from 07:00: 4 of 8 hours = 50 %. The group: the average of the workers."
+      },
+      "vibrationPeriodAverage": "Ola has 120 points and Kari 80 points one day: (120 + 80) / 2 = 100. The figure is the average of the days.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "granularity": {
-        "day": "One point per day with measurements: the average of the day's hourly values"
+        "day": "One point per day (UTC): the average of the day's hours",
+        "hour": "One point per hour: the average of those with measurements that hour"
       },
       "vibrationGranularity": {
-        "day": "One point per day with measurements: the average of the workers' total points for the day"
+        "day": "One point per day (UTC): the average of the workers' daily totals",
+        "hour": "One point per hour: the average of the points so far that day, for those who have had measurements by then"
       },
       "suppressed": "No value",
       "unavailable": {
@@ -495,13 +501,13 @@
       "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
       "notInChart": "Not in the chart: {{groups}}.",
       "reasons": {
-        "noData": "no measurements",
+        "noData": "no data",
         "notEnoughData": "not enough data",
         "unavailable": "not available"
       },
       "notEnoughData": "Not enough data",
       "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
-      "noData": "No measurements",
+      "noData": "No data",
       "noDataDescription": "The group has no measurements in {{period}}.",
       "unavailableDescription": "This exposure can't be calculated for the group yet.",
       "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
@@ -535,18 +541,21 @@
     },
     "source": {
       "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
-      "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
+      "hourly": "The data only has figures for the whole group: one value per hour and shares per day. Each person's measurements aren't stored."
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure shown is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "The figure shown is the average of the days in the period. Days without measurements aren't counted.",
+      "timeOver": "Time above: Ola has measurements in 8 hours, and 2 of them were at the action value or more: 2 / 8 = 25 %. Kari: 0 / 8 = 0 %. The group: (25 % + 0 %) / 2 = 12.5 %. Each worker counts the same. Time above the limit value is calculated the same way.",
+      "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count.",
       "exposure": {
-        "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}, as a plain average of the decibel values. Decibels are logarithmic, so this average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are averaged the same way as for noise and dust."
+        "dust": "{{dustField}} TWA in {{unit}}. At 08:00: Ola 4 and Kari 6 give 5 for the group. The day's figure is the average of the hours.",
+        "noise": "LAeq in {{unit}}. At 08:00: Ola 80 and Kari 84 give 82 for the group. The day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
+        "vibration": "Vibration points. Ola: 40 + 30 + 50 = 120 points that day. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day (UTC)."
       }
     },
     "missing": {
-      "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."
+      "noData": "“No data” = no measurements. 0 % = there are measurements, but none were above.",
+      "suppressed": "Groups have at least {{count}} registered people. A single day can still have measurements from fewer."
     }
   },
   "managementDashboard": {

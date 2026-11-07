@@ -28,7 +28,6 @@ import {
 	getOccupationLabel,
 	getShareLabels,
 	getThresholdNumberFormat,
-	hasTimeOverThresholds,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import {
@@ -192,36 +191,20 @@ function GroupDetails({
 	const metricLabel = getMetricLabel(exposure, dustField, t);
 	const threshold = getGroupThreshold(exposure, dustField);
 	const isColored = trend.points.some((point) => point.value !== null);
-	const timeOverUnavailableCaption = hasTimeOverThresholds(exposure, dustField)
-		? undefined
-		: t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
-				dustField: t(($) => $.exposures.dustFields.pm1_twa),
-			});
 	// Like the overview's info dialog, so the thresholds keep their decimals, like 7.5 µg/m³
 	const numberFormat = getThresholdNumberFormat(i18n.language);
 	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(trend.unit, t)}`;
-	const shareLabels = getShareLabels(exposure, t);
-	// Vibration classifies the group's daily value in the chart instead of each hour, so its key figures are shares of days
-	const kpiText =
-		exposure === "vibration"
-			? {
-					...shareLabels,
-					actionCaption: t(($) => $.aggregatedExposure.group.daysOverActionCaption, {
-						action: threshold.warning,
-					}),
-					limitCaption: t(($) => $.aggregatedExposure.group.daysOverLimitCaption, {
-						limit: threshold.danger,
-					}),
-				}
-			: {
-					...shareLabels,
-					actionCaption: t(($) => $.aggregatedExposure.group.timeOverActionCaption, {
-						action: formatThreshold(threshold.warning),
-					}),
-					limitCaption: t(($) => $.aggregatedExposure.group.timeOverLimitCaption, {
-						limit: formatThreshold(threshold.danger),
-					}),
-				};
+	// The key figures are shares of each worker's hours with measurements for every exposure and dust fraction. Each
+	// exposure's caption says what counts as over, which for vibration is the day's total points so far.
+	const kpiText = {
+		...getShareLabels(t),
+		actionCaption: t(($) => $.aggregatedExposure.group.timeOverActionCaption[exposure], {
+			action: formatThreshold(threshold.warning),
+		}),
+		limitCaption: t(($) => $.aggregatedExposure.group.timeOverLimitCaption[exposure], {
+			limit: formatThreshold(threshold.danger),
+		}),
+	};
 	const exposureName = getDownloadExposureName(exposure, dustField, t);
 	const downloadFilename = toDownloadFilename([
 		group.site,
@@ -237,20 +220,16 @@ function GroupDetails({
 			value: (point) => point.value,
 			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
 		},
-		...(timeOverUnavailableCaption === undefined
-			? [
-					{
-						header: `${kpiText.action} (%)`,
-						value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction),
-						fractionDigits: 1,
-					},
-					{
-						header: `${kpiText.limit} (%)`,
-						value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit),
-						fractionDigits: 1,
-					},
-				]
-			: []),
+		{
+			header: `${kpiText.action} (%)`,
+			value: (point) => toPercent(point.averageTimeOverAction),
+			fractionDigits: 1,
+		},
+		{
+			header: `${kpiText.limit} (%)`,
+			value: (point) => toPercent(point.averageTimeOverLimit),
+			fractionDigits: 1,
+		},
 	];
 
 	return (
@@ -317,12 +296,12 @@ function GroupDetails({
 				<StatisticCardLayout
 					label={kpiText.action}
 					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverAction))}
-					caption={timeOverUnavailableCaption ?? kpiText.actionCaption}
+					caption={kpiText.actionCaption}
 				/>
 				<StatisticCardLayout
 					label={kpiText.limit}
 					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverLimit))}
-					caption={timeOverUnavailableCaption ?? kpiText.limitCaption}
+					caption={kpiText.limitCaption}
 				/>
 			</div>
 		</div>

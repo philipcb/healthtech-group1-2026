@@ -137,12 +137,14 @@ public class DataFetchHandler(AppDbContext _context)
 				await fetchUserAggregatedDataAsync(user.Id, startTime, endTime, exposureType, field)
 			).ToList();
 
-			if (exposureType == ExposureType.Vibration)
-			{
-				userData = FillVibrationHours(userData, startTime, endTime);
-			}
+			var (hourlyValues, dailyRates) = GetWorkerHourlyValuesAndDailyRates(
+				exposureType,
+				userData,
+				startTime,
+				endTime
+			);
 
-			var dataFlat = userData.Select(d => new TimedData
+			var dataFlat = hourlyValues.Select(d => new TimedData
 			{
 				Time = d.Time,
 				AvgValue = d.Value,
@@ -151,7 +153,7 @@ public class DataFetchHandler(AppDbContext _context)
 
 			rawDataList.AddRange(dataFlat);
 
-			rateList.AddRange(GetWorkerDailyRates(userData));
+			rateList.AddRange(dailyRates);
 		}
 
 		var averageDataList = rawDataList
@@ -163,21 +165,46 @@ public class DataFetchHandler(AppDbContext _context)
 				PeakValue = g.Average(d => d.PeakValue ?? null),
 			});
 
-		var averageRateList = rateList
+		return (
+			dataList: averageDataList.ToList(),
+			hoursAboveThresholdDataList: GetDailyTimeOverRates(rateList),
+			GetDailyWorkerRates(rateList)
+		);
+	}
+
+	// One worker's hourly values, and their share of hours at each danger level per day. Vibration's value holds until
+	// midnight, so the group's hourly values include the workers who stopped earlier that day. Only the hours with
+	// measurements count for the time over the thresholds, so the hours after a worker stopped don't count as over.
+	public static (
+		List<ExposureDataDto> hourlyValues,
+		List<AboveThresholdRate> dailyRates
+	) GetWorkerHourlyValuesAndDailyRates(
+		ExposureType exposureType,
+		List<ExposureDataDto> userData,
+		DateTime startTime,
+		DateTime endTime
+	) =>
+		(
+			exposureType == ExposureType.Vibration
+				? FillVibrationHours(userData, startTime, endTime)
+				: userData,
+			GetWorkerDailyRates(userData).ToList()
+		);
+
+	// Per day, the average of the workers' shares of hours at each danger level, so each worker counts the same however
+	// many hours they have
+	public static List<AboveThresholdRate> GetDailyTimeOverRates(
+		IEnumerable<AboveThresholdRate> workerDailyRates
+	) =>
+		workerDailyRates
 			.GroupBy(d => d.Time)
 			.Select(g => new AboveThresholdRate
 			{
 				Time = g.Key,
 				WarningRate = g.Average(d => d.WarningRate),
 				DangerRate = g.Average(d => d.DangerRate),
-			});
-
-		return (
-			dataList: averageDataList.ToList(),
-			hoursAboveThresholdDataList: averageRateList.ToList(),
-			GetDailyWorkerRates(rateList)
-		);
-	}
+			})
+			.ToList();
 
 	// Vibration points add up over the day, so a worker's value holds until their next hour with data. Each day starts
 	// without a value, so a worker without data on a day has no hours that day instead of the day before's total.

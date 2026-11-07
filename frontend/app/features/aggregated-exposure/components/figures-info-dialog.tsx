@@ -31,10 +31,12 @@ export function FiguresInfoDialog({ dustField }: { dustField: DustField }) {
 				<>
 					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.periodAverage)}</AboutFiguresText>
 					<ExposureCalculations exposures={exposures} dustField={dustField} />
+					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.timeOver)}</AboutFiguresText>
+					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.timeOverVibration)}</AboutFiguresText>
 				</>
 			}
 			comparedWith={<ThresholdComparison exposures={exposures} dustField={dustField} />}
-			missing={<MissingStates states={["suppressed"]} />}
+			missing={<MissingStates states={["noData", "suppressed"]} />}
 		/>
 	);
 }

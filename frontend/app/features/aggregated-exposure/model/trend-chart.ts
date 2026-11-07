@@ -1,8 +1,9 @@
 import { formatGroupNumber } from "@/features/aggregated-exposure/model/groups.ts";
-import { TIMEZONE } from "@/i18n/locale.ts";
+import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
-import type { ExposureUnit } from "@/lib/exposures.ts";
+import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
+import { TZDate } from "@date-fns/tz";
 import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay, startOfISOWeek, startOfMonth } from "date-fns";
 
 const Y_AXIS_PADDING = 0.1;
@@ -18,6 +19,46 @@ export function getComparisonChartMarginRight(isMobile: boolean) {
 // The backend sends the start of each UTC day, which is the same day in the app's time zone
 export function toTrendDay(time: Date) {
 	return startOfDay(time, { in: TIMEZONE });
+}
+
+const HOURS_BETWEEN_TICKS = 3;
+
+/**
+ * Every few hours of one day in Norwegian time, from midnight to the next midnight. Made from the day's local hours, so
+ * the ticks stay on whole local hours on the days daylight saving time starts or ends, which are 23 and 25 hours long.
+ */
+export function getHourTicks(day: Date) {
+	return Array.from({ length: 24 / HOURS_BETWEEN_TICKS + 1 }, (_, index) =>
+		new TZDate(
+			day.getFullYear(),
+			day.getMonth(),
+			day.getDate(),
+			index * HOURS_BETWEEN_TICKS,
+			TIMEZONE_NAME,
+		).getTime(),
+	);
+}
+
+// The aggregate job counts a point, and its shares, to its UTC date, which a Norwegian day's first hours aren't on
+function isOnUtcDate(point: TrendPointDto, day: Date) {
+	const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+	// A `TZDate`'s `toISOString` is in its own time zone, so the time is read as a plain `Date`, which is in UTC
+	return new Date(point.time.getTime()).toISOString().startsWith(date);
+}
+
+/**
+ * One Norwegian day's hourly points. Vibration's first hours, before 01:00 in winter and 02:00 in summer, are the day
+ * before's total, which the aggregate job keeps until midnight UTC, so they're left out. Noise and dust keep them, since
+ * they're the night's measurements.
+ */
+export function getDayPoints(points: Array<TrendPointDto>, exposure: Exposure, day: Date) {
+	return exposure === "vibration" ? points.filter((point) => isOnUtcDate(point, day)) : points;
+}
+
+/** The points with the day's shares, which every hour on the day's UTC date repeats. Any points if none are. */
+export function getDaySharePoints(points: Array<TrendPointDto>, day: Date) {
+	const onDate = points.filter((point) => isOnUtcDate(point, day));
+	return onDate.length > 0 ? onDate : points;
 }
 
 export function getTrendTicks(timestamps: Array<number>) {

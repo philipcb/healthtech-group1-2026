@@ -1,11 +1,11 @@
-import { getPeriodLabel, type PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
+import { type GroupPeriod, getPeriodLabel, type PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
 import { CalendarDays } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function PeriodNotice({
 	periodSelection,
 }: {
-	periodSelection: Pick<PeriodSelection, "period" | "month" | "year">;
+	periodSelection: Pick<PeriodSelection<GroupPeriod>, "period" | "day" | "month" | "year">;
 }) {
 	const { t } = useTranslation();
 

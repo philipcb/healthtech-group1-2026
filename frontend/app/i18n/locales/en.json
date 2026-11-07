@@ -346,6 +346,7 @@
     },
     "period": {
       "label": "Time period",
+      "day": "Day",
       "month": "Month",
       "year": "Year",
       "selectYear": "Select year"
@@ -418,6 +419,7 @@
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
+      "dayAverage": "Average for the day",
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
@@ -432,22 +434,27 @@
         "vibration": "Points add up over the day. Ola reaches {{limit}} at 11:00 and has 8 hours of measurements from 07:00: 4 of 8 hours = 50 %. The group: the average of the workers."
       },
       "vibrationPeriodAverage": "Ola has 120 points and Kari 80 points one day: (120 + 80) / 2 = 100. The figure is the average of the days.",
+      "vibrationDayTotal": "Points for the day",
+      "vibrationDayTotalCaption": "Ola 120 and Kari 80 points: (120 + 80) / 2 = 100.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
+      "hourTooltip": "{{time}}, {{day}}",
       "granularity": {
         "day": "One point per day (UTC): the average of the day's hours",
-        "hour": "One point per hour: the average of those with measurements that hour"
+        "hour": "One point per hour (Norwegian time). At 09:00: Ola 80 and Kari 84 give 82."
       },
       "vibrationGranularity": {
         "day": "One point per day (UTC): the average of the workers' daily totals",
-        "hour": "One point per hour: the average of the points so far that day, for those who have had measurements by then"
+        "hour": "One point per hour (Norwegian time): the points so far that day, averaged over the workers. After Ola stops, the total stays the same for the rest of the day."
       },
       "suppressed": "No value",
       "unavailable": {
         "noSuchGroup": "The group doesn't exist."
       },
       "noData": "No data for the selected period.",
+      "noDayData": "No data for the selected day.",
       "noDustFieldData": "No {{dustField}} data for the selected period.",
+      "noDustFieldDayData": "No {{dustField}} data for the selected day.",
       "allSuppressed": "No values for the selected period.",
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
@@ -671,7 +678,8 @@
       "description": "Plain text, separated by commas"
     },
     "columns": {
-      "date": "Date"
+      "date": "Date",
+      "time": "Time"
     }
   }
 }

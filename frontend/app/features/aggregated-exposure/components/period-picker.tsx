@@ -4,13 +4,13 @@ import { Card } from "@/components/ui/card.tsx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
-	type AggregatedExposurePeriod,
 	aggregatedExposurePeriods,
+	type GroupPeriod,
 	getPeriodLabel,
 	getSelectableYears,
 	type PeriodSelection,
 } from "@/features/aggregated-exposure/model/period.ts";
-import { MonthViewIcon } from "@/features/views/views.ts";
+import { DayViewIcon, MonthViewIcon } from "@/features/views/views.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { TIMEZONE_NAME } from "@/i18n/locale.ts";
 import { today as getToday } from "@/lib/date.ts";
@@ -19,21 +19,32 @@ import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, type LucideIcon, Rows3
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-// The operator's icon for a month, and one for a year, which only the aggregated pages have
+// The operator's icons for a day and a month, and one for a year, which only the aggregated pages have
 const PERIOD_ICONS = {
+	day: DayViewIcon,
 	month: MonthViewIcon,
 	year: Rows3Icon,
-} as const satisfies Record<AggregatedExposurePeriod, LucideIcon>;
+} as const satisfies Record<GroupPeriod, LucideIcon>;
+
+type PeriodPickerProps<Period extends GroupPeriod> = {
+	selection: PeriodSelection<Period>;
+	/** The periods the page has. Only the group page has the day period. */
+	periods?: ReadonlyArray<Period>;
+};
 
 /**
  * A page's content with the period picker in a column on the right, as wide as on the operator's pages. On smaller
  * screens the picker is a button above the content.
  */
-export function PeriodPickerLayout({ selection, children }: { selection: PeriodSelection; children: ReactNode }) {
+export function PeriodPickerLayout<Period extends GroupPeriod>({
+	selection,
+	periods,
+	children,
+}: PeriodPickerProps<Period> & { children: ReactNode }) {
 	return (
 		<div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_calc(var(--spacing)*73)] lg:items-start lg:gap-6">
 			<aside className="flex flex-col gap-4 lg:col-start-2 lg:row-start-1">
-				<PeriodPicker selection={selection} />
+				<PeriodPicker selection={selection} periods={periods} />
 			</aside>
 			<div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1">{children}</div>
 		</div>
@@ -41,28 +52,47 @@ export function PeriodPickerLayout({ selection, children }: { selection: PeriodS
 }
 
 /**
- * The aggregated pages' month or year, picked with the same controls, calendar and layout as the operator's date and
- * view picker (`DateAndViewPicker`). Months and years before the selectable ones or after today can't be picked.
+ * The aggregated pages' day, month or year, picked with the same controls, calendar and layout as the operator's date
+ * and view picker (`DateAndViewPicker`). Days, months and years before the selectable ones or after today can't be
+ * picked.
  */
-export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
+export function PeriodPicker<Period extends GroupPeriod>({
+	selection,
+	// The pages without `periods` are those whose selection only has these
+	periods = aggregatedExposurePeriods as ReadonlyArray<GroupPeriod> as ReadonlyArray<Period>,
+}: PeriodPickerProps<Period>) {
 	const { t } = useTranslation();
-	const { period, setPeriod, month, setMonth, year, setYear } = selection;
+	const { period, setPeriod, day, setDay, month, setMonth, year, setYear } = selection;
 	const today = getToday();
 	const firstYear = Math.min(...getSelectableYears());
 	const firstDay = new TZDate(firstYear, 0, 1, TIMEZONE_NAME);
 
 	const pick = (date: Date) => {
+		if (period === "day") {
+			setDay(date.getDate());
+		}
 		setMonth(date.getMonth());
 		setYear(date.getFullYear());
 	};
-	// A month or a year back or forward, keeping the month for a year
+	// A day, a month or a year back or forward, keeping the month for a year
 	const move = (step: -1 | 1) =>
-		pick(period === "month" ? new Date(year, month + step) : new Date(year + step, month));
+		pick(
+			period === "day"
+				? new TZDate(year, month, day + step, TIMEZONE_NAME)
+				: period === "month"
+					? new Date(year, month + step)
+					: new Date(year + step, month),
+		);
 
-	const isCurrent = year === today.getFullYear() && (period === "year" || month === today.getMonth());
-	const isFirst = year === firstYear && (period === "year" || month === 0);
+	const isCurrent =
+		year === today.getFullYear() &&
+		(period === "year" || (month === today.getMonth() && (period === "month" || day === today.getDate())));
+	const isFirst = year === firstYear && (period === "year" || (month === 0 && (period === "month" || day === 1)));
 	const isAfterToday =
-		year > today.getFullYear() || (period === "month" && year === today.getFullYear() && month > today.getMonth());
+		year > today.getFullYear() ||
+		(period !== "year" &&
+			year === today.getFullYear() &&
+			(month > today.getMonth() || (period === "day" && month === today.getMonth() && day > today.getDate())));
 
 	const previousString = t(($) => $.viewPicker.previous);
 	const todayString = t(($) => $.viewPicker.today);
@@ -80,12 +110,12 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 					onValueChange={(value: string) => {
 						// Value is an empty string when clicking the already selected item, so we need this check to avoid
 						// deselecting.
-						const selectedPeriod = aggregatedExposurePeriods.find((candidate) => candidate === value);
+						const selectedPeriod = periods.find((candidate) => candidate === value);
 						if (selectedPeriod) setPeriod(selectedPeriod);
 					}}
 				>
-					{aggregatedExposurePeriods.map((value) => {
-						const Icon = PERIOD_ICONS[value];
+					{periods.map((value) => {
+						const Icon: LucideIcon = PERIOD_ICONS[value];
 						const label = t(($) => $.aggregatedExposure.period[value]);
 
 						return (
@@ -143,6 +173,15 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 	const datePicker =
 		period === "year" ? (
 			<YearPicker selection={selection} />
+		) : period === "day" ? (
+			<DatePicker
+				mode="day"
+				date={new TZDate(year, month, day, TIMEZONE_NAME)}
+				onDateChange={pick}
+				startMonth={firstDay}
+				endMonth={today}
+				disabled={[{ before: firstDay }, { after: today }]}
+			/>
 		) : (
 			<DatePicker
 				mode="month"
@@ -189,7 +228,7 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 }
 
 /** The selectable years in place of the calendar, with the calendar's summary of the selection under them */
-function YearPicker({ selection }: { selection: PeriodSelection }) {
+function YearPicker({ selection }: { selection: Pick<PeriodSelection<GroupPeriod>, "year" | "setYear"> }) {
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const isEn = i18n.language === "en";

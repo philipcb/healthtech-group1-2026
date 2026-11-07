@@ -28,20 +28,24 @@ type GroupTrendChartProps = {
 	unit: ExposureUnit;
 	label: string;
 	threshold: Threshold | null;
+	/** The selected day, when the points are its hours */
+	day?: Date;
 };
 
-export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendChartProps) {
+export function GroupTrendChart({ points, unit, label, threshold, day }: GroupTrendChartProps) {
 	const { t } = useTranslation();
 	const gradientId = useId();
 	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
-	const days = points.map((point) => toTrendDay(point.time));
+	// A day's points keep their hour, the other periods' points are days
+	const days = points.map((point) => (day === undefined ? toTrendDay(point.time) : point.time));
 	const values = points.flatMap((point) => (point.value === null ? [] : [point.value]));
 	const [yMin, yMax] = getTrendYDomain(values, threshold);
 	const { xAxisProps, yAxisProps, formatDay } = useTrendAxes({
-		timestamps: days.map((day) => day.getTime()),
+		timestamps: days.map((time) => time.getTime()),
 		unit,
 		yDomain: [yMin, yMax],
+		day,
 	});
 
 	const rows: Array<ChartRow> = points.map((point, index) => ({

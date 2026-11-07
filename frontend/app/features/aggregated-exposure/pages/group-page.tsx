@@ -31,11 +31,17 @@ import {
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import {
+	type GroupPeriod,
+	getSelectedDay,
+	groupPeriods,
 	type PeriodSelection,
 	toPeriodFilenamePart,
 	toPeriodParams,
+	toTrendPeriodParams,
 } from "@/features/aggregated-exposure/model/period.ts";
+import { getDayPoints, getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
+import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
@@ -51,10 +57,10 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
 	const scope = useDashboardScope();
 	const { search } = useLocation();
-	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
+	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection, groupPeriodSelection } =
 		useAggregatedExposureSearchParams();
-	const periodParams = toPeriodParams(periodSelection);
-	const groupsQuery = useGetAggregateGroups(periodParams, {
+	// The groups have no day period, so a day's group is found in its month
+	const groupsQuery = useGetAggregateGroups(toPeriodParams(periodSelection), {
 		query: { select: toComparableGroups },
 	});
 	// The trend is only requested for a group the backend returned, never for the ID in the URL alone, and never for an
@@ -62,10 +68,16 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const group = groupsQuery.data?.groups.find((summary) => summary.groupId === groupId);
 	const trendQuery = useGetAggregateGroupTrend(
 		group?.groupId ?? "",
-		{ exposure, dustField: exposure === "dust" ? dustField : undefined, ...periodParams },
+		{
+			exposure,
+			dustField: exposure === "dust" ? dustField : undefined,
+			...toTrendPeriodParams(groupPeriodSelection),
+		},
 		{ query: { enabled: group !== undefined && !isExposureUnavailable(exposure) } },
 	);
+	const isDay = groupPeriodSelection.period === "day";
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
+	const noDataText = getNoDataText(exposure, dustFieldLabel, isDay, t);
 
 	const exposurePickers = (
 		<>
@@ -117,13 +129,13 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				</header>
 			</div>
 
-			<PeriodPickerLayout selection={periodSelection}>
+			<PeriodPickerLayout selection={groupPeriodSelection} periods={groupPeriods}>
 				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
 					{exposurePickers}
 				</FilterDialog>
 				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-				<PeriodNotice periodSelection={periodSelection} />
+				<PeriodNotice periodSelection={groupPeriodSelection} />
 
 				{groupsQuery.isPending ? (
 					<Skeleton className="h-96 w-full" />
@@ -139,25 +151,30 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
 				) : trendQuery.data.status === "unavailable" ? (
 					// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
-					<EmptyState
-						title={
-							exposure === "dust"
-								? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
-								: t(($) => $.aggregatedExposure.group.noData)
-						}
-					/>
+					<EmptyState title={noDataText} />
 				) : (
 					<GroupDetails
 						trend={trendQuery.data}
 						group={group}
-						periodSelection={periodSelection}
+						periodSelection={groupPeriodSelection}
 						exposure={exposure}
 						dustField={dustField}
+						noDataText={noDataText}
 					/>
 				)}
 			</PeriodPickerLayout>
 		</div>
 	);
+}
+
+function getNoDataText(exposure: Exposure, dustFieldLabel: string, isDay: boolean, t: TranslateFn) {
+	if (exposure === "dust") {
+		return isDay
+			? t(($) => $.aggregatedExposure.group.noDustFieldDayData, { dustField: dustFieldLabel })
+			: t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel });
+	}
+
+	return isDay ? t(($) => $.aggregatedExposure.group.noDayData) : t(($) => $.aggregatedExposure.group.noData);
 }
 
 function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) {
@@ -179,18 +196,26 @@ function GroupDetails({
 	periodSelection,
 	exposure,
 	dustField,
+	noDataText,
 }: {
 	trend: AggregatedTrendOkDto;
 	group: ComparableGroup;
-	periodSelection: PeriodSelection;
+	periodSelection: PeriodSelection<GroupPeriod>;
 	exposure: Exposure;
 	dustField: DustField;
+	noDataText: string;
 }) {
 	const { t, i18n } = useTranslation();
-	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
+	const formatDate = useFormatDate();
+	const day = periodSelection.period === "day" ? getSelectedDay(periodSelection) : undefined;
+	// A day shows its hours once, with the day's shares and, for vibration, the day's total points
+	const points = day === undefined ? trend.points : getDayPoints(trend.points, exposure, day);
+	const sharePoints = day === undefined ? points : getDaySharePoints(points, day);
+	// Vibration's last hour is the day's total, since the workers' totals hold until midnight UTC
+	const dayTotal = points.at(-1)?.value ?? null;
 	const metricLabel = getMetricLabel(exposure, dustField, t);
 	const threshold = getGroupThreshold(exposure, dustField);
-	const isColored = trend.points.some((point) => point.value !== null);
+	const isColored = points.some((point) => point.value !== null);
 	// Like the overview's info dialog, so the thresholds keep their decimals, like 7.5 µg/m³
 	const numberFormat = getThresholdNumberFormat(i18n.language);
 	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(trend.unit, t)}`;
@@ -215,6 +240,15 @@ function GroupDetails({
 	]);
 	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
 		{ header: t(($) => $.chartDownload.columns.date), value: (point) => point.time },
+		// The date column only holds the date, so a day's hours get their time in Norwegian time in a column of their own
+		...(day === undefined
+			? []
+			: [
+					{
+						header: t(($) => $.chartDownload.columns.time),
+						value: (point: TrendPointDto) => formatDate(point.time, "HH:mm"),
+					},
+				]),
 		{
 			header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`,
 			value: (point) => point.value,
@@ -248,30 +282,23 @@ function GroupDetails({
 						})}
 					</p>
 				</div>
-				{trend.points.length === 0 ? (
-					<EmptyState
-						title={
-							exposure === "dust"
-								? t(($) => $.aggregatedExposure.group.noDustFieldData, {
-										dustField: dustFieldLabel,
-									})
-								: t(($) => $.aggregatedExposure.group.noData)
-						}
-					/>
-				) : trend.points.every((point) => point.value === null) ? (
+				{points.length === 0 ? (
+					<EmptyState title={noDataText} />
+				) : points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
 					<ChartDownload
 						filename={downloadFilename}
 						sheetName={exposureName}
 						columns={downloadColumns}
-						rows={trend.points}
+						rows={points}
 					>
 						<GroupTrendChart
-							points={trend.points}
+							points={points}
 							unit={trend.unit}
 							label={metricLabel}
 							threshold={threshold}
+							day={day}
 						/>
 					</ChartDownload>
 				)}
@@ -279,28 +306,45 @@ function GroupDetails({
 			</Card>
 
 			<div className="flex flex-col gap-3 md:grid md:grid-cols-3">
-				<StatisticCardLayout
-					label={t(($) => $.aggregatedExposure.group.periodAverage)}
-					value={
-						// Left out when every point is `null`
-						trend.average === undefined
-							? t(($) => $.aggregatedExposure.group.noPeriodAverage)
-							: formatGroupValue(trend.average, trend.unit, t)
-					}
-					caption={
-						exposure === "vibration"
-							? t(($) => $.aggregatedExposure.group.vibrationPeriodAverage)
-							: metricLabel
-					}
-				/>
+				{day !== undefined && exposure === "vibration" ? (
+					// The points add up over the day, so their average means nothing. The last hour is the day's total.
+					<StatisticCardLayout
+						label={t(($) => $.aggregatedExposure.group.vibrationDayTotal)}
+						value={
+							dayTotal === null
+								? t(($) => $.aggregatedExposure.group.noPeriodAverage)
+								: formatGroupValue(dayTotal, trend.unit, t)
+						}
+						caption={t(($) => $.aggregatedExposure.group.vibrationDayTotalCaption)}
+					/>
+				) : (
+					<StatisticCardLayout
+						label={
+							day === undefined
+								? t(($) => $.aggregatedExposure.group.periodAverage)
+								: t(($) => $.aggregatedExposure.group.dayAverage)
+						}
+						value={
+							// Left out when every point is `null`
+							trend.average === undefined
+								? t(($) => $.aggregatedExposure.group.noPeriodAverage)
+								: formatGroupValue(trend.average, trend.unit, t)
+						}
+						caption={
+							exposure === "vibration"
+								? t(($) => $.aggregatedExposure.group.vibrationPeriodAverage)
+								: metricLabel
+						}
+					/>
+				)}
 				<StatisticCardLayout
 					label={kpiText.action}
-					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverAction))}
+					value={formatAverageShare(sharePoints.map((point) => point.averageTimeOverAction))}
 					caption={kpiText.actionCaption}
 				/>
 				<StatisticCardLayout
 					label={kpiText.limit}
-					value={formatAverageShare(trend.points.map((point) => point.averageTimeOverLimit))}
+					value={formatAverageShare(sharePoints.map((point) => point.averageTimeOverLimit))}
 					caption={kpiText.limitCaption}
 				/>
 			</div>

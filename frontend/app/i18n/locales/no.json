@@ -346,6 +346,7 @@
     },
     "period": {
       "label": "Tidsperiode",
+      "day": "Dag",
       "month": "Måned",
       "year": "År",
       "selectYear": "Velg år"
@@ -418,6 +419,7 @@
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
+      "dayAverage": "Snitt for dagen",
       "noPeriodAverage": "Ingen verdi for perioden",
       "timeOverAction": "Tid over tiltaksverdi",
       "timeOverLimit": "Tid over grenseverdi",
@@ -432,22 +434,27 @@
         "vibration": "Poengene legges sammen gjennom dagen. Ola når {{limit}} kl. 11 og har 8 timer med målinger fra kl. 07: 4 av 8 timer = 50 %. Gruppen: snittet av arbeiderne."
       },
       "vibrationPeriodAverage": "Ola har 120 poeng og Kari 80 poeng en dag: (120 + 80) / 2 = 100. Tallet er snittet av dagene.",
+      "vibrationDayTotal": "Poeng for dagen",
+      "vibrationDayTotalCaption": "Ola 120 og Kari 80 poeng: (120 + 80) / 2 = 100.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
+      "hourTooltip": "kl. {{time}}, {{day}}",
       "granularity": {
         "day": "Ett punkt per døgn (UTC): snittet av dagens timer",
-        "hour": "Ett punkt per time: snittet av dem som har målinger den timen"
+        "hour": "Ett punkt per time (norsk tid). Kl. 09: Ola 80 og Kari 84 gir 82."
       },
       "vibrationGranularity": {
         "day": "Ett punkt per døgn (UTC): snittet av arbeidernes dagssummer",
-        "hour": "Ett punkt per time: snittet av poengene så langt i dag, for dem som har hatt målinger til da"
+        "hour": "Ett punkt per time (norsk tid): poengene så langt i døgnet, snitt av arbeiderne. Etter at Ola slutter, står summen fast resten av døgnet."
       },
       "suppressed": "Ingen verdi",
       "unavailable": {
         "noSuchGroup": "Gruppen finnes ikke."
       },
       "noData": "Ingen data for valgt periode.",
+      "noDayData": "Ingen data for valgt dag.",
       "noDustFieldData": "Ingen {{dustField}}-data for valgt periode.",
+      "noDustFieldDayData": "Ingen {{dustField}}-data for valgt dag.",
       "allSuppressed": "Ingen verdier for valgt periode.",
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
@@ -671,7 +678,8 @@
       "description": "Ren tekst, skilt med komma"
     },
     "columns": {
-      "date": "Dato"
+      "date": "Dato",
+      "time": "Klokkeslett"
     }
   }
 }

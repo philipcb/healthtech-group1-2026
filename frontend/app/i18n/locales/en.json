@@ -440,11 +440,11 @@
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "hourTooltip": "{{time}}, {{day}}",
       "granularity": {
-        "day": "One point per day (UTC): the average of the day's hours",
+        "day": "One point per day: the average of the day's hours",
         "hour": "One point per hour (Norwegian time). At 09:00: Ola 80 and Kari 84 give 82."
       },
       "vibrationGranularity": {
-        "day": "One point per day (UTC): the average of the workers' daily totals",
+        "day": "One point per day: the average of the workers' daily totals",
         "hour": "One point per hour (Norwegian time): the points so far that day, averaged over the workers. After Ola stops, the total stays the same for the rest of the day."
       },
       "suppressed": "No value",
@@ -505,7 +505,7 @@
           "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed."
         }
       },
-      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
+      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures are listed with the chart.",
       "notInChart": "Not in the chart: {{groups}}.",
       "reasons": {
         "noData": "no data",
@@ -526,14 +526,7 @@
       "hiddenDays": "{{count}} days hidden for privacy",
       "hiddenDays_one": "{{count}} day hidden for privacy",
       "hiddenDays_other": "{{count}} days hidden for privacy",
-      "hiddenDaysLegend": "Days hidden for privacy",
-      "values": {
-        "week": "Values per week",
-        "month": "Values per month",
-        "weekLabel": "Week {{week}}",
-        "bucketColumn": "Period",
-        "caption": "Average per week or month for each group, {{period}}"
-      }
+      "hiddenDaysLegend": "Days hidden for privacy"
     }
   },
   "aboutFigures": {
@@ -557,7 +550,7 @@
       "exposure": {
         "dust": "{{dustField}} TWA in {{unit}}. At 08:00: Ola 4 and Kari 6 give 5 for the group. The day's figure is the average of the hours.",
         "noise": "LAeq in {{unit}}. At 08:00: Ola 80 and Kari 84 give 82 for the group. The day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
-        "vibration": "Vibration points. Ola: 40 + 30 + 50 = 120 points that day. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day (UTC)."
+        "vibration": "Vibration points. Ola: 40 + 30 + 50 = 120 points that day. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day."
       }
     },
     "missing": {

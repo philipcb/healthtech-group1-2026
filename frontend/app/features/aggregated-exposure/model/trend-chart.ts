@@ -4,7 +4,7 @@ import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
 import { TZDate } from "@date-fns/tz";
-import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay, startOfISOWeek, startOfMonth } from "date-fns";
+import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay } from "date-fns";
 
 const Y_AXIS_PADDING = 0.1;
 const MAX_DAYS_WITH_DAY_TICKS = 62;
@@ -84,32 +84,8 @@ export function formatTrendTick(value: number, unit: ExposureUnit) {
 	return formatGroupNumber(value, unit, value < 10 ? 1 : 0);
 }
 
-function average(values: Array<number>) {
-	return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
 export function countHiddenDays(points: Array<TrendPointDto>) {
 	return points.filter((point) => point.value === null).length;
-}
-
-export type ValueBucket = "week" | "month";
-
-export function getBucketAverages(points: Array<TrendPointDto>, bucket: ValueBucket) {
-	const valuesByBucket = new Map<number, Array<number | null>>();
-	for (const point of points) {
-		const day = toTrendDay(point.time);
-		const start = (
-			bucket === "week" ? startOfISOWeek(day, { in: TIMEZONE }) : startOfMonth(day, { in: TIMEZONE })
-		).getTime();
-		valuesByBucket.set(start, [...(valuesByBucket.get(start) ?? []), point.value]);
-	}
-
-	return new Map(
-		[...valuesByBucket].map(([start, values]) => {
-			const present = values.filter((value) => value !== null);
-			return [start, present.length === 0 ? null : average(present)];
-		}),
-	);
 }
 
 export function fillTrendGaps(

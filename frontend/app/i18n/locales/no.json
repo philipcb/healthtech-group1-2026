@@ -440,11 +440,11 @@
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "hourTooltip": "kl. {{time}}, {{day}}",
       "granularity": {
-        "day": "Ett punkt per døgn (UTC): snittet av dagens timer",
+        "day": "Ett punkt per døgn: snittet av dagens timer",
         "hour": "Ett punkt per time (norsk tid). Kl. 09: Ola 80 og Kari 84 gir 82."
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per døgn (UTC): snittet av arbeidernes dagssummer",
+        "day": "Ett punkt per døgn: snittet av arbeidernes dagssummer",
         "hour": "Ett punkt per time (norsk tid): poengene så langt i døgnet, snitt av arbeiderne. Etter at Ola slutter, står summen fast resten av døgnet."
       },
       "suppressed": "Ingen verdi",
@@ -505,7 +505,7 @@
           "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt."
         }
       },
-      "chartLabel": "{{metric}} per døgn i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
+      "chartLabel": "{{metric}} per døgn i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene for hver gruppe står ved grafen.",
       "notInChart": "Ikke i grafen: {{groups}}.",
       "reasons": {
         "noData": "ingen data",
@@ -526,14 +526,7 @@
       "hiddenDays": "{{count}} dager skjult av personvernhensyn",
       "hiddenDays_one": "{{count}} dag skjult av personvernhensyn",
       "hiddenDays_other": "{{count}} dager skjult av personvernhensyn",
-      "hiddenDaysLegend": "Dager skjult av personvernhensyn",
-      "values": {
-        "week": "Verdier per uke",
-        "month": "Verdier per måned",
-        "weekLabel": "Uke {{week}}",
-        "bucketColumn": "Periode",
-        "caption": "Snitt per uke eller måned for hver gruppe, {{period}}"
-      }
+      "hiddenDaysLegend": "Dager skjult av personvernhensyn"
     }
   },
   "aboutFigures": {
@@ -557,7 +550,7 @@
       "exposure": {
         "dust": "{{dustField}} TWA i {{unit}}. Kl. 08: Ola 4 og Kari 6 gir 5 for gruppen. Dagens tall er snittet av timene.",
         "noise": "LAeq i {{unit}}. Kl. 08: Ola 80 og Kari 84 gir 82 for gruppen. Dagens tall er snittet av timene. Merk: 80 og 90 gir 85 her, selv om lydenergien tilsvarer ca. 87. Toppverdier (LCpk) er ikke med i «tid over».",
-        "vibration": "Vibrasjonspoeng. Ola: 40 + 30 + 50 = 120 poeng den dagen. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn (UTC)."
+        "vibration": "Vibrasjonspoeng. Ola: 40 + 30 + 50 = 120 poeng den dagen. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn."
       }
     },
     "missing": {

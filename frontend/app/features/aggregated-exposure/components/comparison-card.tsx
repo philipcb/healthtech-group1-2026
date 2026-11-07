@@ -8,7 +8,6 @@ import {
 	type ComparisonSeries,
 	ComparisonTrendChart,
 } from "@/features/aggregated-exposure/components/comparison-trend-chart.tsx";
-import { ComparisonValues } from "@/features/aggregated-exposure/components/comparison-values.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { isMissing, useComparisonTrends } from "@/features/aggregated-exposure/hooks/use-comparison-trends.ts";
 import {
@@ -204,14 +203,6 @@ export function ComparisonCard({
 							results={results}
 							periodLabel={periodLabel}
 						/>
-						{series.length > 0 && (
-							<ComparisonValues
-								series={series}
-								unit={unit}
-								bucket={periodParams.period === "year" ? "month" : "week"}
-								periodLabel={periodLabel}
-							/>
-						)}
 					</div>
 				</div>
 			)}

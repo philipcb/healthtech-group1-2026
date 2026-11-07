@@ -271,6 +271,30 @@ public class DataFetchHandler(AppDbContext _context)
 			})
 			.ToList();
 
+	// One row per UTC hour. The times from the database are already UTC, so the hour is kept as UTC whatever the
+	// process's time zone, instead of being converted from local time.
+	public static IEnumerable<RawExposureData> GroupByHour(
+		IEnumerable<RawExposureData> data,
+		Guid userId
+	) =>
+		data.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
+			.Select(g => new RawExposureData(
+				new DateTime(
+					g.Key.Date.Year,
+					g.Key.Date.Month,
+					g.Key.Date.Day,
+					g.Key.Hour,
+					0,
+					0,
+					DateTimeKind.Utc
+				),
+				g.Average(x => x.Value),
+				g.Average(x => x.AvgValue),
+				g.Average(x => x.MaxValue),
+				g.Average(x => x.SumValue),
+				userId
+			));
+
 	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(
 		Guid userId,
 		DateTime startTime,
@@ -331,25 +355,7 @@ public class DataFetchHandler(AppDbContext _context)
 			rawExposureData
 		);
 
-		// Assumes the process runs in UTC, so set TZ=UTC. Otherwise `ToUniversalTime` treats the UTC hour as local time and
-		// the stored hours are shifted.
-		var dataHourly = dataWithCumulatedExposureSumValues
-			.GroupBy(d => new { Date = d.Time.Date, Hour = d.Time.Hour })
-			.Select(g => new RawExposureData(
-				new DateTime(
-					g.Key.Date.Year,
-					g.Key.Date.Month,
-					g.Key.Date.Day,
-					g.Key.Hour,
-					0,
-					0
-				).ToUniversalTime(),
-				g.Average(x => x.Value),
-				g.Average(x => x.AvgValue),
-				g.Average(x => x.MaxValue),
-				g.Average(x => x.SumValue),
-				userId
-			));
+		var dataHourly = GroupByHour(dataWithCumulatedExposureSumValues, userId);
 
 		var dataWithDangerLevels = ThresholdUtils.CalculateDangerLevels(
 			exposureType,

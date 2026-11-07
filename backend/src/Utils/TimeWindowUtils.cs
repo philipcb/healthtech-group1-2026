@@ -2,12 +2,24 @@ namespace Backend.Utils
 {
 	public static class TimeWindowUtils
 	{
+		// The aggregated pages' periods are Norwegian calendar periods, whatever the process's time zone
+		private static readonly TimeZoneInfo Oslo = TimeZoneInfo.FindSystemTimeZoneById(
+			"Europe/Oslo"
+		);
+
 		public static DateTime ClampRequestEndDateToCurrentDateTime(DateTime end)
 		{
 			DateTime now = DateTime.UtcNow;
 
 			return end > now ? now : end;
 		}
+
+		// A period from one midnight in Oslo to another, in UTC. The start and the end are converted separately, so a day
+		// is 23 or 25 hours long when daylight saving time starts or ends. Midnight is never skipped or repeated in Oslo.
+		private static (DateTime startTime, DateTime endTime) FromOslo(
+			DateTime start,
+			DateTime end
+		) => (TimeZoneInfo.ConvertTimeToUtc(start, Oslo), TimeZoneInfo.ConvertTimeToUtc(end, Oslo));
 
 		public static (DateTime startTime, DateTime endTime) GetPeriodLimit(
 			string periodType,
@@ -16,13 +28,10 @@ namespace Backend.Utils
 			int? day
 		)
 		{
-			DateTime startTime;
-			DateTime endTime;
 			if (periodType.Equals("year"))
 			{
-				startTime = new DateTime(year, 1, 1).ToUniversalTime();
-				endTime = startTime.AddYears(1);
-				return (startTime, endTime);
+				var start = new DateTime(year, 1, 1);
+				return FromOslo(start, start.AddYears(1));
 			}
 			else if (periodType.Equals("month"))
 			{
@@ -33,9 +42,8 @@ namespace Backend.Utils
 						nameof(month)
 					);
 				}
-				startTime = new DateTime(year, month.Value + 1, 1).ToUniversalTime();
-				endTime = startTime.AddMonths(1);
-				return (startTime, endTime);
+				var start = new DateTime(year, month.Value + 1, 1);
+				return FromOslo(start, start.AddMonths(1));
 			}
 			else if (periodType.Equals("day"))
 			{
@@ -53,9 +61,8 @@ namespace Backend.Utils
 						nameof(day)
 					);
 				}
-				startTime = new DateTime(year, month.Value + 1, day.Value).ToUniversalTime();
-				endTime = startTime.AddDays(1);
-				return (startTime, endTime);
+				var start = new DateTime(year, month.Value + 1, day.Value);
+				return FromOslo(start, start.AddDays(1));
 			}
 			else
 			{

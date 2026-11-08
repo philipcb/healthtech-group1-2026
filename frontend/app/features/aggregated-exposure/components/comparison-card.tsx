@@ -27,8 +27,9 @@ import {
 	getMetricLabel,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import type { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import type { toTrendPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getComparisonChartMarginRight } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
@@ -48,9 +49,11 @@ type ComparisonCardProps = {
 	onDustFieldChange: (dustField: DustField) => void;
 	unit: ExposureUnit;
 	entries: Array<ComparedEntry>;
-	periodParams: ReturnType<typeof toPeriodParams>;
+	periodParams: ReturnType<typeof toTrendPeriodParams>;
 	periodLabel: string;
 	periodFilenamePart: string;
+	/** The selected day, when the trends are its hours */
+	day?: Date;
 };
 
 export function ComparisonCard({
@@ -62,8 +65,10 @@ export function ComparisonCard({
 	periodParams,
 	periodLabel,
 	periodFilenamePart,
+	day,
 }: ComparisonCardProps) {
 	const { t } = useTranslation();
+	const formatDate = useFormatDate();
 	const headingId = useId();
 	const isMobile = useIsMobile();
 	const isUnavailable = isExposureUnavailable(exposure);
@@ -97,6 +102,15 @@ export function ComparisonCard({
 	]);
 	const downloadColumns: Array<ExportColumn<ComparisonDownloadRow>> = [
 		{ header: t(($) => $.chartDownload.columns.date), value: (row) => row.day },
+		// The date column only holds the date, so a day's hours get their time in Norwegian time in a column of their own
+		...(day === undefined
+			? []
+			: [
+					{
+						header: t(($) => $.chartDownload.columns.time),
+						value: (row: ComparisonDownloadRow) => formatDate(row.day, "HH:mm"),
+					},
+				]),
 		...series.map(({ slot, name }) => {
 			const group = groupBySlot.get(slot);
 
@@ -140,17 +154,25 @@ export function ComparisonCard({
 							<Skeleton className={cn("w-full", CHART_HEIGHT_CLASSNAME)} />
 						) : series.length > 0 ? (
 							<figure
-								aria-label={t(($) => $.aggregatedExposure.compare.chartLabel, {
-									metric: metricLabel,
-									unit: unitLabel,
-									period: periodLabel,
-								})}
+								aria-label={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.chartLabel, {
+												metric: metricLabel,
+												unit: unitLabel,
+												period: periodLabel,
+											})
+										: t(($) => $.aggregatedExposure.compare.chartLabelDay, {
+												metric: metricLabel,
+												unit: unitLabel,
+												period: periodLabel,
+											})
+								}
 							>
 								<ChartDownload
 									filename={downloadFilename}
 									sheetName={exposureName}
 									columns={downloadColumns}
-									rows={toComparisonDownloadRows(series)}
+									rows={toComparisonDownloadRows(series, day)}
 									plotMarginRight={getComparisonChartMarginRight(isMobile)}
 								>
 									<ComparisonTrendChart
@@ -158,6 +180,7 @@ export function ComparisonCard({
 										unit={unit}
 										threshold={threshold}
 										className={CHART_HEIGHT_CLASSNAME}
+										day={day}
 									/>
 								</ChartDownload>
 							</figure>
@@ -173,9 +196,11 @@ export function ComparisonCard({
 						) : (
 							<EmptyState
 								title={t(($) => $.aggregatedExposure.compare.noData)}
-								description={t(($) => $.aggregatedExposure.compare.noGroupHasData, {
-									period: periodLabel,
-								})}
+								description={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.noGroupHasData, { period: periodLabel })
+										: t(($) => $.aggregatedExposure.compare.noGroupHasDayData)
+								}
 							/>
 						)}
 
@@ -202,6 +227,7 @@ export function ComparisonCard({
 							entries={entries}
 							results={results}
 							periodLabel={periodLabel}
+							day={day}
 						/>
 					</div>
 				</div>

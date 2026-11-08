@@ -298,10 +298,9 @@ function correctBackendContract(spec: unknown) {
 	}
 
 	// `TimeWindowUtils.GetPeriodLimit` only accepts these periods, and fails without a period or year. `month` is
-	// zero-based and used for the month and day periods, `day` is the day of the month. Only the trend passes `day` on,
-	// so the overview fails for the day period.
+	// zero-based and used for the month and day periods, `day` is the day of the month.
 	const periodsByPath: Record<string, Array<string>> = {
-		"/api/medical-team/groups": ["month", "year"],
+		"/api/medical-team/groups": ["day", "month", "year"],
 		"/api/medical-team/groups/{groupId}/trend": ["day", "month", "year"],
 	};
 	for (const [path, periods] of Object.entries(periodsByPath)) {

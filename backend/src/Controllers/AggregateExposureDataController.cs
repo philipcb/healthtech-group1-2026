@@ -66,12 +66,13 @@ public class AggregateExposureDataController(
 		[FromQuery] string period,
 		[FromQuery] int year,
 		[FromQuery] int? month,
+		[FromQuery] int? day,
 		[FromQuery] string? dustField = null
 	)
 	{
 		try
 		{
-			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month, null);
+			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month, day);
 
 			return new AggregatedOverviewResponseDto
 			{
@@ -86,7 +87,8 @@ public class AggregateExposureDataController(
 						await _aggregateExposureDataService.GetOverviewAggregateDataAsync(
 							timeLimits.startTime,
 							timeLimits.endTime,
-							dustField
+							dustField,
+							period == "day"
 						),
 			};
 		}

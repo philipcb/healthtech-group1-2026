@@ -9,7 +9,7 @@ import {
 	fillTrendGaps,
 	getComparisonChartMarginRight,
 	getTrendYDomain,
-	toTrendDay,
+	toTrendTime,
 } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
@@ -39,13 +39,15 @@ type ComparisonTrendChartProps = {
 	unit: ExposureUnit;
 	threshold: Threshold;
 	className?: string;
+	/** The selected day, when the points are its hours */
+	day?: Date;
 };
 
 const getDataKey = (slot: SeriesSlot) => `series${slot}` as const;
 const getLineKey = (slot: SeriesSlot) => `line${slot}` as const;
 const getBridgeKey = (slot: SeriesSlot) => `bridge${slot}` as const;
 
-export function ComparisonTrendChart({ series, unit, threshold, className }: ComparisonTrendChartProps) {
+export function ComparisonTrendChart({ series, unit, threshold, className, day }: ComparisonTrendChartProps) {
 	const { t } = useTranslation();
 	const chartConfig = Object.fromEntries(
 		series.map(({ slot, name }) => [getDataKey(slot), { label: name, color: getSeriesColor(slot) }]),
@@ -54,7 +56,7 @@ export function ComparisonTrendChart({ series, unit, threshold, className }: Com
 	const rowsByDay = new Map<number, ChartRow>();
 	for (const { slot, points } of series) {
 		for (const point of points) {
-			const date = toTrendDay(point.time);
+			const date = toTrendTime(point.time, day);
 			const row = rowsByDay.get(date.getTime()) ?? { timestamp: date.getTime() };
 			row[getDataKey(slot)] = point.value;
 			rowsByDay.set(date.getTime(), row);
@@ -84,7 +86,12 @@ export function ComparisonTrendChart({ series, unit, threshold, className }: Com
 		points.flatMap((point) => (point.value === null ? [] : [point.value])),
 	);
 	const [yMin, yMax] = getTrendYDomain(values, threshold);
-	const { xAxisProps, yAxisProps, isMobile, formatDay } = useTrendAxes({ timestamps, unit, yDomain: [yMin, yMax] });
+	const { xAxisProps, yAxisProps, isMobile, formatDay } = useTrendAxes({
+		timestamps,
+		unit,
+		yDomain: [yMin, yMax],
+		day,
+	});
 
 	return (
 		<>

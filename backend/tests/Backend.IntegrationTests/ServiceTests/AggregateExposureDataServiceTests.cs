@@ -3,6 +3,7 @@ using Backend.IntegrationTests.Fixtures;
 using Backend.Middleware;
 using Backend.Models;
 using Backend.Services;
+using Backend.Utils;
 
 namespace Backend.IntegrationTests.ServiceTests;
 
@@ -126,7 +127,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var service = CreateService(context, UserRole.OHS);
 
 		var groups = (
-			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
+			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null, false)
 		).ToList();
 
 		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
@@ -143,7 +144,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, UserRole.OHS);
 
-		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null))
+		var groups = (await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null, false))
 			.Where(g => g.Site == OwnSite)
 			.ToList();
 
@@ -175,7 +176,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var service = CreateService(context, role);
 
 		var groups = (
-			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null)
+			await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null, false)
 		).ToList();
 
 		Assert.Equal(2 * Enum.GetValues<Level>().Length, groups.Count);
@@ -196,7 +197,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await using var context = Fixture.CreateAggregateDbContext();
 		var service = CreateService(context, role);
 
-		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null);
+		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, null, false);
 
 		Assert.Empty(groups);
 	}
@@ -250,7 +251,12 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await context.SaveChangesAsync();
 		var service = CreateService(context, UserRole.OHS);
 
-		var groups = await service.GetOverviewAggregateDataAsync(StartTime, EndTime, dustField);
+		var groups = await service.GetOverviewAggregateDataAsync(
+			StartTime,
+			EndTime,
+			dustField,
+			false
+		);
 
 		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
 		Assert.Equal(DustValue(expectedField), group.Averages.Dust);
@@ -263,7 +269,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		var service = CreateService(context, UserRole.OHS);
 
 		await Assert.ThrowsAsync<ArgumentException>(() =>
-			service.GetOverviewAggregateDataAsync(StartTime, EndTime, "pm2_twa")
+			service.GetOverviewAggregateDataAsync(StartTime, EndTime, "pm2_twa", false)
 		);
 	}
 
@@ -567,5 +573,178 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			Assert.Equal(WorkersOverAction(expectedField), point.RateOfWorkerOverAction);
 			Assert.Equal(WorkersOverLimit(expectedField), point.RateOfWorkerLimit);
 		}
+	}
+
+	private static DateTime Utc(int month, int day, int hour) =>
+		new(2026, month, day, hour, 0, 0, DateTimeKind.Utc);
+
+	// Vibration as the aggregate job stores it: 31 August's total of 560 points, kept until midnight UTC, then two days in
+	// September with their totals of 300 and 200 points in their last hour
+	private async Task SeedVibrationAcrossMidnightAsync()
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+
+		foreach (
+			var (time, points) in new[]
+			{
+				(Utc(8, 31, 22), 560.0),
+				(Utc(8, 31, 23), 560.0),
+				(Utc(9, 1, 7), 100.0),
+				(Utc(9, 1, 21), 300.0),
+				(Utc(9, 2, 7), 50.0),
+				(Utc(9, 2, 21), 200.0),
+			}
+		)
+		{
+			context.VibrationAverages.Add(
+				new VibrationAverage
+				{
+					SampleId = OwnSiteGroupId,
+					Time = time,
+					AverageExposure = points,
+				}
+			);
+		}
+
+		await context.SaveChangesAsync();
+	}
+
+	// A Norwegian month starts at 22:00 UTC the day before, when the day before's vibration total is still kept
+	[Fact]
+	public async Task GetOverviewAggregateDataAsync_LeavesOutTheDayBeforesVibration_ForANorwegianMonth()
+	{
+		await SeedVibrationAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("month", 2026, 8, null);
+
+		var groups = await service.GetOverviewAggregateDataAsync(startTime, endTime, null, false);
+
+		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
+		Assert.Equal(250, group.Averages.Vibration);
+	}
+
+	[Fact]
+	public async Task GetTrendAsync_LeavesOutTheDayBeforesVibration_ForANorwegianMonth()
+	{
+		await SeedVibrationAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("month", 2026, 8, null);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			startTime,
+			endTime,
+			OwnSiteGroupId,
+			ExposureType.Vibration,
+			null,
+			false
+		);
+
+		Assert.Equal([Utc(9, 1, 0), Utc(9, 2, 0)], trend.Points!.Select(p => p.Time));
+		Assert.Equal([300.0, 200.0], trend.Points!.Select(p => p.Value));
+		Assert.Equal(250, trend.Average);
+	}
+
+	[Fact]
+	public async Task GetTrendAsync_LeavesOutTheDayBeforesVibration_ForANorwegianDay()
+	{
+		await SeedVibrationAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("day", 2026, 8, 1);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			startTime,
+			endTime,
+			OwnSiteGroupId,
+			ExposureType.Vibration,
+			null,
+			true
+		);
+
+		Assert.Equal([Utc(9, 1, 7), Utc(9, 1, 21)], trend.Points!.Select(p => p.Time));
+	}
+
+	// 1 September in Norwegian time with a measurement at 01:00, which is 23:00 UTC on 31 August, so the day spans two
+	// UTC days: noise 90 dB then 70 and 80 dB, and PM1 9 then 3 and 6 µg/m³
+	private async Task SeedHoursAcrossMidnightAsync()
+	{
+		await SeedVibrationAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+
+		foreach (
+			var (time, noise, dust) in new[]
+			{
+				(Utc(8, 31, 23), 90.0, 9.0),
+				(Utc(9, 1, 7), 70.0, 3.0),
+				(Utc(9, 1, 8), 80.0, 6.0),
+			}
+		)
+		{
+			context.NoiseAverages.Add(
+				new NoiseAverage
+				{
+					SampleId = OwnSiteGroupId,
+					Time = time,
+					AverageLaeq = noise,
+					AverageLcpk = 120,
+				}
+			);
+			context.DustAverages.Add(
+				new DustAverage
+				{
+					SampleId = OwnSiteGroupId,
+					Time = time,
+					AveragePm1Twa = dust,
+				}
+			);
+		}
+
+		await context.SaveChangesAsync();
+	}
+
+	// A day's noise and dust are the average of its hours, not of its two UTC days, which would be 82.5 dB and 6.75 µg/m³.
+	// Vibration is the day's total, without 31 August's total kept until midnight UTC.
+	[Fact]
+	public async Task GetOverviewAggregateDataAsync_AveragesTheHours_ForANorwegianDay()
+	{
+		await SeedHoursAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("day", 2026, 8, 1);
+
+		var groups = await service.GetOverviewAggregateDataAsync(startTime, endTime, null, true);
+
+		var group = Assert.Single(groups, g => g.GroupId == OwnSiteGroupId);
+		Assert.Equal(80, group.Averages.Noise);
+		Assert.Equal(6, group.Averages.Dust);
+		Assert.Equal(300, group.Averages.Vibration);
+	}
+
+	// The overview's day is the same as the group page's average of the day's hours
+	[Fact]
+	public async Task GetOverviewAggregateDataAsync_MatchesTheHourlyTrend_ForANorwegianDay()
+	{
+		await SeedHoursAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("day", 2026, 8, 1);
+
+		var groups = await service.GetOverviewAggregateDataAsync(startTime, endTime, null, true);
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			startTime,
+			endTime,
+			OwnSiteGroupId,
+			ExposureType.Noise,
+			null,
+			true
+		);
+
+		Assert.Equal(
+			trend.Average,
+			Assert.Single(groups, g => g.GroupId == OwnSiteGroupId).Averages.Noise
+		);
 	}
 }

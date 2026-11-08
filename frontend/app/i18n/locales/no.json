@@ -342,6 +342,7 @@
       "notOnMap": "Ikke på kartet",
       "error": "Kunne ikke hente byggoversikten.",
       "noBuildings": "Ingen bygg med yrkesgrupper ennå.",
+      "noDayData": "Ingen data for valgt dag.",
       "noSiteMap": "Dette verftet har ikke områdekart ennå. Velg et bygg i listen for å se en anonym oversikt."
     },
     "period": {
@@ -410,6 +411,7 @@
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
       "noData": "Ingen data for valgt periode.",
+      "noDayData": "Ingen data for valgt dag.",
       "error": "Kunne ikke hente gruppene."
     },
     "group": {
@@ -506,6 +508,7 @@
         }
       },
       "chartLabel": "{{metric}} per døgn i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene for hver gruppe står ved grafen.",
+      "chartLabelDay": "{{metric}} per time den {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene for hver gruppe står ved grafen.",
       "notInChart": "Ikke i grafen: {{groups}}.",
       "reasons": {
         "noData": "ingen data",
@@ -516,9 +519,11 @@
       "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
       "noData": "Ingen data",
       "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
+      "noDayDataDescription": "Gruppen har ingen målinger valgt dag.",
       "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
       "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
       "noGroupHasData": "Ingen av gruppene har målinger i {{period}}.",
+      "noGroupHasDayData": "Ingen av gruppene har målinger valgt dag.",
       "retry": "Prøv igjen",
       "tableCaption": "{{exposure}} per gruppe, {{period}}",
       "group": "Gruppe",

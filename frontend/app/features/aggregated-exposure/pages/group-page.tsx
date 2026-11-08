@@ -31,15 +31,13 @@ import {
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import {
-	type GroupPeriod,
 	getSelectedDay,
-	groupPeriods,
 	type PeriodSelection,
 	toPeriodFilenamePart,
 	toPeriodParams,
 	toTrendPeriodParams,
 } from "@/features/aggregated-exposure/model/period.ts";
-import { getDayPoints, getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
@@ -57,9 +55,8 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
 	const scope = useDashboardScope();
 	const { search } = useLocation();
-	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection, groupPeriodSelection } =
+	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
 		useAggregatedExposureSearchParams();
-	// The groups have no day period, so a day's group is found in its month
 	const groupsQuery = useGetAggregateGroups(toPeriodParams(periodSelection), {
 		query: { select: toComparableGroups },
 	});
@@ -71,11 +68,11 @@ export function GroupPage({ groupId }: { groupId: string }) {
 		{
 			exposure,
 			dustField: exposure === "dust" ? dustField : undefined,
-			...toTrendPeriodParams(groupPeriodSelection),
+			...toTrendPeriodParams(periodSelection),
 		},
 		{ query: { enabled: group !== undefined && !isExposureUnavailable(exposure) } },
 	);
-	const isDay = groupPeriodSelection.period === "day";
+	const isDay = periodSelection.period === "day";
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const noDataText = getNoDataText(exposure, dustFieldLabel, isDay, t);
 
@@ -129,13 +126,13 @@ export function GroupPage({ groupId }: { groupId: string }) {
 				</header>
 			</div>
 
-			<PeriodPickerLayout selection={groupPeriodSelection} periods={groupPeriods}>
+			<PeriodPickerLayout selection={periodSelection}>
 				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
 					{exposurePickers}
 				</FilterDialog>
 				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-				<PeriodNotice periodSelection={groupPeriodSelection} />
+				<PeriodNotice periodSelection={periodSelection} />
 
 				{groupsQuery.isPending ? (
 					<Skeleton className="h-96 w-full" />
@@ -156,7 +153,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					<GroupDetails
 						trend={trendQuery.data}
 						group={group}
-						periodSelection={groupPeriodSelection}
+						periodSelection={periodSelection}
 						exposure={exposure}
 						dustField={dustField}
 						noDataText={noDataText}
@@ -200,7 +197,7 @@ function GroupDetails({
 }: {
 	trend: AggregatedTrendOkDto;
 	group: ComparableGroup;
-	periodSelection: PeriodSelection<GroupPeriod>;
+	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
 	noDataText: string;
@@ -208,8 +205,9 @@ function GroupDetails({
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const day = periodSelection.period === "day" ? getSelectedDay(periodSelection) : undefined;
-	// A day shows its hours once, with the day's shares and, for vibration, the day's total points
-	const points = day === undefined ? trend.points : getDayPoints(trend.points, exposure, day);
+	// A day shows its hours once, with the day's shares and, for vibration, the day's total points. The backend leaves
+	// out the day before's vibration total, which it keeps until midnight UTC.
+	const points = trend.points;
 	const sharePoints = day === undefined ? points : getDaySharePoints(points, day);
 	// Vibration's last hour is the day's total, since the workers' totals hold until midnight UTC
 	const dayTotal = points.at(-1)?.value ?? null;

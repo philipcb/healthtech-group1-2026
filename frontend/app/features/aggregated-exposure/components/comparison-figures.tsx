@@ -16,7 +16,7 @@ import {
 	getShareLabels,
 	MIN_GROUP_SIZE,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { countHiddenDays } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { countHiddenDays, getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
@@ -32,6 +32,8 @@ type ComparisonFiguresProps = {
 	entries: Array<ComparedEntry>;
 	results: Array<GroupResult>;
 	periodLabel: string;
+	/** The selected day, when the trends are its hours */
+	day?: Date;
 };
 
 export function ComparisonFigures({
@@ -41,11 +43,18 @@ export function ComparisonFigures({
 	entries,
 	results,
 	periodLabel,
+	day,
 }: ComparisonFiguresProps) {
 	const { t } = useTranslation();
 	const shareLabels = getShareLabels(t);
+	const averageLabel =
+		day === undefined
+			? t(($) => $.aggregatedExposure.group.periodAverage)
+			: exposure === "vibration"
+				? t(($) => $.aggregatedExposure.group.vibrationDayTotal)
+				: t(($) => $.aggregatedExposure.group.dayAverage);
 	const rows = entries.map((entry, index) => ({ entry, result: results[index] ?? { status: "pending" as const } }));
-	const averageProps = { exposure, dustField, unit };
+	const averageProps = { exposure, dustField, unit, day };
 
 	return (
 		<div className="@container flex min-w-0 flex-col gap-2">
@@ -62,7 +71,7 @@ export function ComparisonFigures({
 							{t(($) => $.aggregatedExposure.compare.group)}
 						</th>
 						<th scope="col" className="px-3 pb-2 font-medium">
-							{t(($) => $.aggregatedExposure.group.periodAverage)}
+							{averageLabel}
 						</th>
 						<th scope="col" className="px-3 pb-2 font-medium">
 							{shareLabels.action}
@@ -84,15 +93,19 @@ export function ComparisonFigures({
 										<Average trend={result.trend} {...averageProps} />
 									</td>
 									<td className="px-3 py-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="action" />
+										<Share trend={result.trend} kind="action" day={day} />
 									</td>
 									<td className="py-3 pl-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="limit" />
+										<Share trend={result.trend} kind="limit" day={day} />
 									</td>
 								</>
 							) : (
 								<td colSpan={3} className="py-3 pl-3 align-top text-muted-foreground">
-									<MissingFigures result={result} periodLabel={periodLabel} />
+									<MissingFigures
+										result={result}
+										periodLabel={periodLabel}
+										isDay={day !== undefined}
+									/>
 								</td>
 							)}
 						</tr>
@@ -107,9 +120,7 @@ export function ComparisonFigures({
 						{result.status === "ok" ? (
 							<dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
 								<div className="col-span-full">
-									<dt className="text-muted-foreground text-xs">
-										{t(($) => $.aggregatedExposure.group.periodAverage)}
-									</dt>
+									<dt className="text-muted-foreground text-xs">{averageLabel}</dt>
 									<dd>
 										<Average trend={result.trend} {...averageProps} />
 									</dd>
@@ -117,19 +128,19 @@ export function ComparisonFigures({
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.action}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="action" />
+										<Share trend={result.trend} kind="action" day={day} />
 									</dd>
 								</div>
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.limit}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="limit" />
+										<Share trend={result.trend} kind="limit" day={day} />
 									</dd>
 								</div>
 							</dl>
 						) : (
 							<div className="text-muted-foreground text-sm">
-								<MissingFigures result={result} periodLabel={periodLabel} />
+								<MissingFigures result={result} periodLabel={periodLabel} isDay={day !== undefined} />
 							</div>
 						)}
 					</li>
@@ -176,15 +187,19 @@ function Average({
 	exposure,
 	dustField,
 	unit,
+	day,
 }: {
 	trend: AggregatedTrendOkDto;
 	exposure: Exposure;
 	dustField: DustField;
 	unit: ExposureUnit;
+	day?: Date;
 }) {
 	const { t } = useTranslation();
 	const threshold = getGroupThreshold(exposure, dustField);
-	const { average } = trend;
+	// A day's vibration points add up over the day, so its figure is the last hour, the day's total
+	const average =
+		day !== undefined && exposure === "vibration" ? (trend.points.at(-1)?.value ?? undefined) : trend.average;
 	const hiddenDays = countHiddenDays(trend.points);
 
 	if (average === undefined) {
@@ -214,18 +229,23 @@ function Average({
 	);
 }
 
-function Share({ trend, kind }: { trend: AggregatedTrendOkDto; kind: "action" | "limit" }) {
+// A day's hours repeat the day's shares, so they're taken from the hours on the day's date
+function Share({ trend, kind, day }: { trend: AggregatedTrendOkDto; kind: "action" | "limit"; day?: Date }) {
+	const points = day === undefined ? trend.points : getDaySharePoints(trend.points, day);
+
 	return formatAverageShare(
-		trend.points.map((point) => (kind === "action" ? point.averageTimeOverAction : point.averageTimeOverLimit)),
+		points.map((point) => (kind === "action" ? point.averageTimeOverAction : point.averageTimeOverLimit)),
 	);
 }
 
 function MissingFigures({
 	result,
 	periodLabel,
+	isDay,
 }: {
 	result: Exclude<GroupResult, { status: "ok" }>;
 	periodLabel: string;
+	isDay: boolean;
 }): ReactNode {
 	const { t } = useTranslation();
 
@@ -248,7 +268,9 @@ function MissingFigures({
 	const text: Record<MissingStatus, { title: string; description: string }> = {
 		noData: {
 			title: t(($) => $.aggregatedExposure.compare.noData),
-			description: t(($) => $.aggregatedExposure.compare.noDataDescription, { period: periodLabel }),
+			description: isDay
+				? t(($) => $.aggregatedExposure.compare.noDayDataDescription)
+				: t(($) => $.aggregatedExposure.compare.noDataDescription, { period: periodLabel }),
 		},
 		notEnoughData: {
 			title: t(($) => $.aggregatedExposure.compare.notEnoughData),

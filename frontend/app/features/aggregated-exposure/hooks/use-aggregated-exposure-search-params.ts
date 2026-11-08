@@ -1,9 +1,8 @@
 import { type CompareLevel, compareLevels } from "@/features/aggregated-exposure/model/compare.ts";
 import {
-	type GroupPeriod,
+	aggregatedExposurePeriods,
 	getDefaultDay,
 	getSelectableYears,
-	groupPeriods,
 	type PeriodSelection,
 } from "@/features/aggregated-exposure/model/period.ts";
 import { TIMEZONE_NAME } from "@/i18n/locale.ts";
@@ -49,7 +48,7 @@ const searchParams = {
 	 * opening an exposure's details from a card doesn't change the overview's filter when going back.
 	 */
 	exposureFilter: parseAsStringLiteral(exposureFilters).withDefault("all"),
-	period: parseAsStringLiteral(groupPeriods).withDefault("month"),
+	period: parseAsStringLiteral(aggregatedExposurePeriods).withDefault("month"),
 	/** Without a default, so the day period starts on the day `getDefaultDay` picks for the month */
 	day: parseAsDay,
 	month: parseAsMonth.withDefault(today.getMonth()),
@@ -73,8 +72,7 @@ export function useAggregatedExposureSearchParams() {
 		getDaysInMonth(new TZDate(params.year, params.month, 1, TIMEZONE_NAME)),
 	);
 
-	// The group page's period, which can be a day
-	const groupPeriodSelection: PeriodSelection<GroupPeriod> = {
+	const periodSelection: PeriodSelection = {
 		period: params.period,
 		// A new period starts on its default day, not one from an earlier day period
 		setPeriod: (period) => void setParams({ period, day: null }),
@@ -84,12 +82,6 @@ export function useAggregatedExposureSearchParams() {
 		setMonth: (month) => void setParams({ month }),
 		year: params.year,
 		setYear: (year) => void setParams({ year }),
-	};
-
-	// The other pages' period. Their groups have no day period, so a day from the group page shows its month.
-	const periodSelection: PeriodSelection = {
-		...groupPeriodSelection,
-		period: params.period === "day" ? "month" : params.period,
 	};
 
 	return {
@@ -110,6 +102,5 @@ export function useAggregatedExposureSearchParams() {
 		resetGroupFilters: () =>
 			void setParams({ period: null, day: null, month: null, year: null, exposure: null, dustField: null }),
 		periodSelection,
-		groupPeriodSelection,
 	};
 }

@@ -4,13 +4,9 @@ import { today as getToday } from "@/lib/date.ts";
 import { TZDate } from "@date-fns/tz";
 import { getDaysInMonth } from "date-fns";
 
-/** The periods of the overview, the comparison and the map, which the aggregate API's groups only have for these */
-export const aggregatedExposurePeriods = ["month", "year"] as const;
+/** The aggregated pages' periods. A day is one day in Norwegian time, with a point per hour in the trends. */
+export const aggregatedExposurePeriods = ["day", "month", "year"] as const;
 export type AggregatedExposurePeriod = (typeof aggregatedExposurePeriods)[number];
-
-/** The group page's periods, which can also be one day in Norwegian time, with a point per hour */
-export const groupPeriods = ["day", ...aggregatedExposurePeriods] as const;
-export type GroupPeriod = (typeof groupPeriods)[number];
 
 export const monthKeys = [
 	"january",
@@ -27,9 +23,9 @@ export const monthKeys = [
 	"december",
 ] as const;
 
-export type PeriodSelection<Period extends GroupPeriod = AggregatedExposurePeriod> = {
-	period: Period;
-	setPeriod: (period: Period) => void;
+export type PeriodSelection = {
+	period: AggregatedExposurePeriod;
+	setPeriod: (period: AggregatedExposurePeriod) => void;
 	/** The day of the month, one-based. Only used for the day period. */
 	day: number;
 	setDay: (day: number) => void;
@@ -39,8 +35,8 @@ export type PeriodSelection<Period extends GroupPeriod = AggregatedExposurePerio
 	setYear: (year: number) => void;
 };
 
-/** What the period is, whatever page it's from */
-type PeriodFields = Pick<PeriodSelection<GroupPeriod>, "period" | "day" | "month" | "year">;
+/** What the period is, without its setters */
+type PeriodFields = Pick<PeriodSelection, "period" | "day" | "month" | "year">;
 
 export function getSelectableYears(): Array<number> {
 	const currentYear = new Date().getFullYear();
@@ -98,17 +94,22 @@ export function getPeriodState({ period, day, month, year }: PeriodFields) {
 	return now < start ? "notStarted" : now < end ? "inProgress" : "complete";
 }
 
-/** The aggregate API's period parameters. It only reads `month` for the month period, zero-based like the frontend's. */
-export function toPeriodParams({ period, month, year }: Pick<PeriodSelection, "period" | "month" | "year">) {
-	return { period, year, month: period === "month" ? month : undefined };
+/**
+ * The aggregate API's period parameters. It reads `month` for the month and day periods, zero-based like the
+ * frontend's, and `day`, one-based, for the day period.
+ */
+export function toPeriodParams({ period, day, month, year }: PeriodFields) {
+	return {
+		period,
+		year,
+		month: period === "year" ? undefined : month,
+		day: period === "day" ? day : undefined,
+	};
 }
 
-/**
- * The group trend's period parameters. A day is always asked for with a point per hour, and `day` is one-based while
- * `month` stays zero-based.
- */
-export function toTrendPeriodParams({ period, day, month, year }: PeriodFields) {
-	return period === "day" ? { period, year, month, day, isHourly: true } : toPeriodParams({ period, month, year });
+/** The group trend's period parameters. A day is always asked for with a point per hour. */
+export function toTrendPeriodParams(selection: PeriodFields) {
+	return { ...toPeriodParams(selection), isHourly: selection.period === "day" ? true : undefined };
 }
 
 /** The period for file names */

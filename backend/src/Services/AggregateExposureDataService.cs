@@ -19,7 +19,8 @@ public interface IAggregateExposureDataService
 		DateTime endTime,
 		Guid? sampleId,
 		ExposureType exposureType,
-		string? field
+		string? field,
+		bool isDay
 	);
 
 	Task<AggregatedTrendResponseDto> GetTrendAsync(
@@ -34,7 +35,8 @@ public interface IAggregateExposureDataService
 	Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
 		DateTime startTime,
 		DateTime endTime,
-		string? dustField
+		string? dustField,
+		bool isDay
 	);
 }
 
@@ -72,27 +74,46 @@ public class AggregateExposureDataService(
 			_ => throw new ArgumentException($"Unsupported dust field: {field}", nameof(field)),
 		};
 
+	// The aggregate job keeps each worker's vibration total until midnight UTC. A period starting before midnight UTC, like
+	// a Norwegian day, month or year, would get the day before's total in its first hours, so vibration starts at the
+	// period's first midnight UTC instead.
+	public static DateTime GetVibrationStartTime(DateTime startTime) =>
+		startTime == startTime.Date ? startTime : startTime.Date.AddDays(1);
+
 	//function to get the average of averages of each user of a given time period and a given exposure type
+	// A Norwegian day can span two UTC days, so a day's noise and dust are the average of its hours, the same as the
+	// group page's hourly trend. Longer periods average their UTC days. Vibration is each UTC day's total either way.
 	public async Task<double?> GetWholeAverage(
 		DateTime startTime,
 		DateTime endTime,
 		Guid? sampleId,
 		ExposureType exposureType,
-		string? field
+		string? field,
+		bool isDay
 	)
 	{
 		switch (exposureType)
 		{
 			case ExposureType.Dust:
 				var dustValue = GetCorrectDustValue(field);
-				return _context
-					.DustAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g => g.AsQueryable().Average(dustValue))
-					.Average();
+				var dustAverages = _context.DustAverages.Where(d =>
+					d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+				);
+				return isDay
+					? dustAverages.Average(dustValue)
+					: dustAverages
+						.GroupBy(d => d.Time.Date)
+						.Select(g => g.AsQueryable().Average(dustValue))
+						.Average();
 			case ExposureType.Noise:
+				if (isDay)
+				{
+					return _context
+						.NoiseAverages.Where(d =>
+							d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+						)
+						.Average(d => (double?)d.AverageLaeq);
+				}
 				return _context
 					.NoiseAverages.Where(d =>
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
@@ -103,9 +124,10 @@ public class AggregateExposureDataService(
 			case ExposureType.Vibration:
 				//For vibration, we have to take the last average hour
 				// Nullable, so a group without data in the period gets `null` instead of failing on the SQL `NULL`
+				var vibrationStartTime = GetVibrationStartTime(startTime);
 				return _context
 					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+						d.Sample.Id == sampleId && vibrationStartTime <= d.Time && d.Time < endTime
 					)
 					.GroupBy(d => d.Time.Date)
 					.Select(g =>
@@ -211,9 +233,10 @@ public class AggregateExposureDataService(
 
 			case ExposureType.Vibration:
 				unit = "points";
+				var vibrationStartTime = GetVibrationStartTime(startTime);
 				var hourlyVibrationAggregates = await _context
 					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+						d.Sample.Id == sampleId && vibrationStartTime <= d.Time && d.Time < endTime
 					)
 					.ToListAsync();
 
@@ -292,7 +315,8 @@ public class AggregateExposureDataService(
 	public async Task<IEnumerable<SampleDto>> GetOverviewAggregateDataAsync(
 		DateTime startTime,
 		DateTime endTime,
-		string? dustField
+		string? dustField,
+		bool isDay
 	)
 	{
 		// PM1 TWA unless another fraction is asked for. Checked before the loop, so an unsupported field is rejected even
@@ -311,21 +335,24 @@ public class AggregateExposureDataService(
 				endTime,
 				s.Id,
 				ExposureType.Dust,
-				field
+				field,
+				isDay
 			);
 			var averageNoiseValues = await GetWholeAverage(
 				startTime,
 				endTime,
 				s.Id,
 				ExposureType.Noise,
-				null
+				null,
+				isDay
 			);
 			var averageVibrationValues = await GetWholeAverage(
 				startTime,
 				endTime,
 				s.Id,
 				ExposureType.Vibration,
-				null
+				null,
+				isDay
 			);
 			overviewList.Add(
 				new SampleDto

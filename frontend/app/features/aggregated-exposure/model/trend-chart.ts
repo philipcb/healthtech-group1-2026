@@ -1,7 +1,7 @@
 import { formatGroupNumber } from "@/features/aggregated-exposure/model/groups.ts";
 import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
-import type { Exposure, ExposureUnit } from "@/lib/exposures.ts";
+import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
 import { TZDate } from "@date-fns/tz";
 import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay } from "date-fns";
@@ -19,6 +19,11 @@ export function getComparisonChartMarginRight(isMobile: boolean) {
 // The backend sends the start of each UTC day, which is the same day in the app's time zone
 export function toTrendDay(time: Date) {
 	return startOfDay(time, { in: TIMEZONE });
+}
+
+/** A point's place on a chart's time axis: its hour when the chart shows one day, otherwise its day */
+export function toTrendTime(time: Date, day: Date | undefined) {
+	return day === undefined ? toTrendDay(time) : time;
 }
 
 const HOURS_BETWEEN_TICKS = 3;
@@ -44,15 +49,6 @@ function isOnUtcDate(point: TrendPointDto, day: Date) {
 	const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
 	// A `TZDate`'s `toISOString` is in its own time zone, so the time is read as a plain `Date`, which is in UTC
 	return new Date(point.time.getTime()).toISOString().startsWith(date);
-}
-
-/**
- * One Norwegian day's hourly points. Vibration's first hours, before 01:00 in winter and 02:00 in summer, are the day
- * before's total, which the aggregate job keeps until midnight UTC, so they're left out. Noise and dust keep them, since
- * they're the night's measurements.
- */
-export function getDayPoints(points: Array<TrendPointDto>, exposure: Exposure, day: Date) {
-	return exposure === "vibration" ? points.filter((point) => isOnUtcDate(point, day)) : points;
 }
 
 /** The points with the day's shares, which every hour on the day's UTC date repeats. Any points if none are. */

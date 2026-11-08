@@ -12,8 +12,9 @@ import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dash
 import {
 	getPeriodLabel,
 	getPeriodState,
+	getSelectedDay,
 	toPeriodFilenamePart,
-	toPeriodParams,
+	toTrendPeriodParams,
 } from "@/features/aggregated-exposure/model/period.ts";
 import { MapPin, RotateCw } from "lucide-react";
 import type { ComponentProps } from "react";
@@ -74,7 +75,8 @@ export function ComparePage() {
 							onDustFieldChange: setDustField,
 							unit: comparison.units[exposure],
 							entries: comparison.entries,
-							periodParams: toPeriodParams(periodSelection),
+							periodParams: toTrendPeriodParams(periodSelection),
+							day: periodSelection.period === "day" ? getSelectedDay(periodSelection) : undefined,
 							periodLabel: getPeriodLabel(periodSelection, t),
 							periodFilenamePart: toPeriodFilenamePart(periodSelection),
 						}

@@ -57,7 +57,8 @@ public class AggregateExposureAuthorizationTests : IClassFixture<WebApplicationF
 				s.GetOverviewAggregateDataAsync(
 					It.IsAny<DateTime>(),
 					It.IsAny<DateTime>(),
-					It.IsAny<string?>()
+					It.IsAny<string?>(),
+					It.IsAny<bool>()
 				)
 			)
 			.ReturnsAsync(new List<SampleDto>());

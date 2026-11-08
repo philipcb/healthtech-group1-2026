@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card.tsx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
+	type AggregatedExposurePeriod,
 	aggregatedExposurePeriods,
-	type GroupPeriod,
 	getPeriodLabel,
 	getSelectableYears,
 	type PeriodSelection,
@@ -24,27 +24,17 @@ const PERIOD_ICONS = {
 	day: DayViewIcon,
 	month: MonthViewIcon,
 	year: Rows3Icon,
-} as const satisfies Record<GroupPeriod, LucideIcon>;
-
-type PeriodPickerProps<Period extends GroupPeriod> = {
-	selection: PeriodSelection<Period>;
-	/** The periods the page has. Only the group page has the day period. */
-	periods?: ReadonlyArray<Period>;
-};
+} as const satisfies Record<AggregatedExposurePeriod, LucideIcon>;
 
 /**
  * A page's content with the period picker in a column on the right, as wide as on the operator's pages. On smaller
  * screens the picker is a button above the content.
  */
-export function PeriodPickerLayout<Period extends GroupPeriod>({
-	selection,
-	periods,
-	children,
-}: PeriodPickerProps<Period> & { children: ReactNode }) {
+export function PeriodPickerLayout({ selection, children }: { selection: PeriodSelection; children: ReactNode }) {
 	return (
 		<div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_calc(var(--spacing)*73)] lg:items-start lg:gap-6">
 			<aside className="flex flex-col gap-4 lg:col-start-2 lg:row-start-1">
-				<PeriodPicker selection={selection} periods={periods} />
+				<PeriodPicker selection={selection} />
 			</aside>
 			<div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1">{children}</div>
 		</div>
@@ -56,11 +46,7 @@ export function PeriodPickerLayout<Period extends GroupPeriod>({
  * and view picker (`DateAndViewPicker`). Days, months and years before the selectable ones or after today can't be
  * picked.
  */
-export function PeriodPicker<Period extends GroupPeriod>({
-	selection,
-	// The pages without `periods` are those whose selection only has these
-	periods = aggregatedExposurePeriods as ReadonlyArray<GroupPeriod> as ReadonlyArray<Period>,
-}: PeriodPickerProps<Period>) {
+export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 	const { t } = useTranslation();
 	const { period, setPeriod, day, setDay, month, setMonth, year, setYear } = selection;
 	const today = getToday();
@@ -110,12 +96,12 @@ export function PeriodPicker<Period extends GroupPeriod>({
 					onValueChange={(value: string) => {
 						// Value is an empty string when clicking the already selected item, so we need this check to avoid
 						// deselecting.
-						const selectedPeriod = periods.find((candidate) => candidate === value);
+						const selectedPeriod = aggregatedExposurePeriods.find((candidate) => candidate === value);
 						if (selectedPeriod) setPeriod(selectedPeriod);
 					}}
 				>
-					{periods.map((value) => {
-						const Icon: LucideIcon = PERIOD_ICONS[value];
+					{aggregatedExposurePeriods.map((value) => {
+						const Icon = PERIOD_ICONS[value];
 						const label = t(($) => $.aggregatedExposure.period[value]);
 
 						return (
@@ -228,7 +214,7 @@ export function PeriodPicker<Period extends GroupPeriod>({
 }
 
 /** The selectable years in place of the calendar, with the calendar's summary of the selection under them */
-function YearPicker({ selection }: { selection: Pick<PeriodSelection<GroupPeriod>, "year" | "setYear"> }) {
+function YearPicker({ selection }: { selection: Pick<PeriodSelection, "year" | "setYear"> }) {
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const isEn = i18n.language === "en";

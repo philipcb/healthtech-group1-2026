@@ -5,7 +5,7 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
 import { TrendTooltip } from "@/features/aggregated-exposure/components/trend-tooltip.tsx";
 import { useTrendAxes } from "@/features/aggregated-exposure/hooks/use-trend-axes.tsx";
 import { formatGroupValue } from "@/features/aggregated-exposure/model/groups.ts";
-import { getTrendYDomain, toTrendDay } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { getTrendYDomain, toTrendTime } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
@@ -37,8 +37,7 @@ export function GroupTrendChart({ points, unit, label, threshold, day }: GroupTr
 	const gradientId = useId();
 	const chartConfig = { value: { label, color: NEUTRAL_COLOR } };
 
-	// A day's points keep their hour, the other periods' points are days
-	const days = points.map((point) => (day === undefined ? toTrendDay(point.time) : point.time));
+	const days = points.map((point) => toTrendTime(point.time, day));
 	const values = points.flatMap((point) => (point.value === null ? [] : [point.value]));
 	const [yMin, yMax] = getTrendYDomain(values, threshold);
 	const { xAxisProps, yAxisProps, formatDay } = useTrendAxes({

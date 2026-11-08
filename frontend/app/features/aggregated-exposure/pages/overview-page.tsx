@@ -126,7 +126,13 @@ function GroupResults({ params, level, yard, hall, filter, dustField, showsYard,
 	) : filter !== "all" && isExposureUnavailable(filter) ? (
 		<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[filter])} />
 	) : groups.every((group) => hasNoValues(group.averages, filter)) ? (
-		<EmptyState title={t(($) => $.aggregatedExposure.overview.noData)} />
+		<EmptyState
+			title={
+				params.period === "day"
+					? t(($) => $.aggregatedExposure.overview.noDayData)
+					: t(($) => $.aggregatedExposure.overview.noData)
+			}
+		/>
 	) : (
 		<GroupTable
 			groups={groups}

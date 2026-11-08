@@ -77,7 +77,8 @@ export function ChartDownload<Row>({
 									}
 								}}
 								style={{ right: plotMarginRight + BUTTON_INSET }}
-								className="absolute top-5 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground"
+								// Phones show the chart's figure above the plot, so the button sits beside the figure instead of over the caption
+								className="absolute top-0 z-10 bg-background/80 text-muted-foreground backdrop-blur-sm hover:text-foreground lg:top-5"
 							>
 								<Download aria-hidden="true" className="size-6" />
 							</Button>

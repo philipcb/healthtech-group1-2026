@@ -11,9 +11,9 @@ const MAX_DAYS_WITH_DAY_TICKS = 62;
 // The room the comparison chart keeps right of its plot, for the groups' names at the end of their lines
 const END_LABEL_WIDTH = 160;
 
-/** The comparison chart's right margin. Phones have no room for the names, so they're listed under the chart instead. */
+/** The comparison chart's right margin. Phones have no room for the names, so they're listed above the chart, with the values, instead. */
 export function getComparisonChartMarginRight(isMobile: boolean) {
-	return isMobile ? 12 : END_LABEL_WIDTH;
+	return isMobile ? 0 : END_LABEL_WIDTH;
 }
 
 // The backend sends each day as its midnight in Oslo, which is the start of the day in the app's time zone
@@ -32,13 +32,13 @@ const HOURS_BETWEEN_TICKS = 3;
  * Every few hours of one day in Norwegian time, from midnight to the next midnight. Made from the day's local hours, so
  * the ticks stay on whole local hours on the days daylight saving time starts or ends, which are 23 and 25 hours long.
  */
-export function getHourTicks(day: Date) {
-	return Array.from({ length: 24 / HOURS_BETWEEN_TICKS + 1 }, (_, index) =>
+export function getHourTicks(day: Date, hoursBetweenTicks = HOURS_BETWEEN_TICKS) {
+	return Array.from({ length: 24 / hoursBetweenTicks + 1 }, (_, index) =>
 		new TZDate(
 			day.getFullYear(),
 			day.getMonth(),
 			day.getDate(),
-			index * HOURS_BETWEEN_TICKS,
+			index * hoursBetweenTicks,
 			TIMEZONE_NAME,
 		).getTime(),
 	);

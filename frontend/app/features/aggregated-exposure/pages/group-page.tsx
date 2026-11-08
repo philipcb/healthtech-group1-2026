@@ -263,7 +263,7 @@ function GroupDetails({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Card className={cn("relative w-full gap-3", MOBILE_BREAKOUT_CARD_CLASSNAME)}>
+			<Card className={cn("relative w-full gap-3 max-lg:px-5", MOBILE_BREAKOUT_CARD_CLASSNAME)}>
 				<div className="space-y-1">
 					<h2 className="font-semibold">{t(($) => $.aggregatedExposure.group.trendTitle)}</h2>
 					<p className="text-muted-foreground text-xs">
@@ -287,6 +287,8 @@ function GroupDetails({
 						sheetName={exposureName}
 						columns={downloadColumns}
 						rows={points}
+						// Out to the screen's edges on phones, past the card's padding
+						className="max-lg:-mx-5"
 					>
 						<GroupTrendChart
 							points={points}

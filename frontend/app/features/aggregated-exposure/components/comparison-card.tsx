@@ -40,7 +40,8 @@ import { Info } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-const CHART_HEIGHT_CLASSNAME = "h-64 lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)]";
+// Phones: about three quarters of the screen's width, like the other charts there
+const CHART_HEIGHT_CLASSNAME = "h-[75vw] max-h-[60dvh] lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)] lg:max-h-none";
 
 type ComparisonCardProps = {
 	exposure: Exposure;
@@ -153,7 +154,7 @@ export function ComparisonCard({
 					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
 				</div>
 			) : (
-				<div className="grid gap-x-6 gap-y-4 p-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] 2xl:items-start">
+				<div className="grid gap-x-6 gap-y-4 p-4 max-lg:px-5 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] 2xl:items-start">
 					<div className="flex min-w-0 flex-col gap-3">
 						{isPending ? (
 							<Skeleton className={cn("w-full", CHART_HEIGHT_CLASSNAME)} />
@@ -179,6 +180,8 @@ export function ComparisonCard({
 									columns={downloadColumns}
 									rows={toComparisonDownloadRows(series, day)}
 									plotMarginRight={getComparisonChartMarginRight(isMobile)}
+									// Out to the screen's edges on phones, past the card's padding
+									className="max-lg:-mx-5"
 								>
 									<ComparisonTrendChart
 										series={series}

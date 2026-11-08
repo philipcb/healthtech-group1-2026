@@ -85,7 +85,7 @@ export function ExposureGraphEmptyState({ date, locale }: { date: Date; locale: 
 	const { t } = useTranslation();
 
 	return (
-		<Card className="flex min-h-80 w-full items-center justify-center gap-1 text-center">
+		<Card className="flex w-full items-center justify-center gap-1 py-6 text-center">
 			<CardTitle className="font-medium text-muted-foreground text-sm">
 				{date.toLocaleDateString(locale, {
 					day: "numeric",

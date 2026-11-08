@@ -28,7 +28,6 @@ import {
 	getMetricLabel,
 	getOccupationLabel,
 	getShareLabels,
-	getThresholdNumberFormat,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import {
@@ -218,34 +217,11 @@ function GroupDetails({
 	const metricLabel = getMetricLabel(exposure, dustField, t);
 	const threshold = getGroupThreshold(exposure, dustField);
 	const isColored = points.some((point) => point.value !== null);
-	// Like the overview's info dialog, so the thresholds keep their decimals, like 7.5 µg/m³
-	const numberFormat = getThresholdNumberFormat(i18n.language);
-	const formatThreshold = (value: number) => `${numberFormat.format(value)} ${getGroupUnitLabel(trend.unit, t)}`;
-	// The key figures are shares of each worker's hours with measurements for every exposure and dust fraction. Each
-	// exposure's caption says what counts as over, which for vibration is the day's total points so far.
-	const kpiText = {
-		...getShareLabels(t),
-		actionCaption: t(($) => $.aggregatedExposure.group.timeOverActionCaption[exposure], {
-			action: formatThreshold(threshold.warning),
-		}),
-		limitCaption: t(($) => $.aggregatedExposure.group.timeOverLimitCaption[exposure], {
-			limit: formatThreshold(threshold.danger),
-		}),
-	};
-	// The backend's share for the period, with the measured hours it's taken over below it
-	const shareValue = (share?: number) => {
-		const hourBasis = formatHourBasis(share, trend.hourCount, t, i18n.language);
-		return (
-			<>
-				{formatShare(share)}
-				{hourBasis && (
-					<span className="mt-1 block text-pretty font-normal text-muted-foreground text-xs tabular-nums">
-						{hourBasis}
-					</span>
-				)}
-			</>
-		);
-	};
+	// The key figures are shares of each worker's hours with measurements. The info dialog shows how they're calculated.
+	const shareLabels = getShareLabels(t);
+	// What each key figure is, in the same style on every card, so it reads as the figure's description
+	const describe = (text: string | undefined) =>
+		text && <span className="text-pretty font-medium tabular-nums">{text}</span>;
 	const exposureName = getDownloadExposureName(exposure, dustField, t);
 	const downloadFilename = toDownloadFilename([
 		group.site,
@@ -271,12 +247,12 @@ function GroupDetails({
 			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
 		},
 		{
-			header: `${kpiText.action} (%)`,
+			header: `${shareLabels.action} (%)`,
 			value: (point) => toPercent(point.averageTimeOverAction),
 			fractionDigits: 1,
 		},
 		{
-			header: `${kpiText.limit} (%)`,
+			header: `${shareLabels.limit} (%)`,
 			value: (point) => toPercent(point.averageTimeOverLimit),
 			fractionDigits: 1,
 		},
@@ -331,7 +307,7 @@ function GroupDetails({
 								? t(($) => $.aggregatedExposure.group.noPeriodAverage)
 								: formatGroupValue(dayTotal, trend.unit, t)
 						}
-						caption={t(($) => $.aggregatedExposure.group.vibrationDayTotalCaption)}
+						caption={describe(metricLabel)}
 					/>
 				) : (
 					<StatisticCardLayout
@@ -346,22 +322,18 @@ function GroupDetails({
 								? t(($) => $.aggregatedExposure.group.noPeriodAverage)
 								: formatGroupValue(trend.average, trend.unit, t)
 						}
-						caption={
-							exposure === "vibration"
-								? t(($) => $.aggregatedExposure.group.vibrationPeriodAverage)
-								: metricLabel
-						}
+						caption={describe(metricLabel)}
 					/>
 				)}
 				<StatisticCardLayout
-					label={kpiText.action}
-					value={shareValue(trend.rateOfHourAboveAction)}
-					caption={kpiText.actionCaption}
+					label={shareLabels.action}
+					value={formatShare(trend.rateOfHourAboveAction)}
+					caption={describe(formatHourBasis(trend.rateOfHourAboveAction, trend.hourCount, t, i18n.language))}
 				/>
 				<StatisticCardLayout
-					label={kpiText.limit}
-					value={shareValue(trend.rateOfHourAboveLimit)}
-					caption={kpiText.limitCaption}
+					label={shareLabels.limit}
+					value={formatShare(trend.rateOfHourAboveLimit)}
+					caption={describe(formatHourBasis(trend.rateOfHourAboveLimit, trend.hourCount, t, i18n.language))}
 				/>
 			</div>
 		</div>

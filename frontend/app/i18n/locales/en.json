@@ -429,29 +429,17 @@
       "hourBasis": "Average per worker and day · {{hours}} hours measured",
       "hourBasis_one": "Average per worker and day · {{hours}} hour measured",
       "hourBasis_other": "Average per worker and day · {{hours}} hours measured",
-      "timeOverActionCaption": {
-        "noise": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
-        "dust": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
-        "vibration": "Points add up over the day. Ola reaches {{action}} at 09:00 and has 8 hours of measurements from 07:00: 6 of 8 hours = 75 %. The day: the average of the workers. The period: the average of the days."
-      },
-      "timeOverLimitCaption": {
-        "noise": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
-        "dust": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
-        "vibration": "Points add up over the day. Ola reaches {{limit}} at 11:00 and has 8 hours of measurements from 07:00: 4 of 8 hours = 50 %. The day: the average of the workers. The period: the average of the days."
-      },
-      "vibrationPeriodAverage": "Ola has 120 points and Kari 80 points one day: (120 + 80) / 2 = 100. The figure is the average of the days.",
       "vibrationDayTotal": "Points for the day",
-      "vibrationDayTotalCaption": "Ola 120 and Kari 80 points: (120 + 80) / 2 = 100.",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
       "hourTooltip": "{{time}}, {{day}}",
       "granularity": {
         "day": "One point per day: the average of the day's hours",
-        "hour": "One point per hour (Norwegian time). At 09:00: Ola 80 and Kari 84 give 82."
+        "hour": "One point per hour (Norwegian time)"
       },
       "vibrationGranularity": {
         "day": "One point per day: the average of the workers' daily totals",
-        "hour": "One point per hour (Norwegian time): the points so far that day, averaged over the workers. After Ola stops, the total stays the same for the rest of the day."
+        "hour": "One point per hour (Norwegian time)"
       },
       "suppressed": "No value",
       "unavailable": {

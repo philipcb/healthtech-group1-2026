@@ -429,29 +429,17 @@
       "hourBasis": "Snitt per arbeider og dag · {{hours}} timer målt",
       "hourBasis_one": "Snitt per arbeider og dag · {{hours}} time målt",
       "hourBasis_other": "Snitt per arbeider og dag · {{hours}} timer målt",
-      "timeOverActionCaption": {
-        "noise": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
-        "dust": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
-        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{action}} kl. 09 og har 8 timer med målinger fra kl. 07: 6 av 8 timer = 75 %. Dagen: snittet av arbeiderne. Perioden: snittet av dagene."
-      },
-      "timeOverLimitCaption": {
-        "noise": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
-        "dust": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
-        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{limit}} kl. 11 og har 8 timer med målinger fra kl. 07: 4 av 8 timer = 50 %. Dagen: snittet av arbeiderne. Perioden: snittet av dagene."
-      },
-      "vibrationPeriodAverage": "Ola har 120 poeng og Kari 80 poeng en dag: (120 + 80) / 2 = 100. Tallet er snittet av dagene.",
       "vibrationDayTotal": "Poeng for dagen",
-      "vibrationDayTotalCaption": "Ola 120 og Kari 80 poeng: (120 + 80) / 2 = 100.",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
       "hourTooltip": "kl. {{time}}, {{day}}",
       "granularity": {
         "day": "Ett punkt per døgn: snittet av dagens timer",
-        "hour": "Ett punkt per time (norsk tid). Kl. 09: Ola 80 og Kari 84 gir 82."
+        "hour": "Ett punkt per time (norsk tid)"
       },
       "vibrationGranularity": {
         "day": "Ett punkt per døgn: snittet av arbeidernes dagssummer",
-        "hour": "Ett punkt per time (norsk tid): poengene så langt i døgnet, snitt av arbeiderne. Etter at Ola slutter, står summen fast resten av døgnet."
+        "hour": "Ett punkt per time (norsk tid)"
       },
       "suppressed": "Ingen verdi",
       "unavailable": {

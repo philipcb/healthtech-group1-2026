@@ -300,7 +300,7 @@ public class AggregateExposureDataService(
 			RateOfHourAboveAction = shiftAverages.Average(d => d.AverageTimeOverAction),
 			RateOfHourAboveLimit = shiftAverages.Average(d => d.AverageTimeOverLimit),
 			RateOfDayAboveAction = shiftAverages.Average(d => d.DailyRateOfWorkerOverAction),
-			RateOfDayAboveLimit = shiftAverages.Average(d => d.DailyRateOfWorkerOverLimit)
+			RateOfDayAboveLimit = shiftAverages.Average(d => d.DailyRateOfWorkerOverLimit),
 		};
 	}
 

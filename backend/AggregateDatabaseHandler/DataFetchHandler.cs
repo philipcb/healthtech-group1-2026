@@ -152,7 +152,7 @@ public class DataFetchHandler(AppDbContext _context)
 					}
 					else if (previous != null)
 					{
-						extraCountedHour ++;
+						extraCountedHour++;
 						userData.Add(
 							new ExposureDataDto
 							{
@@ -238,7 +238,7 @@ public class DataFetchHandler(AppDbContext _context)
 				Time = g.Key,
 				WarningRate = g.Average(d => d.WarningRate),
 				DangerRate = g.Average(d => d.DangerRate),
-				UnitCount = g.Sum(d => d.UnitCount)
+				UnitCount = g.Sum(d => d.UnitCount),
 			});
 
 	// Vibration points add up over the day, so a worker's value holds until their next hour with data. Each day starts
@@ -289,7 +289,7 @@ public class DataFetchHandler(AppDbContext _context)
 				Time = g.Key,
 				WarningRate = (double)g.Count(d => d.WarningRate > 0) / g.Count(),
 				DangerRate = (double)g.Count(d => d.DangerRate > 0) / g.Count(),
-				UnitCount = g.Count()
+				UnitCount = g.Count(),
 			});
 
 	public static List<DailyWorkerRate> GetDailyWorkerRates(
@@ -426,6 +426,7 @@ public class TimedData
 public class AboveThresholdRate
 {
 	public DateTime Time { get; set; }
+
 	//Number of hour if rate is hour, number of days if rate is day
 	public int UnitCount { get; set; }
 	public double WarningRate { get; set; }

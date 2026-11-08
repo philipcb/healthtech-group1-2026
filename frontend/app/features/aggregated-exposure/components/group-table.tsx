@@ -138,9 +138,9 @@ function GroupList({
 	const dustFieldLabel = t(($) => $.aggregatedExposure.group.dustFieldLabel);
 
 	return (
-		<div className={cn("overflow-hidden rounded-xl border bg-card", className)}>
+		<div className={cn("flex flex-col gap-3", className)}>
 			{exposures.includes("dust") && !isExposureUnavailable("dust") && (
-				<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b bg-secondary px-4 py-2">
+				<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
 					{/* The tabs are named by their own label, so this one isn't read twice */}
 					<span aria-hidden="true" className="flex items-center gap-1.5 font-medium text-sm">
 						<ExposureIcon type="dust" iconOnly={true} iconClassName="size-4" />
@@ -154,13 +154,14 @@ function GroupList({
 					/>
 				</div>
 			)}
-			<ul aria-labelledby={labelledBy} className="divide-y text-sm">
+			{/* Each group in a card of its own, so it's clear where one group's figures end and the next begin */}
+			<ul aria-labelledby={labelledBy} className="flex flex-col gap-3 text-sm">
 				{groups.map((group) => (
-					<li key={group.groupId}>
-						<div className="px-4 pt-3 pb-1">
-							<GroupName group={group} showsYard={showsYard} />
+					<li key={group.groupId} className="overflow-hidden rounded-xl border bg-card">
+						<div className="border-b px-4 py-3">
+							<GroupName group={group} showsYard={showsYard} isProminent={true} />
 						</div>
-						<ul>
+						<ul className="divide-y">
 							{exposures.map((exposure) => (
 								<li key={exposure} className={getLevelTint(group, exposure, dustField)}>
 									<ExposureLink
@@ -180,13 +181,24 @@ function GroupList({
 	);
 }
 
-function GroupName({ group, showsYard }: { group: ComparableGroup; showsYard: boolean }) {
+function GroupName({
+	group,
+	showsYard,
+	isProminent = false,
+}: {
+	group: ComparableGroup;
+	showsYard: boolean;
+	/** The heading of a group's card on phones */
+	isProminent?: boolean;
+}) {
 	const { t } = useTranslation();
 	const context = getRowContext(group, showsYard);
 
 	return (
 		<>
-			<span className="block font-medium">{getRowName(group, t)}</span>
+			<span className={cn("block font-medium", isProminent && "font-semibold text-base")}>
+				{getRowName(group, t)}
+			</span>
 			{context && <span className="block text-muted-foreground text-xs">{context}</span>}
 		</>
 	);

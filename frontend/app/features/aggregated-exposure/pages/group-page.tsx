@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
 import { FiguresInfoDialog } from "@/features/aggregated-exposure/components/figures-info-dialog.tsx";
-import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
 import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
 import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
@@ -54,8 +53,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const { t } = useTranslation();
 	const scope = useDashboardScope();
 	const { search } = useLocation();
-	const { exposure, setExposure, dustField, setDustField, resetGroupFilters, periodSelection } =
-		useAggregatedExposureSearchParams();
+	const { exposure, setExposure, dustField, setDustField, periodSelection } = useAggregatedExposureSearchParams();
 	const groupsQuery = useGetAggregateGroups(toPeriodParams(periodSelection), {
 		query: { select: toComparableGroups },
 	});
@@ -75,10 +73,12 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	const dustFieldLabel = t(($) => $.exposures.dustFields[dustField]);
 	const noDataText = getNoDataText(exposure, dustFieldLabel, isDay, t);
 
+	// Always on the page, also on phones, like the exposure on the overview and the compare page
 	const exposurePickers = (
-		<>
+		<div className="flex flex-col gap-3">
 			<ExposureToggle
 				label={t(($) => $.aggregatedExposure.exposureLabel)}
+				hidesLabel={true}
 				value={exposure}
 				onValueChange={setExposure}
 			/>
@@ -89,7 +89,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 					ariaLabel={t(($) => $.aggregatedExposure.group.dustFieldLabel)}
 				/>
 			)}
-		</>
+		</div>
 	);
 
 	return (
@@ -131,10 +131,7 @@ export function GroupPage({ groupId }: { groupId: string }) {
 			</div>
 
 			<PeriodPickerLayout selection={periodSelection}>
-				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
-					{exposurePickers}
-				</FilterDialog>
-				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
+				{exposurePickers}
 
 				<PeriodNotice periodSelection={periodSelection} />
 

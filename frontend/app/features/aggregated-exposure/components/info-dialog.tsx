@@ -27,9 +27,10 @@ export function InfoDialog({
 	return (
 		<Dialog>
 			<DialogTrigger asChild={true}>
-				<Button variant="outline" size="sm">
+				{/* Only the icon on phones, so the page's title keeps the width */}
+				<Button variant="outline" size="sm" className="shrink-0 max-sm:size-9 max-sm:px-0">
 					<InfoIcon aria-hidden="true" />
-					{triggerLabel}
+					<span className="max-sm:sr-only">{triggerLabel}</span>
 				</Button>
 			</DialogTrigger>
 

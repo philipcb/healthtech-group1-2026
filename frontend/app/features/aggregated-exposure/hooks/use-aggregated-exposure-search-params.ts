@@ -97,10 +97,8 @@ export function useAggregatedExposureSearchParams() {
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,
 		setLevel: (level: CompareLevel) => void setParams({ level }),
-		// The period has its own picker, so it isn't one of the filters this resets
-		resetOverviewFilters: () => void setParams({ exposureFilter: null, level: null, yard: null, hall: null }),
-		resetGroupFilters: () =>
-			void setParams({ period: null, day: null, month: null, year: null, exposure: null, dustField: null }),
+		// Only what's in the filter dialog. The period and the exposure are always on the page, so they aren't reset with it.
+		resetOverviewFilters: () => void setParams({ level: null, yard: null, hall: null }),
 		periodSelection,
 	};
 }

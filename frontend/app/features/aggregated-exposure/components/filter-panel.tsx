@@ -52,37 +52,84 @@ export function FilterPanel({
 }: FilterPanelProps) {
 	const { t } = useTranslation();
 	const { YardFilter } = useDashboardScope();
-	const dialogLevelLabelId = useId();
+
+	const filterDialog = (
+		<FilterPanelDialog
+			onReset={onReset}
+			activeCount={activeDialogFilterCount}
+			yards={yards}
+			selectedYard={selectedYard}
+			onYardChange={onYardChange}
+			levelLabel={levelLabel}
+			level={level}
+			onLevelChange={onLevelChange}
+			dialogFilters={dialogFilters}
+			className="shrink-0 sm:hidden"
+		/>
+	);
+	// Phones: the dialog with the other filters opens from beside the exposure, so the two share one row
+	const withFilterDialog = (control: ReactNode) => (
+		<div className="flex items-center gap-2">
+			<div className="min-w-0 grow">{control}</div>
+			{filterDialog}
+		</div>
+	);
 
 	return (
-		<>
-			<FilterDialog onReset={onReset} activeCount={activeDialogFilterCount} className="sm:hidden">
-				{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
-				{dialogFilters}
-				<div className="flex flex-col gap-1.5">
-					<p id={dialogLevelLabelId} className="font-medium text-sm">
-						{levelLabel}
-					</p>
-					<LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={dialogLevelLabelId} />
-				</div>
-			</FilterDialog>
-
-			<section
-				aria-label={label}
-				className="grid gap-x-4 gap-y-3 rounded-xl border bg-card p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start"
-			>
-				<FilterRow label={t(($) => $.aggregatedExposure.exposureLabel)}>{exposure}</FilterRow>
-				{YardFilter && (
-					<FilterRow label={t(($) => $.aggregatedExposure.filters.yard)} hiddenOnMobile={true}>
-						<YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} hidesLabel={true} />
-					</FilterRow>
-				)}
-				<FilterRow label={levelLabel} hiddenOnMobile={true}>
-					{(labelId) => <LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={labelId} />}
+		// Phones: no box around the filters, so they read as the page's controls rather than one more card
+		<section
+			aria-label={label}
+			className="grid gap-x-4 gap-y-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-y-3 sm:rounded-xl sm:border sm:bg-card sm:p-3"
+		>
+			{/* The exposure toggle names itself, and on phones its options say what it is */}
+			<FilterRow label={t(($) => $.aggregatedExposure.exposureLabel)} hiddenLabelOnMobile={true}>
+				{typeof exposure === "function"
+					? (labelId) => withFilterDialog(exposure(labelId))
+					: withFilterDialog(exposure)}
+			</FilterRow>
+			{YardFilter && (
+				<FilterRow label={t(($) => $.aggregatedExposure.filters.yard)} hiddenOnMobile={true}>
+					<YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} hidesLabel={true} />
 				</FilterRow>
-				{children}
-			</section>
-		</>
+			)}
+			<FilterRow label={levelLabel} hiddenOnMobile={true}>
+				{(labelId) => <LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={labelId} />}
+			</FilterRow>
+			{children}
+		</section>
+	);
+}
+
+/** The yard and level, which are in a dialog on phones */
+export function FilterPanelDialog({
+	onReset,
+	activeCount,
+	yards,
+	selectedYard,
+	onYardChange,
+	levelLabel,
+	level,
+	onLevelChange,
+	dialogFilters,
+	className,
+}: Pick<
+	FilterPanelProps,
+	"onReset" | "yards" | "selectedYard" | "onYardChange" | "levelLabel" | "level" | "onLevelChange" | "dialogFilters"
+> & { activeCount?: number; className?: string }) {
+	const { YardFilter } = useDashboardScope();
+	const levelLabelId = useId();
+
+	return (
+		<FilterDialog onReset={onReset} activeCount={activeCount} className={className}>
+			{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
+			{dialogFilters}
+			<div className="flex flex-col gap-1.5">
+				<p id={levelLabelId} className="font-medium text-sm">
+					{levelLabel}
+				</p>
+				<LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={levelLabelId} />
+			</div>
+		</FilterDialog>
 	);
 }
 
@@ -91,17 +138,32 @@ type FilterRowProps = {
 	/** Shown under the label on phones only */
 	hint?: string;
 	hiddenOnMobile?: boolean;
+	/** Only the control is shown on phones, for a control whose options already say what it is */
+	hiddenLabelOnMobile?: boolean;
 	children: LabelledControl;
 };
 
 /** One labeled row of a `FilterPanel` */
-export function FilterRow({ label, hint, hiddenOnMobile = false, children }: FilterRowProps) {
+export function FilterRow({
+	label,
+	hint,
+	hiddenOnMobile = false,
+	hiddenLabelOnMobile = false,
+	children,
+}: FilterRowProps) {
 	const labelId = useId();
 	const isLabelling = typeof children === "function";
 
 	return (
 		<>
-			<div className={cn("flex flex-col gap-1 sm:pt-2", hiddenOnMobile && "hidden sm:flex")}>
+			<div
+				className={cn(
+					"flex flex-col gap-1 sm:pt-2",
+					hiddenOnMobile && "hidden sm:flex",
+					// Out of the layout on phones, but it still names the control for screen readers
+					hiddenLabelOnMobile && "max-sm:sr-only",
+				)}
+			>
 				<p
 					id={isLabelling ? labelId : undefined}
 					aria-hidden={isLabelling ? undefined : true}

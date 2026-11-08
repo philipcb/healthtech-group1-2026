@@ -132,12 +132,18 @@ export function ComparisonCard({
 		<Card
 			variant="labeled"
 			aria-labelledby={headingId}
-			className={cn("relative w-full", MOBILE_BREAKOUT_CARD_CLASSNAME)}
+			// Phones: a hairline over the results, as the filters above have no box to end at
+			className={cn("relative w-full", MOBILE_BREAKOUT_CARD_CLASSNAME, "max-lg:border-t")}
 		>
-			<CardLabelHeader className="flex-wrap justify-between gap-x-3 gap-y-1.5 rounded-none">
-				<h2 id={headingId} className="font-medium text-sm">
+			{/* Phones: a plain heading over the chart, like a stock app's name over its price, instead of the grey strip */}
+			<CardLabelHeader className="flex-wrap justify-between gap-x-3 gap-y-1.5 rounded-none max-lg:bg-transparent max-lg:px-5 max-lg:pt-4 max-lg:pb-0">
+				<h2 id={headingId} className="font-medium text-sm max-lg:font-semibold max-lg:text-base">
 					{metricLabel}
-					<span className="font-normal text-muted-foreground">{` · ${unitLabel}`}</span>
+					{/* Phones: the unit on a line of its own, so a long name doesn't leave it hanging after a dot */}
+					<span className="font-normal text-muted-foreground max-lg:block max-lg:text-sm">
+						<span className="max-lg:hidden">{" · "}</span>
+						{unitLabel}
+					</span>
 				</h2>
 				{exposure === "dust" && !isUnavailable && (
 					<DustFieldTabs
@@ -248,7 +254,7 @@ export function ComparisonCard({
 			)}
 
 			{series.length > 0 && (
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-4 py-2 text-muted-foreground text-xs">
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-4 py-2 text-muted-foreground text-xs max-lg:px-5">
 					<ThresholdLegend
 						items={[
 							{ dangerLevel: "warning", color: "var(--warning)" },

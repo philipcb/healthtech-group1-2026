@@ -75,7 +75,8 @@ export function CompareGroupPicker({
 
 	return (
 		<div className="flex min-w-0 flex-col gap-1.5">
-			<div className="flex items-start gap-3">
+			{/* Phones: the groups as a list on top, then adding on the left and clearing on the right */}
+			<div className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:items-start">
 				<Popover
 					open={isOpen}
 					onOpenChange={(open) => {
@@ -174,7 +175,10 @@ export function CompareGroupPicker({
 						</div>
 					</PopoverContent>
 				</Popover>
-				<ul aria-labelledby={labelledBy} className="flex min-w-0 grow flex-wrap items-center gap-2">
+				<ul
+					aria-labelledby={labelledBy}
+					className="flex min-w-0 grow flex-wrap items-center gap-2 max-sm:order-first max-sm:basis-full max-sm:empty:hidden"
+				>
 					{entries.map(({ group, slot }, index) => {
 						const name = getComparableGroupName(group, t);
 						const context = getComparableGroupContext(group);
@@ -182,7 +186,7 @@ export function CompareGroupPicker({
 						return (
 							<li
 								key={group.groupId}
-								className="flex h-8 min-w-0 max-w-full items-center gap-2 rounded-full border bg-background pr-0.5 pl-3"
+								className="flex h-8 min-w-0 max-w-full items-center gap-2 rounded-full border bg-background pr-0.5 pl-3 max-sm:h-10 max-sm:w-full"
 							>
 								<SeriesKey slot={slot} width={16} />
 								<p className="min-w-0 grow truncate text-sm">
@@ -211,8 +215,9 @@ export function CompareGroupPicker({
 						);
 					})}
 				</ul>
-				<div className="flex shrink-0 items-center gap-2">
-					<span aria-live="polite" className="text-muted-foreground text-xs tabular-nums">
+				<div className="ml-auto flex shrink-0 items-center gap-2">
+					{/* Phones show the count on the button that opens the picker */}
+					<span aria-live="polite" className="text-muted-foreground text-xs tabular-nums max-sm:sr-only">
 						{t(($) => $.aggregatedExposure.compare.picker.count, { count: entries.length })}
 					</span>
 					<Button

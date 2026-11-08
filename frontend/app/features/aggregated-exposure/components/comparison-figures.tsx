@@ -116,29 +116,10 @@ export function ComparisonFigures({
 
 			<ul className="flex @xl:hidden flex-col">
 				{rows.map(({ entry, result }) => (
-					<li key={entry.group.groupId} className="flex flex-col gap-2 border-t py-3 first:border-t-0">
+					<li key={entry.group.groupId} className="flex flex-col gap-1 border-t pt-4 pb-2 first:border-t-0">
 						<GroupName entry={entry} result={result} exposure={exposure} />
 						{result.status === "ok" ? (
-							<dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-								<div className="col-span-full">
-									<dt className="text-muted-foreground text-xs">{averageLabel}</dt>
-									<dd>
-										<Average trend={result.trend} {...averageProps} />
-									</dd>
-								</div>
-								<div>
-									<dt className="text-muted-foreground text-xs">{shareLabels.action}</dt>
-									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="action" />
-									</dd>
-								</div>
-								<div>
-									<dt className="text-muted-foreground text-xs">{shareLabels.limit}</dt>
-									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="limit" />
-									</dd>
-								</div>
-							</dl>
+							<KeyFigures trend={result.trend} averageLabel={averageLabel} {...averageProps} />
 						) : (
 							<div className="text-muted-foreground text-sm">
 								<MissingFigures result={result} periodLabel={periodLabel} isDay={day !== undefined} />
@@ -183,19 +164,39 @@ function GroupName({
 	);
 }
 
-function Average({
-	trend,
-	exposure,
-	dustField,
-	unit,
-	day,
-}: {
+function Average({ trend, exposure, dustField, unit, day }: AverageProps) {
+	const { t } = useTranslation();
+	const figure = useAverageFigure({ trend, exposure, dustField, day });
+
+	if (figure === null) {
+		return <span>{t(($) => $.aggregatedExposure.group.noPeriodAverage)}</span>;
+	}
+
+	return (
+		<div className="flex max-w-48 flex-col gap-1.5">
+			<span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+				<span className="font-semibold text-base tabular-nums">
+					{formatGroupValue(figure.average, unit, t)}
+				</span>
+				<DangerLevelBadge dangerLevel={figure.level} />
+				<span className="text-muted-foreground text-xs">{figure.levelLabel}</span>
+			</span>
+			<ThresholdBar value={figure.average} threshold={figure.threshold} />
+			{figure.hiddenNote && <span className="text-muted-foreground text-xs">{figure.hiddenNote}</span>}
+		</div>
+	);
+}
+
+type AverageProps = {
 	trend: AggregatedTrendOkDto;
 	exposure: Exposure;
 	dustField: DustField;
 	unit: ExposureUnit;
 	day?: Date;
-}) {
+};
+
+/** The period's average with its status, or null when there is none */
+function useAverageFigure({ trend, exposure, dustField, day }: Omit<AverageProps, "unit">) {
 	const { t } = useTranslation();
 	const threshold = getGroupThreshold(exposure, dustField);
 	// A day's vibration points add up over the day, so its figure is the last hour, the day's total
@@ -204,31 +205,79 @@ function Average({
 	const hiddenDays = countHiddenDays(trend.points);
 
 	if (average === undefined) {
-		return <span>{t(($) => $.aggregatedExposure.group.noPeriodAverage)}</span>;
+		return null;
 	}
 
 	const level = getDangerLevel(average, threshold.warning, threshold.danger);
-	const levelLabel =
-		level === "safe"
-			? t(($) => $.aggregatedExposure.overview.belowActionValue)
-			: t(($) => $.dangerLevelStatus[level]);
+
+	return {
+		average,
+		threshold,
+		level,
+		levelLabel:
+			level === "safe"
+				? t(($) => $.aggregatedExposure.overview.belowActionValue)
+				: t(($) => $.dangerLevelStatus[level]),
+		hiddenNote:
+			hiddenDays === 0
+				? null
+				: day === undefined
+					? t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })
+					: t(($) => $.aggregatedExposure.compare.hiddenHours, { count: hiddenDays }),
+	};
+}
+
+/**
+ * A group's figures on phones, as a stock app lists key figures: the label and the value on one line, and what explains
+ * the value under them across the whole width
+ */
+function KeyFigures({ trend, averageLabel, ...averageProps }: AverageProps & { averageLabel: string }) {
+	const { t, i18n } = useTranslation();
+	const shareLabels = getShareLabels(t);
+	const figure = useAverageFigure({ trend, ...averageProps });
+	const getShareRow = (label: string, share: number | undefined) => ({
+		label,
+		value: formatShare(share),
+		detail: formatHourBasis(share, trend.hourCount, t, i18n.language),
+	});
+
+	const rows = [
+		{
+			label: averageLabel,
+			value:
+				figure === null ? (
+					t(($) => $.aggregatedExposure.group.noPeriodAverage)
+				) : (
+					<span className="inline-flex items-center gap-2">
+						{formatGroupValue(figure.average, averageProps.unit, t)}
+						<DangerLevelBadge dangerLevel={figure.level} />
+					</span>
+				),
+			detail: figure && (
+				<span className="flex flex-col gap-1.5">
+					{figure.levelLabel}
+					<ThresholdBar value={figure.average} threshold={figure.threshold} />
+					{figure.hiddenNote}
+				</span>
+			),
+		},
+		getShareRow(shareLabels.action, trend.rateOfHourAboveAction),
+		getShareRow(shareLabels.limit, trend.rateOfHourAboveLimit),
+	];
 
 	return (
-		<div className="flex max-w-48 flex-col gap-1.5">
-			<span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-				<span className="font-semibold text-base tabular-nums">{formatGroupValue(average, unit, t)}</span>
-				<DangerLevelBadge dangerLevel={level} />
-				<span className="text-muted-foreground text-xs">{levelLabel}</span>
-			</span>
-			<ThresholdBar value={average} threshold={threshold} />
-			{hiddenDays > 0 && (
-				<span className="text-muted-foreground text-xs">
-					{day === undefined
-						? t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })
-						: t(($) => $.aggregatedExposure.compare.hiddenHours, { count: hiddenDays })}
-				</span>
-			)}
-		</div>
+		<dl className="flex flex-col text-sm">
+			{rows.map(({ label, value, detail }) => (
+				<div
+					key={label}
+					className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 border-t py-3 first:border-t-0"
+				>
+					<dt className="text-muted-foreground">{label}</dt>
+					<dd className="font-semibold text-base tabular-nums">{value}</dd>
+					{detail && <dd className="col-span-2 text-muted-foreground text-xs">{detail}</dd>}
+				</div>
+			))}
+		</dl>
 	);
 }
 
@@ -241,7 +290,9 @@ function Share({ trend, kind }: { trend: AggregatedTrendOkDto; kind: "action" | 
 	return (
 		<>
 			{formatShare(share)}
-			{hourBasis && <span className="mt-0.5 block text-pretty text-muted-foreground text-xs">{hourBasis}</span>}
+			{hourBasis && (
+				<span className="mt-0.5 block text-pretty font-normal text-muted-foreground text-xs">{hourBasis}</span>
+			)}
 		</>
 	);
 }

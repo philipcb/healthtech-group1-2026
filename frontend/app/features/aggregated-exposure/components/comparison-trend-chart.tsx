@@ -1,10 +1,10 @@
-import { ChartScrubCursor, ChartScrubHeader, ChartScrubTracker } from "@/components/chart-scrub.tsx";
+import { ChartScrubCursor, ChartScrubHeader, ChartScrubTracker, ChartScrubValue } from "@/components/chart-scrub.tsx";
 import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.tsx";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart.tsx";
 import { SeriesKey, SeriesMarker } from "@/features/aggregated-exposure/components/series-key.tsx";
 import { TrendTooltip } from "@/features/aggregated-exposure/components/trend-tooltip.tsx";
 import { useTrendAxes } from "@/features/aggregated-exposure/hooks/use-trend-axes.tsx";
-import { formatGroupValue } from "@/features/aggregated-exposure/model/groups.ts";
+import { formatGroupNumber, formatGroupValue, getGroupUnitLabel } from "@/features/aggregated-exposure/model/groups.ts";
 import { getSeriesColor, type SeriesSlot } from "@/features/aggregated-exposure/model/series.ts";
 import {
 	fillTrendGaps,
@@ -22,6 +22,8 @@ import { CartesianGrid, ComposedChart, Line, ReferenceDot, usePlotArea, XAxis, Y
 
 const MAX_POINTS_WITH_EVERY_MARKER = 31;
 const SPARSE_MARKER_COUNT = 12;
+// A phone's narrow line only has room for a few, enough to tell the lines apart by shape
+const MOBILE_MARKER_COUNT = 4;
 const END_LABEL_LINE_HEIGHT = 14;
 const END_LABEL_GAP = 6;
 const END_LABEL_MAX_LINE_LENGTH = 22;
@@ -79,7 +81,6 @@ export function ComparisonTrendChart({ series, unit, threshold, className, day }
 		});
 	}
 
-	const markerStep = rows.length <= MAX_POINTS_WITH_EVERY_MARKER ? 1 : Math.ceil(rows.length / SPARSE_MARKER_COUNT);
 	const lastIndexBySlot = new Map(
 		series.map(({ slot }) => [slot, rows.findLastIndex((row) => typeof row[getDataKey(slot)] === "number")]),
 	);
@@ -94,6 +95,11 @@ export function ComparisonTrendChart({ series, unit, threshold, className, day }
 		yDomain: [yMin, yMax],
 		day,
 	});
+	const markerStep = isMobile
+		? Math.max(1, Math.ceil(rows.length / MOBILE_MARKER_COUNT))
+		: rows.length <= MAX_POINTS_WITH_EVERY_MARKER
+			? 1
+			: Math.ceil(rows.length / SPARSE_MARKER_COUNT);
 
 	// Phones list each group's value at the picked day, or the latest one with data, above the chart
 	const scrub = useChartScrub(isMobile);
@@ -105,17 +111,30 @@ export function ComparisonTrendChart({ series, unit, threshold, className, day }
 
 	return (
 		<>
-			{isMobile && shownRow && (
+			{isMobile && shownRow && series.length === 1 && (
+				// One group gets the same large figure as the other phone charts
+				<ChartScrubHeader caption={`${series[0].name} · ${formatDay(new Date(shownRow.timestamp))}`}>
+					{typeof shownRow[getDataKey(series[0].slot)] === "number" ? (
+						<ChartScrubValue
+							value={formatGroupNumber(Number(shownRow[getDataKey(series[0].slot)]), unit)}
+							unit={getGroupUnitLabel(unit, t)}
+						/>
+					) : (
+						<ChartScrubValue value={t(($) => $.aggregatedExposure.compare.notEnoughData)} unit="" />
+					)}
+				</ChartScrubHeader>
+			)}
+			{isMobile && shownRow && series.length > 1 && (
 				<ChartScrubHeader caption={formatDay(new Date(shownRow.timestamp))}>
 					{/* Clear of the download button in the corner */}
-					<ul className="flex flex-col gap-1 pr-12 text-sm">
+					<ul className="flex flex-col gap-1.5 pr-12 text-sm">
 						{series.map(({ slot, name }) => {
 							const value = shownRow[getDataKey(slot)];
 
 							return (
 								<li key={slot} className="grid grid-cols-[auto_auto_1fr] items-center gap-2">
 									<SeriesKey slot={slot} width={18} />
-									<span className="font-semibold tabular-nums">
+									<span className="font-semibold text-base tabular-nums">
 										{typeof value === "number"
 											? formatGroupValue(value, unit, t)
 											: t(($) => $.aggregatedExposure.compare.notEnoughData)}

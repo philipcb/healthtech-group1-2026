@@ -8,13 +8,17 @@ export function CompareIntro() {
 	const { t } = useTranslation();
 
 	return (
-		<ul className="grid gap-3 sm:grid-cols-3">
+		// Phones: a plain list, so three cards don't push the page down before anything is compared
+		<ul className="flex flex-col divide-y sm:grid sm:grid-cols-3 sm:gap-3 sm:divide-y-0">
 			{kinds.map((kind) => {
 				const Icon = kindIcons[kind];
 
 				return (
-					<li key={kind} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
-						<span className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+					<li
+						key={kind}
+						className="flex items-start gap-3 py-3 sm:flex-col sm:rounded-xl sm:border sm:bg-card sm:p-4"
+					>
+						<span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
 							<Icon aria-hidden="true" className="size-4.5" />
 						</span>
 						<div className="flex flex-col gap-1">

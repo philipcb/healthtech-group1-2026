@@ -31,10 +31,11 @@ export function ComparePage() {
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">
 			<header className="flex items-start justify-between gap-3 border-b pb-3">
-				<div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+				{/* Phones: the yards on their own line under the title, so neither is squeezed into a narrow column */}
+				<div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3">
 					<h1 className="font-medium text-2xl">{t(($) => $.aggregatedExposure.compare.title)}</h1>
-					<p className="flex items-center gap-1.5 text-muted-foreground text-sm">
-						<MapPin aria-hidden="true" className="size-4" />
+					<p className="flex items-start gap-1.5 text-muted-foreground text-sm">
+						<MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
 						{comparedYards.length > 0
 							? comparedYards.join(", ")
 							: (comparison.selectedYard ??

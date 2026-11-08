@@ -137,14 +137,37 @@ public class DataFetchHandler(AppDbContext _context)
 				await fetchUserAggregatedDataAsync(user.Id, startTime, endTime, exposureType, field)
 			).ToList();
 
-			var (hourlyValues, dailyRates) = GetWorkerHourlyValuesAndDailyRates(
-				exposureType,
-				userData,
-				startTime,
-				endTime
-			);
+			//Allow to not count extra hours for vibration, as duplicated hours are added to get better averages for vibration exposure
+			var extraCountedHour = 0;
+			if (exposureType == ExposureType.Vibration)
+			{
+				var dataByTime = userData.ToDictionary(d => d.Time);
 
-			var dataFlat = hourlyValues.Select(d => new TimedData
+				ExposureDataDto? previous = null;
+				for (var time = startTime; time < endTime; time = time.AddHours(1))
+				{
+					if (dataByTime.TryGetValue(time, out var current))
+					{
+						previous = current;
+					}
+					else if (previous != null)
+					{
+						extraCountedHour ++;
+						userData.Add(
+							new ExposureDataDto
+							{
+								Time = time,
+								Value = previous.Value,
+								PeakValue = previous.PeakValue,
+								DangerLevel = previous.DangerLevel,
+								PeakDangerLevel = previous.PeakDangerLevel,
+							}
+						);
+					}
+				}
+			}
+
+			var dataFlat = userData.Select(d => new TimedData
 			{
 				Time = d.Time,
 				AvgValue = d.Value,
@@ -153,7 +176,19 @@ public class DataFetchHandler(AppDbContext _context)
 
 			rawDataList.AddRange(dataFlat);
 
-			rateList.AddRange(dailyRates);
+			var aboveThresholdData = userData
+				.GroupBy(d => d.Time.Date)
+				.Select(g => new AboveThresholdRate
+				{
+					Time = g.Key,
+					WarningRate =
+						(double)g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
+					DangerRate =
+						(double)g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+					UnitCount = g.Count() - extraCountedHour,
+				});
+
+			rateList.AddRange(aboveThresholdData);
 		}
 
 		var averageDataList = rawDataList
@@ -203,8 +238,8 @@ public class DataFetchHandler(AppDbContext _context)
 				Time = g.Key,
 				WarningRate = g.Average(d => d.WarningRate),
 				DangerRate = g.Average(d => d.DangerRate),
-			})
-			.ToList();
+				UnitCount = g.Sum(d => d.UnitCount)
+			});
 
 	// Vibration points add up over the day, so a worker's value holds until their next hour with data. Each day starts
 	// without a value, so a worker without data on a day has no hours that day instead of the day before's total.
@@ -252,9 +287,9 @@ public class DataFetchHandler(AppDbContext _context)
 			.Select(g => new AboveThresholdRate
 			{
 				Time = g.Key,
-				WarningRate =
-					(double)g.Count(d => d.DangerLevel == DangerLevel.Warning) / g.Count(),
-				DangerRate = (double)g.Count(d => d.DangerLevel == DangerLevel.Danger) / g.Count(),
+				WarningRate = (double)g.Count(d => d.WarningRate > 0) / g.Count(),
+				DangerRate = (double)g.Count(d => d.DangerRate > 0) / g.Count(),
+				UnitCount = g.Count()
 			});
 
 	public static List<DailyWorkerRate> GetDailyWorkerRates(
@@ -391,6 +426,8 @@ public class TimedData
 public class AboveThresholdRate
 {
 	public DateTime Time { get; set; }
+	//Number of hour if rate is hour, number of days if rate is day
+	public int UnitCount { get; set; }
 	public double WarningRate { get; set; }
 	public double DangerRate { get; set; }
 }

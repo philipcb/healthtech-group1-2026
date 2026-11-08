@@ -28,6 +28,36 @@ public sealed class AggregatedTrendResponseDto
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	public List<TrendPointDto>? Points { get; set; }
 
+	[JsonPropertyName("dayCount")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public int DayCount { get; set; }
+
+	[JsonPropertyName("hourCount")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public int HourCount { get; set; }
+
+	[JsonPropertyName("rateOfHourAboveAction")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public double RateOfHourAboveAction { get; set; }
+
+	[JsonPropertyName("rateOfHourAboveLimit")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public double RateOfHourAboveLimit { get; set; }
+	
+	[JsonPropertyName("rateOfDayAboveAction")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public double RateOfDayAboveAction { get; set; }
+
+	[JsonPropertyName("rateOfDayAboveLimit")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
+	public double RateOfDayAboveLimit { get; set; }
+
 	// Present when status == "unavailable"
 	[JsonPropertyName("reason")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

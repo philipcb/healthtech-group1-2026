@@ -7,6 +7,8 @@ public class AveragePer8HourShift
 	public ExposureType ExposureType { get; set; }
 	public string Field { get; set; } = "not specified";
 
+	public int HourCount { get; set; }
+	public int DayCount { get; set; }
 	public double DailyRateOfWorkerOverAction { get; set; }
 	public double DailyRateOfWorkerOverLimit { get; set; }
 	public double AverageTimeOverLimit { get; set; }

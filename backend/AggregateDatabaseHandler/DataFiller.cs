@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Backend;
 using Backend.DTOs;
 using Backend.Models;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -80,8 +81,10 @@ public class DataFiller
 			SampleId = sampleId,
 			Time = rate.Time,
 			ExposureType = exposureType,
-			DailyRateOfWorkerOverAction = dailyRate.OverActionRate,
-			DailyRateOfWorkerOverLimit = dailyRate.OverLimitRate,
+			HourCount = rate.UnitCount,
+			DayCount = dailyRate.UnitCount,
+			DailyRateOfWorkerOverAction = dailyRate.WarningRate,
+			DailyRateOfWorkerOverLimit = dailyRate.DangerRate + dailyRate.WarningRate,
 			AverageTimeInSafeLimits = 1 - rate.WarningRate - rate.DangerRate,
 			AverageTimeOverLimit = rate.DangerRate,
 			AverageTimeOverAction = rate.WarningRate + rate.DangerRate,

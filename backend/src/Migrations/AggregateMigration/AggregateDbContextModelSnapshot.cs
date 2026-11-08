@@ -50,6 +50,12 @@ namespace backend.Migrations.AggregateMigration
                     b.Property<double>("DailyRateOfWorkerOverLimit")
                         .HasColumnType("double precision");
 
+                    b.Property<int>("DayCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HourCount")
+                        .HasColumnType("integer");
+
                     b.HasKey("SampleId", "ExposureType", "Field", "Time");
 
                     b.HasIndex("SampleId");

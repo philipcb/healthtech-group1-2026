@@ -286,20 +286,6 @@ public class AggregateExposureDataService(
 				&& (lowercaseField == null || d.Field.ToLower() == lowercaseField)
 			)
 			.ToListAsync();
-		var shiftAverageByDay = shiftAverages
-			.GroupBy(d => d.Time.Date)
-			.ToDictionary(g => g.Key, g => g.First());
-
-		foreach (var point in exposureAverages!)
-		{
-			if (shiftAverageByDay.TryGetValue(point.Time.Date, out var shiftAverage))
-			{
-				point.AverageTimeOverAction = shiftAverage.AverageTimeOverAction;
-				point.RateOfWorkerOverAction = shiftAverage.DailyRateOfWorkerOverAction;
-				point.AverageTimeOverLimit = shiftAverage.AverageTimeOverLimit;
-				point.RateOfWorkerLimit = shiftAverage.DailyRateOfWorkerOverLimit;
-			}
-		}
 
 		return new AggregatedTrendResponseDto
 		{
@@ -309,6 +295,12 @@ public class AggregateExposureDataService(
 			Average = exposureAverages!.Average(d => d.Value),
 			Granularity = isHourly ? "hour" : "day",
 			Points = exposureAverages,
+			HourCount = shiftAverages.Sum(d => d.HourCount),
+			DayCount = shiftAverages.Sum(d => d.DayCount),
+			RateOfHourAboveAction = shiftAverages.Average(d => d.AverageTimeOverAction),
+			RateOfHourAboveLimit = shiftAverages.Average(d => d.AverageTimeOverLimit),
+			RateOfDayAboveAction = shiftAverages.Average(d => d.DailyRateOfWorkerOverAction),
+			RateOfDayAboveLimit = shiftAverages.Average(d => d.DailyRateOfWorkerOverLimit)
 		};
 	}
 

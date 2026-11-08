@@ -103,6 +103,43 @@ public class DailyWorkerRateTests
 	}
 
 	/// <summary>
+	/// Verifies that the worker days of a day are the workers with data that day.
+	/// </summary>
+	[Fact]
+	public void GetDailyWorkerRates_CountsTheWorkersThatDay()
+	{
+		var rate = Assert.Single(
+			DailyRates(
+				Worker(Day, DangerLevel.Safe),
+				Worker(Day, DangerLevel.Safe, DangerLevel.Safe),
+				Worker(Day, DangerLevel.Danger, DangerLevel.Safe, DangerLevel.Safe)
+			)
+		);
+
+		Assert.Equal(3, rate.UnitCount);
+	}
+
+	/// <summary>
+	/// Verifies that the hours of a day are the measured hours of all its workers added up.
+	/// </summary>
+	[Fact]
+	public void GetDailyTimeOverRates_AddsUpTheWorkersHours()
+	{
+		var rate = Assert.Single(
+			DataFetchHandler.GetDailyTimeOverRates(
+				new[]
+				{
+					Worker(Day, DangerLevel.Safe),
+					Worker(Day, DangerLevel.Safe, DangerLevel.Safe),
+					Worker(Day, DangerLevel.Danger, DangerLevel.Safe, DangerLevel.Safe),
+				}.SelectMany(DataFetchHandler.GetWorkerDailyRates)
+			)
+		);
+
+		Assert.Equal(6, rate.UnitCount);
+	}
+
+	/// <summary>
 	/// Verifies that each day counts the workers over a threshold that day, so workers over on different days don't add
 	/// up across days.
 	/// </summary>
@@ -160,7 +197,8 @@ public class DailyWorkerRateTests
 	}
 
 	/// <summary>
-	/// Verifies that the stored shares of workers are the shares over each threshold, unchanged, for every exposure.
+	/// Verifies that the stored shares of workers are the shares over each threshold, unchanged, for every exposure, and
+	/// that the hours and worker days they are taken over are stored with them.
 	/// </summary>
 	[Theory]
 	[InlineData(ExposureType.Noise, null)]
@@ -177,12 +215,14 @@ public class DailyWorkerRateTests
 			Time = Day,
 			WarningRate = 0.375,
 			DangerRate = 0.125,
+			UnitCount = 32,
 		};
 		var dailyRate = new DailyWorkerRate
 		{
 			Time = Day,
 			OverActionRate = 0.75,
 			OverLimitRate = 0.5,
+			UnitCount = 4,
 		};
 
 		var average = DataFiller.ToShiftAverage(Guid.Empty, exposureType, field, rate, dailyRate);
@@ -191,5 +231,7 @@ public class DailyWorkerRateTests
 		Assert.Equal(0.5, average.DailyRateOfWorkerOverLimit);
 		Assert.Equal(0.5, average.AverageTimeOverAction);
 		Assert.Equal(0.125, average.AverageTimeOverLimit);
+		Assert.Equal(32, average.HourCount);
+		Assert.Equal(4, average.DayCount);
 	}
 }

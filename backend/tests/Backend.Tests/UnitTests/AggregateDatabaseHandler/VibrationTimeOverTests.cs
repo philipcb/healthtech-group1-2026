@@ -63,6 +63,7 @@ public class VibrationTimeOverTests
 		var rate = Assert.Single(dailyRates);
 		Assert.Equal(0.5, rate.DangerRate);
 		Assert.Equal(0.875, rate.WarningRate + rate.DangerRate);
+		Assert.Equal(8, rate.UnitCount);
 
 		Assert.Equal(17, hourlyValues.Count);
 		Assert.Equal(480, hourlyValues.Single(d => d.Time == Day.AddHours(23)).Value);

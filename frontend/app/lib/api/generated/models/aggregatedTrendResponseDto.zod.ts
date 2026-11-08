@@ -25,7 +25,13 @@ export const AggregatedTrendResponseDto = zod.union([zod.object({
   "rateOfWorkerOverLimit": zod.number().nullable(),
   "averageTimeOverAction": zod.number().nullable(),
   "averageTimeOverLimit": zod.number().nullable()
-}))
+})),
+  "hourCount": zod.int(),
+  "dayCount": zod.int(),
+  "rateOfHourAboveAction": zod.number().optional(),
+  "rateOfHourAboveLimit": zod.number().optional(),
+  "rateOfDayAboveAction": zod.number().optional(),
+  "rateOfDayAboveLimit": zod.number().optional()
 }),zod.object({
   "status": zod.enum(['unavailable']),
   "reason": zod.enum(['noSuchGroup', 'exposureUnavailable'])

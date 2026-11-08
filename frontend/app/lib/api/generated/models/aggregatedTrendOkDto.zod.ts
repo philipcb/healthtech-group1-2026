@@ -25,7 +25,13 @@ export const AggregatedTrendOkDto = zod.object({
   "rateOfWorkerOverLimit": zod.number().nullable(),
   "averageTimeOverAction": zod.number().nullable(),
   "averageTimeOverLimit": zod.number().nullable()
-}))
+})),
+  "hourCount": zod.int(),
+  "dayCount": zod.int(),
+  "rateOfHourAboveAction": zod.number().optional(),
+  "rateOfHourAboveLimit": zod.number().optional(),
+  "rateOfDayAboveAction": zod.number().optional(),
+  "rateOfDayAboveLimit": zod.number().optional()
 })
 
 export type AggregatedTrendOkDto = zod.output<typeof AggregatedTrendOkDto>;

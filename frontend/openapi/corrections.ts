@@ -332,14 +332,29 @@ function correctBackendContract(spec: unknown) {
 	// AggregatedTrendResponseDto leaves out its `null` properties (`JsonIgnoreCondition.WhenWritingNull`).
 	// AggregateExposureDataService.GetTrendAsync sends either the trend, whose average is left out when every point is
 	// `null`, `noSuchGroup`, also for a group without measurements in the period, or `exposureUnavailable` for vibration.
+	// The period's rates are left out when the aggregate job hasn't stored the time over the thresholds for the period.
 	assert.deepEqual(
 		Object.keys(at(schemas, "AggregatedTrendResponseDto", "properties")).sort(),
-		["average", "granularity", "group", "points", "reason", "status", "unit"],
+		[
+			"average",
+			"dayCount",
+			"granularity",
+			"group",
+			"hourCount",
+			"points",
+			"rateOfDayAboveAction",
+			"rateOfDayAboveLimit",
+			"rateOfHourAboveAction",
+			"rateOfHourAboveLimit",
+			"reason",
+			"status",
+			"unit",
+		],
 		"The backend spec changed AggregatedTrendResponseDto",
 	);
 	schemas.AggregatedTrendOkDto = {
 		type: "object",
-		required: ["status", "group", "unit", "granularity", "points"],
+		required: ["status", "group", "unit", "granularity", "points", "hourCount", "dayCount"],
 		properties: {
 			status: { type: "string", enum: ["ok"] },
 			group: schemaRef("TrendSampleDto"),
@@ -348,6 +363,12 @@ function correctBackendContract(spec: unknown) {
 			// `hour` when the trend is asked for with `isHourly`
 			granularity: { type: "string", enum: ["day", "hour"] },
 			points: { type: "array", items: schemaRef("TrendPointDto") },
+			hourCount: { type: "integer" },
+			dayCount: { type: "integer" },
+			rateOfHourAboveAction: { type: "number" },
+			rateOfHourAboveLimit: { type: "number" },
+			rateOfDayAboveAction: { type: "number" },
+			rateOfDayAboveLimit: { type: "number" },
 		},
 	};
 	schemas.AggregatedTrendUnavailableDto = {

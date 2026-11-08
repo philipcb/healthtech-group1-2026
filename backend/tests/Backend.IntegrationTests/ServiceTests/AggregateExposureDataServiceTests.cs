@@ -510,6 +510,96 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Contains("\"rateOfWorkerOverLimit\":0.25", json);
 	}
 
+	/// <summary>
+	/// Verifies that the period's rates are the plain average of the days' rates, so a long day with 50 % of the hours
+	/// over the action value and a short day with 10 % give 30 % whatever their hours, and that the hours and worker
+	/// days are added up.
+	/// </summary>
+	[Fact]
+	public async Task GetTrendAsync_AveragesThePeriodsRates_AndAddsUpTheCounts()
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		context.AveragesPer8HourShift.AddRange(
+			new AveragePer8HourShift
+			{
+				SampleId = OwnSiteGroupId,
+				Time = DayWithShiftAverage,
+				ExposureType = ExposureType.Noise,
+				HourCount = 30,
+				DayCount = 3,
+				AverageTimeOverAction = 0.5,
+				AverageTimeOverLimit = 0.25,
+				DailyRateOfWorkerOverAction = 0.75,
+				DailyRateOfWorkerOverLimit = 0.25,
+			},
+			new AveragePer8HourShift
+			{
+				SampleId = OwnSiteGroupId,
+				Time = DayWithoutShiftAverage,
+				ExposureType = ExposureType.Noise,
+				HourCount = 10,
+				DayCount = 1,
+				AverageTimeOverAction = 0.1,
+				AverageTimeOverLimit = 0,
+				DailyRateOfWorkerOverAction = 0.5,
+				DailyRateOfWorkerOverLimit = 0,
+			}
+		);
+		await context.SaveChangesAsync();
+		var service = CreateService(context, UserRole.OHS);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			StartTime,
+			EndTime,
+			OwnSiteGroupId,
+			ExposureType.Noise,
+			null,
+			false
+		);
+
+		Assert.Equal(40, trend.HourCount);
+		Assert.Equal(4, trend.DayCount);
+		// (0.5 + 0.1) / 2 and (0.25 + 0) / 2
+		Assert.Equal(0.3, trend.RateOfHourAboveAction!.Value, 10);
+		Assert.Equal(0.125, trend.RateOfHourAboveLimit!.Value, 10);
+		// (0.75 + 0.5) / 2 and (0.25 + 0) / 2
+		Assert.Equal(0.625, trend.RateOfDayAboveAction!.Value, 10);
+		Assert.Equal(0.125, trend.RateOfDayAboveLimit!.Value, 10);
+	}
+
+	/// <summary>
+	/// Verifies that the period's rates are left out, not 0 or an error, when the aggregate job hasn't stored the time
+	/// over the thresholds for the period.
+	/// </summary>
+	[Fact]
+	public async Task GetTrendAsync_LeavesOutThePeriodsRates_WithoutShiftAverages()
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var service = CreateService(context, UserRole.OHS);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			StartTime,
+			EndTime,
+			OwnSiteGroupId,
+			ExposureType.Noise,
+			null,
+			false
+		);
+
+		Assert.Equal("ok", trend.Status);
+		Assert.Equal(0, trend.HourCount);
+		Assert.Equal(0, trend.DayCount);
+		Assert.Null(trend.RateOfHourAboveAction);
+		Assert.Null(trend.RateOfHourAboveLimit);
+		Assert.Null(trend.RateOfDayAboveAction);
+		Assert.Null(trend.RateOfDayAboveLimit);
+
+		var json = System.Text.Json.JsonSerializer.Serialize(trend);
+		Assert.DoesNotContain("rateOfHourAboveAction", json);
+	}
+
 	[Theory]
 	[InlineData(false, "day")]
 	[InlineData(true, "hour")]

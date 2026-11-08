@@ -404,11 +404,12 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		Assert.Equal("noSuchGroup", trend.Reason);
 	}
 
+	// 15 and 16 September, as the aggregate job stores days: their midnight in Oslo, as UTC
 	private static readonly DateTime DayWithShiftAverage = new(
 		2026,
 		9,
-		15,
-		0,
+		14,
+		22,
 		0,
 		0,
 		DateTimeKind.Utc
@@ -416,8 +417,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 	private static readonly DateTime DayWithoutShiftAverage = new(
 		2026,
 		9,
-		16,
-		0,
+		15,
+		22,
 		0,
 		0,
 		DateTimeKind.Utc
@@ -668,8 +669,9 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 	private static DateTime Utc(int month, int day, int hour) =>
 		new(2026, month, day, hour, 0, 0, DateTimeKind.Utc);
 
-	// Vibration as the aggregate job stores it: 31 August's total of 560 points, kept until midnight UTC, then two days in
-	// September with their totals of 300 and 200 points in their last hour
+	// Vibration as the aggregate job stores it, in Norwegian days: 31 August's total of 560 points, kept until midnight in
+	// Oslo at 22:00 UTC, then two days in September with their totals of 300 and 200 points in their last hour, 23:00 in
+	// Oslo. 1 September has a measurement at midnight in Oslo.
 	private async Task SeedVibrationAcrossMidnightAsync()
 	{
 		await SeedGroupsAsync();
@@ -678,8 +680,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		foreach (
 			var (time, points) in new[]
 			{
-				(Utc(8, 31, 22), 560.0),
-				(Utc(8, 31, 23), 560.0),
+				(Utc(8, 31, 21), 560.0),
+				(Utc(8, 31, 22), 40.0),
 				(Utc(9, 1, 7), 100.0),
 				(Utc(9, 1, 21), 300.0),
 				(Utc(9, 2, 7), 50.0),
@@ -700,7 +702,7 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await context.SaveChangesAsync();
 	}
 
-	// A Norwegian month starts at 22:00 UTC the day before, when the day before's vibration total is still kept
+	// A Norwegian month starts at midnight in Oslo, 22:00 UTC the day before, after the day before's vibration total
 	[Fact]
 	public async Task GetOverviewAggregateDataAsync_LeavesOutTheDayBeforesVibration_ForANorwegianMonth()
 	{
@@ -732,13 +734,15 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			false
 		);
 
-		Assert.Equal([Utc(9, 1, 0), Utc(9, 2, 0)], trend.Points!.Select(p => p.Time));
+		// Each day is its midnight in Oslo, as UTC
+		Assert.Equal([Utc(8, 31, 22), Utc(9, 1, 22)], trend.Points!.Select(p => p.Time));
 		Assert.Equal([300.0, 200.0], trend.Points!.Select(p => p.Value));
 		Assert.Equal(250, trend.Average);
 	}
 
+	// The day's hours start at midnight in Oslo, with vibration from then on
 	[Fact]
-	public async Task GetTrendAsync_LeavesOutTheDayBeforesVibration_ForANorwegianDay()
+	public async Task GetTrendAsync_HasVibrationFromMidnightInOslo_ForANorwegianDay()
 	{
 		await SeedVibrationAcrossMidnightAsync();
 		await using var context = Fixture.CreateAggregateDbContext();
@@ -754,11 +758,14 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			true
 		);
 
-		Assert.Equal([Utc(9, 1, 7), Utc(9, 1, 21)], trend.Points!.Select(p => p.Time));
+		Assert.Equal(
+			[Utc(8, 31, 22), Utc(9, 1, 7), Utc(9, 1, 21)],
+			trend.Points!.Select(p => p.Time)
+		);
 	}
 
-	// 1 September in Norwegian time with a measurement at 01:00, which is 23:00 UTC on 31 August, so the day spans two
-	// UTC days: noise 90 dB then 70 and 80 dB, and PM1 9 then 3 and 6 µg/m³
+	// 1 September in Norwegian time with a measurement at 01:00, which is 23:00 UTC on 31 August: noise 90 dB then 70 and
+	// 80 dB, and PM1 9 then 3 and 6 µg/m³
 	private async Task SeedHoursAcrossMidnightAsync()
 	{
 		await SeedVibrationAcrossMidnightAsync();
@@ -795,8 +802,8 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 		await context.SaveChangesAsync();
 	}
 
-	// A day's noise and dust are the average of its hours, not of its two UTC days, which would be 82.5 dB and 6.75 µg/m³.
-	// Vibration is the day's total, without 31 August's total kept until midnight UTC.
+	// A day's noise and dust are the average of its hours, 80 dB and 6 µg/m³. Vibration is the day's total, without 31
+	// August's total.
 	[Fact]
 	public async Task GetOverviewAggregateDataAsync_AveragesTheHours_ForANorwegianDay()
 	{
@@ -836,5 +843,67 @@ public sealed class AggregateExposureDataServiceTests(PostgresTestDbFixture fixt
 			trend.Average,
 			Assert.Single(groups, g => g.GroupId == OwnSiteGroupId).Averages.Noise
 		);
+	}
+
+	// A month averages its Norwegian days: 1 September's hours from 01:00 in Oslo, 23:00 UTC on 31 August, give 80 dB, 2
+	// September 60 dB and 15 September, from `SeedGroupsAsync`, 82 dB, so (80 + 60 + 82) / 3 = 74 dB. Its UTC days would
+	// give (90 + 75 + 60 + 82) / 4 = 76.75 dB.
+	[Fact]
+	public async Task GetOverviewAggregateDataAsync_AveragesTheNorwegianDays_ForAMonth()
+	{
+		await SeedHoursAcrossMidnightAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		context.NoiseAverages.Add(
+			new NoiseAverage
+			{
+				SampleId = OwnSiteGroupId,
+				Time = Utc(9, 2, 8),
+				AverageLaeq = 60,
+				AverageLcpk = 120,
+			}
+		);
+		await context.SaveChangesAsync();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("month", 2026, 8, null);
+
+		var groups = await service.GetOverviewAggregateDataAsync(startTime, endTime, null, false);
+
+		Assert.Equal(74, Assert.Single(groups, g => g.GroupId == OwnSiteGroupId).Averages.Noise);
+	}
+
+	// 25 October 2026, when daylight saving time ends, has 25 hours from midnight in Oslo, 22:00 UTC on 24 October, with
+	// vibration from midnight on
+	[Fact]
+	public async Task GetTrendAsync_HasTheDaysHours_WhenDaylightSavingTimeEnds()
+	{
+		await SeedGroupsAsync();
+		await using var context = Fixture.CreateAggregateDbContext();
+		var midnight = Utc(10, 24, 22);
+		for (var hour = 0; hour < 25; hour++)
+		{
+			context.VibrationAverages.Add(
+				new VibrationAverage
+				{
+					SampleId = OwnSiteGroupId,
+					Time = midnight.AddHours(hour),
+					AverageExposure = hour + 1,
+				}
+			);
+		}
+		await context.SaveChangesAsync();
+		var service = CreateService(context, UserRole.OHS);
+		var (startTime, endTime) = TimeWindowUtils.GetPeriodLimit("day", 2026, 9, 25);
+
+		AggregatedTrendResponseDto trend = await service.GetTrendAsync(
+			startTime,
+			endTime,
+			OwnSiteGroupId,
+			ExposureType.Vibration,
+			null,
+			true
+		);
+
+		Assert.Equal(25, trend.Points!.Count);
+		Assert.Equal(midnight, trend.Points![0].Time);
 	}
 }

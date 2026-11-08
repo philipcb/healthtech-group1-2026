@@ -111,6 +111,52 @@ public class TimeWindowUtilsTests
 	}
 
 	/// <summary>
+	/// Verifies that 00:30 in Oslo on 16 July, 22:30 UTC on 15 July, is on 16 July, which starts at 22:00 UTC on 15 July,
+	/// while 23:30 in Oslo on 15 July is on 15 July.
+	/// </summary>
+	[Fact]
+	public void StartOfOsloDay_PutsTheHoursAfterMidnightOnTheNorwegianDay()
+	{
+		var afterMidnight = TimeWindowUtils.StartOfOsloDay(
+			new DateTime(2026, 7, 15, 22, 30, 0, DateTimeKind.Utc)
+		);
+		var beforeMidnight = TimeWindowUtils.StartOfOsloDay(
+			new DateTime(2026, 7, 15, 21, 30, 0, DateTimeKind.Utc)
+		);
+
+		Assert.Equal(Utc(2026, 7, 15, 22), afterMidnight);
+		Assert.Equal(DateTimeKind.Utc, afterMidnight.Kind);
+		Assert.Equal(Utc(2026, 7, 14, 22), beforeMidnight);
+	}
+
+	/// <summary>
+	/// Verifies that a time without a time zone is read as UTC, like the times from the database.
+	/// </summary>
+	[Fact]
+	public void StartOfOsloDay_ReadsATimeWithoutTimeZoneAsUtc()
+	{
+		Assert.Equal(
+			Utc(2026, 7, 15, 22),
+			TimeWindowUtils.StartOfOsloDay(new DateTime(2026, 7, 15, 22, 30, 0))
+		);
+	}
+
+	/// <summary>
+	/// Verifies that the days daylight saving time starts and ends, 29 March and 25 October 2026, are 23 and 25 hours
+	/// long, from midnight to midnight in Oslo.
+	/// </summary>
+	[Theory]
+	[InlineData(3, 29, 23)]
+	[InlineData(10, 25, 25)]
+	public void StartOfOsloDay_DaylightSavingTimeDays(int month, int day, int expectedHours)
+	{
+		var start = TimeWindowUtils.StartOfOsloDay(Utc(2026, month, day, 12));
+		var nextStart = TimeWindowUtils.StartOfOsloDay(Utc(2026, month, day, 12).AddDays(1));
+
+		Assert.Equal(expectedHours, (nextStart - start).TotalHours);
+	}
+
+	/// <summary>
 	/// Verifies that a day that doesn't exist in the month is rejected.
 	/// </summary>
 	[Fact]

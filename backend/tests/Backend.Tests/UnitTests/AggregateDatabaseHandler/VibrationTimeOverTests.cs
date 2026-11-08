@@ -10,7 +10,8 @@ namespace Backend.Tests.UnitTests.AggregateDatabaseHandler;
 /// </summary>
 public class VibrationTimeOverTests
 {
-	private static readonly DateTime Day = new(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+	// Midnight on 1 October in Oslo (summer time), as UTC, like the aggregate job's days
+	private static readonly DateTime Day = new(2026, 9, 30, 22, 0, 0, DateTimeKind.Utc);
 
 	// One worker's hours with measurements, as the hour and the hour's points. The value and danger level are the
 	// running total of the day, like `fetchUserAggregatedDataAsync` returns them.
@@ -127,7 +128,7 @@ public class VibrationTimeOverTests
 		var (hourlyValues, dailyRates) = Process(OverLimitFromElevenUntilThree(), days: 2);
 
 		Assert.Equal(Day, Assert.Single(dailyRates).Time);
-		Assert.All(hourlyValues, d => Assert.Equal(Day, d.Time.Date));
+		Assert.All(hourlyValues, d => Assert.Equal(Day, TimeWindowUtils.StartOfOsloDay(d.Time)));
 	}
 
 	/// <summary>

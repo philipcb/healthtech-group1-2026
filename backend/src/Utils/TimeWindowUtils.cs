@@ -7,6 +7,18 @@ namespace Backend.Utils
 			"Europe/Oslo"
 		);
 
+		// The start of the Norwegian day a time is in, as UTC, like 2026-07-15 22:00 UTC for a time on 16 July. It's the
+		// key for a day everywhere the aggregated figures are split into days, so a day is 23 or 25 hours long when
+		// daylight saving time starts or ends. The time is read as UTC, whatever the process's time zone.
+		public static DateTime StartOfOsloDay(DateTime utcTime)
+		{
+			var osloTime = TimeZoneInfo.ConvertTimeFromUtc(
+				DateTime.SpecifyKind(utcTime, DateTimeKind.Utc),
+				Oslo
+			);
+			return TimeZoneInfo.ConvertTimeToUtc(osloTime.Date, Oslo);
+		}
+
 		public static DateTime ClampRequestEndDateToCurrentDateTime(DateTime end)
 		{
 			DateTime now = DateTime.UtcNow;

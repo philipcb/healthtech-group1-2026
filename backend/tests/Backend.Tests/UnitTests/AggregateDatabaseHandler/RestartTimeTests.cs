@@ -6,8 +6,8 @@ namespace Backend.Tests.UnitTests.AggregateDatabaseHandler;
 public class RestartTimeTests
 {
 	/// <summary>
-	/// Verifies that the job starts at the beginning of the last stored day, so a day stored during the day is computed
-	/// again in full.
+	/// Verifies that the job starts at the beginning of the last stored Norwegian day, midnight in Oslo, so a day stored
+	/// during the day is computed again in full.
 	/// </summary>
 	[Fact]
 	public void GetRestartTime_IsTheStartOfTheLastStoredDay()
@@ -16,7 +16,7 @@ public class RestartTimeTests
 			new DateTime(2026, 10, 21, 11, 0, 0, DateTimeKind.Utc)
 		);
 
-		Assert.Equal(new DateTime(2026, 10, 21, 0, 0, 0, DateTimeKind.Utc), restartTime);
+		Assert.Equal(new DateTime(2026, 10, 20, 22, 0, 0, DateTimeKind.Utc), restartTime);
 		Assert.Equal(DateTimeKind.Utc, restartTime.Kind);
 	}
 

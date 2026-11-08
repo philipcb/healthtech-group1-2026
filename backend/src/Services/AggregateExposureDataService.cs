@@ -74,15 +74,9 @@ public class AggregateExposureDataService(
 			_ => throw new ArgumentException($"Unsupported dust field: {field}", nameof(field)),
 		};
 
-	// The aggregate job keeps each worker's vibration total until midnight UTC. A period starting before midnight UTC, like
-	// a Norwegian day, month or year, would get the day before's total in its first hours, so vibration starts at the
-	// period's first midnight UTC instead.
-	public static DateTime GetVibrationStartTime(DateTime startTime) =>
-		startTime == startTime.Date ? startTime : startTime.Date.AddDays(1);
-
-	//function to get the average of averages of each user of a given time period and a given exposure type
-	// A Norwegian day can span two UTC days, so a day's noise and dust are the average of its hours, the same as the
-	// group page's hourly trend. Longer periods average their UTC days. Vibration is each UTC day's total either way.
+	// The period's figure for the overview, or null when the group has no data in the period. A day's noise and dust are
+	// the average of its hours, the same as the group page's hourly trend. Longer periods average their Norwegian days.
+	// Vibration is each Norwegian day's total, its last hour, either way.
 	public async Task<double?> GetWholeAverage(
 		DateTime startTime,
 		DateTime endTime,
@@ -95,51 +89,48 @@ public class AggregateExposureDataService(
 		switch (exposureType)
 		{
 			case ExposureType.Dust:
-				var dustValue = GetCorrectDustValue(field);
-				var dustAverages = _context.DustAverages.Where(d =>
-					d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-				);
-				return isDay
-					? dustAverages.Average(dustValue)
-					: dustAverages
-						.GroupBy(d => d.Time.Date)
-						.Select(g => g.AsQueryable().Average(dustValue))
-						.Average();
+				var dustValue = GetCorrectDustValue(field).Compile();
+				var dustAverages = await _context
+					.DustAverages.Where(d =>
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
+					)
+					.ToListAsync();
+				return AverageOfHoursOrDays(dustAverages, d => d.Time, dustValue, isDay);
 			case ExposureType.Noise:
-				if (isDay)
-				{
-					return _context
-						.NoiseAverages.Where(d =>
-							d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
-						)
-						.Average(d => (double?)d.AverageLaeq);
-				}
-				return _context
+				var noiseAverages = await _context
 					.NoiseAverages.Where(d =>
 						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g => (double?)g.Average(d => d.AverageLaeq))
-					.Average();
+					.ToListAsync();
+				return AverageOfHoursOrDays(noiseAverages, d => d.Time, d => d.AverageLaeq, isDay);
 			case ExposureType.Vibration:
-				//For vibration, we have to take the last average hour
-				// Nullable, so a group without data in the period gets `null` instead of failing on the SQL `NULL`
-				var vibrationStartTime = GetVibrationStartTime(startTime);
-				return _context
+				var vibrationAverages = await _context
 					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && vibrationStartTime <= d.Time && d.Time < endTime
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
-					.GroupBy(d => d.Time.Date)
-					.Select(g =>
-						g.OrderByDescending(d => d.Time)
-							.Select(d => (double?)d.AverageExposure)
-							.First()
-					)
+					.ToListAsync();
+				return vibrationAverages
+					.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
+					.Select(g => (double?)g.MaxBy(d => d.Time)!.AverageExposure)
 					.Average();
 			default:
 				return null;
 		}
 	}
+
+	// The average of the hours for a day, otherwise the average of each Norwegian day's average. Null without hours.
+	public static double? AverageOfHoursOrDays<T>(
+		List<T> hours,
+		Func<T, DateTime> time,
+		Func<T, double?> value,
+		bool isDay
+	) =>
+		isDay
+			? hours.Average(value)
+			: hours
+				.GroupBy(d => TimeWindowUtils.StartOfOsloDay(time(d)))
+				.Select(g => g.Average(value))
+				.Average();
 
 	public async Task<AggregatedTrendResponseDto> GetTrendAsync(
 		DateTime startTime,
@@ -191,7 +182,7 @@ public class AggregateExposureDataService(
 				else
 				{
 					exposureAverages = hourlyDustAggregates
-						.GroupBy(d => d.Time.Date)
+						.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
 						.Select(g => new TrendPointDto
 						{
 							Time = g.Key,
@@ -220,7 +211,7 @@ public class AggregateExposureDataService(
 				else
 				{
 					exposureAverages = hourlyNoiseAggregates
-						.GroupBy(d => d.Time.Date)
+						.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
 						.Select(g => new TrendPointDto
 						{
 							Time = g.Key,
@@ -233,10 +224,9 @@ public class AggregateExposureDataService(
 
 			case ExposureType.Vibration:
 				unit = "points";
-				var vibrationStartTime = GetVibrationStartTime(startTime);
 				var hourlyVibrationAggregates = await _context
 					.VibrationAverages.Where(d =>
-						d.Sample.Id == sampleId && vibrationStartTime <= d.Time && d.Time < endTime
+						d.Sample.Id == sampleId && startTime <= d.Time && d.Time < endTime
 					)
 					.ToListAsync();
 
@@ -250,7 +240,7 @@ public class AggregateExposureDataService(
 				else
 				{
 					exposureAverages = hourlyVibrationAggregates
-						.GroupBy(d => d.Time.Date)
+						.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
 						.Select(g => new TrendPointDto
 						{
 							Time = g.Key,
@@ -287,12 +277,17 @@ public class AggregateExposureDataService(
 			)
 			.ToListAsync();
 		var shiftAverageByDay = shiftAverages
-			.GroupBy(d => d.Time.Date)
+			.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
 			.ToDictionary(g => g.Key, g => g.First());
 
 		foreach (var point in exposureAverages!)
 		{
-			if (shiftAverageByDay.TryGetValue(point.Time.Date, out var shiftAverage))
+			if (
+				shiftAverageByDay.TryGetValue(
+					TimeWindowUtils.StartOfOsloDay(point.Time),
+					out var shiftAverage
+				)
+			)
 			{
 				point.AverageTimeOverAction = shiftAverage.AverageTimeOverAction;
 				point.RateOfWorkerOverAction = shiftAverage.DailyRateOfWorkerOverAction;

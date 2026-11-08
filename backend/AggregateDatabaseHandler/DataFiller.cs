@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Backend;
 using Backend.DTOs;
 using Backend.Models;
+using Backend.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -34,10 +35,13 @@ public class DataFiller
 		await transaction.CommitAsync();
 	}
 
-	// The job can run during a day, so the last stored day may be incomplete. It's computed again from its start, instead
-	// of continuing after its last hour, which would leave the day's daily values incomplete or insert them twice.
+	// The job can run during a day, so the last stored day may be incomplete. It's computed again from its start at
+	// midnight in Oslo, instead of continuing after its last hour, which would leave the day's daily values incomplete or
+	// insert them twice. Without stored rows, it starts from the beginning.
 	public static DateTime GetRestartTime(DateTime lastStoredTime) =>
-		DateTime.SpecifyKind(lastStoredTime.Date, DateTimeKind.Utc);
+		lastStoredTime == default
+			? DateTime.SpecifyKind(default, DateTimeKind.Utc)
+			: TimeWindowUtils.StartOfOsloDay(lastStoredTime);
 
 	private async Task<DateTime> restartLastStoredDay(
 		Guid sampleId,

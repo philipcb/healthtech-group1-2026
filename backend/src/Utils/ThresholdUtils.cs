@@ -21,19 +21,20 @@ public static class ThresholdUtils
 				(DangerLevel dangerLevel, DangerLevel? peakDangerLevel) dangerLevels
 			)>();
 
-		// Vibration thresholds are calculated cumulatively over a day
+		// Vibration thresholds are calculated cumulatively over a Norwegian day
 		if (exposureType == ExposureType.Vibration)
 		{
 			var sortedData = rawExposureData.OrderBy(data => data.Time).ToList();
 			double cumulativeValue = 0;
-			DateOnly? currentDate = null;
+			DateTime? currentDay = null;
 
 			foreach (var data in sortedData)
 			{
-				if (currentDate != DateOnly.FromDateTime(data.Time))
+				var day = TimeWindowUtils.StartOfOsloDay(data.Time);
+				if (currentDay != day)
 				{
 					cumulativeValue = 0;
-					currentDate = DateOnly.FromDateTime(data.Time);
+					currentDay = day;
 				}
 
 				cumulativeValue += data.SumValue;

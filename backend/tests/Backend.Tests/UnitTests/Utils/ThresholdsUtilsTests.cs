@@ -143,6 +143,39 @@ public class ThresholdsUtilsTests
 	}
 
 	/// <summary>
+	/// Verifies that a night measurement from 22:00 to 02:00 in Oslo starts a new total at midnight in Oslo, so a worker
+	/// at the action value before midnight is safe again after it.
+	/// </summary>
+	[Fact]
+	public void CalculateDangerLevels_Vibration_ResetsAtMidnightInOslo()
+	{
+		var threshold = Threshold.Vibration;
+		var userId = Guid.NewGuid();
+		// 23:00 and 00:00 in Oslo on the night to 16 July
+		var beforeMidnight = new DateTime(2026, 7, 15, 21, 0, 0, DateTimeKind.Utc);
+		var afterMidnight = new DateTime(2026, 7, 15, 22, 0, 0, DateTimeKind.Utc);
+
+		var result = ThresholdUtils
+			.CalculateDangerLevels(
+				ExposureType.Vibration,
+				[
+					new(beforeMidnight, 0, 0, 0, threshold.Warning, userId),
+					new(afterMidnight, 0, 0, 0, 1, userId),
+				]
+			)
+			.ToList();
+
+		Assert.Equal(
+			DangerLevel.Warning,
+			result.Single(r => r.data.Time == beforeMidnight).dangerLevels.dangerLevel
+		);
+		Assert.Equal(
+			DangerLevel.Safe,
+			result.Single(r => r.data.Time == afterMidnight).dangerLevels.dangerLevel
+		);
+	}
+
+	/// <summary>
 	/// Verifies that noise danger level calculation returns safe values when the average value is below the warning threshold.
 	/// </summary>
 	[Fact]

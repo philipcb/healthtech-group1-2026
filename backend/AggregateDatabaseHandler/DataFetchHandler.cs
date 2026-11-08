@@ -172,8 +172,8 @@ public class DataFetchHandler(AppDbContext _context)
 		);
 	}
 
-	// One worker's hourly values, and their share of hours at each danger level per day. Vibration's value holds until
-	// midnight, so the group's hourly values include the workers who stopped earlier that day. Only the hours with
+	// One worker's hourly values, and their share of hours at each danger level per Norwegian day. Vibration's value holds
+	// until midnight in Oslo, so the group's hourly values include the workers who stopped earlier that day. Only the hours with
 	// measurements count for the time over the thresholds, so the hours after a worker stopped don't count as over.
 	public static (
 		List<ExposureDataDto> hourlyValues,
@@ -207,8 +207,9 @@ public class DataFetchHandler(AppDbContext _context)
 			})
 			.ToList();
 
-	// Vibration points add up over the day, so a worker's value holds until their next hour with data. Each day starts
-	// without a value, so a worker without data on a day has no hours that day instead of the day before's total.
+	// Vibration points add up over the Norwegian day, so a worker's value holds until their next hour with data. Each day
+	// starts without a value at midnight in Oslo, so a worker without data on a day has no hours that day instead of the
+	// day before's total.
 	public static List<ExposureDataDto> FillVibrationHours(
 		List<ExposureDataDto> userData,
 		DateTime startTime,
@@ -226,7 +227,10 @@ public class DataFetchHandler(AppDbContext _context)
 			{
 				previous = current;
 			}
-			else if (previous != null && previous.Time.Date == time.Date)
+			else if (
+				previous != null
+				&& TimeWindowUtils.StartOfOsloDay(previous.Time) == TimeWindowUtils.StartOfOsloDay(time)
+			)
 			{
 				filledData.Add(
 					new ExposureDataDto
@@ -244,12 +248,12 @@ public class DataFetchHandler(AppDbContext _context)
 		return filledData;
 	}
 
-	// One worker's share of hours at each danger level, per day
+	// One worker's share of hours at each danger level, per Norwegian day. Each day's `Time` is its midnight in Oslo, as UTC.
 	public static IEnumerable<AboveThresholdRate> GetWorkerDailyRates(
 		IEnumerable<ExposureDataDto> userData
 	) =>
 		userData
-			.GroupBy(d => d.Time.Date)
+			.GroupBy(d => TimeWindowUtils.StartOfOsloDay(d.Time))
 			.Select(g => new AboveThresholdRate
 			{
 				Time = g.Key,

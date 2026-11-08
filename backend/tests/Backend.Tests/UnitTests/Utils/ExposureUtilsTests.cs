@@ -178,4 +178,30 @@ public class ExposureUtilsTests
 		Assert.Equal(32, result[0].SumValue);
 		Assert.Equal(userId, result[0].UserId);
 	}
+
+	/// <summary>
+	/// Verifies that a night measurement from 22:00 to 02:00 in Oslo starts a new total at midnight in Oslo, 22:00 UTC in
+	/// summer, though all its hours are on the same UTC date.
+	/// </summary>
+	[Fact]
+	public void CumulateVibrationSumValues_ResetsAtMidnightInOslo()
+	{
+		Guid userId = Guid.NewGuid();
+		// 22:00, 23:00, 00:00 and 01:00 in Oslo on the night to 16 July
+		List<RawExposureData> rawData =
+		[
+			new(new DateTime(2026, 7, 15, 20, 0, 0, DateTimeKind.Utc), 1, 0, 0, 0, userId),
+			new(new DateTime(2026, 7, 15, 21, 0, 0, DateTimeKind.Utc), 2, 0, 0, 0, userId),
+			new(new DateTime(2026, 7, 15, 22, 0, 0, DateTimeKind.Utc), 3, 0, 0, 0, userId),
+			new(new DateTime(2026, 7, 15, 23, 0, 0, DateTimeKind.Utc), 4, 0, 0, 0, userId),
+		];
+
+		List<RawExposureData> result = ExposureUtils.CumulateVibrationSumValues(
+			ExposureType.Vibration,
+			AggregationFunction.Sum,
+			rawData
+		);
+
+		Assert.Equal([1, 3, 3, 7], result.Select(data => data.Value));
+	}
 }

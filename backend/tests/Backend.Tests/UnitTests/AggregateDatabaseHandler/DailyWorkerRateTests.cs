@@ -1,5 +1,6 @@
 using Backend.DTOs;
 using Backend.Models;
+using Backend.Utils;
 
 namespace Backend.Tests.UnitTests.AggregateDatabaseHandler;
 
@@ -9,7 +10,8 @@ namespace Backend.Tests.UnitTests.AggregateDatabaseHandler;
 /// </summary>
 public class DailyWorkerRateTests
 {
-	private static readonly DateTime Day = new(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);
+	// Midnight on 1 October in Oslo (summer time), as UTC, like the aggregate job's days
+	private static readonly DateTime Day = new(2026, 9, 30, 22, 0, 0, DateTimeKind.Utc);
 
 	// One worker's hours, from 08:00 on the given day
 	private static List<ExposureDataDto> Worker(DateTime day, params DangerLevel[] hours) =>
@@ -185,7 +187,10 @@ public class DailyWorkerRateTests
 			endTime
 		);
 
-		Assert.All(overOnlyFirstDay, d => Assert.Equal(Day, d.Time.Date));
+		Assert.All(
+			overOnlyFirstDay,
+			d => Assert.Equal(Day, TimeWindowUtils.StartOfOsloDay(d.Time))
+		);
 		Assert.Equal(16, overOnlyFirstDay.Count);
 
 		var secondDay = Assert.Single(
@@ -194,6 +199,79 @@ public class DailyWorkerRateTests
 		);
 		Assert.Equal(1, secondDay.OverActionRate);
 		Assert.Equal(0, secondDay.OverLimitRate);
+	}
+
+	/// <summary>
+	/// Verifies that a vibration value is filled until midnight in Oslo, so the days daylight saving time starts and ends
+	/// have 23 and 25 hours.
+	/// </summary>
+	[Theory]
+	// Midnight in Oslo on 29 March is 23:00 UTC on 28 March
+	[InlineData(3, 28, 23, 23)]
+	// Midnight in Oslo on 25 October is 22:00 UTC on 24 October
+	[InlineData(10, 24, 22, 25)]
+	public void FillVibrationHours_FillsUntilMidnightInOslo(
+		int month,
+		int utcDay,
+		int utcHour,
+		int expectedHours
+	)
+	{
+		var midnight = new DateTime(2026, month, utcDay, utcHour, 0, 0, DateTimeKind.Utc);
+
+		var filled = DataFetchHandler.FillVibrationHours(
+			[new ExposureDataDto { Time = midnight, DangerLevel = DangerLevel.Safe }],
+			midnight,
+			midnight.AddDays(2)
+		);
+
+		Assert.Equal(expectedHours, filled.Count);
+		Assert.All(filled, d => Assert.Equal(midnight, TimeWindowUtils.StartOfOsloDay(d.Time)));
+	}
+
+	/// <summary>
+	/// Verifies that a night measurement from 22:00 to 02:00 in Oslo is split at midnight in Oslo, so its hours over the
+	/// action value before midnight count on the first day and its safe hours after midnight on the next.
+	/// </summary>
+	[Fact]
+	public void GetWorkerDailyRates_SplitsANightMeasurementAtMidnightInOslo()
+	{
+		var nextDay = Day.AddDays(1);
+		List<ExposureDataDto> night =
+		[
+			new() { Time = nextDay.AddHours(-2), DangerLevel = DangerLevel.Warning },
+			new() { Time = nextDay.AddHours(-1), DangerLevel = DangerLevel.Warning },
+			new() { Time = nextDay, DangerLevel = DangerLevel.Safe },
+			new() { Time = nextDay.AddHours(1), DangerLevel = DangerLevel.Safe },
+		];
+
+		var rates = DataFetchHandler.GetWorkerDailyRates(night).OrderBy(r => r.Time).ToList();
+
+		Assert.Equal(2, rates.Count);
+		Assert.Equal(Day, rates[0].Time);
+		Assert.Equal(1, rates[0].WarningRate);
+		Assert.Equal(2, rates[0].UnitCount);
+		Assert.Equal(nextDay, rates[1].Time);
+		Assert.Equal(0, rates[1].WarningRate);
+		Assert.Equal(2, rates[1].UnitCount);
+	}
+
+	/// <summary>
+	/// Verifies that measurements at 23:30 and 00:30 in Oslo are on different days, though they're on the same UTC date.
+	/// </summary>
+	[Fact]
+	public void GetWorkerDailyRates_PutsHalfPastElevenAndHalfPastMidnightOnDifferentDays()
+	{
+		var nextDay = Day.AddDays(1);
+		List<ExposureDataDto> hours =
+		[
+			new() { Time = nextDay.AddMinutes(-30), DangerLevel = DangerLevel.Safe },
+			new() { Time = nextDay.AddMinutes(30), DangerLevel = DangerLevel.Safe },
+		];
+
+		var days = DataFetchHandler.GetWorkerDailyRates(hours).Select(r => r.Time).Order();
+
+		Assert.Equal([Day, nextDay], days);
 	}
 
 	/// <summary>

@@ -89,16 +89,18 @@ public class ExposureUtils
 
 		List<RawExposureData> result = [];
 
+		// The points add up over a Norwegian day, and start from 0 at midnight in Oslo
 		var sortedData = rawData.OrderBy(data => data.Time).ToList();
 		double cumulativeValue = 0;
-		DateOnly? currentDate = null;
+		DateTime? currentDay = null;
 
 		foreach (var data in sortedData)
 		{
-			if (currentDate != DateOnly.FromDateTime(data.Time))
+			var day = TimeWindowUtils.StartOfOsloDay(data.Time);
+			if (currentDay != day)
 			{
 				cumulativeValue = 0;
-				currentDate = DateOnly.FromDateTime(data.Time);
+				currentDay = day;
 			}
 
 			cumulativeValue += data.Value;

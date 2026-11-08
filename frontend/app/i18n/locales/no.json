@@ -641,61 +641,218 @@
     "dialogTitle": "Dato og visning"
   },
   "safetyJourney": {
-    "title": "Min sikkerhetsreise",
-    "chipLabel": "Min sikkerhetsreise: {{points}} poeng, {{days}} dager på rad",
-    "level": "Nivå {{number}}",
+    "chip": {
+      "operatorLabel": "Min sikkerhetsreise: {{points}} poeng, {{days}} dager på rad",
+      "foremanLabel": "Teamets sikkerhetsreise",
+      "managementLabel": "Innstillinger for belønninger"
+    },
+    "common": {
+      "back": "Tilbake",
+      "pointsDelta": "+{{points}}",
+      "points": "{{points}} poeng",
+      "pointsShort": "{{points}} p",
+      "kr": "{{amount}} kr",
+      "fraction": "{{value}} / {{total}}",
+      "ofTotal": "{{value}} av {{total}}",
+      "days": {
+        "mon": "Man",
+        "tue": "Tir",
+        "wed": "Ons",
+        "thu": "Tor",
+        "fri": "Fre"
+      },
+      "today": "I dag"
+    },
+    "dialog": {
+      "title": "Min sikkerhetsreise",
+      "tabs": {
+        "overview": "Oversikt",
+        "badges": "Merker",
+        "rewards": "Belønninger"
+      },
+      "howToEarn": "Hvordan tjener jeg poeng?",
+      "onlyYou": "Bare du kan se dette"
+    },
     "levels": {
-      "aware": "Bevisst",
-      "observer": "Observatør",
-      "preventer": "Forebygger",
-      "improver": "Forbedrer",
-      "safetyChampion": "Sikkerhetsmester"
+      "level": "Nivå {{number}}",
+      "levelWithName": "Nivå {{number}} · {{name}}",
+      "names": {
+        "aware": "Bevisst",
+        "observer": "Observatør",
+        "preventer": "Forebygger",
+        "improver": "Forbedrer",
+        "safetyChampion": "Sikkerhetsmester"
+      },
+      "lifetimePoints": "{{points}} poeng totalt",
+      "pointsToNext": "{{points}} poeng til {{level}}",
+      "maxLevel": "Du har nådd det høyeste nivået",
+      "streak": "{{days}} dager på rad",
+      "streakExplanation": "Arbeidsdager på rad med sensoren på og uten rød sone."
     },
-    "streak": "{{days}} arbeidsdager",
-    "streakExplanation": "Arbeidsdager på rad med minst én engasjementshandling.",
-    "pointsToNext": "{{points}} til {{level}}",
-    "points": "{{points}} poeng",
-    "badgesTitle": "Merker",
-    "earned": "Opptjent",
-    "badgeInfo": {
-      "sharpEye": "Skriv notat om 3 observasjoner",
-      "noiseDetective": "Loggfør en handling etter et støyvarsel",
-      "preventer": "Loggfør handlinger etter 10 varsler",
-      "improvementMaker": "Send inn et forbedringsforslag",
-      "consistentLogger": "Loggfør handlinger 5 arbeidsdager på rad",
-      "quickResponder": "Svar på 5 varsler"
-    },
-    "days": {
+    "overview": {
+      "lifetime": "Totalt · bestemmer nivået ditt",
+      "balance": "Saldo · brukes på belønninger",
       "today": "I dag",
-      "yesterday": "I går"
+      "todayProgress": "{{points}} / {{max}} poeng",
+      "nothingToday": "Ingen poeng ennå i dag",
+      "weeklyChallenge": "Ukens utfordring",
+      "weeklyTitle": "{{target}} rene skift denne uken",
+      "weeklyBonus": "+{{points}} bonus",
+      "weeklyProgress": "{{done}} av {{target}} gjort. Én bom-dag ødelegger ikke uken.",
+      "weeklyDone": "Ferdig! Bonusen er din.",
+      "dayStatus": {
+        "clean": "Rent skift",
+        "missed": "Rød sone",
+        "upcoming": "Ikke ennå"
+      }
+    },
+    "events": {
+      "cleanShift": "Rent skift",
+      "weeklyChallenge": "Bonus for ukens utfordring",
+      "learningChallenge": "Læringsutfordring",
+      "recoveryAnswer": "Svarte på «hva hjalp?»"
+    },
+    "rules": {
+      "names": {
+        "cleanShift": "Rent skift: ingen rød sone, sensoren på",
+        "weeklyChallenge": "Ukens utfordring: {{target}} rene skift",
+        "learningChallenge": "Læringsutfordring",
+        "recoveryAnswer": "Svar på «hva hjalp?» etter et varsel"
+      },
+      "limit": {
+        "day": "+{{points}} · {{count}} per dag",
+        "week": "+{{points}} · {{count}} per uke"
+      },
+      "maxPerDay": "Maks per dag",
+      "maxPerDayValue": "{{points}} poeng",
+      "bonusOnTop": "Ukebonusen kommer i tillegg."
+    },
+    "prompt": {
+      "waiting": "Venter på svaret ditt",
+      "backInGreen": "{{exposure}} · tilbake i grønn",
+      "redPeriod": "Rød sone {{start}}–{{end}} · Hva hjalp?",
+      "since": "Tilbake i grønn siden {{time}}",
+      "oneTap": "Hva hjalp? Ett trykk, +{{points}} poeng",
+      "notNow": "Ikke nå",
+      "answerLater": "Svar senere i dag",
+      "answered": "+{{points}} SafePoints · {{answer}}",
+      "answeredNoPoints": "{{answer}} · dagens grense er nådd",
+      "thanks": "Takk! Dette viser teamet ditt hva som fungerer.",
+      "undo": "Angre",
+      "answer": "Svar",
+      "options": {
+        "changedTool": "Byttet verktøy",
+        "changedTask": "Byttet oppgave",
+        "tookBreak": "Tok en pause",
+        "hearingProtection": "Hørselvern",
+        "movedAway": "Flyttet meg",
+        "usedRespirator": "Tok på maske",
+        "somethingElse": "Noe annet"
+      }
     },
     "badges": {
-      "sharpEye": "Skarpt øye",
-      "noiseDetective": "Støydetektiv",
-      "preventer": "Forebygger",
-      "improvementMaker": "Forbedringsskaper",
-      "consistentLogger": "Stødig loggfører",
-      "quickResponder": "Rask responder"
+      "closest": "Nærmeste merke",
+      "yours": "Dine merker",
+      "earned": "Opptjent",
+      "progress": "{{progress}} / {{target}}",
+      "names": {
+        "cleanWeek": "Ren uke",
+        "alwaysOn": "Alltid på",
+        "noiseDetective": "Støydetektiv",
+        "steadyStreak": "Stø kurs",
+        "sharpEye": "Skarpt øye",
+        "preventer": "Forebygger"
+      },
+      "info": {
+        "cleanWeek": "{{target}} rene skift på rad",
+        "alwaysOn": "Sensoren på i {{target}} skift",
+        "noiseDetective": "Fortalte hva som hjalp etter et støyvarsel",
+        "steadyStreak": "{{target}} dager på rad",
+        "sharpEye": "{{target}} læringsutfordringer",
+        "preventer": "{{target}} rene skift"
+      },
+      "nextStep": {
+        "cleanWeek": "{{count}} rene skift til på rad",
+        "alwaysOn": "Ha sensoren på i {{count}} skift til",
+        "noiseDetective": "Svar på «hva hjalp?» etter et støyvarsel",
+        "steadyStreak": "{{count}} dager til på rad",
+        "sharpEye": "{{count}} læringsutfordringer til",
+        "preventer": "{{count}} rene skift til"
+      },
+      "team": {
+        "label": "Teammerke",
+        "name": "Felles forebygging",
+        "fullName": "Merket for felles forebygging",
+        "info": "Opptjenes når teamet har {{target}} rene skift i løpet av en uke",
+        "progress": "{{progress}} av {{target}} rene skift denne uken",
+        "remaining": "{{count}} rene skift til for å få det",
+        "earned": "Opptjent denne uken"
+      }
     },
-    "recentTitle": "Siste hendelser",
-    "events": {
-      "loggedVibrationAction": "Loggførte handling etter vibrasjonsvarsel",
-      "observationNote": "Skrev notat om en observasjon",
-      "improvementSuggestion": "Sendte inn et forbedringsforslag"
+    "rewards": {
+      "balance": "Saldo",
+      "neverLowersLevel": "Å bruke poeng senker aldri nivået ditt.",
+      "title": "Belønninger",
+      "redeem": "Løs inn",
+      "cost": "{{cost}} poeng",
+      "moreToGo": "{{cost}} poeng · {{count}} igjen",
+      "chosenByEmployer": "Belønningene velges av arbeidsgiveren din.",
+      "none": "Ingen belønninger tilgjengelig akkurat nå",
+      "history": "Løst inn tidligere",
+      "coupon": "Kupong: {{reward}}",
+      "couponInfo": "Vis denne i kantinen. Gyldig i 30 dager.",
+      "names": {
+        "coffee": "Kaffe",
+        "lunch": "Lunsjkupong",
+        "gym": "Dagspass på treningssenter"
+      }
     },
-    "howToEarnTitle": "Hvordan tjener jeg poeng?",
-    "rules": {
-      "respondedToAlert": "Svarte på varsel og loggførte hva du gjorde",
-      "observationNote": "Notat om en observasjon",
-      "improvementSuggestion": "Forbedringsforslag",
-      "learningChallenge": "Fullført læringsutfordring"
+    "team": {
+      "title": "Teamets sikkerhetsreise",
+      "subtitle": "{{team}} · {{count}} operatører · denne uken",
+      "teamPoints": "Teampoeng",
+      "perOperator": "Rundt {{points}} per operatør",
+      "takingPart": "Deltar",
+      "takingPartInfo": "Tjente poeng denne uken",
+      "cleanShifts": "Rene skift",
+      "alertsAnswered": "Varsler besvart",
+      "alertsAnsweredInfo": "Svar på «hva hjalp?»",
+      "whatHelped": "Hva hjalp etter varsler",
+      "fromAnswers": "Fra {{count}} svar denne uken",
+      "exposureFilter": "Filtrer etter eksponering",
+      "all": "Alle",
+      "tip": "Å bytte verktøy hjelper mest etter vibrasjonsvarsler. Sjekk at reserveverktøy med lav vibrasjon er lett å få tak i.",
+      "privacy": "Hver operatørs egne poeng og nivå er private. Du ser bare teamets totaler."
     },
-    "maxPerDay": "(maks {{max}} per dag)",
-    "onlyYou": "Bare du kan se dette",
-    "nextStepTitle": "Nærmeste badge",
-    "nextStep": {
-      "consistentLogger": "Loggfør handlinger {{count}} arbeidsdager til på rad",
-      "quickResponder": "Svar på {{count}} varsler til"
+    "rewardsSettings": {
+      "title": "Belønninger",
+      "subtitle": "Velg hva operatørene kan bruke SafePoints på.",
+      "table": {
+        "reward": "Belønning",
+        "cost": "Pris",
+        "value": "Verdi",
+        "perPerson": "Per person",
+        "redeemed": "Løst inn",
+        "active": "Aktiv",
+        "perMonth": "{{count}} / måned",
+        "toggleLabel": "{{reward}} aktiv"
+      },
+      "earnHint": "En operatør med bare rene skift tjener rundt {{points}} poeng i uken ({{perShift}} per skift + {{bonus}} i ukebonus).",
+      "budget": {
+        "title": "Månedlig budsjett",
+        "label": "Budsjett per måned (kr)",
+        "used": "Brukt denne måneden",
+        "pauseInfo": "Når budsjettet er brukt opp, pauses belønningene til neste måned."
+      },
+      "form": {
+        "title": "Legg til belønning",
+        "name": "Navn",
+        "namePlaceholder": "f.eks. Kinobillett",
+        "cost": "Pris (poeng)",
+        "value": "Verdi (kr)",
+        "perPerson": "Maks per person per måned",
+        "submit": "Legg til belønning"
+      }
     }
   }
 }

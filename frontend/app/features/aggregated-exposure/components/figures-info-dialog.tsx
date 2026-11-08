@@ -2,8 +2,8 @@ import {
 	AboutFiguresDialog,
 	AboutFiguresText,
 	ExposureCalculations,
-	MissingStates,
 	ThresholdComparison,
+	TimeOverCalculation,
 } from "@/features/aggregated-exposure/components/about-figures.tsx";
 import { type DustField, exposures } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
@@ -17,26 +17,14 @@ export function FiguresInfoDialog({ dustField }: { dustField: DustField }) {
 
 	return (
 		<AboutFiguresDialog
-			source={
-				<>
-					<AboutFiguresText>
-						{t(($) => $.aboutFigures.source.groups, {
-							perOccupation: t(($) => $.aggregatedExposure.perOccupation),
-						})}
-					</AboutFiguresText>
-					<AboutFiguresText>{t(($) => $.aboutFigures.source.hourly)}</AboutFiguresText>
-				</>
-			}
+			comparedWith={<ThresholdComparison exposures={exposures} dustField={dustField} />}
 			calculation={
 				<>
 					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.periodAverage)}</AboutFiguresText>
 					<ExposureCalculations exposures={exposures} dustField={dustField} />
-					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.timeOver)}</AboutFiguresText>
-					<AboutFiguresText>{t(($) => $.aboutFigures.calculation.timeOverVibration)}</AboutFiguresText>
+					<TimeOverCalculation />
 				</>
 			}
-			comparedWith={<ThresholdComparison exposures={exposures} dustField={dustField} />}
-			missing={<MissingStates states={["noData", "suppressed"]} />}
 		/>
 	);
 }

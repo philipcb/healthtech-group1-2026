@@ -44,19 +44,6 @@ export function getHourTicks(day: Date) {
 	);
 }
 
-// The aggregate job counts a point, and its shares, to its UTC date, which a Norwegian day's first hours aren't on
-function isOnUtcDate(point: TrendPointDto, day: Date) {
-	const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-	// A `TZDate`'s `toISOString` is in its own time zone, so the time is read as a plain `Date`, which is in UTC
-	return new Date(point.time.getTime()).toISOString().startsWith(date);
-}
-
-/** The points with the day's shares, which every hour on the day's UTC date repeats. Any points if none are. */
-export function getDaySharePoints(points: Array<TrendPointDto>, day: Date) {
-	const onDate = points.filter((point) => isOnUtcDate(point, day));
-	return onDate.length > 0 ? onDate : points;
-}
-
 export function getTrendTicks(timestamps: Array<number>) {
 	const firstDay = timestamps[0] ?? 0;
 	const lastDay = timestamps.at(-1) ?? 0;

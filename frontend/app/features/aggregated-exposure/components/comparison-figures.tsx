@@ -10,13 +10,14 @@ import {
 	getComparableGroupName,
 } from "@/features/aggregated-exposure/model/compare.ts";
 import {
-	formatAverageShare,
 	formatGroupValue,
+	formatHourBasis,
+	formatShare,
 	getGroupThreshold,
 	getShareLabels,
 	MIN_GROUP_SIZE,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { countHiddenDays, getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { countHiddenDays } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import { getDangerLevel } from "@/lib/danger-levels.ts";
 import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
@@ -93,10 +94,10 @@ export function ComparisonFigures({
 										<Average trend={result.trend} {...averageProps} />
 									</td>
 									<td className="px-3 py-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="action" day={day} />
+										<Share trend={result.trend} kind="action" />
 									</td>
 									<td className="py-3 pl-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="limit" day={day} />
+										<Share trend={result.trend} kind="limit" />
 									</td>
 								</>
 							) : (
@@ -128,13 +129,13 @@ export function ComparisonFigures({
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.action}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="action" day={day} />
+										<Share trend={result.trend} kind="action" />
 									</dd>
 								</div>
 								<div>
 									<dt className="text-muted-foreground text-xs">{shareLabels.limit}</dt>
 									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="limit" day={day} />
+										<Share trend={result.trend} kind="limit" />
 									</dd>
 								</div>
 							</dl>
@@ -231,12 +232,17 @@ function Average({
 	);
 }
 
-// A day's hours repeat the day's shares, so they're taken from the hours on the day's date
-function Share({ trend, kind, day }: { trend: AggregatedTrendOkDto; kind: "action" | "limit"; day?: Date }) {
-	const points = day === undefined ? trend.points : getDaySharePoints(trend.points, day);
+// The backend's share for the period, with the measured hours it's taken over below it
+function Share({ trend, kind }: { trend: AggregatedTrendOkDto; kind: "action" | "limit" }) {
+	const { t, i18n } = useTranslation();
+	const share = kind === "action" ? trend.rateOfHourAboveAction : trend.rateOfHourAboveLimit;
+	const hourBasis = formatHourBasis(share, trend.hourCount, t, i18n.language);
 
-	return formatAverageShare(
-		points.map((point) => (kind === "action" ? point.averageTimeOverAction : point.averageTimeOverLimit)),
+	return (
+		<>
+			{formatShare(share)}
+			{hourBasis && <span className="mt-0.5 block text-pretty text-muted-foreground text-xs">{hourBasis}</span>}
+		</>
 	);
 }
 

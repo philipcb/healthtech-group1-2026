@@ -425,15 +425,19 @@
       "noPeriodAverage": "Ingen verdi for perioden",
       "timeOverAction": "Tid over tiltaksverdi",
       "timeOverLimit": "Tid over grenseverdi",
+      "registeredWorkers": "Registrerte arbeidere: {{count}}",
+      "hourBasis": "Snitt per arbeider og dag · {{hours}} timer målt",
+      "hourBasis_one": "Snitt per arbeider og dag · {{hours}} time målt",
+      "hourBasis_other": "Snitt per arbeider og dag · {{hours}} timer målt",
       "timeOverActionCaption": {
-        "noise": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
-        "dust": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
-        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{action}} kl. 09 og har 8 timer med målinger fra kl. 07: 6 av 8 timer = 75 %. Gruppen: snittet av arbeiderne."
+        "noise": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
+        "dust": "Ola: 2 av 8 timer på {{action}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
+        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{action}} kl. 09 og har 8 timer med målinger fra kl. 07: 6 av 8 timer = 75 %. Dagen: snittet av arbeiderne. Perioden: snittet av dagene."
       },
       "timeOverLimitCaption": {
-        "noise": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
-        "dust": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Gruppen: snittet, 12,5 %.",
-        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{limit}} kl. 11 og har 8 timer med målinger fra kl. 07: 4 av 8 timer = 50 %. Gruppen: snittet av arbeiderne."
+        "noise": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
+        "dust": "Ola: 2 av 8 timer på {{limit}} eller mer = 25 %. Kari: 0 av 8 = 0 %. Dagen: snittet, 12,5 %. Perioden: snittet av dagene.",
+        "vibration": "Poengene legges sammen gjennom dagen. Ola når {{limit}} kl. 11 og har 8 timer med målinger fra kl. 07: 4 av 8 timer = 50 %. Dagen: snittet av arbeiderne. Perioden: snittet av dagene."
       },
       "vibrationPeriodAverage": "Ola har 120 poeng og Kari 80 poeng en dag: (120 + 80) / 2 = 100. Tallet er snittet av dagene.",
       "vibrationDayTotal": "Poeng for dagen",
@@ -543,30 +547,40 @@
   "aboutFigures": {
     "trigger": "Grenseverdier og beregning",
     "title": "Grenseverdier og beregning",
-    "description": "Tiltaks- og grenseverdiene tallene sammenlignes med, hvordan tallene er regnet ut, og hvor de kommer fra.",
+    "description": "Tiltaks- og grenseverdiene tallene sammenlignes med, og hvordan tallene er regnet ut.",
     "headings": {
-      "source": "Kilde",
       "calculation": "Beregning",
-      "comparedWith": "Tiltaks- og grenseverdier",
-      "missing": "Når tall mangler"
-    },
-    "source": {
-      "groups": "Hver gruppe er alle som er målt i ett verft eller bygg. Med «{{perOccupation}}» er hver yrkesgruppe der en egen gruppe.",
-      "hourly": "Dataene har bare tall for hele gruppen: én verdi per time og andeler per dag. Målingene til hver person lagres ikke."
+      "comparedWith": "Tiltaks- og grenseverdier"
     },
     "calculation": {
       "periodAverage": "Tallet som vises, er snittet av dagene i perioden. Dager uten målinger telles ikke.",
-      "timeOver": "Tid over: Ola har målinger i 8 timer, og 2 av dem var på tiltaksverdien eller mer: 2 / 8 = 25 %. Kari: 0 / 8 = 0 %. Gruppen: (25 % + 0 %) / 2 = 12,5 %. Hver arbeider teller likt. Tid over grenseverdi regnes på samme måte.",
-      "timeOverVibration": "Vibrasjon: Ola når tiltaksverdien kl. 09 og har 8 timer med målinger fra kl. 07. Timene fra kl. 09 teller: 6 / 8 = 75 %. Timer etter at Ola har sluttet, teller ikke.",
       "exposure": {
-        "dust": "{{dustField}} TWA i {{unit}}. Kl. 08: Ola 4 og Kari 6 gir 5 for gruppen. Dagens tall er snittet av timene.",
-        "noise": "LAeq i {{unit}}. Kl. 08: Ola 80 og Kari 84 gir 82 for gruppen. Dagens tall er snittet av timene. Merk: 80 og 90 gir 85 her, selv om lydenergien tilsvarer ca. 87. Toppverdier (LCpk) er ikke med i «tid over».",
-        "vibration": "Vibrasjonspoeng. Ola: 40 + 30 + 50 = 120 poeng den dagen. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn."
-      }
-    },
-    "missing": {
-      "noData": "«Ingen data» = ingen målinger. 0 % = det finnes målinger, men ingen var over.",
-      "suppressed": "Grupper har minst {{count}} registrerte personer. Et enkelt døgn kan likevel ha målinger fra færre."
+        "dust": "{{dustField}} TWA i {{unit}}. Gruppens tall for en time er snittet av arbeiderne, og dagens tall er snittet av timene.",
+        "noise": "LAeq i {{unit}}. Gruppens tall for en time er snittet av arbeiderne, og dagens tall er snittet av timene. Merk: 80 og 90 gir 85 her, selv om lydenergien tilsvarer ca. 87. Toppverdier (LCpk) er ikke med i «tid over».",
+        "vibration": "Vibrasjonspoeng, lagt sammen gjennom dagen: 40 + 30 + 50 = 120 poeng. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn."
+      },
+      "exampleWorkers": {
+        "ola": "Ola",
+        "kari": "Kari"
+      },
+      "exposureExample": {
+        "title": "Eksempel: gruppens tall",
+        "exposure": "Eksponering",
+        "group": "Gruppen",
+        "atEight": "kl. 08",
+        "dayTotal": "dagssum"
+      },
+      "timeOver": "Tid over = timer over tiltaksverdien delt på timer målt, for hver arbeider og hver dag.",
+      "timeOverExample": {
+        "title": "Eksempel: tid over tiltaksverdi én dag",
+        "worker": "Arbeider",
+        "measured": "Timer målt",
+        "over": "Timer over",
+        "share": "Tid over",
+        "day": "Dagen: snittet"
+      },
+      "timeOverNote": "Perioden er snittet av dagene. Hver arbeider og hver dag teller likt, uansett hvor mange timer som er målt. Prosenten er derfor ikke andelen av alle målte timer. Tid over grenseverdi regnes på samme måte.",
+      "timeOverVibration": "Vibrasjon: Ola når tiltaksverdien kl. 09 og har 8 timer med målinger fra kl. 07. Timene fra kl. 09 teller: 6 / 8 = 75 %. Timer etter at Ola har sluttet, teller ikke."
     }
   },
   "managementDashboard": {

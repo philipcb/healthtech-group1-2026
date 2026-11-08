@@ -425,15 +425,19 @@
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
+      "registeredWorkers": "Registered workers: {{count}}",
+      "hourBasis": "Average per worker and day · {{hours}} hours measured",
+      "hourBasis_one": "Average per worker and day · {{hours}} hour measured",
+      "hourBasis_other": "Average per worker and day · {{hours}} hours measured",
       "timeOverActionCaption": {
-        "noise": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
-        "dust": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
-        "vibration": "Points add up over the day. Ola reaches {{action}} at 09:00 and has 8 hours of measurements from 07:00: 6 of 8 hours = 75 %. The group: the average of the workers."
+        "noise": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
+        "dust": "Ola: 2 of 8 hours at {{action}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
+        "vibration": "Points add up over the day. Ola reaches {{action}} at 09:00 and has 8 hours of measurements from 07:00: 6 of 8 hours = 75 %. The day: the average of the workers. The period: the average of the days."
       },
       "timeOverLimitCaption": {
-        "noise": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
-        "dust": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The group: the average, 12.5 %.",
-        "vibration": "Points add up over the day. Ola reaches {{limit}} at 11:00 and has 8 hours of measurements from 07:00: 4 of 8 hours = 50 %. The group: the average of the workers."
+        "noise": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
+        "dust": "Ola: 2 of 8 hours at {{limit}} or more = 25 %. Kari: 0 of 8 = 0 %. The day: the average, 12.5 %. The period: the average of the days.",
+        "vibration": "Points add up over the day. Ola reaches {{limit}} at 11:00 and has 8 hours of measurements from 07:00: 4 of 8 hours = 50 %. The day: the average of the workers. The period: the average of the days."
       },
       "vibrationPeriodAverage": "Ola has 120 points and Kari 80 points one day: (120 + 80) / 2 = 100. The figure is the average of the days.",
       "vibrationDayTotal": "Points for the day",
@@ -543,30 +547,40 @@
   "aboutFigures": {
     "trigger": "Limits and calculation",
     "title": "Limits and calculation",
-    "description": "The action and limit values the figures are compared with, how the figures are calculated, and where they come from.",
+    "description": "The action and limit values the figures are compared with, and how the figures are calculated.",
     "headings": {
-      "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Action and limit values",
-      "missing": "When figures are missing"
-    },
-    "source": {
-      "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
-      "hourly": "The data only has figures for the whole group: one value per hour and shares per day. Each person's measurements aren't stored."
+      "comparedWith": "Action and limit values"
     },
     "calculation": {
       "periodAverage": "The figure shown is the average of the days in the period. Days without measurements aren't counted.",
-      "timeOver": "Time above: Ola has measurements in 8 hours, and 2 of them were at the action value or more: 2 / 8 = 25 %. Kari: 0 / 8 = 0 %. The group: (25 % + 0 %) / 2 = 12.5 %. Each worker counts the same. Time above the limit value is calculated the same way.",
-      "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count.",
       "exposure": {
-        "dust": "{{dustField}} TWA in {{unit}}. At 08:00: Ola 4 and Kari 6 give 5 for the group. The day's figure is the average of the hours.",
-        "noise": "LAeq in {{unit}}. At 08:00: Ola 80 and Kari 84 give 82 for the group. The day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
-        "vibration": "Vibration points. Ola: 40 + 30 + 50 = 120 points that day. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day."
-      }
-    },
-    "missing": {
-      "noData": "“No data” = no measurements. 0 % = there are measurements, but none were above.",
-      "suppressed": "Groups have at least {{count}} registered people. A single day can still have measurements from fewer."
+        "dust": "{{dustField}} TWA in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours.",
+        "noise": "LAeq in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
+        "vibration": "Vibration points, added up over the day: 40 + 30 + 50 = 120 points. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day."
+      },
+      "exampleWorkers": {
+        "ola": "Ola",
+        "kari": "Kari"
+      },
+      "exposureExample": {
+        "title": "Example: the group's figures",
+        "exposure": "Exposure",
+        "group": "The group",
+        "atEight": "at 08:00",
+        "dayTotal": "daily total"
+      },
+      "timeOver": "Time above = hours above the action value divided by hours measured, for each worker and each day.",
+      "timeOverExample": {
+        "title": "Example: time above the action value on one day",
+        "worker": "Worker",
+        "measured": "Hours measured",
+        "over": "Hours above",
+        "share": "Time above",
+        "day": "The day: the average"
+      },
+      "timeOverNote": "The period is the average of the days. Each worker and each day counts the same, however many hours were measured. So the percentage isn't the share of all measured hours. Time above the limit value is calculated the same way.",
+      "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count."
     }
   },
   "managementDashboard": {

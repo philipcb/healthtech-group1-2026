@@ -129,14 +129,24 @@ export function getOccupationLabel(occupation: string, t: TranslateFn) {
 
 export const NO_VALUE = "—";
 
-export function formatAverageShare(shares: Array<number | null>) {
-	const present = shares.filter((share) => share !== null);
-	if (present.length === 0) {
-		return NO_VALUE;
+/** A share like 0.125 as "13 %", or "—" when the backend has no share, so no data doesn't read as 0 % */
+export function formatShare(share?: number) {
+	return share === undefined ? NO_VALUE : `${Math.round(share * 100)} %`;
+}
+
+/**
+ * The measured hours a share is taken over, like "Average per worker and day · 200 hours measured". Left out without a share, and for the
+ * days the aggregate job stored before it counted the hours, which have 0 hours.
+ */
+export function formatHourBasis(share: number | undefined, hourCount: number, t: TranslateFn, language: string) {
+	if (share === undefined || hourCount === 0) {
+		return undefined;
 	}
 
-	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
-	return `${Math.round(average * 100)} %`;
+	return t(($) => $.aggregatedExposure.group.hourBasis, {
+		count: hourCount,
+		hours: getThresholdNumberFormat(language).format(hourCount),
+	});
 }
 
 export function getMetricLabel(exposure: Exposure, dustField: DustField, t: TranslateFn) {

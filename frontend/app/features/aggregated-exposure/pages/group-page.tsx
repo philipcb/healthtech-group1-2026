@@ -20,8 +20,9 @@ import {
 } from "@/features/aggregated-exposure/model/compare.ts";
 import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import {
-	formatAverageShare,
 	formatGroupValue,
+	formatHourBasis,
+	formatShare,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getMetricLabel,
@@ -37,7 +38,6 @@ import {
 	toPeriodParams,
 	toTrendPeriodParams,
 } from "@/features/aggregated-exposure/model/period.ts";
-import { getDaySharePoints } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
@@ -121,6 +121,11 @@ export function GroupPage({ groupId }: { groupId: string }) {
 									? getComparableGroupName(group, t)
 									: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
+						)}
+						{group && (
+							<p className="text-pretty text-muted-foreground text-sm tabular-nums">
+								{t(($) => $.aggregatedExposure.group.registeredWorkers, { count: group.workerCount })}
+							</p>
 						)}
 					</div>
 				</header>
@@ -208,7 +213,6 @@ function GroupDetails({
 	// A day shows its hours once, with the day's shares and, for vibration, the day's total points. The backend leaves
 	// out the day before's vibration total, which it keeps until midnight UTC.
 	const points = trend.points;
-	const sharePoints = day === undefined ? points : getDaySharePoints(points, day);
 	// Vibration's last hour is the day's total, since the workers' totals hold until midnight UTC
 	const dayTotal = points.at(-1)?.value ?? null;
 	const metricLabel = getMetricLabel(exposure, dustField, t);
@@ -227,6 +231,20 @@ function GroupDetails({
 		limitCaption: t(($) => $.aggregatedExposure.group.timeOverLimitCaption[exposure], {
 			limit: formatThreshold(threshold.danger),
 		}),
+	};
+	// The backend's share for the period, with the measured hours it's taken over below it
+	const shareValue = (share?: number) => {
+		const hourBasis = formatHourBasis(share, trend.hourCount, t, i18n.language);
+		return (
+			<>
+				{formatShare(share)}
+				{hourBasis && (
+					<span className="mt-1 block text-pretty font-normal text-muted-foreground text-xs tabular-nums">
+						{hourBasis}
+					</span>
+				)}
+			</>
+		);
 	};
 	const exposureName = getDownloadExposureName(exposure, dustField, t);
 	const downloadFilename = toDownloadFilename([
@@ -337,12 +355,12 @@ function GroupDetails({
 				)}
 				<StatisticCardLayout
 					label={kpiText.action}
-					value={formatAverageShare(sharePoints.map((point) => point.averageTimeOverAction))}
+					value={shareValue(trend.rateOfHourAboveAction)}
 					caption={kpiText.actionCaption}
 				/>
 				<StatisticCardLayout
 					label={kpiText.limit}
-					value={formatAverageShare(sharePoints.map((point) => point.averageTimeOverLimit))}
+					value={shareValue(trend.rateOfHourAboveLimit)}
 					caption={kpiText.limitCaption}
 				/>
 			</div>

@@ -425,6 +425,7 @@
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
+      "wholeDayShareColumn": "{{share}}, whole day (%)",
       "registeredWorkers": "Registered workers: {{count}}",
       "hourBasis": "Average per worker and day · {{hours}} hours measured",
       "hourBasis_one": "Average per worker and day · {{hours}} hour measured",
@@ -567,7 +568,7 @@
         "share": "Time above",
         "day": "The day: the average"
       },
-      "timeOverNote": "The period is the average of the days. Each worker and each day counts the same, however many hours were measured. So the percentage isn't the share of all measured hours. Time above the limit value is calculated the same way.",
+      "timeOverNote": "The day is the average of the workers, and each worker counts the same. The period is the average of the days, and each day counts the same, however many workers or hours it had. So the percentage isn't the share of all measured hours. Time above the limit value is calculated the same way.",
       "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count."
     }
   },

@@ -209,10 +209,10 @@ function GroupDetails({
 	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const day = periodSelection.period === "day" ? getSelectedDay(periodSelection) : undefined;
-	// A day shows its hours once, with the day's shares and, for vibration, the day's total points. The backend leaves
-	// out the day before's vibration total, which it keeps until midnight UTC.
+	// A day shows its hours once, with the day's shares and, for vibration, the day's total points. The workers' totals
+	// start at midnight in Oslo, so the day has none of the day before's.
 	const points = trend.points;
-	// Vibration's last hour is the day's total, since the workers' totals hold until midnight UTC
+	// Vibration's last hour is the day's total, since the workers' totals hold until midnight in Oslo
 	const dayTotal = points.at(-1)?.value ?? null;
 	const metricLabel = getMetricLabel(exposure, dustField, t);
 	const threshold = getGroupThreshold(exposure, dustField);
@@ -222,6 +222,9 @@ function GroupDetails({
 	// What each key figure is, in the same style on every card, so it reads as the figure's description
 	const describe = (text: string | undefined) =>
 		text && <span className="text-pretty font-medium tabular-nums">{text}</span>;
+	// A day's hours all get the day's share, so the header says it's for the whole day
+	const shareHeader = (label: string) =>
+		day === undefined ? `${label} (%)` : t(($) => $.aggregatedExposure.group.wholeDayShareColumn, { share: label });
 	const exposureName = getDownloadExposureName(exposure, dustField, t);
 	const downloadFilename = toDownloadFilename([
 		group.site,
@@ -247,12 +250,12 @@ function GroupDetails({
 			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
 		},
 		{
-			header: `${shareLabels.action} (%)`,
+			header: shareHeader(shareLabels.action),
 			value: (point) => toPercent(point.averageTimeOverAction),
 			fractionDigits: 1,
 		},
 		{
-			header: `${shareLabels.limit} (%)`,
+			header: shareHeader(shareLabels.limit),
 			value: (point) => toPercent(point.averageTimeOverLimit),
 			fractionDigits: 1,
 		},

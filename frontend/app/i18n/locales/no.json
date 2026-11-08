@@ -425,6 +425,7 @@
       "noPeriodAverage": "Ingen verdi for perioden",
       "timeOverAction": "Tid over tiltaksverdi",
       "timeOverLimit": "Tid over grenseverdi",
+      "wholeDayShareColumn": "{{share}}, hele dagen (%)",
       "registeredWorkers": "Registrerte arbeidere: {{count}}",
       "hourBasis": "Snitt per arbeider og dag · {{hours}} timer målt",
       "hourBasis_one": "Snitt per arbeider og dag · {{hours}} time målt",
@@ -567,7 +568,7 @@
         "share": "Tid over",
         "day": "Dagen: snittet"
       },
-      "timeOverNote": "Perioden er snittet av dagene. Hver arbeider og hver dag teller likt, uansett hvor mange timer som er målt. Prosenten er derfor ikke andelen av alle målte timer. Tid over grenseverdi regnes på samme måte.",
+      "timeOverNote": "Dagen er snittet av arbeiderne, og hver arbeider teller likt. Perioden er snittet av dagene, og hver dag teller likt, uansett hvor mange arbeidere eller timer den hadde. Prosenten er derfor ikke andelen av alle målte timer. Tid over grenseverdi regnes på samme måte.",
       "timeOverVibration": "Vibrasjon: Ola når tiltaksverdien kl. 09 og har 8 timer med målinger fra kl. 07. Timene fra kl. 09 teller: 6 / 8 = 75 %. Timer etter at Ola har sluttet, teller ikke."
     }
   },

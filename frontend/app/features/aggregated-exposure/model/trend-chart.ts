@@ -16,7 +16,7 @@ export function getComparisonChartMarginRight(isMobile: boolean) {
 	return isMobile ? 12 : END_LABEL_WIDTH;
 }
 
-// The backend sends the start of each UTC day, which is the same day in the app's time zone
+// The backend sends each day as its midnight in Oslo, which is the start of the day in the app's time zone
 export function toTrendDay(time: Date) {
 	return startOfDay(time, { in: TIMEZONE });
 }

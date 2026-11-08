@@ -229,7 +229,8 @@ public class DataFetchHandler(AppDbContext _context)
 			}
 			else if (
 				previous != null
-				&& TimeWindowUtils.StartOfOsloDay(previous.Time) == TimeWindowUtils.StartOfOsloDay(time)
+				&& TimeWindowUtils.StartOfOsloDay(previous.Time)
+					== TimeWindowUtils.StartOfOsloDay(time)
 			)
 			{
 				filledData.Add(

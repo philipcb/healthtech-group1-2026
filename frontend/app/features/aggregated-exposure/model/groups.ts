@@ -37,7 +37,7 @@ export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: stri
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
  * - vibration: `VibrationAverage.AverageExposure`, each hour the average of the workers' total points so far that day.
- *   A worker's total holds until midnight (UTC), so each day's last hour is the average of the workers' daily totals.
+ *   A worker's total holds until midnight in Oslo, so each day's last hour is the average of the workers' daily totals.
  *   The overview averages those days, and the trend shows each day's last hour.
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {

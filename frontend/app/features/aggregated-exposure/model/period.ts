@@ -76,20 +76,21 @@ export function getPeriodLabel(selection: PeriodFields, t: TranslateFn) {
 	}
 }
 
+/** Whether the period has started and ended, with its boundaries in Norwegian time */
 export function getPeriodState({ period, day, month, year }: PeriodFields) {
 	const now = new Date();
 	const start =
 		period === "day"
-			? new Date(year, month, day)
+			? new TZDate(year, month, day, TIMEZONE_NAME)
 			: period === "month"
-				? new Date(year, month, 1)
-				: new Date(year, 0, 1);
+				? new TZDate(year, month, 1, TIMEZONE_NAME)
+				: new TZDate(year, 0, 1, TIMEZONE_NAME);
 	const end =
 		period === "day"
-			? new Date(year, month, day + 1)
+			? new TZDate(year, month, day + 1, TIMEZONE_NAME)
 			: period === "month"
-				? new Date(year, month + 1, 1)
-				: new Date(year + 1, 0, 1);
+				? new TZDate(year, month + 1, 1, TIMEZONE_NAME)
+				: new TZDate(year + 1, 0, 1, TIMEZONE_NAME);
 
 	return now < start ? "notStarted" : now < end ? "inProgress" : "complete";
 }

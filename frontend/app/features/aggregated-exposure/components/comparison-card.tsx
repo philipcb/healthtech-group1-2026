@@ -89,6 +89,11 @@ export function ComparisonCard({
 		return result && isMissing(result) ? [{ group, status: result.status }] : [];
 	});
 	const hasHiddenDays = series.some(({ points }) => points.some((point) => point.value === null));
+	// A day's points are its hours
+	const hiddenLegend =
+		day === undefined
+			? t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)
+			: t(($) => $.aggregatedExposure.compare.hiddenHoursLegend);
 	const isPending = results.some((result) => result.status === "pending");
 	const hasErrors = results.some((result) => result.status === "error");
 	const yards = [...new Set(entries.map(({ group }) => group.site))];
@@ -189,9 +194,15 @@ export function ComparisonCard({
 						) : notInChart.some(({ status }) => status === "notEnoughData") ? (
 							<EmptyState
 								title={t(($) => $.aggregatedExposure.compare.notEnoughData)}
-								description={t(($) => $.aggregatedExposure.compare.noGroupHasEnoughData, {
-									period: periodLabel,
-								})}
+								description={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.noGroupHasEnoughData, {
+												period: periodLabel,
+											})
+										: t(($) => $.aggregatedExposure.compare.noGroupHasEnoughDayData, {
+												period: periodLabel,
+											})
+								}
 							/>
 						) : (
 							<EmptyState
@@ -245,11 +256,11 @@ export function ComparisonCard({
 					{hasHiddenDays && (
 						<span className="flex items-center gap-2">
 							<ThresholdLegendLine
-								label={t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+								label={hiddenLegend}
 								color="var(--muted-foreground)"
 								strokeDasharray="2 4"
 							/>
-							{t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+							{hiddenLegend}
 						</span>
 					)}
 				</div>

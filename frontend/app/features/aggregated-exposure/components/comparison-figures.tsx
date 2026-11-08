@@ -222,7 +222,9 @@ function Average({
 			<ThresholdBar value={average} threshold={threshold} />
 			{hiddenDays > 0 && (
 				<span className="text-muted-foreground text-xs">
-					{t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })}
+					{day === undefined
+						? t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })
+						: t(($) => $.aggregatedExposure.compare.hiddenHours, { count: hiddenDays })}
 				</span>
 			)}
 		</div>
@@ -274,10 +276,15 @@ function MissingFigures({
 		},
 		notEnoughData: {
 			title: t(($) => $.aggregatedExposure.compare.notEnoughData),
-			description: t(($) => $.aggregatedExposure.compare.notEnoughDataDescription, {
-				count: MIN_GROUP_SIZE,
-				period: periodLabel,
-			}),
+			description: isDay
+				? t(($) => $.aggregatedExposure.compare.notEnoughDayDataDescription, {
+						count: MIN_GROUP_SIZE,
+						period: periodLabel,
+					})
+				: t(($) => $.aggregatedExposure.compare.notEnoughDataDescription, {
+						count: MIN_GROUP_SIZE,
+						period: periodLabel,
+					}),
 		},
 		unavailable: {
 			title: t(($) => $.aggregatedExposure.unavailableValue),

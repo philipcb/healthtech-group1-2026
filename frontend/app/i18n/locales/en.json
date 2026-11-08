@@ -517,11 +517,13 @@
       },
       "notEnoughData": "Not enough data",
       "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
+      "notEnoughDayDataDescription": "Fewer than {{count}} people in the group had data on {{period}}.",
       "noData": "No data",
       "noDataDescription": "The group has no measurements in {{period}}.",
       "noDayDataDescription": "The group has no measurements on the selected day.",
       "unavailableDescription": "This exposure can't be calculated for the group yet.",
       "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
+      "noGroupHasEnoughDayData": "None of the groups had enough people with data on {{period}}.",
       "noGroupHasData": "None of the groups have measurements in {{period}}.",
       "noGroupHasDayData": "None of the groups have measurements on the selected day.",
       "retry": "Try again",
@@ -531,7 +533,11 @@
       "hiddenDays": "{{count}} days hidden for privacy",
       "hiddenDays_one": "{{count}} day hidden for privacy",
       "hiddenDays_other": "{{count}} days hidden for privacy",
-      "hiddenDaysLegend": "Days hidden for privacy"
+      "hiddenDaysLegend": "Days hidden for privacy",
+      "hiddenHours": "{{count}} hours hidden for privacy",
+      "hiddenHours_one": "{{count}} hour hidden for privacy",
+      "hiddenHours_other": "{{count}} hours hidden for privacy",
+      "hiddenHoursLegend": "Hours hidden for privacy"
     }
   },
   "aboutFigures": {

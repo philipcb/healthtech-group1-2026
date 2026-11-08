@@ -517,11 +517,13 @@
       },
       "notEnoughData": "Ikke nok data",
       "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
+      "notEnoughDayDataDescription": "Færre enn {{count}} personer i gruppen hadde data den {{period}}.",
       "noData": "Ingen data",
       "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
       "noDayDataDescription": "Gruppen har ingen målinger valgt dag.",
       "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
       "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
+      "noGroupHasEnoughDayData": "Ingen av gruppene hadde nok personer med data den {{period}}.",
       "noGroupHasData": "Ingen av gruppene har målinger i {{period}}.",
       "noGroupHasDayData": "Ingen av gruppene har målinger valgt dag.",
       "retry": "Prøv igjen",
@@ -531,7 +533,11 @@
       "hiddenDays": "{{count}} dager skjult av personvernhensyn",
       "hiddenDays_one": "{{count}} dag skjult av personvernhensyn",
       "hiddenDays_other": "{{count}} dager skjult av personvernhensyn",
-      "hiddenDaysLegend": "Dager skjult av personvernhensyn"
+      "hiddenDaysLegend": "Dager skjult av personvernhensyn",
+      "hiddenHours": "{{count}} timer skjult av personvernhensyn",
+      "hiddenHours_one": "{{count}} time skjult av personvernhensyn",
+      "hiddenHours_other": "{{count}} timer skjult av personvernhensyn",
+      "hiddenHoursLegend": "Timer skjult av personvernhensyn"
     }
   },
   "aboutFigures": {

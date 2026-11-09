@@ -2,7 +2,7 @@ import { TeamStats } from "@/features/safety-journey/components/foreman/team-sta
 import { WhatHelpedChart } from "@/features/safety-journey/components/foreman/what-helped-chart.tsx";
 import { BackButton } from "@/features/safety-journey/components/shared/back-button.tsx";
 import { TeamBadgeCard } from "@/features/safety-journey/components/shared/team-badge-card.tsx";
-import { teamMock } from "@/features/safety-journey/model/mock-data.ts";
+import { useTeamSummary } from "@/features/safety-journey/hooks/use-team-summary.ts";
 import { Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { href } from "react-router";
@@ -10,7 +10,7 @@ import { href } from "react-router";
 /** Foreman view: team totals for this week only, never individual points */
 export function TeamJourneyPage() {
 	const { t } = useTranslation();
-	const team = teamMock;
+	const team = useTeamSummary();
 
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-4">

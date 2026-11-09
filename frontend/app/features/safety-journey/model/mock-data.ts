@@ -14,7 +14,8 @@ export const operatorMock = {
 	lifetimePoints: 420,
 	balance: 120,
 	streakDays: 6,
-	today: [{ rule: "learningChallenge", points: 5, time: "08:10" }] satisfies Array<PointEvent>,
+	/** Nothing earned yet today, so the demo shows points coming in live */
+	today: [] satisfies Array<PointEvent>,
 	week: [
 		{ day: "mon", status: "clean", isToday: false },
 		{ day: "tue", status: "clean", isToday: false },
@@ -22,12 +23,12 @@ export const operatorMock = {
 		{ day: "thu", status: "missed", isToday: true },
 		{ day: "fri", status: "upcoming", isToday: false },
 	] satisfies Array<Weekday>,
-	prompt: {
-		exposure: "vibration",
-		redStart: "10:05",
-		redEnd: "10:12",
-		status: "ask",
-	} satisfies RecoveryPrompt,
+	/** Today's red-zone alerts, newest first. Only the first answer gives points (1 per day). */
+	prompts: [
+		{ id: "dust-1315", exposure: "dust", redStart: "13:15", redEnd: "13:31", status: "ask" },
+		{ id: "vibration-1005", exposure: "vibration", redStart: "10:05", redEnd: "10:12", status: "ask" },
+		{ id: "noise-0840", exposure: "noise", redStart: "08:40", redEnd: "08:52", status: "ask" },
+	] satisfies Array<RecoveryPrompt>,
 	badges: [
 		{ key: "cleanWeek", progress: 5 },
 		{ key: "alwaysOn", progress: 20 },
@@ -84,10 +85,10 @@ export const teamMock: TeamSummary = {
 	teamPoints: 1240,
 	cleanShifts: 31,
 	plannedShifts: 40,
-	alertsAnswered: 9,
-	alertsTotal: 11,
+	alertsAnswered: 8,
+	alertsTotal: 9,
 	answers: [
-		{ exposure: "vibration", option: "changedTool", count: 4 },
+		{ exposure: "vibration", option: "changedTool", count: 3 },
 		{ exposure: "vibration", option: "tookBreak", count: 1 },
 		{ exposure: "noise", option: "movedAway", count: 2 },
 		{ exposure: "noise", option: "tookBreak", count: 1 },

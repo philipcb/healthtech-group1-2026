@@ -14,10 +14,10 @@ export function NotificationBell() {
 	const { t } = useTranslation();
 	const { visible, openPopup, closePopup } = usePopup();
 	const { user } = useUser();
-	const { prompt } = useSafetyJourney();
-	// The "what helped?" prompt counts as unread until it is answered or put off
-	const hasUnreadPrompt = SHOW_SAFETY_JOURNEY && user.role === "operator" && prompt.status === "ask";
-	const count = HARDCODED_NOTIFICATION_COUNT + (hasUnreadPrompt ? 1 : 0);
+	const { unreadPromptCount } = useSafetyJourney();
+	// Each "what helped?" prompt counts as unread until it is answered or put off
+	const showPrompts = SHOW_SAFETY_JOURNEY && user.role === "operator";
+	const count = HARDCODED_NOTIFICATION_COUNT + (showPrompts ? unreadPromptCount : 0);
 
 	return (
 		<>

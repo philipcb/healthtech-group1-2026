@@ -748,6 +748,26 @@
         "movedAway": "Flyttet meg",
         "usedRespirator": "Tok på maske",
         "somethingElse": "Noe annet"
+      },
+      "limitReached": "Dagens grense er nådd",
+      "thanksNoPoints": "Svaret ditt hjelper fortsatt teamet å se hva som fungerer.",
+      "oneTapNoPoints": "Dagens svarpoeng er brukt, men svarene dine hjelper fortsatt teamet."
+    },
+    "learning": {
+      "title": "Læringsutfordring",
+      "correct": "Riktig!",
+      "incorrect": "Ikke helt.",
+      "earned": "+{{points}} poeng",
+      "questions": {
+        "vibrationGrip": {
+          "question": "Du sliper og får et vibrasjonsvarsel. Hva senker eksponeringen din mest?",
+          "options": {
+            "gripHarder": "Holde hardere rundt verktøyet",
+            "lowVibrationTool": "Bytte til et verktøy med lav vibrasjon",
+            "workFaster": "Jobbe raskere for å bli ferdig fortere"
+          },
+          "explanation": "Et verktøy med lav vibrasjon senker dosen med en gang. Hardere grep sender mer vibrasjon inn i hendene, og å stresse senker ikke vibrasjonsnivået."
+        }
       }
     },
     "badges": {

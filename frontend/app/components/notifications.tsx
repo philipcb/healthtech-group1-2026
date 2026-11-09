@@ -1,4 +1,4 @@
-import { RecoveryPrompt } from "@/features/safety-journey/components/notifications/recovery-prompt.tsx";
+import { RecoveryPrompts } from "@/features/safety-journey/components/notifications/recovery-prompt.tsx";
 import { SHOW_SAFETY_JOURNEY } from "@/features/safety-journey/model/config.ts";
 import { useUser } from "@/features/user/user-context.tsx";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
@@ -51,7 +51,7 @@ export function Notifications({ onParentClose }: { onParentClose: () => void }) 
 				showRecoveryPrompt ? "max-h-[28rem]" : "max-h-72",
 			)}
 		>
-			{showRecoveryPrompt && <RecoveryPrompt />}
+			{showRecoveryPrompt && <RecoveryPrompts />}
 			{notifications.map(({ exposure, date, dangerLevel }) => {
 				const notificationLink = user.role === "foreman" ? `/foreman` : `/operator/${exposure}`;
 				let notificationLinkSearch = "";

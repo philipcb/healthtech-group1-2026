@@ -751,6 +751,26 @@
         "movedAway": "Moved away",
         "usedRespirator": "Put on a mask",
         "somethingElse": "Something else"
+      },
+      "limitReached": "Daily limit reached",
+      "thanksNoPoints": "Your answer still helps your team see what works.",
+      "oneTapNoPoints": "Today's answer points are used, but your answers still help the team."
+    },
+    "learning": {
+      "title": "Learning challenge",
+      "correct": "Correct!",
+      "incorrect": "Not quite.",
+      "earned": "+{{points}} points",
+      "questions": {
+        "vibrationGrip": {
+          "question": "You're grinding and get a vibration alert. What lowers your exposure the most?",
+          "options": {
+            "gripHarder": "Grip the tool harder",
+            "lowVibrationTool": "Switch to a low-vibration tool",
+            "workFaster": "Work faster to finish sooner"
+          },
+          "explanation": "A low-vibration tool lowers the dose right away. Gripping harder sends more vibration into your hands, and rushing doesn't lower the vibration level."
+        }
       }
     },
     "badges": {

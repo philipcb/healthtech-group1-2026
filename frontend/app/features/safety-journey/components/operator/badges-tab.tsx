@@ -2,17 +2,20 @@ import { Progress } from "@/components/ui/progress.tsx";
 import { BadgeGrid } from "@/features/safety-journey/components/operator/badge-grid.tsx";
 import { BadgeEmblem } from "@/features/safety-journey/components/shared/badge-emblem.tsx";
 import { TeamBadgeCard } from "@/features/safety-journey/components/shared/team-badge-card.tsx";
+import { useTeamSummary } from "@/features/safety-journey/hooks/use-team-summary.ts";
 import { getClosestBadge } from "@/features/safety-journey/model/badges.ts";
-import { operatorMock, teamMock } from "@/features/safety-journey/model/mock-data.ts";
+import { useSafetyJourney } from "@/features/safety-journey/state/use-safety-journey.ts";
 import { useTranslation } from "react-i18next";
 
 export function BadgesTab() {
 	const { t } = useTranslation();
-	const closest = getClosestBadge(operatorMock.badges);
+	const { badgeProgress } = useSafetyJourney();
+	const team = useTeamSummary();
+	const closest = getClosestBadge(badgeProgress);
 
 	return (
 		<div className="flex flex-col gap-4">
-			<TeamBadgeCard cleanShifts={teamMock.cleanShifts} />
+			<TeamBadgeCard cleanShifts={team.cleanShifts} />
 
 			{closest && (
 				<section className="flex items-center gap-4 rounded-lg border p-3">
@@ -38,7 +41,7 @@ export function BadgesTab() {
 
 			<section className="flex flex-col gap-2">
 				<h3 className="font-semibold text-sm">{t(($) => $.safetyJourney.badges.yours)}</h3>
-				<BadgeGrid progress={operatorMock.badges} />
+				<BadgeGrid progress={badgeProgress} />
 			</section>
 		</div>
 	);

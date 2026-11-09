@@ -1,4 +1,4 @@
-import type { EarnRule, EarnRuleKey, Level } from "@/features/safety-journey/model/types.ts";
+import type { EarnRule, EarnRuleKey, Level, PointEvent } from "@/features/safety-journey/model/types.ts";
 
 export const LEVELS = [
 	{ key: "aware", minPoints: 0 },
@@ -57,4 +57,24 @@ export function getLevelProgress(lifetimePoints: number) {
 /** The points actually given when `points` are earned on a day that already has `todayPoints` */
 export function applyDailyCap(todayPoints: number, points: number): number {
 	return Math.max(0, Math.min(points, DAILY_POINT_CAP - todayPoints));
+}
+
+/** Points earned today that count towards the daily cap */
+export function getTodayPoints(events: ReadonlyArray<PointEvent>): number {
+	return events
+		.filter((event) => getRule(event.rule).countsTowardsDailyCap)
+		.reduce((sum, event) => sum + event.points, 0);
+}
+
+/**
+ * The points a rule would give right now: 0 once its limit per day is used up, and never more than
+ * what is left of the daily cap. This is what stops answering many alerts from farming points.
+ */
+export function getAwardablePoints(events: ReadonlyArray<PointEvent>, key: EarnRuleKey): number {
+	const rule = getRule(key);
+	const timesToday = events.filter((event) => event.rule === key && event.points > 0).length;
+
+	if (rule.limit.per === "day" && timesToday >= rule.limit.count) return 0;
+
+	return applyDailyCap(getTodayPoints(events), rule.points);
 }

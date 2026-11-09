@@ -2,10 +2,8 @@ import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { COLORS, tint } from "@/features/safety-journey/model/colors.ts";
 import { RECOVERY_OPTIONS } from "@/features/safety-journey/model/recovery-options.ts";
-import { getRule } from "@/features/safety-journey/model/rules.ts";
-import type { RecoveryOptionKey } from "@/features/safety-journey/model/types.ts";
+import type { RecoveryPrompt as Prompt, RecoveryOptionKey } from "@/features/safety-journey/model/types.ts";
 import { useSafetyJourney } from "@/features/safety-journey/state/use-safety-journey.ts";
-import type { Exposure } from "@/lib/exposures.ts";
 import { Check, Coffee, Ellipsis, Footprints, Headphones, type LucideIcon, Repeat, Wind, Wrench } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -19,14 +17,14 @@ const OPTION_ICONS: Record<RecoveryOptionKey, LucideIcon> = {
 	somethingElse: Ellipsis,
 };
 
-/** The preset answers for an exposure as a 2×2 grid of buttons; one tap answers */
-export function RecoveryOptionButtons({ exposure }: { exposure: Exposure }) {
+/** The preset answers for the prompt's exposure as a 2×2 grid of buttons; one tap answers */
+export function RecoveryOptionButtons({ prompt }: { prompt: Prompt }) {
 	const { t } = useTranslation();
 	const { answerPrompt } = useSafetyJourney();
 
 	return (
 		<div className="grid grid-cols-2 gap-2">
-			{RECOVERY_OPTIONS[exposure].map((option) => {
+			{RECOVERY_OPTIONS[prompt.exposure].map((option) => {
 				const Icon = OPTION_ICONS[option];
 
 				return (
@@ -34,7 +32,7 @@ export function RecoveryOptionButtons({ exposure }: { exposure: Exposure }) {
 						key={option}
 						type="button"
 						variant="outline"
-						onClick={() => answerPrompt(option)}
+						onClick={() => answerPrompt(prompt.id, option)}
 						className="h-11 cursor-pointer justify-start gap-2 bg-background text-left"
 					>
 						<Icon className="size-4 shrink-0" style={{ color: COLORS.indigo }} aria-hidden={true} />
@@ -46,13 +44,30 @@ export function RecoveryOptionButtons({ exposure }: { exposure: Exposure }) {
 	);
 }
 
+/** "+5" while today's answer points are still available, otherwise "Daily limit reached" */
+export function AnswerPointsPill() {
+	const { t } = useTranslation();
+	const { nextAnswerPoints } = useSafetyJourney();
+
+	return (
+		<span
+			className="shrink-0 rounded-full bg-background px-2 py-0.5 font-semibold text-xs"
+			style={nextAnswerPoints ? { color: COLORS.indigo } : undefined}
+		>
+			{nextAnswerPoints
+				? t(($) => $.safetyJourney.common.pointsDelta, { points: nextAnswerPoints })
+				: t(($) => $.safetyJourney.prompt.limitReached)}
+		</span>
+	);
+}
+
 /**
- * The red-zone alert in the bell list, changed in place into "Back in green — what helped?".
+ * One red-zone alert in the bell list, changed in place into "Back in green — what helped?".
  * No extra notification is sent; it is one prompt per alert and it can be put off with "Not now".
  */
-export function RecoveryPrompt() {
+function RecoveryPromptItem({ prompt }: { prompt: Prompt }) {
 	const { t } = useTranslation();
-	const { prompt, skipPrompt, reopenPrompt, undoAnswer } = useSafetyJourney();
+	const { skipPrompt, reopenPrompt, undoAnswer } = useSafetyJourney();
 	const exposureName = t(($) => $.exposures[prompt.exposure]);
 	const title = t(($) => $.safetyJourney.prompt.backInGreen, { exposure: exposureName });
 
@@ -71,19 +86,12 @@ export function RecoveryPrompt() {
 								})}
 							</span>
 						</div>
-						<span
-							className="shrink-0 rounded-full bg-background px-2 py-0.5 font-semibold text-xs"
-							style={{ color: COLORS.indigo }}
-						>
-							{t(($) => $.safetyJourney.common.pointsDelta, {
-								points: getRule("recoveryAnswer").points,
-							})}
-						</span>
+						<AnswerPointsPill />
 					</div>
-					<RecoveryOptionButtons exposure={prompt.exposure} />
+					<RecoveryOptionButtons prompt={prompt} />
 					<button
 						type="button"
-						onClick={skipPrompt}
+						onClick={() => skipPrompt(prompt.id)}
 						className="cursor-pointer self-start text-muted-foreground text-xs underline hover:text-foreground"
 					>
 						{t(($) => $.safetyJourney.prompt.notNow)}
@@ -110,9 +118,19 @@ export function RecoveryPrompt() {
 								? t(($) => $.safetyJourney.prompt.answered, { points: prompt.awardedPoints, answer })
 								: t(($) => $.safetyJourney.prompt.answeredNoPoints, { answer })}
 						</span>
-						<span className="text-muted-foreground text-xs">{t(($) => $.safetyJourney.prompt.thanks)}</span>
+						<span className="text-muted-foreground text-xs">
+							{prompt.awardedPoints
+								? t(($) => $.safetyJourney.prompt.thanks)
+								: t(($) => $.safetyJourney.prompt.thanksNoPoints)}
+						</span>
 					</div>
-					<Button type="button" variant="ghost" size="sm" onClick={undoAnswer} className="cursor-pointer">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={() => undoAnswer(prompt.id)}
+						className="cursor-pointer"
+					>
 						{t(($) => $.safetyJourney.prompt.undo)}
 					</Button>
 				</li>
@@ -127,7 +145,7 @@ export function RecoveryPrompt() {
 						<span className="font-medium text-sm">{title}</span>
 						<button
 							type="button"
-							onClick={reopenPrompt}
+							onClick={() => reopenPrompt(prompt.id)}
 							className="cursor-pointer text-xs hover:underline"
 							style={{ color: COLORS.indigo }}
 						>
@@ -147,4 +165,11 @@ export function RecoveryPrompt() {
 			return exhaustive;
 		}
 	}
+}
+
+/** All of today's "what helped?" prompts, for the top of the bell list */
+export function RecoveryPrompts() {
+	const { prompts } = useSafetyJourney();
+
+	return prompts.map((prompt) => <RecoveryPromptItem key={prompt.id} prompt={prompt} />);
 }

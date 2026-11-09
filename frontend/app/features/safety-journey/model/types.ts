@@ -14,8 +14,8 @@ export type EarnRule = {
 	countsTowardsDailyCap: boolean;
 };
 
-/** Points earned at a time of day, e.g. a learning challenge at 08:10 */
-export type PointEvent = { rule: EarnRuleKey; points: number; time: string };
+/** Points earned at a time of day, e.g. a learning challenge at 08:10. `sourceId` is the prompt it came from, if any. */
+export type PointEvent = { rule: EarnRuleKey; points: number; time: string; sourceId?: string };
 
 export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
@@ -48,6 +48,7 @@ export type RecoveryPromptStatus = "ask" | "done" | "skipped";
 
 /** The "what helped?" question shown after the operator has left the red zone */
 export type RecoveryPrompt = {
+	id: string;
 	exposure: Exposure;
 	redStart: string;
 	redEnd: string;
@@ -56,6 +57,18 @@ export type RecoveryPrompt = {
 	/** Points actually given for the answer, after the daily cap */
 	awardedPoints?: number;
 };
+
+export type LearningChallengeId = "vibrationGrip";
+
+export type LearningOptionKey = "gripHarder" | "lowVibrationTool" | "workFaster";
+
+export type LearningChallenge = {
+	id: LearningChallengeId;
+	options: ReadonlyArray<LearningOptionKey>;
+	correct: LearningOptionKey;
+};
+
+export type LearningAnswer = { choice: LearningOptionKey; awardedPoints: number };
 
 export type RewardIcon = "coffee" | "lunch" | "gym" | "gift";
 

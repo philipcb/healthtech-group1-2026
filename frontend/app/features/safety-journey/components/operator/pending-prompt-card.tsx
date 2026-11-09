@@ -1,41 +1,36 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { RecoveryOptionButtons } from "@/features/safety-journey/components/notifications/recovery-prompt.tsx";
+import {
+	AnswerPointsPill,
+	RecoveryOptionButtons,
+} from "@/features/safety-journey/components/notifications/recovery-prompt.tsx";
 import { COLORS, tint } from "@/features/safety-journey/model/colors.ts";
-import { getRule } from "@/features/safety-journey/model/rules.ts";
+import type { RecoveryPrompt } from "@/features/safety-journey/model/types.ts";
 import { useSafetyJourney } from "@/features/safety-journey/state/use-safety-journey.ts";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-/** "Waiting for your answer": the same question as in the bell, answerable right here in the dialog */
-export function PendingPromptCard() {
+function PendingPromptRow({ prompt }: { prompt: RecoveryPrompt }) {
 	const { t } = useTranslation();
-	const { prompt, isPromptOpen } = useSafetyJourney();
 	const [expanded, setExpanded] = useState(false);
 
-	if (!isPromptOpen) return null;
-
 	return (
-		<section
-			className="flex flex-col gap-3 rounded-lg border p-3"
-			style={{ backgroundColor: tint(COLORS.indigo), borderColor: tint(COLORS.indigo) }}
-		>
+		<li className="flex flex-col gap-3 rounded-md bg-background p-2.5">
 			<div className="flex items-center gap-3">
-				<ExposureIcon type={prompt.exposure} size="md" dangerLevel="safe" />
+				<ExposureIcon type={prompt.exposure} size="sm" dangerLevel="safe" />
 				<div className="min-w-0 flex-1">
-					<p className="font-semibold text-xs uppercase tracking-wide" style={{ color: COLORS.indigo }}>
-						{t(($) => $.safetyJourney.prompt.waiting)}
-					</p>
 					<p className="font-medium text-sm">
 						{t(($) => $.safetyJourney.prompt.backInGreen, {
 							exposure: t(($) => $.exposures[prompt.exposure]),
 						})}
 					</p>
 					<p className="text-muted-foreground text-xs">
-						{t(($) => $.safetyJourney.prompt.oneTap, { points: getRule("recoveryAnswer").points })}
+						{t(($) => $.safetyJourney.prompt.since, { time: prompt.redEnd })}
 					</p>
 				</div>
-				{!expanded && (
+				{expanded ? (
+					<AnswerPointsPill />
+				) : (
 					<Button
 						type="button"
 						size="sm"
@@ -47,7 +42,38 @@ export function PendingPromptCard() {
 					</Button>
 				)}
 			</div>
-			{expanded && <RecoveryOptionButtons exposure={prompt.exposure} />}
+			{expanded && <RecoveryOptionButtons prompt={prompt} />}
+		</li>
+	);
+}
+
+/** "Waiting for your answer": the same questions as in the bell, answerable right here in the dialog */
+export function PendingPromptCard() {
+	const { t } = useTranslation();
+	const { openPrompts, nextAnswerPoints } = useSafetyJourney();
+
+	if (!openPrompts.length) return null;
+
+	return (
+		<section
+			className="flex flex-col gap-2.5 rounded-lg border p-3"
+			style={{ backgroundColor: tint(COLORS.indigo), borderColor: tint(COLORS.indigo) }}
+		>
+			<div>
+				<p className="font-semibold text-xs uppercase tracking-wide" style={{ color: COLORS.indigo }}>
+					{t(($) => $.safetyJourney.prompt.waiting)}
+				</p>
+				<p className="text-muted-foreground text-xs">
+					{nextAnswerPoints
+						? t(($) => $.safetyJourney.prompt.oneTap, { points: nextAnswerPoints })
+						: t(($) => $.safetyJourney.prompt.oneTapNoPoints)}
+				</p>
+			</div>
+			<ul className="flex flex-col gap-2">
+				{openPrompts.map((prompt) => (
+					<PendingPromptRow key={prompt.id} prompt={prompt} />
+				))}
+			</ul>
 		</section>
 	);
 }

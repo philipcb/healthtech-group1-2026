@@ -688,5 +688,240 @@
       "date": "Date",
       "time": "Time"
     }
+  },
+  "safetyJourney": {
+    "chip": {
+      "operatorLabel": "My Safety Journey: {{points}} points, {{days}} day streak",
+      "foremanLabel": "Team Safety Journey",
+      "managementLabel": "Rewards settings"
+    },
+    "common": {
+      "back": "Back",
+      "pointsDelta": "+{{points}}",
+      "points": "{{points}} points",
+      "pointsShort": "{{points}} pts",
+      "kr": "{{amount}} kr",
+      "fraction": "{{value}} / {{total}}",
+      "ofTotal": "{{value}} of {{total}}",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri"
+      },
+      "today": "Today"
+    },
+    "dialog": {
+      "title": "My Safety Journey",
+      "tabs": {
+        "overview": "Overview",
+        "badges": "Badges",
+        "rewards": "Rewards"
+      },
+      "howToEarn": "How do I earn points?",
+      "onlyYou": "Only you can see this"
+    },
+    "levels": {
+      "level": "Level {{number}}",
+      "levelWithName": "Level {{number}} · {{name}}",
+      "names": {
+        "aware": "Aware",
+        "observer": "Observer",
+        "preventer": "Preventer",
+        "improver": "Improver",
+        "safetyChampion": "Safety Champion"
+      },
+      "lifetimePoints": "{{points}} lifetime points",
+      "pointsToNext": "{{points}} points to {{level}}",
+      "maxLevel": "You have reached the highest level",
+      "streak": "{{days}}-day streak",
+      "streakExplanation": "Working days in a row with the sensor worn and no red zone."
+    },
+    "overview": {
+      "lifetime": "Lifetime · sets your level",
+      "balance": "Balance · spend on rewards",
+      "today": "Today",
+      "todayProgress": "{{points}} / {{max}} points",
+      "nothingToday": "No points yet today",
+      "weeklyChallenge": "Weekly challenge",
+      "weeklyTitle": "{{target}} clean shifts this week",
+      "weeklyBonus": "+{{points}} bonus",
+      "weeklyProgress": "{{done}} of {{target}} done. One missed day doesn't break it.",
+      "weeklyDone": "Done! The bonus is yours.",
+      "dayStatus": {
+        "clean": "Clean shift",
+        "missed": "Red zone",
+        "upcoming": "Not yet"
+      }
+    },
+    "events": {
+      "cleanShift": "Clean shift",
+      "weeklyChallenge": "Weekly challenge bonus",
+      "learningChallenge": "Learning challenge",
+      "recoveryAnswer": "Answered \"what helped?\""
+    },
+    "rules": {
+      "names": {
+        "cleanShift": "Clean shift: no red zone, sensor worn",
+        "weeklyChallenge": "Weekly challenge: {{target}} clean shifts",
+        "learningChallenge": "Learning challenge",
+        "recoveryAnswer": "Answer \"what helped?\" after an alert"
+      },
+      "limit": {
+        "day": "+{{points}} · {{count}} per day",
+        "week": "+{{points}} · {{count}} per week"
+      },
+      "maxPerDay": "Max per day",
+      "maxPerDayValue": "{{points}} points",
+      "bonusOnTop": "The weekly bonus comes on top."
+    },
+    "prompt": {
+      "waiting": "Waiting for your answer",
+      "backInGreen": "{{exposure}} · back in green",
+      "redPeriod": "Red zone {{start}}–{{end}} · What helped?",
+      "since": "Back in green since {{time}}",
+      "oneTap": "What helped? One tap, +{{points}} points",
+      "notNow": "Not now",
+      "answerLater": "Answer later today",
+      "answered": "+{{points}} SafePoints · {{answer}}",
+      "answeredNoPoints": "{{answer}} · daily limit reached",
+      "thanks": "Thanks! This shows your team what works.",
+      "undo": "Undo",
+      "answer": "Answer",
+      "options": {
+        "changedTool": "Changed tool",
+        "changedTask": "Changed task",
+        "tookBreak": "Took a break",
+        "hearingProtection": "Hearing protection",
+        "movedAway": "Moved away",
+        "usedRespirator": "Put on a mask",
+        "somethingElse": "Something else"
+      },
+      "limitReached": "Daily limit reached",
+      "thanksNoPoints": "Your answer still helps your team see what works.",
+      "oneTapNoPoints": "Today's answer points are used, but your answers still help the team."
+    },
+    "learning": {
+      "title": "Learning challenge",
+      "correct": "Correct!",
+      "incorrect": "Not quite.",
+      "earned": "+{{points}} points",
+      "questions": {
+        "vibrationGrip": {
+          "question": "You're grinding and get a vibration alert. What lowers your exposure the most?",
+          "options": {
+            "gripHarder": "Grip the tool harder",
+            "lowVibrationTool": "Switch to a low-vibration tool",
+            "workFaster": "Work faster to finish sooner"
+          },
+          "explanation": "A low-vibration tool lowers the dose right away. Gripping harder sends more vibration into your hands, and rushing doesn't lower the vibration level."
+        }
+      }
+    },
+    "badges": {
+      "closest": "Closest badge",
+      "yours": "Your badges",
+      "earned": "Earned",
+      "progress": "{{progress}} / {{target}}",
+      "names": {
+        "cleanWeek": "Clean Week",
+        "alwaysOn": "Always On",
+        "noiseDetective": "Noise Detective",
+        "steadyStreak": "Steady Streak",
+        "sharpEye": "Sharp Eye",
+        "preventer": "Preventer"
+      },
+      "info": {
+        "cleanWeek": "{{target}} clean shifts in a row",
+        "alwaysOn": "Sensor worn on {{target}} shifts",
+        "noiseDetective": "Told us what helped after a noise alert",
+        "steadyStreak": "A {{target}}-day streak",
+        "sharpEye": "{{target}} learning challenges",
+        "preventer": "{{target}} clean shifts"
+      },
+      "nextStep": {
+        "cleanWeek": "{{count}} more clean shifts in a row",
+        "alwaysOn": "Wear the sensor on {{count}} more shifts",
+        "noiseDetective": "Answer \"what helped?\" after a noise alert",
+        "steadyStreak": "{{count}} more days on your streak",
+        "sharpEye": "{{count}} more learning challenges",
+        "preventer": "{{count}} more clean shifts"
+      },
+      "team": {
+        "label": "Team badge",
+        "name": "Collective Prevention",
+        "fullName": "Collective Prevention Badge",
+        "info": "Earned when the team has {{target}} clean shifts in a week",
+        "progress": "{{progress}} of {{target}} clean shifts this week",
+        "remaining": "{{count}} more clean shifts to earn it",
+        "earned": "Earned this week"
+      }
+    },
+    "rewards": {
+      "balance": "Balance",
+      "neverLowersLevel": "Spending points never lowers your level.",
+      "title": "Rewards",
+      "redeem": "Redeem",
+      "cost": "{{cost}} points",
+      "moreToGo": "{{cost}} points · {{count}} more to go",
+      "chosenByEmployer": "Rewards are chosen by your employer.",
+      "none": "No rewards available right now",
+      "history": "Redeemed earlier",
+      "coupon": "{{reward}} coupon",
+      "couponInfo": "Show this at the canteen. Valid for 30 days.",
+      "names": {
+        "coffee": "Coffee",
+        "lunch": "Lunch voucher",
+        "gym": "Gym day pass"
+      }
+    },
+    "team": {
+      "title": "Team Safety Journey",
+      "subtitle": "{{team}} · {{count}} operators · this week",
+      "teamPoints": "Team points",
+      "perOperator": "About {{points}} per operator",
+      "takingPart": "Taking part",
+      "takingPartInfo": "Earned points this week",
+      "cleanShifts": "Clean shifts",
+      "alertsAnswered": "Alerts answered",
+      "alertsAnsweredInfo": "\"What helped?\" answers",
+      "whatHelped": "What helped after alerts",
+      "fromAnswers": "From {{count}} answers this week",
+      "exposureFilter": "Filter by exposure",
+      "all": "All",
+      "tip": "Changing tools works best after vibration alerts. Worth checking that spare low-vibration tools are easy to reach.",
+      "privacy": "Each operator's own points and level are private. You only see team totals."
+    },
+    "rewardsSettings": {
+      "title": "Rewards",
+      "subtitle": "Choose what operators can spend their SafePoints on.",
+      "table": {
+        "reward": "Reward",
+        "cost": "Cost",
+        "value": "Value",
+        "perPerson": "Per person",
+        "redeemed": "Redeemed",
+        "active": "Active",
+        "perMonth": "{{count}} / month",
+        "toggleLabel": "{{reward}} active"
+      },
+      "earnHint": "An operator with only clean shifts earns about {{points}} points a week ({{perShift}} per shift + {{bonus}} weekly bonus).",
+      "budget": {
+        "title": "Monthly budget",
+        "label": "Budget per month (kr)",
+        "used": "Used this month",
+        "pauseInfo": "When the budget is used up, rewards pause until next month."
+      },
+      "form": {
+        "title": "Add reward",
+        "name": "Name",
+        "namePlaceholder": "e.g. Cinema ticket",
+        "cost": "Cost (points)",
+        "value": "Value (kr)",
+        "perPerson": "Max per person per month",
+        "submit": "Add reward"
+      }
+    }
   }
 }

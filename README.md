@@ -1,6 +1,6 @@
 # HealthTech
 
-HealthTech is a project for Aker Solutions in the NTNU course TDT4290 Customer Driven Project. We are a group of six students who continued the project in TDT4290.
+HealthTech is a academic project for Aker Solutions. This is the third group of students to work on the project.
 
 <table>
   <tr>
@@ -70,17 +70,25 @@ Remember to change the default database password (`your_secure_password`) in `PO
 
 The setup script uses `dotnet ef`, which you can install by running: `dotnet tool install --global dotnet-ef`
 
-Then run the setup script from the project root. It starts the database, creates the login and aggregate databases, runs the migrations, seeds the sample data and fills the aggregate database. Run it once, on an empty database. Seeding may take a few minutes.
+Then run the following commands in the root directory of the project:
 
 ```sh
 # From project root
-./databaseSetUp.sh
-```
 
-To update the aggregate database with new data later, run only the aggregate job. `TZ=UTC` is needed for the stored hours to be right.
+# Start the database
+docker compose --env-file ./backend/.env up -d db
 
-```sh
-cd backend && TZ=UTC dotnet run --project AggregateDatabaseHandler
+# Navigate to the backend directory
+cd backend
+
+# Run migrations
+dotnet ef database update --project src
+
+# Navigate back to the root directory
+cd ..
+
+# Seed the database with sample data. This may take a few minutes.
+docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
 ```
 
 ### Start the backend

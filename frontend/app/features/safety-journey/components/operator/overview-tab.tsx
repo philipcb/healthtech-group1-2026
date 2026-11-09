@@ -1,3 +1,4 @@
+import { LearningChallengeCard } from "@/features/safety-journey/components/operator/learning-challenge-card.tsx";
 import { LevelProgress } from "@/features/safety-journey/components/operator/level-progress.tsx";
 import { PendingPromptCard } from "@/features/safety-journey/components/operator/pending-prompt-card.tsx";
 import { PointsSummary } from "@/features/safety-journey/components/operator/points-summary.tsx";
@@ -10,6 +11,7 @@ export function OverviewTab() {
 			<LevelProgress />
 			<PointsSummary />
 			<PendingPromptCard />
+			<LearningChallengeCard />
 			<TodayCard />
 			<WeeklyChallengeCard />
 		</div>

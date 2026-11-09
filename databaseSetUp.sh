@@ -9,6 +9,10 @@ set -a
 source ./backend/.env
 set +a
 
+echo "------ empty previous db container" 
+docker compose --env-file ./backend/.env down -v
+
+
 echo "------ start db container" 
 
 docker compose --env-file ./backend/.env up -d db

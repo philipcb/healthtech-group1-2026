@@ -1,6 +1,6 @@
 # HealthTech
 
-HealthTech is a Bachelor's thesis project for Aker Solutions. This is the second group of students to work on the project.
+HealthTech is a academic project for Aker Solutions. This is the third group of students to work on the project.
 
 <table>
   <tr>
@@ -70,26 +70,15 @@ Remember to change the default database password (`your_secure_password`) in `PO
 
 You may also have to download `ef`, which you can do by running: `dotnet tool install --global dotnet-ef`
 
-Then run the following commands in the root directory of the project:
+Then run the following command in the root directory of the project:
 
 ```sh
 # From project root
 
-# Start the database
-docker compose --env-file ./backend/.env up -d db
-
-# Navigate to the backend directory
-cd backend
-
-# Run migrations
-dotnet ef database update --project src
-
-# Navigate back to the root directory
-cd ..
-
-# Seed the database with sample data. This may take a few minutes.
-docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
+./databaseSetUp.sh
 ```
+
+With this, you will reinitialise the previous docker containers you had previously setup, and then create the databases, run the migrations on them, and fill them.
 
 ### Start the backend
 

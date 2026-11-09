@@ -46,7 +46,7 @@ import { useTranslation } from "react-i18next";
  * PDF Export Dialog Component
  *
  * This file provides a dialog UI for selecting a date range before exporting exposure data to PDF.
- * It is a popup that appears when the user clicks the "Export PDF" button in the left sidebar.
+ * It is a popup that appears when the user clicks the "Download report" button below the calendar.
  *
  * Used by: exposure-layout.tsx (the layout wrapper for all exposure pages)
  */
@@ -120,6 +120,12 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 
 	// The months the period export covers.
 	const [localPeriod, setLocalPeriod] = useState<PdfPeriod>(getDefaultPeriod);
+
+	// Clicking a week number in the calendar switches to the week view on that week
+	const selectWeek = useCallback((weekDate: TZDate) => {
+		setLocalView("week");
+		setLocalDate(weekDate);
+	}, []);
 
 	// This component stays mounted while the dialog is closed, so reset the period
 	// each time it opens - during render, so the old period never flashes on screen.
@@ -412,8 +418,8 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 		<Dialog open={open} onOpenChange={handleDialogOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{t(($) => $.layout.exportPdf)}</DialogTitle>
-					<DialogDescription>{t(($) => $.layout.exportPdfDescription)}</DialogDescription>
+					<DialogTitle>{t(($) => $.layout.downloadReport)}</DialogTitle>
+					<DialogDescription>{t(($) => $.layout.downloadReportDescription)}</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4">
@@ -508,7 +514,7 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 								mode={localView}
 								date={localDate}
 								onDateChange={setLocalDate}
-								withFooter={true}
+								onWeekSelect={selectWeek}
 								showWeekNumber={true}
 							/>
 						)}
@@ -525,14 +531,14 @@ export function PdfExportDialog({ open, onOpenChange, exposureType }: PdfExportD
 					</div>
 				)}
 
-				{/* Footer buttons (Cancel / Export) */}
+				{/* Footer buttons (Cancel / Download) */}
 				<DialogFooter>
 					{/* Usable mid-export, except while building - that step can't be interrupted */}
 					<Button variant="outline" onClick={handleCancel} disabled={progress?.step === "building"}>
 						{t(($) => $.common.cancel)}
 					</Button>
 					<Button onClick={handleExport} disabled={isExporting}>
-						{isExporting ? "Exporting..." : t(($) => $.common.export)}
+						{isExporting ? t(($) => $.layout.creatingReport) : t(($) => $.layout.download)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

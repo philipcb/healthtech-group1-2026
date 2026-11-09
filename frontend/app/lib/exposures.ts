@@ -6,6 +6,10 @@ export const exposures = ["dust", "noise", "vibration"] as const satisfies Reado
 export type Exposure = ExposureType;
 export const parseAsExposure = parseAsStringLiteral(exposures);
 
+/** An exposure type, or all of them */
+export const exposureFilters = ["all", ...exposures] as const;
+export type ExposureFilter = (typeof exposureFilters)[number];
+
 export const exposureUnits = ["mg", "ug", "points", "db"] as const;
 export type ExposureUnit = (typeof exposureUnits)[number];
 export const parseAsExposureUnit = parseAsStringLiteral(exposureUnits);

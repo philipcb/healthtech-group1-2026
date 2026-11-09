@@ -40,6 +40,10 @@
       "mg": "mg/m³",
       "points": "Points",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Show exposure",
+      "all": "All"
     }
   },
   "dangerLevels": {
@@ -77,16 +81,17 @@
   "layout": {
     "live": "Live",
     "overview": "Overview",
-    "home": "Home",
-    "team": "Team",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
-    "exportPdf": "Export PDF",
-    "exportPdfDescription": "Select time period for PDF export",
+    "downloadReport": "Download report",
+    "downloadReportDescription": "Choose the period the report covers. It downloads as a PDF.",
+    "download": "Download",
+    "creatingReport": "Creating report…",
     "theme": "Theme",
     "language": "Language",
     "map": "Map",
-    "compare": "Compare"
+    "compare": "Compare",
+    "teamSettings": "Team settings"
   },
   "live": {
     "timeRange": {
@@ -108,9 +113,10 @@
     }
   },
   "exposureSummary": {
+    "ofTotal": "of {{total}}",
     "title": "Exposure",
     "aggregated": {
-      "safe": "Within safe limits",
+      "safe": "Below action value",
       "warning": "Above action value",
       "danger": "Above limit value"
     }
@@ -118,27 +124,40 @@
   "myTrends": {
     "title": "My trends",
     "period": {
-      "week": "Week {{period}} vs. weeks {{baselineStart}}–{{baselineEnd}}",
-      "month": "{{period}} vs. {{baselineStart}}–{{baselineEnd}}"
+      "day": "{{period}} vs. {{baseline}}",
+      "week": "Week {{period}} vs. week {{baseline}}",
+      "month": "{{period}} vs. {{baseline}}"
+    },
+    "previous": {
+      "day": "previous day",
+      "week": "last week",
+      "month": "last month"
     },
     "trend": {
-      "higher": "Higher than usual",
-      "same": "As usual",
-      "lower": "Lower than usual"
+      "higher": "Higher than {{previous}}",
+      "same": "Same as {{previous}}",
+      "lower": "Lower than {{previous}}"
     },
-    "share": "{{percent}}% of measured time above action value (usual: {{normal}}%)",
+    "share": "{{value}}%",
+    "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "higherHint": "Have you changed tools or tasks? Feel free to add a note.",
-    "coverage": {
-      "week": "Measured {{hours}} h in week {{period}} (usual: {{normal}} h)",
-      "month": "Measured {{hours}} h in {{period}} (usual: {{normal}} h)"
-    },
-    "private": "Only you can see this"
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)"
   },
-  "lineChart": {
+  "exposureStatus": {
+    "noData": "No data",
+    "statusDuration": "{{status}}: {{count}} h",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Show {{exposure}}"
+  },
+  "dangerLevelStatus": {
     "danger": "Above limit value",
     "warning": "Above action value",
     "safe": "Within safe limits"
+  },
+  "thresholds": {
+    "warning": "Action value",
+    "danger": "Limit value"
   },
   "notes": {
     "interactive": {
@@ -207,6 +226,11 @@
       "title": "Your team",
       "failedToLoadMembers": "Failed to load team members",
       "noMembersFound": "No team members found",
+      "empty": "No operators in your team yet. Add them in the team settings to follow their exposure here.",
+      "filteredCount": "Showing {{shown}} of {{total}}",
+      "clearFilter": "Clear filter: {{filter}}",
+      "noFilterMatches": "No operators in your team match this filter.",
+      "retry": "Try again",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -222,6 +246,9 @@
       "membersCount": "{{count}} operator in team",
       "membersCount_one": "{{count}} operator in team",
       "membersCount_other": "{{count}} operators in team",
+      "memberCountShort": "{{count}} operators",
+      "memberCountShort_one": "{{count}} operator",
+      "memberCountShort_other": "{{count}} operators",
       "mapTitle": "Location map"
     },
     "overview": {
@@ -253,11 +280,12 @@
         },
         "noActiveSensors": {
           "label": "No active sensors"
-        }
+        },
+        "showInList": "Show in team list",
+        "clearFilter": "Clear filter"
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection",
-      "clearExposureFilter": "Clear exposure filter"
+      "clearUserSelection": "Clear user selection"
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",
@@ -343,7 +371,10 @@
       "title": "Filters",
       "description": "Changes apply right away.",
       "close": "Close",
-      "save": "Save"
+      "reset": "Reset filters",
+      "activeCount": "{{count}} active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
     },
     "occupations": {
       "welder": "Welder",
@@ -360,29 +391,17 @@
       "noise": "Average sound level (LAeq, arithmetic average)",
       "vibration": "Average vibration points"
     },
-    "metricsShort": {
-      "dust": "{{dustField}} TWA",
-      "noise": "LAeq",
-      "vibration": "Points"
-    },
-    "privacyNotice": "Groups with fewer than {{count}} registered people aren't shown.",
     "unavailableValue": "Not available",
     "exposureUnavailable": {
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Show exposure",
-        "all": "All"
-      },
       "level": {
-        "label": "View"
+        "label": "Group by"
       },
       "belowActionValue": "Below action value",
-      "aggregationNotice": "Values are group averages. Individual exposure may vary.",
       "noValue": "No value",
       "groupColumn": "Group",
-      "sortedByStatus": "Sorted by worst status first",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
         "title": "No groups to display",
@@ -449,7 +468,6 @@
         "cleared": "Removed all groups.",
         "undo": "Undo",
         "addOneMore": "Add at least one more group to compare.",
-        "addAtLeastTwo": "Add at least two groups to compare.",
         "noneLeft": "Every group at this level is already added.",
         "noMatches": "No groups match “{{query}}”.",
         "count": "{{count}} groups",
@@ -461,22 +479,17 @@
         "hiddenFromLink_other": "{{count}} groups from the link can't be shown at this level."
       },
       "intro": {
-        "title": "What you can compare",
-        "description": "Choose the kind of group under “Compare”, then add at least two groups with “Add group”. Every group is shown for the same exposure and period.",
         "yard": {
           "title": "Yards",
-          "description": "Everyone measured at a yard counts as one group. Shows which yard has the highest exposure overall, and whether one stands out from the others.",
-          "how": "Compare: Yards"
+          "description": "Everyone measured at a yard counts as one group. Shows which yard has the highest exposure overall, and whether one stands out from the others."
         },
         "hall": {
           "title": "Buildings",
-          "description": "Everyone in one building against everyone in another. Shows where at the yard the exposure is highest, and which buildings to follow up.",
-          "how": "Compare: Buildings"
+          "description": "Everyone in one building against everyone in another. Shows where at the yard the exposure is highest, and which buildings to follow up."
         },
         "occupation": {
           "title": "Occupation groups",
-          "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed.",
-          "how": "Compare: Yards or Buildings, and tick “Split by occupation”"
+          "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed."
         }
       },
       "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
@@ -511,13 +524,13 @@
     }
   },
   "aboutFigures": {
-    "trigger": "About the figures",
-    "title": "About the figures",
-    "description": "Where the figures on this page come from, and how they're calculated.",
+    "trigger": "Limits and calculation",
+    "title": "Limits and calculation",
+    "description": "The action and limit values the figures are compared with, how the figures are calculated, and where they come from.",
     "headings": {
       "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Compared with",
+      "comparedWith": "Action and limit values",
       "missing": "When figures are missing"
     },
     "source": {
@@ -525,15 +538,12 @@
       "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure on the card is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure shown is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
       "exposure": {
         "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
+        "noise": "LAeq in {{unit}}, as a plain average of the decibel values. Decibels are logarithmic, so this average is never higher than an energy average, and often lower when the sound level varies.",
+        "vibration": "Vibration points. The hourly values are averaged the same way as for noise and dust."
       }
-    },
-    "comparedWith": {
-      "unconfirmed": "Not confirmed"
     },
     "missing": {
       "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."
@@ -552,12 +562,7 @@
       "yourExposureExposure": "Your {{exposure}} exposure"
     },
     "subtitle": {
-      "allExposureTypes": "All exposure types",
-      "viewDay": "Day",
-      "viewWeek": "Week {{week}}",
-      "viewMonth": "Month",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "All exposure types"
     }
   },
   "register": {
@@ -630,6 +635,7 @@
     "trendPeakDescription": "Shows the maximum value per day"
   },
   "limitExplanation": {
+    "title": "Action and limit values",
     "actionValue": {
       "label": "Action value",
       "description": "Level where preventative action should be taken."
@@ -641,7 +647,23 @@
   },
   "datePicker": {
     "openLabel": "Choose date and view",
-    "dialogTitle": "Date and view"
+    "dialogTitle": "Date and view",
+    "selectWeek": "Select week {{week}}"
+  },
+  "chartDownload": {
+    "download": "Download data",
+    "comparison": "Comparison",
+    "excel": {
+      "title": "Excel (.xlsx)",
+      "description": "Recommended for Excel"
+    },
+    "csv": {
+      "title": "CSV (.csv)",
+      "description": "Plain text, separated by commas"
+    },
+    "columns": {
+      "date": "Date"
+    }
   },
   "safetyJourney": {
     "chip": {

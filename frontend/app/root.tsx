@@ -66,8 +66,10 @@ export function Layout({ children }: { children: ReactNode }) {
 export default function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-				<NuqsAdapter>
+			<ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+				{/* Not shallow, so React Router sees every change of the search params, and links built from its location, like the
+				    team table's, keep the selected date, view and exposure */}
+				<NuqsAdapter defaultOptions={{ shallow: false }}>
 					<UserProvider>
 						<ViewProvider>
 							<DateProvider>

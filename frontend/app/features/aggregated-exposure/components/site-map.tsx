@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { type GroupSummary, getOccupationLabel, MIN_GROUP_SIZE } from "@/features/aggregated-exposure/model/groups.ts";
+import { type GroupSummary, getOccupationLabel } from "@/features/aggregated-exposure/model/groups.ts";
 import { getBuildings, siteMaps } from "@/features/aggregated-exposure/model/site-maps.ts";
 import { getCenterPoint } from "@/features/location-map/location-map-utils.ts";
 import { useImageSize } from "@/features/location-map/use-image-size.tsx";
@@ -153,9 +153,6 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 								</p>
 							)
 						)}
-						<p className="mt-auto border-t px-2 pt-3 text-muted-foreground text-xs">
-							{t(($) => $.aggregatedExposure.privacyNotice, { count: MIN_GROUP_SIZE })}
-						</p>
 					</aside>
 
 					{siteMap && imageSize && bounds ? (

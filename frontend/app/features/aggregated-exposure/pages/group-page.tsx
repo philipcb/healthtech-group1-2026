@@ -1,40 +1,48 @@
+import { ChartDownload } from "@/components/chart-download.tsx";
 import { DustFieldTabs } from "@/components/dust-field-tabs.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Card } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { ExposureToggle } from "@/features/aggregated-exposure/components/exposure-toggle.tsx";
+import { FiguresInfoDialog } from "@/features/aggregated-exposure/components/figures-info-dialog.tsx";
 import { FilterDialog } from "@/features/aggregated-exposure/components/filter-dialog.tsx";
 import { GroupTrendChart } from "@/features/aggregated-exposure/components/group-trend-chart.tsx";
-import { PeriodAndPrivacyNotice } from "@/features/aggregated-exposure/components/notices.tsx";
-import { PeriodPicker } from "@/features/aggregated-exposure/components/period-picker.tsx";
+import { PeriodNotice } from "@/features/aggregated-exposure/components/notices.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { ThresholdBarLegend } from "@/features/aggregated-exposure/components/threshold-bar.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import {
 	type ComparableGroup,
 	getComparableGroupName,
-	isPerOccupation,
 	toComparableGroups,
 } from "@/features/aggregated-exposure/model/compare.ts";
+import { DOWNLOAD_FRACTION_DIGITS, getDownloadExposureName } from "@/features/aggregated-exposure/model/download.ts";
 import {
 	formatAverageShare,
 	formatGroupValue,
 	getGroupThreshold,
 	getGroupUnitLabel,
 	getMetricLabel,
+	getOccupationLabel,
 	getShareLabels,
 	getThresholdNumberFormat,
 	hasTimeOverThresholds,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import {
+	type PeriodSelection,
+	toPeriodFilenamePart,
+	toPeriodParams,
+} from "@/features/aggregated-exposure/model/period.ts";
 import { StatisticCardLayout } from "@/features/statistic-card-layout.tsx";
 import type { TranslateFn } from "@/i18n/config.ts";
 import { useGetAggregateGroups, useGetAggregateGroupTrend } from "@/lib/api/generated/aggregate-exposure-data.ts";
-import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
+import type { AggregatedTrendOkDto, TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
 import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
+import { type ExportColumn, toDownloadFilename } from "@/lib/plot-export.ts";
 import { cn } from "@/lib/utils.ts";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -80,12 +88,16 @@ export function GroupPage({ groupId }: { groupId: string }) {
 	return (
 		<div className="flex w-full min-w-0 flex-col gap-7">
 			<div className="flex flex-col gap-4 border-b pb-5">
-				<Button asChild={true} variant="ghost" size="sm" className="-ml-2 w-fit">
-					<Link to={{ pathname: scope.overviewPath, search }}>
-						<ArrowLeft aria-hidden="true" className="size-4" />
-						{t(($) => $.aggregatedExposure.group.back)}
-					</Link>
-				</Button>
+				{/* The info button sits in the page's top row, like on the overview and the compare page */}
+				<div className="flex items-center justify-between gap-3">
+					<Button asChild={true} variant="ghost" size="sm" className="-ml-2 w-fit">
+						<Link to={{ pathname: scope.overviewPath, search }}>
+							<ArrowLeft aria-hidden="true" className="size-4" />
+							{t(($) => $.aggregatedExposure.group.back)}
+						</Link>
+					</Button>
+					<FiguresInfoDialog dustField={dustField} />
+				</div>
 				<header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
 					<div className="space-y-1">
 						<p className="text-muted-foreground text-sm">
@@ -97,47 +109,54 @@ export function GroupPage({ groupId }: { groupId: string }) {
 							<Skeleton className="h-8 w-56" />
 						) : (
 							<h1 className="font-medium text-2xl">
-								{group ? getTitle(group, t) : t(($) => $.aggregatedExposure.group.fallbackTitle)}
+								{group
+									? getComparableGroupName(group, t)
+									: t(($) => $.aggregatedExposure.group.fallbackTitle)}
 							</h1>
 						)}
-					</div>
-					<div className="hidden sm:block">
-						<PeriodPicker selection={periodSelection} />
 					</div>
 				</header>
 			</div>
 
-			<FilterDialog periodSelection={periodSelection} onReset={resetGroupFilters} className="sm:hidden">
-				{exposurePickers}
-			</FilterDialog>
-			<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
+			<PeriodPickerLayout selection={periodSelection}>
+				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
+					{exposurePickers}
+				</FilterDialog>
+				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 
-			<PeriodAndPrivacyNotice periodSelection={periodSelection} />
+				<PeriodNotice periodSelection={periodSelection} />
 
-			{groupsQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : groupsQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
-			) : group === undefined ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
-			) : isExposureUnavailable(exposure) ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
-			) : trendQuery.isPending ? (
-				<Skeleton className="h-96 w-full" />
-			) : trendQuery.isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
-			) : trendQuery.data.status === "unavailable" ? (
-				// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
-				<EmptyState
-					title={
-						exposure === "dust"
-							? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
-							: t(($) => $.aggregatedExposure.group.noData)
-					}
-				/>
-			) : (
-				<GroupDetails trend={trendQuery.data} exposure={exposure} dustField={dustField} />
-			)}
+				{groupsQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : groupsQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.error)} />
+				) : group === undefined ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.unavailable.noSuchGroup)} />
+				) : isExposureUnavailable(exposure) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
+				) : trendQuery.isPending ? (
+					<Skeleton className="h-96 w-full" />
+				) : trendQuery.isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.group.trendError)} />
+				) : trendQuery.data.status === "unavailable" ? (
+					// The group exists, since the backend returned it, so `noSuchGroup` means there are no measurements
+					<EmptyState
+						title={
+							exposure === "dust"
+								? t(($) => $.aggregatedExposure.group.noDustFieldData, { dustField: dustFieldLabel })
+								: t(($) => $.aggregatedExposure.group.noData)
+						}
+					/>
+				) : (
+					<GroupDetails
+						trend={trendQuery.data}
+						group={group}
+						periodSelection={periodSelection}
+						exposure={exposure}
+						dustField={dustField}
+					/>
+				)}
+			</PeriodPickerLayout>
 		</div>
 	);
 }
@@ -155,22 +174,16 @@ function getEyebrow(group: ComparableGroup, showsYard: boolean, t: TranslateFn) 
 	return showsYard && group.level !== "yardOccupation" ? `${eyebrow} · ${group.site}` : eyebrow;
 }
 
-function getTitle(group: ComparableGroup, t: TranslateFn) {
-	if (isPerOccupation(group.level)) {
-		return getComparableGroupName(group, t);
-	}
-
-	return group.hall === null
-		? `${group.site} · ${t(($) => $.aggregatedExposure.compare.wholeYard)}`
-		: `${group.hall} · ${t(($) => $.aggregatedExposure.wholeHall)}`;
-}
-
 function GroupDetails({
 	trend,
+	group,
+	periodSelection,
 	exposure,
 	dustField,
 }: {
 	trend: AggregatedTrendOkDto;
+	group: ComparableGroup;
+	periodSelection: PeriodSelection;
 	exposure: Exposure;
 	dustField: DustField;
 }) {
@@ -209,6 +222,36 @@ function GroupDetails({
 						limit: formatThreshold(threshold.danger),
 					}),
 				};
+	const exposureName = getDownloadExposureName(exposure, dustField, t);
+	const downloadFilename = toDownloadFilename([
+		group.site,
+		group.hall,
+		getWholeGroupPart(group, t),
+		exposureName,
+		toPeriodFilenamePart(periodSelection),
+	]);
+	const downloadColumns: Array<ExportColumn<TrendPointDto>> = [
+		{ header: t(($) => $.chartDownload.columns.date), value: (point) => point.time },
+		{
+			header: `${metricLabel} (${getGroupUnitLabel(trend.unit, t)})`,
+			value: (point) => point.value,
+			fractionDigits: DOWNLOAD_FRACTION_DIGITS[trend.unit],
+		},
+		...(timeOverUnavailableCaption === undefined
+			? [
+					{
+						header: `${kpiText.action} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverAction),
+						fractionDigits: 1,
+					},
+					{
+						header: `${kpiText.limit} (%)`,
+						value: (point: TrendPointDto) => toPercent(point.averageTimeOverLimit),
+						fractionDigits: 1,
+					},
+				]
+			: []),
+	];
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -239,12 +282,19 @@ function GroupDetails({
 				) : trend.points.every((point) => point.value === null) ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.group.allSuppressed)} />
 				) : (
-					<GroupTrendChart
-						points={trend.points}
-						unit={trend.unit}
-						label={metricLabel}
-						threshold={threshold}
-					/>
+					<ChartDownload
+						filename={downloadFilename}
+						sheetName={exposureName}
+						columns={downloadColumns}
+						rows={trend.points}
+					>
+						<GroupTrendChart
+							points={trend.points}
+							unit={trend.unit}
+							label={metricLabel}
+							threshold={threshold}
+						/>
+					</ChartDownload>
 				)}
 				{isColored && <ThresholdBarLegend />}
 			</Card>
@@ -277,4 +327,17 @@ function GroupDetails({
 			</div>
 		</div>
 	);
+}
+
+// A share like 0.125 as 12.5, for the downloaded files' percentage columns. The download code rounds it.
+function toPercent(share: number | null) {
+	return share === null ? null : share * 100;
+}
+
+function getWholeGroupPart({ hall, occupation }: ComparableGroup, t: TranslateFn) {
+	if (occupation !== null) {
+		return getOccupationLabel(occupation, t);
+	}
+
+	return hall === null ? t(($) => $.aggregatedExposure.compare.wholeYard) : t(($) => $.aggregatedExposure.wholeHall);
 }

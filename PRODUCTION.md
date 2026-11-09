@@ -1,8 +1,8 @@
 # Production server
 
-You need to create and host a VM on some cloud provider. We use NTNUs StackIT (OpenStack). This document assumes you have already deployed the VM and picks up after you have SSHed into it.
+You need to create and host a VM on some cloud provider. We use NTNUs StackIT (OpenStack) (You can ask for it on NTNU Help Portal). This document assumes you have already deployed the VM and picks up after you have SSHed into it.
 
-<sub>NOTE: This assumes a standard Ubuntu server. It should still be easy to follow for other distros, but not Windows server.</sub>
+<sub>NOTE: This assumes a standard Ubuntu server. It should still be easy to follow for other Unix-like distros, but not Windows server.</sub>
 
 This document explains both *hosting the application* and *hosting the GitHub Actions runner* (for deployment from GitHub).
 
@@ -31,7 +31,7 @@ exit
 
 cd ~/
 
-git clone https://github.com/tdt4290-group2/healthtech.git
+git clone https://github.com/tdt4290-group2/healthtech.git #(or your fork of it)
 
 cd ~/healthtech
 ```
@@ -53,28 +53,53 @@ cp ~/healthtech/backend/.env.example ~/env/backend.env
 # Set the correct permissions
 chmod 600 ~/env/frontend.env ~/env/backend.env
 
-# Update your secrets
+# Update your secrets, set them up for Production rather than localhosting
 nano ~/env/frontend.env
 nano ~/env/backend.env
 # You use CTRL+O to save and CTRL+X to exit in nano.
 ```
 
-### Run database migrations
-
-The migrator service in our `docker-compose.prd.yml` is set up to run the migrations automatically when you launch the app, but you can also run them manually if you want more control or need to troubleshoot.
+The backend uses **three databases** on the same Postgres server: the operational database (`POSTGRES_DB`, named `healthtech`), a login database and an aggregate database. It should contain the credentials for all three databases.
 
 ```bash
-# IMPORTANT: Read the text above
+POSTGRES_DB=...
+POSTGRES_USER=...
+POSTGRES_PASSWORD=...
+
+LOGIN_DB=...
+LOGIN_USER=...
+LOGIN_PASSWORD=...
+
+AGGREGATE_DB=...
+AGGREGATE_USER=...
+AGGREGATE_PASSWORD=...
+```
+
+`docker-compose.prd.yml` refuses to start if any of these are missing. The connection strings (`DATABASE_URL`, `LOGIN_DATABASE_URL`, `AGGREGATE_DATABASE_URL`) are built from them in the compose file, so you don't write them in the env file.
+
+**Important:** the deployment workflow copies `~/env/backend.env`, so update this file *before* merging anything to `main`, otherwise the deployment will fail.
+
+### Run database migrations
+
+Two one-shot services in our `docker-compose.prd.yml` prepare the databases automatically when you launch the app:
+
+1. `db-init` creates the login and aggregate roles and databases if they don't exist (the production equivalent of the `psql` commands in `databaseSetUp.sh`). It is idempotent and also re-syncs the role passwords with your env file.
+2. `db-migrator` then applies the migrations of all three contexts in order: `AppDbContext` (operational), `LoginDbContext` and `AggregateDbContext`. The backend only starts once it has succeeded.
+
+You can also run them manually if you want more control or need to troubleshoot.
+
+```bash
 # (SSH-ed into your server)
 
 cd ~/healthtech
 
 docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml run --rm db-migrator
+# This starts db and db-init first, then runs the three migration bundles.
 ```
 
 ### Launch the application
 
-Build and start all services (database, backend, frontend, and Traefik) from the root directory:
+Build and start all services (database, database init, migrator, backend, frontend, and Traefik) from the root directory:
 
 ```bash
 # (SSH-ed into your server)
@@ -110,7 +135,7 @@ Use a program like WinSCP/Cyberduck/FileZilla to upload the files, or use rsync 
 # Navigate to backend/seed directory on your local machine
 cd path/to/healthtech/backend/seed
 
-rsync -avP -e "ssh -i ./your-key.pem" *.csv ubuntu@<HOST_IP_ADDRESS>:~/healthtech/backend/seed/
+rsync -avP -e "ssh -i ./your-key.pem" *.csv ubuntu@<HOST_IP_ADDRESS>:~/healthtech/backend/seed/ #You can also use sftp or scp if you prefer
 # Update these fields   ^^^^^^^^^^^^               ^^^^^^^^^^^^^^^^^
 
 # If you use an SSH key manager like 1Password, simply omit the -i flag:
@@ -138,6 +163,21 @@ cd ~/healthtech
 docker exec -it healthtech-prd-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
 ```
 
+#### Filling the aggregate database
+
+The aggregate database is filled from the operational and login databases, so run this **after** the seed above. It is a one-shot job (the `aggregate-filler` service, in the `tools` profile), so it is not started by `up`:
+
+```bash
+# (SSH-ed into your server)
+
+cd ~/healthtech
+
+docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml run --rm aggregate-filler
+```
+NOTE: The filler is idempotent so you can re-run it without duplicating data. It only fills data from the "past" so once it has run, no "future" data will appear before you rerun it. It means your management page data stops at the last run you did. A daily fill should be scheduled at 2am on the github self-hosted runner with `.github/workflows/aggregate-daily.yml` but it can be disabled or set up on the VM directly with Cron.
+
+NOTE: the `/seed` folder of the `db` container is the `backend/seed` folder next to the compose file that last started it. The deployment workflow starts it from the runner's workspace, which does not contain the CSV files. Run the seeding from `~/healthtech` as described here, right after copying the CSV files.
+
 ### Maintenance and logs
 
 Check if everything is running correctly:
@@ -156,7 +196,12 @@ docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f doc
 docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml logs -f frontend
 docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml logs -f db
 docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml logs -f traefik
+
+# One-shot services (they exit when done; use these to debug a failed deployment)
+docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml logs db-init
+docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml logs db-migrator
 ```
+
 
 ## Setting up the GitHub Actions runner
 
@@ -191,4 +236,4 @@ sudo ./svc.sh stop
 sudo ./svc.sh uninstall
 ```
 
-See [`./.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) for the deployment workflow.
+See [`./.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) for the deployment workflow and [`./.github/workflows/aggregate-daily.yml`](./.github/workflows/aggregate-daily.yml) for the daily aggregate data run.

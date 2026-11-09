@@ -137,7 +137,8 @@ export function GroupTrendChart({ points, unit, label, threshold }: GroupTrendCh
 					// Straight lines between days, since a curve would suggest values between them that weren't measured
 					type="linear"
 					stroke={threshold === null ? NEUTRAL_COLOR : `url(#${gradientId}-line)`}
-					strokeWidth={3}
+					// As thin as the operator's and foreman's line charts
+					strokeWidth={1.25}
 					strokeLinejoin="round"
 					dot={({ cx, cy, index }) => {
 						const value = rows[index]?.value ?? null;

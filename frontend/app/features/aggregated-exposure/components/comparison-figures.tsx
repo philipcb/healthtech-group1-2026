@@ -162,6 +162,7 @@ function GroupName({
 	const { t } = useTranslation();
 	const getDetailsLink = useGroupDetailsLink();
 	const name = getComparableGroupName(group, t);
+	const context = getComparableGroupContext(group);
 
 	return (
 		<div className="flex items-start gap-2.5">
@@ -175,7 +176,7 @@ function GroupName({
 				>
 					{name}
 				</Link>
-				<p className="text-muted-foreground text-xs">{getComparableGroupContext(group, t)}</p>
+				{context && <p className="text-muted-foreground text-xs">{context}</p>}
 			</div>
 		</div>
 	);
@@ -203,7 +204,9 @@ function Average({
 
 	const level = getDangerLevel(average, threshold.warning, threshold.danger);
 	const levelLabel =
-		level === "safe" ? t(($) => $.aggregatedExposure.overview.belowActionValue) : t(($) => $.lineChart[level]);
+		level === "safe"
+			? t(($) => $.aggregatedExposure.overview.belowActionValue)
+			: t(($) => $.dangerLevelStatus[level]);
 
 	return (
 		<div className="flex max-w-48 flex-col gap-1.5">

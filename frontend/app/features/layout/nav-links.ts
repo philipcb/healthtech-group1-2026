@@ -28,7 +28,7 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 			return [
 				{
 					to: href("/foreman"),
-					label: t(($) => $.layout.home),
+					label: t(($) => $.layout.overview),
 				},
 				{
 					to: href("/foreman/map"),
@@ -36,14 +36,14 @@ export function getLinks(t: TranslateFn, role: User["role"] | null): Array<NavLi
 				},
 				{
 					to: href("/foreman/team"),
-					label: t(($) => $.layout.team),
+					label: t(($) => $.layout.teamSettings),
 				},
 			];
 		}
 
 		case "management": {
 			return [
-				{ to: href("/management"), label: t(($) => $.layout.home) },
+				{ to: href("/management"), label: t(($) => $.layout.overview) },
 				{ to: href("/management/map"), label: t(($) => $.layout.map) },
 				{ to: href("/management/compare"), label: t(($) => $.layout.compare) },
 			];

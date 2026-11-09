@@ -1,0 +1,25 @@
+name: Aggregate filler (daily)
+
+# Same group as deploy.yml, so this never runs at the same time as a deployment.
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # every day at 02:00 UTC (03:00/04:00 in Norway)
+  workflow_dispatch: # lets you run it manually from the Actions tab
+
+jobs:
+  fill-aggregate:
+    runs-on: self-hosted
+    steps:
+      - name: Pull code
+        uses: actions/checkout@v6
+
+      - name: Run aggregate filler
+        # -T: no TTY in CI. --no-deps: the database is already running and migrated,
+        # so don't re-run db-init/db-migrator every day.
+        # The image is rebuilt by deploy.yml, so this uses the code from the last deployment.
+        run: |
+          docker compose --env-file ~/env/backend.env --env-file ~/env/frontend.env -f docker-compose.prd.yml run --rm -T --no-deps aggregate-filler

@@ -1,12 +1,17 @@
 import { DangerLevelDots } from "@/components/danger-level-dots.tsx";
-import { Card, CardContent } from "@/components/ui/card.tsx";
+import { Card, CardContent, CardLabelHeader, CardLabelTitle } from "@/components/ui/card.tsx";
+import { GaugeIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function LimitExplanation() {
 	const { t } = useTranslation();
 
 	return (
-		<Card muted={true} className="px-3 py-2">
+		<Card muted={true} variant="labeled">
+			<CardLabelHeader>
+				<GaugeIcon className="size-4 shrink-0 text-muted-foreground" />
+				<CardLabelTitle>{t(($) => $.limitExplanation.title)}</CardLabelTitle>
+			</CardLabelHeader>
 			{/* Side-by-side below lg (matches this app's mobile threshold) so the two legend
 			    rows share a row instead of each taking the full width; lg:flex-col restores
 			    the original stacked layout used by every other page rendering this card. */}

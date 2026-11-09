@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
- * The "About the figures" dialog every aggregated page shares. It writes the four headings itself, always in the same
+ * The "Limits and calculation" dialog every aggregated page shares. It writes the four headings itself, always in the same
  * order, so a page only decides what goes under them. A section that doesn't apply to the page is left out with `null`.
  * The texts are facts about how the figures are calculated rather than about a page, so the pages can share them.
  */
@@ -28,10 +28,11 @@ export function AboutFiguresDialog({
 	missing: ReactNode;
 }) {
 	const { t } = useTranslation();
+	// In the order of the button's label: the limits first, since they're what people open it for, then the calculation
 	const sections = [
-		{ title: t(($) => $.aboutFigures.headings.source), content: source },
-		{ title: t(($) => $.aboutFigures.headings.calculation), content: calculation },
 		{ title: t(($) => $.aboutFigures.headings.comparedWith), content: comparedWith },
+		{ title: t(($) => $.aboutFigures.headings.calculation), content: calculation },
+		{ title: t(($) => $.aboutFigures.headings.source), content: source },
 		{ title: t(($) => $.aboutFigures.headings.missing), content: missing },
 	];
 
@@ -129,15 +130,7 @@ export function ThresholdComparison({
 								<TableCell>
 									<span className="flex items-center gap-2">
 										<ExposureIcon type={exposure} size="xs" />
-										<span className="flex flex-col">
-											{t(($) => $.exposures[exposure])}
-											{/* See `thresholdByExposure`: the dust thresholds have no documented source */}
-											{exposure === "dust" && (
-												<span className="text-muted-foreground text-xs">
-													{t(($) => $.aboutFigures.comparedWith.unconfirmed)}
-												</span>
-											)}
-										</span>
+										{t(($) => $.exposures[exposure])}
 									</span>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">

@@ -2,24 +2,31 @@ import { FilterDialog } from "@/features/aggregated-exposure/components/filter-d
 import { LevelPicker } from "@/features/aggregated-exposure/components/level-picker.tsx";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
 import type { CompareLevel } from "@/features/aggregated-exposure/model/compare.ts";
-import type { PeriodSelection } from "@/features/aggregated-exposure/model/period.ts";
 import { cn } from "@/lib/utils.ts";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
+/**
+ * A function gets the label's ID, for a control that's named by the label. Otherwise the control names itself, and
+ * the label is hidden from screen readers so it isn't read twice.
+ */
+type LabelledControl = ReactNode | ((labelId: string) => ReactNode);
+
 type FilterPanelProps = {
 	label: string;
-	periodSelection: PeriodSelection;
+	/** Puts the filters back to the defaults, from the dialog on phones */
 	onReset?: () => void;
+	/** How many of the filters that are in the dialog on phones aren't the defaults */
+	activeDialogFilterCount?: number;
 	/** The exposure row, the one filter that's also shown on phones */
-	exposure: FilterRowProps["children"];
+	exposure: LabelledControl;
 	yards: Array<string>;
 	selectedYard: string | null;
 	onYardChange: (yard: string | null) => void;
 	levelLabel: string;
 	level: CompareLevel;
 	onLevelChange: (level: CompareLevel) => void;
-	/** The page's own filters in the dialog on phones, after the level */
+	/** The page's own filters in the dialog on phones, after the yard, as they narrow the place too */
 	dialogFilters?: ReactNode;
 	/** The page's own rows, after the level */
 	children?: ReactNode;
@@ -31,8 +38,8 @@ type FilterPanelProps = {
  */
 export function FilterPanel({
 	label,
-	periodSelection,
 	onReset,
+	activeDialogFilterCount = 0,
 	exposure,
 	yards,
 	selectedYard,
@@ -49,15 +56,15 @@ export function FilterPanel({
 
 	return (
 		<>
-			<FilterDialog periodSelection={periodSelection} showsPeriod={true} onReset={onReset} className="sm:hidden">
+			<FilterDialog onReset={onReset} activeCount={activeDialogFilterCount} className="sm:hidden">
 				{YardFilter && <YardFilter yards={yards} value={selectedYard} onValueChange={onYardChange} />}
+				{dialogFilters}
 				<div className="flex flex-col gap-1.5">
 					<p id={dialogLevelLabelId} className="font-medium text-sm">
 						{levelLabel}
 					</p>
 					<LevelPicker level={level} onLevelChange={onLevelChange} labelledBy={dialogLevelLabelId} />
 				</div>
-				{dialogFilters}
 			</FilterDialog>
 
 			<section
@@ -84,11 +91,7 @@ type FilterRowProps = {
 	/** Shown under the label on phones only */
 	hint?: string;
 	hiddenOnMobile?: boolean;
-	/**
-	 * A function gets the label's ID, for a control that's named by the label. Otherwise the control names itself, and
-	 * the label is hidden from screen readers so it isn't read twice.
-	 */
-	children: ReactNode | ((labelId: string) => ReactNode);
+	children: LabelledControl;
 };
 
 /** One labeled row of a `FilterPanel` */

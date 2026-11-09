@@ -1,14 +1,11 @@
 import type { TranslateFn } from "@/i18n/config.ts";
 import type { AggregatedOverviewResponseDto, SampleDto } from "@/lib/api/generated/models/index.ts";
-import { type DustField, type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
+import { type DustField, type Exposure, type ExposureFilter, type ExposureUnit, exposures } from "@/lib/exposures.ts";
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 
 /** Groups with fewer people than this are never returned by the backend */
 export const MIN_GROUP_SIZE = 5;
-
-export const exposureFilters = ["all", ...exposures] as const;
-export type ExposureFilter = (typeof exposureFilters)[number];
 
 export function getShownExposures(filter: ExposureFilter): ReadonlyArray<Exposure> {
 	return filter === "all" ? exposures : [filter];

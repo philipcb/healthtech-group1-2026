@@ -6,11 +6,13 @@ import { useRoleRedirect } from "@/features/layout/use-role-redirect.ts";
 import { UserDropdown } from "@/features/layout/user-dropdown.tsx";
 import { SafetyJourney } from "@/features/safety-journey/safety-journey.tsx";
 import { SafetyJourneyProvider } from "@/features/safety-journey/state/safety-journey-provider.tsx";
+import { useUser } from "@/features/user/user-context.tsx";
 import { Outlet } from "react-router";
 import "leaflet/dist/leaflet.css";
 
 export default function Layout() {
 	useRoleRedirect();
+	const { user } = useUser();
 
 	return (
 		<SafetyJourneyProvider>
@@ -26,7 +28,8 @@ export default function Layout() {
 								</nav>
 
 								<div className="flex flex-row items-center gap-4">
-									<NotificationBell />
+									{/* Management doesn't see live data, which the notifications are about */}
+									{user?.role !== "management" && <NotificationBell />}
 
 									<SafetyJourney />
 

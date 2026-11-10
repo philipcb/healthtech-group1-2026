@@ -1,5 +1,10 @@
-import type { GroupSummary } from "@/features/aggregated-exposure/model/groups.ts";
+import {
+	type GroupSummary,
+	hideUnavailableAverages,
+	toGroupSummaries,
+} from "@/features/aggregated-exposure/model/groups.ts";
 import { xyToyx } from "@/features/location-map/location-map-utils.ts";
+import type { AggregatedOverviewResponseDto, SampleDto } from "@/lib/api/generated/models/index.ts";
 
 export type SiteMapConfig = {
 	image: string;
@@ -35,19 +40,40 @@ const MOCK_PEOPLE_COUNTS: Partial<Record<string, Partial<Record<string, number>>
 	"Aker Solutions Verdal": { "M-hallen": 26, "A-hallen": 29 },
 };
 
+/** The averages of a whole hall, across its occupations */
+export type HallSummary = { site: string; hall: string; averages: SampleDto["averages"] };
+
+/**
+ * The aggregate API's groups, for `useGetAggregateGroups`'s `select` on the map. Like `toGroupSummaries`, plus the
+ * whole halls it leaves out, which the map colors its buildings by.
+ */
+export function toSiteMapSummaries(response: AggregatedOverviewResponseDto) {
+	return {
+		...toGroupSummaries(response),
+		halls: response.groups.flatMap(
+			({ site, hall, occupation, averages }): Array<HallSummary> =>
+				hall !== null && occupation === null
+					? [{ site, hall, averages: hideUnavailableAverages(averages) }]
+					: [],
+		),
+	};
+}
+
 export type Building = {
 	site: string;
 	hall: string;
 	occupations: Array<string>;
 	/** `null` for halls without a mock head count */
 	peopleCount: number | null;
+	/** `null` when the aggregate API didn't send the whole hall */
+	averages: SampleDto["averages"] | null;
 };
 
 /**
  * The halls of the aggregate API's groups, with the occupations that have a group in each, sorted by name. Only the
  * head counts are mock data.
  */
-export function getBuildings(groups: Array<GroupSummary>, site: string): Array<Building> {
+export function getBuildings(groups: Array<GroupSummary>, halls: Array<HallSummary>, site: string): Array<Building> {
 	const occupationsByHall = Map.groupBy(
 		groups.filter((group) => group.site === site),
 		(group) => group.hall,
@@ -61,6 +87,7 @@ export function getBuildings(groups: Array<GroupSummary>, site: string): Array<B
 				a.localeCompare(b),
 			),
 			peopleCount: MOCK_PEOPLE_COUNTS[site]?.[hall] ?? null,
+			averages: halls.find((summary) => summary.site === site && summary.hall === hall)?.averages ?? null,
 		}))
 		.toSorted((a, b) => a.hall.localeCompare(b.hall));
 }

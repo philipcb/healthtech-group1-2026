@@ -311,7 +311,7 @@
   "aggregatedExposure": {
     "map": {
       "title": "Site map",
-      "description": "An anonymized overview of the occupation groups in each building.",
+      "description": "An anonymized overview of average exposure by building and work group for the selected month or year.",
       "buildings": "Buildings",
       "selectedBuilding": "Selected building",
       "occupations": "Occupation groups",

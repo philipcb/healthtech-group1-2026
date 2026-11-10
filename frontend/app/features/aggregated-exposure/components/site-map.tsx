@@ -1,10 +1,20 @@
 import { Card, CardContent } from "@/components/ui/card.tsx";
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { type GroupSummary, getOccupationLabel } from "@/features/aggregated-exposure/model/groups.ts";
-import { getBuildings, siteMaps } from "@/features/aggregated-exposure/model/site-maps.ts";
+import {
+	compareAverages,
+	formatGroupValue,
+	getGroupThreshold,
+	getMetricLabel,
+	getOccupationLabel,
+	NO_VALUE,
+} from "@/features/aggregated-exposure/model/groups.ts";
+import { getBuildings, siteMaps, type toSiteMapSummaries } from "@/features/aggregated-exposure/model/site-maps.ts";
 import { getCenterPoint } from "@/features/location-map/location-map-utils.ts";
 import { useImageSize } from "@/features/location-map/use-image-size.tsx";
+import type { TranslateFn } from "@/i18n/config.ts";
+import { dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
+import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
 import L, { type LatLngBoundsExpression } from "leaflet";
 import { Building2, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -30,12 +40,22 @@ function createCountIcon(label: string | number, selected: boolean) {
 	return L.divIcon({ className: "", html, iconSize: [42, 42], iconAnchor: [21, 21] });
 }
 
+type SiteMapProps = {
+	site: string;
+	summaries: ReturnType<typeof toSiteMapSummaries>;
+	exposure: Exposure;
+	/** The dust fraction the summaries were requested for */
+	dustField: DustField;
+};
+
 /**
- * The site's buildings and the occupation groups in each, from the aggregate API's groups. Buildings with a position
- * are also drawn on the site's map, when it has one. The head counts are mock data for now, see `getBuildings`. Meant
- * to be rendered with the site as its `key`, so the selected building doesn't carry over to another site.
+ * The site's buildings and the occupation groups in each, from the aggregate API's groups, with their average of the
+ * selected exposure. Buildings are sorted by that average, highest first, and drawn on the site's map, when it has
+ * one, in the color of where the average falls between the action and limit values. The head counts are mock data
+ * for now, see `getBuildings`. Meant to be rendered with the site as its `key`, so the selected building doesn't carry
+ * over to another site.
  */
-export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSummary> }) {
+export function SiteMap({ site, summaries, exposure, dustField }: SiteMapProps) {
 	const { t } = useTranslation();
 	const scope = useDashboardScope();
 	const siteMap = siteMaps[site];
@@ -43,7 +63,20 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 	const mapRef = useRef<L.Map | null>(null);
 	const [selectedHall, setSelectedHall] = useState<string | null>(null);
 
-	const buildings = useMemo(() => getBuildings(groups, site), [groups, site]);
+	const { units, groups, halls } = summaries;
+	const unit = units[exposure];
+	const threshold = getGroupThreshold(exposure, dustField);
+	const buildings = useMemo(
+		() =>
+			getBuildings(groups, halls, site).toSorted((a, b) =>
+				compareAverages(a.averages?.[exposure] ?? null, b.averages?.[exposure] ?? null),
+			),
+		[groups, halls, site, exposure],
+	);
+	const getOccupationAverage = (hall: string, occupation: string) =>
+		groups.find((group) => group.site === site && group.hall === hall && group.occupation === occupation)?.averages[
+			exposure
+		] ?? null;
 	const selectedBuilding = buildings.find((building) => building.hall === selectedHall) ?? null;
 	const bounds = useMemo<LatLngBoundsExpression | null>(
 		() =>
@@ -111,6 +144,9 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 											{building.peopleCount}
 										</span>
 									)}
+									<span className="text-sm tabular-nums">
+										{formatAverage(building.averages?.[exposure] ?? null, unit, t)}
+									</span>
 								</button>
 							);
 						})}
@@ -130,17 +166,32 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 												count: selectedBuilding.peopleCount,
 											})}
 								</p>
+								<p className="mt-3 flex items-center justify-between gap-3 border-t pt-3 text-sm">
+									<span className="text-muted-foreground">
+										{getMetricLabel(exposure, dustField, t)}
+									</span>
+									<span className="shrink-0 font-medium tabular-nums">
+										{formatAverage(selectedBuilding.averages?.[exposure] ?? null, unit, t)}
+									</span>
+								</p>
 								<div className="mt-4">
 									<p className="font-medium text-sm">
 										{t(($) => $.aggregatedExposure.map.occupations)}
 									</p>
-									<ul className="mt-2 flex flex-wrap gap-2">
+									<ul className="mt-2 flex flex-col divide-y">
 										{selectedBuilding.occupations.map((occupation) => (
 											<li
 												key={occupation}
-												className="rounded-md border bg-background px-2 py-1 text-sm"
+												className="flex items-center justify-between gap-3 py-2 text-sm"
 											>
-												{getOccupationLabel(occupation, t)}
+												<span className="min-w-0">{getOccupationLabel(occupation, t)}</span>
+												<span className="shrink-0 font-medium tabular-nums">
+													{formatAverage(
+														getOccupationAverage(selectedBuilding.hall, occupation),
+														unit,
+														t,
+													)}
+												</span>
 											</li>
 										))}
 									</ul>
@@ -175,7 +226,12 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 										if (!positions) return null;
 
 										const active = selectedHall === building.hall;
-										const color = active ? "var(--primary)" : "var(--safe)";
+										const average = building.averages?.[exposure] ?? null;
+										const dangerLevel =
+											average === null
+												? "none"
+												: getDangerLevel(average, threshold.warning, threshold.danger);
+										const { color } = dangerlevelStyles[dangerLevel];
 
 										return (
 											<Polygon
@@ -226,4 +282,8 @@ export function SiteMap({ site, groups }: { site: string; groups: Array<GroupSum
 			</CardContent>
 		</Card>
 	);
+}
+
+function formatAverage(average: number | null, unit: ExposureUnit, t: TranslateFn) {
+	return average === null ? NO_VALUE : formatGroupValue(average, unit, t);
 }

@@ -308,7 +308,7 @@
   "aggregatedExposure": {
     "map": {
       "title": "Områdekart",
-      "description": "Anonym oversikt over yrkesgruppene i hvert bygg.",
+      "description": "Anonym oversikt over eksponeringssnitt per bygg og yrkesgruppe for valgt måned eller år.",
       "buildings": "Bygg",
       "selectedBuilding": "Valgt bygg",
       "occupations": "Yrkesgrupper",

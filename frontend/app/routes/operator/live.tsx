@@ -1,5 +1,6 @@
+import { ExposureIcon } from "@/components/exposure-icon.tsx";
 import { NotesCard } from "@/components/notes-card.tsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card.tsx";
+import { Card, CardContent, CardHeader } from "@/components/ui/card.tsx";
 import { Separator } from "@/components/ui/separator.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import {
@@ -16,9 +17,13 @@ import { useUser } from "@/features/user/user-context.tsx";
 import { getStoredUser } from "@/features/user/user-utils.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { today as getToday } from "@/lib/date.ts";
+import type { Exposure } from "@/lib/exposures.ts";
+import { MOBILE_BREAKOUT_CARD_CLASSNAME } from "@/lib/mobile-breakout.ts";
 import { queryClient } from "@/lib/query-client.ts";
+import { cn } from "@/lib/utils.ts";
 import { Clock } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
+import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/live";
 
@@ -54,102 +59,14 @@ export default function OperatorLiveView() {
 
 	return (
 		<div
-			className="flex w-full flex-col gap-4 md:grid"
+			className="flex w-full flex-col gap-4 lg:grid lg:items-start"
 			style={{
 				gridTemplateColumns: "minmax(calc(var(--spacing) * 40), 1fr) minmax(0, 3fr) calc(var(--spacing) * 73)",
 			}}
 		>
-			<aside className="flex flex-col gap-4 md:col-start-1">
-				<SecurityRegulationsCard />
-				<NotesCard />
-				<LimitExplanation />
-			</aside>
-
-			<div className="flex min-w-0 flex-col gap-4 md:col-start-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>{t(($) => $.exposures.dust)}</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<LiveExposureCard
-							exposure="dust"
-							exposureLabel="PM1 TWA"
-							exposureUnitLabel="µg/m³"
-							chartUnit="ug"
-							data={dustTwa1Data}
-							minTime={start}
-							maxTime={end}
-							chartClassName="h-42 p-0 border-none"
-						/>
-						<Separator />
-						<LiveExposureCard
-							exposure="dust"
-							exposureLabel="PM2.5 TWA"
-							exposureField="pm25_twa"
-							exposureUnitLabel="µg/m³"
-							chartUnit="ug"
-							data={dustTwa25Data}
-							minTime={start}
-							maxTime={end}
-							chartClassName="h-42 p-0 border-none"
-						/>
-						<Separator />
-						<LiveExposureCard
-							exposure="dust"
-							exposureLabel="PM10 TWA"
-							exposureField="pm10_twa"
-							exposureUnitLabel="µg/m³"
-							chartUnit="ug"
-							data={dustTwa10Data}
-							minTime={start}
-							maxTime={end}
-							chartClassName="h-42 p-0 border-none"
-							showLegend={true}
-						/>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>{t(($) => $.exposures.noise)}</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<LiveExposureCard
-							exposure="noise"
-							exposureLabel={t(($) => $.exposures.noise)}
-							exposureUnitLabel="dB"
-							chartUnit="db"
-							data={noiseData}
-							minTime={start}
-							maxTime={end}
-							chartClassName="h-42 p-0 border-none"
-							showLegend={true}
-						/>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>{t(($) => $.exposures.vibration)}</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<LiveExposureCard
-							exposure="vibration"
-							exposureLabel={t(($) => $.exposures.vibration)}
-							exposureUnitLabel={t(($) => $.exposures.units.points)}
-							chartUnit="points"
-							data={vibrationData}
-							minTime={start}
-							maxTime={end}
-							chartClassName="h-42 p-0 border-none"
-							showLegend={true}
-							lineType="monotone"
-						/>
-					</CardContent>
-				</Card>
-			</div>
-
-			<aside className="md:col-start-3">
+			{/* Mobile: time range first since it drives the charts, then the charts, then the info cards.
+			    Desktop (lg+): the grid placements put them back in three columns. */}
+			<aside className="lg:col-start-3 lg:row-start-1">
 				<Card muted={true} className="flex flex-col gap-4">
 					<div className="flex w-full flex-row justify-between">
 						<p className="flex items-center gap-2 text-sm">
@@ -162,6 +79,7 @@ export default function OperatorLiveView() {
 						type="single"
 						value={timeRange}
 						variant="outline"
+						className="inline-grid w-full auto-cols-fr grid-flow-col"
 						onValueChange={(value: TimeRangeOption | "") => {
 							if (value) {
 								setTimeRange(value);
@@ -199,6 +117,98 @@ export default function OperatorLiveView() {
 					</ToggleGroup>
 				</Card>
 			</aside>
+
+			<aside className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1">
+				<SecurityRegulationsCard />
+				<NotesCard />
+				<LimitExplanation />
+			</aside>
+
+			<div className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-start-1">
+				<LiveSection exposure="dust">
+					<LiveExposureCard
+						exposure="dust"
+						exposureLabel="PM1 TWA"
+						exposureUnitLabel="µg/m³"
+						chartUnit="ug"
+						data={dustTwa1Data}
+						minTime={start}
+						maxTime={end}
+						chartClassName="p-0 border-none lg:h-42"
+					/>
+					<Separator />
+					<LiveExposureCard
+						exposure="dust"
+						exposureLabel="PM2.5 TWA"
+						exposureField="pm25_twa"
+						exposureUnitLabel="µg/m³"
+						chartUnit="ug"
+						data={dustTwa25Data}
+						minTime={start}
+						maxTime={end}
+						chartClassName="p-0 border-none lg:h-42"
+					/>
+					<Separator />
+					<LiveExposureCard
+						exposure="dust"
+						exposureLabel="PM10 TWA"
+						exposureField="pm10_twa"
+						exposureUnitLabel="µg/m³"
+						chartUnit="ug"
+						data={dustTwa10Data}
+						minTime={start}
+						maxTime={end}
+						chartClassName="p-0 border-none lg:h-42"
+						showLegend={true}
+					/>
+				</LiveSection>
+
+				<LiveSection exposure="noise">
+					<LiveExposureCard
+						exposure="noise"
+						exposureLabel={t(($) => $.exposures.noise)}
+						exposureUnitLabel="dB"
+						chartUnit="db"
+						data={noiseData}
+						minTime={start}
+						maxTime={end}
+						chartClassName="p-0 border-none lg:h-42"
+						showLegend={true}
+					/>
+				</LiveSection>
+
+				<LiveSection exposure="vibration">
+					<LiveExposureCard
+						exposure="vibration"
+						exposureLabel={t(($) => $.exposures.vibration)}
+						exposureUnitLabel={t(($) => $.exposures.units.points)}
+						chartUnit="points"
+						data={vibrationData}
+						minTime={start}
+						maxTime={end}
+						chartClassName="p-0 border-none lg:h-42"
+						showLegend={true}
+						lineType="monotone"
+					/>
+				</LiveSection>
+			</div>
 		</div>
+	);
+}
+
+/** One exposure's charts under a header that names it, so it's clear where each exposure starts and ends. */
+function LiveSection({ exposure, children }: PropsWithChildren<{ exposure: Exposure }>) {
+	const { t } = useTranslation();
+
+	return (
+		<Card className={cn("relative gap-0", MOBILE_BREAKOUT_CARD_CLASSNAME)}>
+			<CardHeader className="border-b">
+				<h2 className="flex items-center gap-2.5 font-semibold text-lg">
+					<ExposureIcon type={exposure} size="sm" />
+					{t(($) => $.exposures[exposure])}
+				</h2>
+			</CardHeader>
+			<CardContent className="pt-3">{children}</CardContent>
+		</Card>
 	);
 }

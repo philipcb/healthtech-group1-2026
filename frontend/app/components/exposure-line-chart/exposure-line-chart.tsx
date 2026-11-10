@@ -1,33 +1,35 @@
+import {
+	ChartScrubCursor,
+	ChartScrubDot,
+	ChartScrubHeader,
+	ChartScrubTracker,
+	ChartScrubValue,
+	ScrubXAxisTick,
+} from "@/components/chart-scrub.tsx";
 import { ExposureTooltip } from "@/components/exposure-line-chart/exposure-tooltip.tsx";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart.tsx";
+import {
+	SCRUB_CHART_HEIGHT_CLASSNAME,
+	SCRUB_COMPACT_CHART_HEIGHT_CLASSNAME,
+	SCRUB_Y_AXIS_PROPS,
+	useChartScrub,
+} from "@/hooks/use-chart-scrub.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import { getLocale } from "@/i18n/locale.ts";
 import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
-import { DangerLevels } from "@/lib/danger-levels.ts";
+import { DangerLevels, dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import { now as getNow, toTZDate } from "@/lib/date.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
 import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
-import { cn, formatExposureValue } from "@/lib/utils.ts";
+import { cn, formatExposureValue, normalizeDangerLevelForPeakForLineChart } from "@/lib/utils.ts";
 import { TZDate } from "@date-fns/tz";
 import { addMinutes, formatDistanceToNowStrict } from "date-fns";
 import { type PropsWithChildren, useId } from "react";
 import { useTranslation } from "react-i18next";
-import {
-	Area,
-	CartesianGrid,
-	ComposedChart,
-	Legend,
-	Line,
-	XAxis,
-	type XAxisTickContentProps,
-	YAxis,
-	type YAxisTickContentProps,
-} from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, type XAxisTickContentProps, YAxis } from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
-import { CollapsedYAxisTick } from "./collapsed-y-axis-tick.tsx";
-import { COLLAPSED_Y_AXIS_WIDTH } from "./collapsed-y-axis-width.ts";
 import { ExposureDot } from "./exposure-dot.tsx";
 import { ExposureLineChartGradientStops } from "./exposure-line-chart-gradient-stops.tsx";
 import { ThresholdLegend } from "./threshold-legend.tsx";
@@ -51,6 +53,8 @@ export interface ExposureLineChartProps extends PropsWithChildren {
 	chartData: Array<ExposureDataDto>;
 	maxY: number;
 	minY: number;
+	// Overrides the default y ticks (only dust has fixed ones)
+	yTicks?: Array<number>;
 	unit: ExposureUnit;
 	lineType?: CurveType;
 	exposure: Exposure;
@@ -68,12 +72,15 @@ export interface ExposureLineChartProps extends PropsWithChildren {
 	minTime: Date;
 	maxTime: Date;
 	breakoutOnMobile?: boolean;
+	/** Named above the value on phones, when the section around the chart doesn't name it */
+	title?: string;
 }
 
 export function ExposureLineChart({
 	chartData,
 	maxY,
 	minY,
+	yTicks: yTicksOverride,
 	unit,
 	lineType = "linear",
 	children,
@@ -90,6 +97,7 @@ export function ExposureLineChart({
 	showLegend = true,
 	xAxisMode = "default",
 	breakoutOnMobile = false,
+	title,
 }: ExposureLineChartProps) {
 	const { t, i18n } = useTranslation();
 	const id = useId();
@@ -98,7 +106,7 @@ export function ExposureLineChart({
 
 	const { warning, danger, peakDanger } = getThreshold(exposure, dustField);
 	const dangerThreshold = usePeakData && peakDanger ? peakDanger : danger;
-	const yTicks = exposure === "dust" ? buildYAxisTicks(minY, maxY, DUST_Y_AXIS_STEP) : undefined;
+	const yTicks = yTicksOverride ?? (exposure === "dust" ? buildYAxisTicks(minY, maxY, DUST_Y_AXIS_STEP) : undefined);
 	const defaultFractionDigits = exposure === "dust" ? 1 : 0;
 	const fractionDigitsPerUnit = exposure === "dust" ? { mg: 4 } : { mg: 3 };
 
@@ -112,19 +120,23 @@ export function ExposureLineChart({
 
 	const compact = variant === "compact";
 	const isMobileBreakout = breakoutOnMobile && isMobile;
-	const hideYAxisLabel = compact || isMobileBreakout;
-	const yAxisWidth = compact
-		? Y_AXIS_WIDTH
-		: isMobileBreakout
-			? COLLAPSED_Y_AXIS_WIDTH
-			: unit === "mg"
-				? MG_Y_AXIS_WIDTH
-				: Y_AXIS_WIDTH;
+	const isMobileCompact = compact && isMobile;
+	const yAxisWidth = compact ? Y_AXIS_WIDTH : unit === "mg" ? MG_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
+	const scrub = useChartScrub(isMobileBreakout);
 
 	const rawTicks = buildTicks(xAxisMode, minTime, maxTime);
-	const ticks = limitTicks(rawTicks, isMobileBreakout ? 4 : 6);
+	// Windowed labels ("3 hours", "now") are wide, so a phone-width compact chart only fits three. Phone charts that run
+	// edge to edge leave out the first and last, which would be cut off, so they keep four between them.
+	const ticks = limitTicks(rawTicks, isMobileBreakout ? 6 : isMobileCompact ? 3 : 6);
 
 	const formatTime = (time: number) => formatDate(toTZDate(time), "HH:mm");
+	const formatXTick = (time: number) => {
+		if (xAxisMode !== "windowed") {
+			return formatTime(time);
+		}
+
+		return time === xMax ? t(($) => $.live.chart.now) : formatMsToDistanceString(xMax - time, i18n.language);
+	};
 	const formatYValue = (value: number) =>
 		formatExposureValue(value, unit as ExposureUnit, defaultFractionDigits, fractionDigitsPerUnit);
 
@@ -132,30 +144,46 @@ export function ExposureLineChart({
 	const dataValues = transformedData.map((point) => point.value);
 	const maxDataValue = dataValues.length > 0 ? Math.max(...dataValues) : maxY;
 
-	return (
+	// Phones show the picked point, or the latest one, above the chart instead of in a tooltip
+	const shownIndex = scrub.activeIndex ?? transformedData.length - 1;
+	const shownPoint = transformedData[shownIndex];
+	const shownDangerLevel =
+		shownPoint === undefined
+			? null
+			: normalizeDangerLevelForPeakForLineChart(
+					getDangerLevel(shownPoint.value, warning, dangerThreshold),
+					usePeakData,
+				);
+
+	const chart = (
 		<ChartContainer
 			config={chartConfig}
 			className={cn(
 				"h-full w-full",
 				chartContainerClassName,
-				(compact || isMobileBreakout) && "!aspect-auto",
-				isMobileBreakout && "!h-[50dvh]",
+				compact && "!aspect-auto",
+				isMobileBreakout && (compact ? SCRUB_COMPACT_CHART_HEIGHT_CLASSNAME : SCRUB_CHART_HEIGHT_CLASSNAME),
 			)}
 		>
 			<ComposedChart
 				accessibilityLayer={true}
 				data={transformedData}
+				{...scrub.chartProps}
 				margin={
-					compact
-						? undefined
-						: {
-								left: 12,
-								right: 8,
-								top: 12,
-							}
+					isMobileBreakout
+						? { left: 0, right: 0, top: 12, bottom: compact ? 4 : 0 }
+						: compact
+							? undefined
+							: {
+									left: 12,
+									right: 8,
+									top: 12,
+								}
 				}
 			>
-				<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.3} />
+				{!isMobileBreakout && (
+					<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.3} />
+				)}
 				<XAxis
 					dataKey="time"
 					type="number"
@@ -165,42 +193,36 @@ export function ExposureLineChart({
 					allowDataOverflow={true}
 					tickLine={false}
 					axisLine={false}
-					tickMargin={12}
-					tick={(props) => (
-						<CustomXAxisTick
-							{...props}
-							variant={variant}
-							formatTime={formatTime}
-							xMin={xMin}
-							xMax={xMax}
-							xAxisMode={xAxisMode}
-							t={t}
-							locale={i18n.language}
-						/>
-					)}
+					tickMargin={isMobileBreakout ? 8 : 12}
+					tickFormatter={formatXTick}
+					tick={(props) =>
+						isMobileBreakout ? (
+							<ScrubXAxisTick {...props} />
+						) : (
+							<CustomXAxisTick {...props} variant={variant} xMin={xMin} xMax={xMax} />
+						)
+					}
 				/>
 				<YAxis
 					dataKey="value"
-					width={yAxisWidth}
-					tickLine={false}
-					axisLine={false}
-					tick={
-						isMobileBreakout
-							? (tickProps: YAxisTickContentProps) => (
-									<CollapsedYAxisTick
-										y={tickProps.y}
-										label={formatYValue(Number(tickProps.payload.value))}
-									/>
-								)
-							: {
-									className: compact ? "text-xs" : "text-sm",
-									fill: "var(--color-muted-foreground)",
-								}
-					}
 					domain={[minY, maxY]}
 					ticks={yTicks}
+					// Overridden ticks are already spaced for the chart, so don't let recharts drop any of them
+					interval={yTicksOverride ? 0 : undefined}
+					tickFormatter={formatYValue}
+					{...(isMobileBreakout
+						? SCRUB_Y_AXIS_PROPS
+						: {
+								width: yAxisWidth,
+								tickLine: false,
+								axisLine: false,
+								tick: {
+									className: compact ? "text-xs" : "text-sm",
+									fill: "var(--color-muted-foreground)",
+								},
+							})}
 					label={
-						hideYAxisLabel
+						compact || isMobileBreakout
 							? undefined
 							: {
 									value: t(($) => $.exposures.units[unit]),
@@ -214,9 +236,8 @@ export function ExposureLineChart({
 									fill: "var(--color-muted-foreground)",
 								}
 					}
-					tickFormatter={formatYValue}
 				/>
-				<ExposureTooltip unit={unit} />
+				{isMobileBreakout ? <ChartScrubTracker /> : <ExposureTooltip unit={unit} />}
 				<defs>
 					{/* Gradient for line stroke */}
 					<linearGradient id={`${id}-line`} x1="0" y1="0" x2="0" y2="1">
@@ -270,17 +291,36 @@ export function ExposureLineChart({
 					isAnimationActive={false}
 					animationDuration={0}
 					dot={false}
-					activeDot={(props) => (
-						<ExposureDot {...props} warning={warning} danger={dangerThreshold} isPeak={usePeakData} />
-					)}
+					activeDot={
+						isMobileBreakout
+							? false
+							: (props) => (
+									<ExposureDot
+										{...props}
+										warning={warning}
+										danger={dangerThreshold}
+										isPeak={usePeakData}
+									/>
+								)
+					}
 				/>
 				{children}
+				{scrub.activeIndex !== null && shownPoint && shownDangerLevel && (
+					<>
+						<ChartScrubCursor x={shownPoint.time} xEnd={xMax} />
+						<ChartScrubDot
+							x={shownPoint.time}
+							y={shownPoint.value}
+							color={dangerlevelStyles[shownDangerLevel].color}
+						/>
+					</>
+				)}
 				{showLegend && (
 					<Legend
 						verticalAlign="bottom"
 						align="left"
 						content={() => (
-							<div style={{ marginLeft: yAxisWidth }}>
+							<div style={{ marginLeft: isMobileBreakout ? 20 : yAxisWidth }}>
 								<ThresholdLegend
 									items={[
 										{
@@ -300,44 +340,44 @@ export function ExposureLineChart({
 			</ComposedChart>
 		</ChartContainer>
 	);
+
+	if (!(isMobileBreakout && shownPoint)) {
+		return chart;
+	}
+
+	return (
+		<div className="flex w-full flex-col">
+			<ChartScrubHeader
+				title={title}
+				dangerLevel={shownDangerLevel}
+				caption={
+					scrub.activeIndex === null && xAxisMode === "windowed"
+						? t(($) => $.live.chart.now)
+						: formatTime(shownPoint.time)
+				}
+			>
+				<ChartScrubValue
+					value={formatExposureValue(shownPoint.value, unit)}
+					unit={t(($) => $.exposures.units[unit])}
+				/>
+			</ChartScrubHeader>
+			{chart}
+		</div>
+	);
 }
 
 type CustomXAxisTickProps = XAxisTickContentProps & {
 	xMin: number;
 	xMax: number;
 	variant: LineChartVariant;
-	formatTime: (time: number) => string;
-	xAxisMode?: XAxisMode;
-	t: ReturnType<typeof useTranslation>["t"];
-	locale: string;
 };
 
-function CustomXAxisTick({
-	x,
-	y,
-	xMin,
-	xMax,
-	payload,
-	formatTime,
-	variant,
-	xAxisMode,
-	t,
-	locale,
-}: CustomXAxisTickProps) {
+function CustomXAxisTick({ x, y, xMin, xMax, payload, index, tickFormatter, variant }: CustomXAxisTickProps) {
 	const value: number = payload.value ?? 0;
 
 	const isFirst = value === xMin;
 	const isLast = value === xMax;
-
-	let label = formatTime(value);
-
-	if (xAxisMode === "windowed") {
-		if (isLast) {
-			label = t(($) => $.live.chart.now);
-		} else {
-			label = formatMsToDistanceString(xMax - value, locale);
-		}
-	}
+	const label = tickFormatter ? tickFormatter(value, index) : value;
 
 	return (
 		<text

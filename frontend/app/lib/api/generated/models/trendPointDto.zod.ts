@@ -10,6 +10,8 @@ import { tzDateSchema } from '@/lib/date.ts';
 export const TrendPointDto = zod.object({
   "time": tzDateSchema,
   "value": zod.number().nullable(),
+  "rateOfWorkerOverAction": zod.number().nullable(),
+  "rateOfWorkerOverLimit": zod.number().nullable(),
   "averageTimeOverAction": zod.number().nullable(),
   "averageTimeOverLimit": zod.number().nullable()
 })

@@ -1,14 +1,11 @@
 import type { TranslateFn } from "@/i18n/config.ts";
 import type { AggregatedOverviewResponseDto, SampleDto } from "@/lib/api/generated/models/index.ts";
-import { type DustField, type Exposure, type ExposureUnit, exposures } from "@/lib/exposures.ts";
+import { type DustField, type Exposure, type ExposureFilter, type ExposureUnit, exposures } from "@/lib/exposures.ts";
 import { getThreshold, type Threshold } from "@/lib/thresholds.ts";
 import { formatExposureValue } from "@/lib/utils.ts";
 
 /** Groups with fewer people than this are never returned by the backend */
 export const MIN_GROUP_SIZE = 5;
-
-export const exposureFilters = ["all", ...exposures] as const;
-export type ExposureFilter = (typeof exposureFilters)[number];
 
 export function getShownExposures(filter: ExposureFilter): ReadonlyArray<Exposure> {
 	return filter === "all" ? exposures : [filter];
@@ -34,13 +31,14 @@ export type GroupSummary = Omit<SampleDto, "hall" | "occupation"> & { hall: stri
 
 /**
  * The aggregate API's groups, for `useGetAggregateGroups`'s `select`. The backend decides which sites the user sees:
- * the occupational health service its own, management every site. Where each value comes from in the aggregate
+ * every site, for both management and the occupational health service. Where each value comes from in the aggregate
  * database:
  * - dust: the average TWA of the `dustField` asked for, PM1 by default, such as `DustAverage.AveragePm1Twa`.
  * - noise: average LAeq, `NoiseAverage.AverageLaeq`. An arithmetic average of decibels, which underestimates the
  *   energy average.
- * - vibration: `VibrationAverage.AverageExposure`, the group's average per hour. The overview averages each day's
- *   hours, and the trend shows each day's last hour.
+ * - vibration: `VibrationAverage.AverageExposure`, each hour the average of the workers' total points so far that day.
+ *   A worker's total holds until midnight in Oslo, so each day's last hour is the average of the workers' daily totals.
+ *   The overview averages those days, and the trend shows each day's last hour.
  */
 export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDto) {
 	const summaries = groups.map((group) => ({ ...group, averages: hideUnavailableAverages(group.averages) }));
@@ -49,8 +47,10 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
 		units,
 		// The backend also sends whole sites, whole halls and one occupation across a site, which the site map doesn't show
 		groups: summaries.flatMap(
-			({ groupId, site, hall, occupation, averages }): Array<GroupSummary> =>
-				hall === null || occupation === null ? [] : [{ groupId, site, hall, occupation, averages }],
+			({ groupId, site, hall, occupation, workerCount, averages }): Array<GroupSummary> =>
+				hall === null || occupation === null
+					? []
+					: [{ groupId, site, hall, occupation, workerCount, averages }],
 		),
 	};
 }
@@ -63,8 +63,8 @@ export function toGroupSummaries({ units, groups }: AggregatedOverviewResponseDt
  *   professional assessment.
  * - noise: 80 / 85 dB apply to a person's daily exposure (LEX,8h), while the value is an arithmetic average of LAeq, so
  *   the measurement basis isn't the same and needs a professional assessment.
- * - vibration: 100 / 400 points apply to a person's daily points, while the value is the group's average of its hourly
- *   points, so the measurement basis isn't the same and needs a professional assessment.
+ * - vibration: 100 / 400 points apply to a person's daily points, while the value is the average of the workers' daily
+ *   totals, so a group average below a threshold can still include workers above it.
  */
 export const thresholdByExposure: Record<Exposure, Threshold> = {
 	dust: getThreshold("dust", "pm1_twa"),
@@ -130,14 +130,24 @@ export function getOccupationLabel(occupation: string, t: TranslateFn) {
 
 export const NO_VALUE = "—";
 
-export function formatAverageShare(shares: Array<number | null>) {
-	const present = shares.filter((share) => share !== null);
-	if (present.length === 0) {
-		return NO_VALUE;
+/** A share like 0.125 as "13 %", or "—" when the backend has no share, so no data doesn't read as 0 % */
+export function formatShare(share?: number) {
+	return share === undefined ? NO_VALUE : `${Math.round(share * 100)} %`;
+}
+
+/**
+ * The measured hours a share is taken over, like "Average per worker and day · 200 hours measured". Left out without a share, and for the
+ * days the aggregate job stored before it counted the hours, which have 0 hours.
+ */
+export function formatHourBasis(share: number | undefined, hourCount: number, t: TranslateFn, language: string) {
+	if (share === undefined || hourCount === 0) {
+		return undefined;
 	}
 
-	const average = present.reduce((sum, share) => sum + share, 0) / present.length;
-	return `${Math.round(average * 100)} %`;
+	return t(($) => $.aggregatedExposure.group.hourBasis, {
+		count: hourCount,
+		hours: getThresholdNumberFormat(language).format(hourCount),
+	});
 }
 
 export function getMetricLabel(exposure: Exposure, dustField: DustField, t: TranslateFn) {
@@ -146,20 +156,12 @@ export function getMetricLabel(exposure: Exposure, dustField: DustField, t: Tran
 		: t(($) => $.aggregatedExposure.metrics[exposure]);
 }
 
-export function getShareLabels(exposure: Exposure, t: TranslateFn) {
-	return exposure === "vibration"
-		? {
-				action: t(($) => $.aggregatedExposure.group.daysOverAction),
-				limit: t(($) => $.aggregatedExposure.group.daysOverLimit),
-			}
-		: {
-				action: t(($) => $.aggregatedExposure.group.timeOverAction),
-				limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
-			};
-}
-
-export function hasTimeOverThresholds(exposure: Exposure, dustField: DustField) {
-	return exposure !== "dust" || dustField === "pm1_twa";
+// The same for every exposure, since the backend's time over the thresholds is a share of hours for all of them
+export function getShareLabels(t: TranslateFn) {
+	return {
+		action: t(($) => $.aggregatedExposure.group.timeOverAction),
+		limit: t(($) => $.aggregatedExposure.group.timeOverLimit),
+	};
 }
 
 export function getThresholdNumberFormat(language: string) {

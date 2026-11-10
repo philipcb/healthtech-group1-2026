@@ -34,7 +34,13 @@ export function DustFieldTabs({ value, onValueChange, ariaLabel, isCompact = fal
 					<TabsTrigger
 						key={field}
 						value={field}
-						className={cn(isCompact ? "px-2.5 text-xs" : "flex-1 sm:flex-none")}
+						// The selected fraction in the same light blue as the app's other toggles (Day/Week/Month, exposure
+						// filter), so it stands out from the grey headers it often sits in
+						className={cn(
+							"data-[state=active]:bg-accent data-[state=active]:text-accent-foreground",
+							"dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground",
+							isCompact ? "px-2.5 text-xs" : "flex-1 sm:flex-none",
+						)}
 					>
 						{t(($) => $.exposures.dustFields[field])}
 					</TabsTrigger>

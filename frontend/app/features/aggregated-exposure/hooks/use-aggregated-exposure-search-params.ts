@@ -1,11 +1,22 @@
 import { type CompareLevel, compareLevels } from "@/features/aggregated-exposure/model/compare.ts";
-import { type ExposureFilter, exposureFilters } from "@/features/aggregated-exposure/model/groups.ts";
 import {
 	aggregatedExposurePeriods,
+	getDefaultDay,
 	getSelectableYears,
 	type PeriodSelection,
 } from "@/features/aggregated-exposure/model/period.ts";
-import { type DustField, defaultDustField, type Exposure, parseAsDustField, parseAsExposure } from "@/lib/exposures.ts";
+import { TIMEZONE_NAME } from "@/i18n/locale.ts";
+import {
+	type DustField,
+	defaultDustField,
+	type Exposure,
+	type ExposureFilter,
+	exposureFilters,
+	parseAsDustField,
+	parseAsExposure,
+} from "@/lib/exposures.ts";
+import { TZDate } from "@date-fns/tz";
+import { getDaysInMonth } from "date-fns";
 import { createParser, parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
 
 const parseAsMonth = createParser<number>({
@@ -16,7 +27,18 @@ const parseAsMonth = createParser<number>({
 	serialize: (month) => String(month + 1),
 });
 
+const parseAsDay = createParser<number>({
+	parse: (value) => {
+		const day = Number(value);
+		return Number.isInteger(day) && day >= 1 && day <= 31 ? day : null;
+	},
+	serialize: String,
+});
+
 const today = new Date();
+
+/** What the overview's groups are until another level is picked */
+export const defaultOverviewLevel: CompareLevel = "hallOccupation";
 
 const searchParams = {
 	exposure: parseAsExposure.withDefault("dust"),
@@ -27,20 +49,35 @@ const searchParams = {
 	 */
 	exposureFilter: parseAsStringLiteral(exposureFilters).withDefault("all"),
 	period: parseAsStringLiteral(aggregatedExposurePeriods).withDefault("month"),
+	/** Without a default, so the day period starts on the day `getDefaultDay` picks for the month */
+	day: parseAsDay,
 	month: parseAsMonth.withDefault(today.getMonth()),
 	year: parseAsNumberLiteral(getSelectableYears()).withDefault(today.getFullYear()),
 	yard: parseAsString,
 	hall: parseAsString,
 	/** What the overview's groups are, picked like the compare page's groups */
-	level: parseAsStringLiteral(compareLevels).withDefault("hallOccupation"),
+	level: parseAsStringLiteral(compareLevels).withDefault(defaultOverviewLevel),
 };
+
+/** The search params of the period, which the management pages share, so it's kept when switching between them */
+export const periodSearchParamKeys = ["period", "day", "month", "year"] as const satisfies Array<
+	keyof typeof searchParams
+>;
 
 export function useAggregatedExposureSearchParams() {
 	const [params, setParams] = useQueryStates(searchParams);
+	// A day from the link that the month doesn't have, like 31 in February, is its last day
+	const selectedDay = Math.min(
+		params.day ?? getDefaultDay(params.month, params.year),
+		getDaysInMonth(new TZDate(params.year, params.month, 1, TIMEZONE_NAME)),
+	);
 
 	const periodSelection: PeriodSelection = {
 		period: params.period,
-		setPeriod: (period) => void setParams({ period }),
+		// A new period starts on its default day, not one from an earlier day period
+		setPeriod: (period) => void setParams({ period, day: null }),
+		day: selectedDay,
+		setDay: (day) => void setParams({ day }),
 		month: params.month,
 		setMonth: (month) => void setParams({ month }),
 		year: params.year,
@@ -60,18 +97,8 @@ export function useAggregatedExposureSearchParams() {
 		setHall: (hall: string | null) => void setParams({ hall }),
 		level: params.level,
 		setLevel: (level: CompareLevel) => void setParams({ level }),
-		resetOverviewFilters: () =>
-			void setParams({
-				period: null,
-				month: null,
-				year: null,
-				exposureFilter: null,
-				level: null,
-				yard: null,
-				hall: null,
-			}),
-		resetGroupFilters: () =>
-			void setParams({ period: null, month: null, year: null, exposure: null, dustField: null }),
+		// Only what's in the filter dialog. The period and the exposure are always on the page, so they aren't reset with it.
+		resetOverviewFilters: () => void setParams({ level: null, yard: null, hall: null }),
 		periodSelection,
 	};
 }

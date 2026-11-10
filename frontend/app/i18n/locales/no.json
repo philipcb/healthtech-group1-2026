@@ -30,13 +30,21 @@
       "pm1_twa": "PM1",
       "pm25_twa": "PM2.5",
       "pm4_twa": "PM4",
-      "pm10_twa": "PM10"
+      "pm10_twa": "PM10",
+      "pm1_stel": "PM1",
+      "pm25_stel": "PM2.5",
+      "pm4_stel": "PM4",
+      "pm10_stel": "PM10"
     },
     "units": {
       "ug": "µg/m³",
       "mg": "mg/m³",
       "points": "Poeng",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Vis eksponering",
+      "all": "Alle"
     }
   },
   "dangerLevels": {
@@ -74,16 +82,17 @@
   "layout": {
     "live": "Live",
     "overview": "Oversikt",
-    "home": "Hjem",
-    "team": "Team",
     "statistics": "Statistikk",
     "export": "Eksporter oversikt som PDF",
-    "exportPdf": "Eksporter PDF",
-    "exportPdfDescription": "Velg tidsperiode for PDF-eksport",
+    "downloadReport": "Last ned rapport",
+    "downloadReportDescription": "Velg perioden rapporten skal dekke. Den lastes ned som PDF.",
+    "download": "Last ned",
+    "creatingReport": "Lager rapport …",
     "theme": "Fargetema",
     "language": "Språk",
     "map": "Kart",
-    "compare": "Sammenlign"
+    "compare": "Sammenlign",
+    "teamSettings": "Teaminnstillinger"
   },
   "live": {
     "timeRange": {
@@ -108,7 +117,7 @@
     "ofTotal": "av {{total}}",
     "title": "Eksponering",
     "aggregated": {
-      "safe": "Innenfor trygge grenseverdier",
+      "safe": "Under tiltaksverdi",
       "warning": "Over tiltaksverdi",
       "danger": "Over grenseverdi"
     }
@@ -133,8 +142,14 @@
     "share": "{{value}} %",
     "shareExplanation": "% = andel av måletiden over tiltaksverdi",
     "notEnoughData": "For lite data til å vise trend",
-    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)",
-    "private": "Bare du ser dette"
+    "coverage": "Målt {{hours}} t ({{previous}}: {{normal}} t)"
+  },
+  "exposureStatus": {
+    "noData": "Ingen data",
+    "statusDuration": "{{status}}: {{count}} t",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Vis {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Over grenseverdi",
@@ -212,6 +227,11 @@
       "title": "Ditt team",
       "failedToLoadMembers": "Kunne ikke laste teammedlemmer",
       "noMembersFound": "Ingen teammedlemmer funnet",
+      "empty": "Ingen operatører i teamet ennå. Legg dem til i teaminnstillingene for å følge eksponeringen deres her.",
+      "filteredCount": "Viser {{shown}} av {{total}}",
+      "clearFilter": "Fjern filter: {{filter}}",
+      "noFilterMatches": "Ingen operatører i teamet passer dette filteret.",
+      "retry": "Prøv igjen",
       "table": {
         "name": "Navn",
         "email": "E-post",
@@ -227,6 +247,9 @@
       "membersCount": "{{count}} operatør i teamet",
       "membersCount_one": "{{count}} operatør i teamet",
       "membersCount_other": "{{count}} operatører i teamet",
+      "memberCountShort": "{{count}} operatører",
+      "memberCountShort_one": "{{count}} operatør",
+      "memberCountShort_other": "{{count}} operatører",
       "mapTitle": "Lokasjonskart"
     },
     "overview": {
@@ -258,11 +281,12 @@
         },
         "noActiveSensors": {
           "label": "Ingen aktive sensorer"
-        }
+        },
+        "showInList": "Vis i teamlisten",
+        "clearFilter": "Fjern filter"
       },
       "selectUserPlaceholder": "Velg et teammedlem",
-      "clearUserSelection": "Fjern brukervalg",
-      "clearExposureFilter": "Fjern eksponeringsfilter"
+      "clearUserSelection": "Fjern brukervalg"
     },
     "actionCard": {
       "safe": "Teamstatus: Innenfor eksponeringsgrenser",
@@ -318,10 +342,12 @@
       "notOnMap": "Ikke på kartet",
       "error": "Kunne ikke hente byggoversikten.",
       "noBuildings": "Ingen bygg med yrkesgrupper ennå.",
+      "noDayData": "Ingen data for valgt dag.",
       "noSiteMap": "Dette verftet har ikke områdekart ennå. Velg et bygg i listen for å se en anonym oversikt."
     },
     "period": {
       "label": "Tidsperiode",
+      "day": "Dag",
       "month": "Måned",
       "year": "År",
       "selectYear": "Velg år"
@@ -348,7 +374,10 @@
       "title": "Filtre",
       "description": "Valgene gjelder med en gang.",
       "close": "Lukk",
-      "save": "Lagre"
+      "reset": "Nullstill filtre",
+      "activeCount": "{{count}} aktive",
+      "activeCount_one": "{{count}} aktiv",
+      "activeCount_other": "{{count}} aktive"
     },
     "occupations": {
       "welder": "Sveiser",
@@ -370,15 +399,11 @@
       "vibration": "Vibrasjon er ikke tilgjengelig ennå. Målingene kan ikke vises som daglig eksponering."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Vis eksponering",
-        "all": "Alle"
-      },
       "level": {
-        "label": "Visning"
+        "label": "Grupper etter"
       },
       "belowActionValue": "Under tiltaksverdi",
-      "noValue": "Ingen verdi",
+      "noGroupData": "Ingen data",
       "groupColumn": "Gruppe",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Vis utvikling over tid.",
       "noGroups": {
@@ -386,6 +411,7 @@
         "description": "Grupper med for få personer vises ikke, for å beskytte personvernet."
       },
       "noData": "Ingen data for valgt periode.",
+      "noDayData": "Ingen data for valgt dag.",
       "error": "Kunne ikke hente gruppene."
     },
     "group": {
@@ -395,31 +421,35 @@
       "fallbackTitle": "Gruppe",
       "dustFieldLabel": "Støvfraksjon",
       "periodAverage": "Snitt i perioden",
+      "dayAverage": "Snitt for dagen",
       "noPeriodAverage": "Ingen verdi for perioden",
       "timeOverAction": "Tid over tiltaksverdi",
       "timeOverLimit": "Tid over grenseverdi",
-      "timeOverActionCaption": "Andel av timene der gruppas timesnitt var minst {{action}}, inkludert over grenseverdien.",
-      "timeOverLimitCaption": "Andel av timene der gruppas timesnitt var minst {{limit}}.",
-      "timeOverOnlyForDustField": "Beregnes bare for {{dustField}}.",
-      "daysOverAction": "Dager over tiltaksverdi",
-      "daysOverLimit": "Dager over grenseverdi",
-      "daysOverActionCaption": "Andel av dagene der gruppas verdi i grafen var minst {{action}} poeng, inkludert over grenseverdien.",
-      "daysOverLimitCaption": "Andel av dagene der gruppas verdi i grafen var minst {{limit}} poeng.",
-      "vibrationPeriodAverage": "Snittet av dagspunktene i grafen, som er arbeidernes samlede poeng per dag.",
+      "wholeDayShareColumn": "{{share}}, hele dagen (%)",
+      "registeredWorkers": "Registrerte arbeidere: {{count}}",
+      "hourBasis": "Snitt per arbeider og dag · {{hours}} timer målt",
+      "hourBasis_one": "Snitt per arbeider og dag · {{hours}} time målt",
+      "hourBasis_other": "Snitt per arbeider og dag · {{hours}} timer målt",
+      "vibrationDayTotal": "Poeng for dagen",
       "trendTitle": "Utvikling i perioden",
       "unitAndGranularity": "Enhet: {{unit}}. {{granularity}}.",
+      "hourTooltip": "kl. {{time}}, {{day}}",
       "granularity": {
-        "day": "Ett punkt per dag med målinger: snittet av dagens timesverdier"
+        "day": "Ett punkt per døgn: snittet av dagens timer",
+        "hour": "Ett punkt per time (norsk tid)"
       },
       "vibrationGranularity": {
-        "day": "Ett punkt per dag med målinger: snittet av arbeidernes samlede poeng for dagen"
+        "day": "Ett punkt per døgn: snittet av arbeidernes dagssummer",
+        "hour": "Ett punkt per time (norsk tid)"
       },
       "suppressed": "Ingen verdi",
       "unavailable": {
         "noSuchGroup": "Gruppen finnes ikke."
       },
       "noData": "Ingen data for valgt periode.",
+      "noDayData": "Ingen data for valgt dag.",
       "noDustFieldData": "Ingen {{dustField}}-data for valgt periode.",
+      "noDustFieldDayData": "Ingen {{dustField}}-data for valgt dag.",
       "allSuppressed": "Ingen verdier for valgt periode.",
       "error": "Kunne ikke hente gruppen.",
       "trendError": "Kunne ikke hente utviklingen for gruppen."
@@ -470,20 +500,25 @@
           "description": "Ett yrke mot et annet, for eksempel sveisere mot elektrikere. På tvers av hele verftet eller innenfor hvert bygg, for å se hvilke jobber som er mest utsatt."
         }
       },
-      "chartLabel": "{{metric}} per dag i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene og verdiene per uke eller måned for hver gruppe står ved grafen.",
+      "chartLabel": "{{metric}} per døgn i {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene for hver gruppe står ved grafen.",
+      "chartLabelDay": "{{metric}} per time den {{period}}, i {{unit}}, for hver gruppe i sammenligningen. Nøkkeltallene for hver gruppe står ved grafen.",
       "notInChart": "Ikke i grafen: {{groups}}.",
       "reasons": {
-        "noData": "ingen målinger",
+        "noData": "ingen data",
         "notEnoughData": "ikke nok data",
         "unavailable": "ikke tilgjengelig"
       },
       "notEnoughData": "Ikke nok data",
       "notEnoughDataDescription": "Færre enn {{count}} personer i gruppen hadde data i {{period}}.",
-      "noData": "Ingen målinger",
+      "notEnoughDayDataDescription": "Færre enn {{count}} personer i gruppen hadde data den {{period}}.",
+      "noData": "Ingen data",
       "noDataDescription": "Gruppen har ingen målinger i {{period}}.",
+      "noDayDataDescription": "Gruppen har ingen målinger valgt dag.",
       "unavailableDescription": "Denne eksponeringen kan ikke beregnes for gruppen ennå.",
       "noGroupHasEnoughData": "Ingen av gruppene hadde nok personer med data i {{period}}.",
+      "noGroupHasEnoughDayData": "Ingen av gruppene hadde nok personer med data den {{period}}.",
       "noGroupHasData": "Ingen av gruppene har målinger i {{period}}.",
+      "noGroupHasDayData": "Ingen av gruppene har målinger valgt dag.",
       "retry": "Prøv igjen",
       "tableCaption": "{{exposure}} per gruppe, {{period}}",
       "group": "Gruppe",
@@ -492,39 +527,49 @@
       "hiddenDays_one": "{{count}} dag skjult av personvernhensyn",
       "hiddenDays_other": "{{count}} dager skjult av personvernhensyn",
       "hiddenDaysLegend": "Dager skjult av personvernhensyn",
-      "values": {
-        "week": "Verdier per uke",
-        "month": "Verdier per måned",
-        "weekLabel": "Uke {{week}}",
-        "bucketColumn": "Periode",
-        "caption": "Snitt per uke eller måned for hver gruppe, {{period}}"
-      }
+      "hiddenHours": "{{count}} timer skjult av personvernhensyn",
+      "hiddenHours_one": "{{count}} time skjult av personvernhensyn",
+      "hiddenHours_other": "{{count}} timer skjult av personvernhensyn",
+      "hiddenHoursLegend": "Timer skjult av personvernhensyn"
     }
   },
   "aboutFigures": {
     "trigger": "Grenseverdier og beregning",
-    "title": "Om tallene",
-    "description": "Hvor tallene på siden kommer fra, og hvordan de er regnet ut.",
+    "title": "Grenseverdier og beregning",
+    "description": "Tiltaks- og grenseverdiene tallene sammenlignes med, og hvordan tallene er regnet ut.",
     "headings": {
-      "source": "Kilde",
       "calculation": "Beregning",
-      "comparedWith": "Sammenlignet med",
-      "missing": "Når tall mangler"
-    },
-    "source": {
-      "groups": "Hver gruppe er alle som er målt i ett verft eller bygg. Med «{{perOccupation}}» er hver yrkesgruppe der en egen gruppe.",
-      "hourly": "Dataene inneholder bare én verdi per time for hver gruppe, ikke målingene til hver enkelt person. Tallene viser derfor aldri enkeltpersoner."
+      "comparedWith": "Tiltaks- og grenseverdier"
     },
     "calculation": {
-      "periodAverage": "For hver dag regnes snittet av gruppens timesverdier. Tallet på kortet er snittet av dagene med målinger i valgt periode. Dager uten målinger telles ikke med.",
+      "periodAverage": "Tallet som vises, er snittet av dagene i perioden. Dager uten målinger telles ikke.",
       "exposure": {
-        "dust": "{{dustField}} TWA i {{unit}}.",
-        "noise": "LAeq i {{unit}}. Snittene er vanlige aritmetiske snitt av desibelverdiene. Fordi desibel er en logaritmisk skala, blir et slikt snitt aldri høyere enn et energisnitt, og ofte lavere når lydnivået varierer.",
-        "vibration": "Vibrasjonspoeng. Timesverdiene regnes sammen på samme måte som for støy og støv."
-      }
-    },
-    "missing": {
-      "suppressed": "Grupper med færre enn {{count}} registrerte personer finnes ikke i dataene, og vises derfor ikke."
+        "dust": "{{dustField}} TWA i {{unit}}. Gruppens tall for en time er snittet av arbeiderne, og dagens tall er snittet av timene.",
+        "noise": "LAeq i {{unit}}. Gruppens tall for en time er snittet av arbeiderne, og dagens tall er snittet av timene. Merk: 80 og 90 gir 85 her, selv om lydenergien tilsvarer ca. 87. Toppverdier (LCpk) er ikke med i «tid over».",
+        "vibration": "Vibrasjonspoeng, lagt sammen gjennom dagen: 40 + 30 + 50 = 120 poeng. Dagens tall er snittet av dagssummene til alle med målinger. Summen starter på 0 hvert døgn."
+      },
+      "exampleWorkers": {
+        "ola": "Ola",
+        "kari": "Kari"
+      },
+      "exposureExample": {
+        "title": "Eksempel: gruppens tall",
+        "exposure": "Eksponering",
+        "group": "Gruppen",
+        "atEight": "kl. 08",
+        "dayTotal": "dagssum"
+      },
+      "timeOver": "Tid over = timer over tiltaksverdien delt på timer målt, for hver arbeider og hver dag.",
+      "timeOverExample": {
+        "title": "Eksempel: tid over tiltaksverdi én dag",
+        "worker": "Arbeider",
+        "measured": "Timer målt",
+        "over": "Timer over",
+        "share": "Tid over",
+        "day": "Dagen: snittet"
+      },
+      "timeOverNote": "Dagen er snittet av arbeiderne, og hver arbeider teller likt. Perioden er snittet av dagene, og hver dag teller likt, uansett hvor mange arbeidere eller timer den hadde. Prosenten er derfor ikke andelen av alle målte timer. Tid over grenseverdi regnes på samme måte.",
+      "timeOverVibration": "Vibrasjon: Ola når tiltaksverdien kl. 09 og har 8 timer med målinger fra kl. 07. Timene fra kl. 09 teller: 6 / 8 = 75 %. Timer etter at Ola har sluttet, teller ikke."
     }
   },
   "managementDashboard": {
@@ -540,12 +585,7 @@
       "yourExposureExposure": "Din {{exposure}}eksponering"
     },
     "subtitle": {
-      "allExposureTypes": "Alle eksponeringstyper",
-      "viewDay": "Dag",
-      "viewWeek": "Uke {{week}}",
-      "viewMonth": "Måned",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "Alle eksponeringstyper"
     }
   },
   "register": {
@@ -618,6 +658,7 @@
     "trendPeakDescription": "Viser maksimal verdi per dag"
   },
   "limitExplanation": {
+    "title": "Tiltaks- og grenseverdier",
     "actionValue": {
       "label": "Tiltaksverdi",
       "description": "Nivå hvor forebyggende tiltak bør iverksettes."
@@ -629,7 +670,8 @@
   },
   "datePicker": {
     "openLabel": "Velg dato og visning",
-    "dialogTitle": "Dato og visning"
+    "dialogTitle": "Dato og visning",
+    "selectWeek": "Velg uke {{week}}"
   },
   "chartDownload": {
     "download": "Last ned data",
@@ -643,7 +685,243 @@
       "description": "Ren tekst, skilt med komma"
     },
     "columns": {
-      "date": "Dato"
+      "date": "Dato",
+      "time": "Klokkeslett"
+    }
+  },
+  "safetyJourney": {
+    "chip": {
+      "operatorLabel": "Min sikkerhetsreise: {{points}} poeng, {{days}} dager på rad",
+      "foremanLabel": "Teamets sikkerhetsreise",
+      "managementLabel": "Innstillinger for belønninger"
+    },
+    "common": {
+      "back": "Tilbake",
+      "pointsDelta": "+{{points}}",
+      "points": "{{points}} poeng",
+      "pointsShort": "{{points}} p",
+      "kr": "{{amount}} kr",
+      "fraction": "{{value}} / {{total}}",
+      "ofTotal": "{{value}} av {{total}}",
+      "days": {
+        "mon": "Man",
+        "tue": "Tir",
+        "wed": "Ons",
+        "thu": "Tor",
+        "fri": "Fre"
+      },
+      "today": "I dag"
+    },
+    "dialog": {
+      "title": "Min sikkerhetsreise",
+      "tabs": {
+        "overview": "Oversikt",
+        "badges": "Merker",
+        "rewards": "Belønninger"
+      },
+      "howToEarn": "Hvordan tjener jeg poeng?",
+      "onlyYou": "Bare du kan se dette"
+    },
+    "levels": {
+      "level": "Nivå {{number}}",
+      "levelWithName": "Nivå {{number}} · {{name}}",
+      "names": {
+        "aware": "Bevisst",
+        "observer": "Observatør",
+        "preventer": "Forebygger",
+        "improver": "Forbedrer",
+        "safetyChampion": "Sikkerhetsmester"
+      },
+      "lifetimePoints": "{{points}} poeng totalt",
+      "pointsToNext": "{{points}} poeng til {{level}}",
+      "maxLevel": "Du har nådd det høyeste nivået",
+      "streak": "{{days}} dager på rad",
+      "streakExplanation": "Arbeidsdager på rad med sensoren på og uten rød sone."
+    },
+    "overview": {
+      "lifetime": "Totalt · bestemmer nivået ditt",
+      "balance": "Saldo · brukes på belønninger",
+      "today": "I dag",
+      "todayProgress": "{{points}} / {{max}} poeng",
+      "nothingToday": "Ingen poeng ennå i dag",
+      "weeklyChallenge": "Ukens utfordring",
+      "weeklyTitle": "{{target}} rene skift denne uken",
+      "weeklyBonus": "+{{points}} bonus",
+      "weeklyProgress": "{{done}} av {{target}} gjort. Én bom-dag ødelegger ikke uken.",
+      "weeklyDone": "Ferdig! Bonusen er din.",
+      "dayStatus": {
+        "clean": "Rent skift",
+        "missed": "Rød sone",
+        "upcoming": "Ikke ennå"
+      }
+    },
+    "events": {
+      "cleanShift": "Rent skift",
+      "weeklyChallenge": "Bonus for ukens utfordring",
+      "learningChallenge": "Læringsutfordring",
+      "recoveryAnswer": "Svarte på «hva hjalp?»"
+    },
+    "rules": {
+      "names": {
+        "cleanShift": "Rent skift: ingen rød sone, sensoren på",
+        "weeklyChallenge": "Ukens utfordring: {{target}} rene skift",
+        "learningChallenge": "Læringsutfordring",
+        "recoveryAnswer": "Svar på «hva hjalp?» etter et varsel"
+      },
+      "limit": {
+        "day": "+{{points}} · {{count}} per dag",
+        "week": "+{{points}} · {{count}} per uke"
+      },
+      "maxPerDay": "Maks per dag",
+      "maxPerDayValue": "{{points}} poeng",
+      "bonusOnTop": "Ukebonusen kommer i tillegg."
+    },
+    "prompt": {
+      "waiting": "Venter på svaret ditt",
+      "backInGreen": "{{exposure}} · tilbake i grønn",
+      "redPeriod": "Rød sone {{start}}–{{end}} · Hva hjalp?",
+      "since": "Tilbake i grønn siden {{time}}",
+      "oneTap": "Hva hjalp? Ett trykk, +{{points}} poeng",
+      "notNow": "Ikke nå",
+      "answerLater": "Svar senere i dag",
+      "answered": "+{{points}} SafePoints · {{answer}}",
+      "answeredNoPoints": "{{answer}} · dagens grense er nådd",
+      "thanks": "Takk! Dette viser teamet ditt hva som fungerer.",
+      "undo": "Angre",
+      "answer": "Svar",
+      "options": {
+        "changedTool": "Byttet verktøy",
+        "changedTask": "Byttet oppgave",
+        "tookBreak": "Tok en pause",
+        "hearingProtection": "Hørselvern",
+        "movedAway": "Flyttet meg",
+        "usedRespirator": "Tok på maske",
+        "somethingElse": "Noe annet"
+      },
+      "limitReached": "Dagens grense er nådd",
+      "thanksNoPoints": "Svaret ditt hjelper fortsatt teamet å se hva som fungerer.",
+      "oneTapNoPoints": "Dagens svarpoeng er brukt, men svarene dine hjelper fortsatt teamet."
+    },
+    "learning": {
+      "title": "Læringsutfordring",
+      "correct": "Riktig!",
+      "incorrect": "Ikke helt.",
+      "earned": "+{{points}} poeng",
+      "questions": {
+        "vibrationGrip": {
+          "question": "Du sliper og får et vibrasjonsvarsel. Hva senker eksponeringen din mest?",
+          "options": {
+            "gripHarder": "Holde hardere rundt verktøyet",
+            "lowVibrationTool": "Bytte til et verktøy med lav vibrasjon",
+            "workFaster": "Jobbe raskere for å bli ferdig fortere"
+          },
+          "explanation": "Et verktøy med lav vibrasjon senker dosen med en gang. Hardere grep sender mer vibrasjon inn i hendene, og å stresse senker ikke vibrasjonsnivået."
+        }
+      }
+    },
+    "badges": {
+      "closest": "Nærmeste merke",
+      "yours": "Dine merker",
+      "earned": "Opptjent",
+      "progress": "{{progress}} / {{target}}",
+      "names": {
+        "cleanWeek": "Ren uke",
+        "alwaysOn": "Alltid på",
+        "noiseDetective": "Støydetektiv",
+        "steadyStreak": "Stø kurs",
+        "sharpEye": "Skarpt øye",
+        "preventer": "Forebygger"
+      },
+      "info": {
+        "cleanWeek": "{{target}} rene skift på rad",
+        "alwaysOn": "Sensoren på i {{target}} skift",
+        "noiseDetective": "Fortalte hva som hjalp etter et støyvarsel",
+        "steadyStreak": "{{target}} dager på rad",
+        "sharpEye": "{{target}} læringsutfordringer",
+        "preventer": "{{target}} rene skift"
+      },
+      "nextStep": {
+        "cleanWeek": "{{count}} rene skift til på rad",
+        "alwaysOn": "Ha sensoren på i {{count}} skift til",
+        "noiseDetective": "Svar på «hva hjalp?» etter et støyvarsel",
+        "steadyStreak": "{{count}} dager til på rad",
+        "sharpEye": "{{count}} læringsutfordringer til",
+        "preventer": "{{count}} rene skift til"
+      },
+      "team": {
+        "label": "Teammerke",
+        "name": "Felles forebygging",
+        "fullName": "Merket for felles forebygging",
+        "info": "Opptjenes når teamet har {{target}} rene skift i løpet av en uke",
+        "progress": "{{progress}} av {{target}} rene skift denne uken",
+        "remaining": "{{count}} rene skift til for å få det",
+        "earned": "Opptjent denne uken"
+      }
+    },
+    "rewards": {
+      "balance": "Saldo",
+      "neverLowersLevel": "Å bruke poeng senker aldri nivået ditt.",
+      "title": "Belønninger",
+      "redeem": "Løs inn",
+      "cost": "{{cost}} poeng",
+      "moreToGo": "{{cost}} poeng · {{count}} igjen",
+      "chosenByEmployer": "Belønningene velges av arbeidsgiveren din.",
+      "none": "Ingen belønninger tilgjengelig akkurat nå",
+      "history": "Løst inn tidligere",
+      "coupon": "Kupong: {{reward}}",
+      "couponInfo": "Vis denne i kantinen. Gyldig i 30 dager.",
+      "names": {
+        "coffee": "Kaffe",
+        "lunch": "Lunsjkupong",
+        "gym": "Dagspass på treningssenter"
+      }
+    },
+    "team": {
+      "title": "Teamets sikkerhetsreise",
+      "subtitle": "{{team}} · {{count}} operatører · denne uken",
+      "teamPoints": "Teampoeng",
+      "perOperator": "Rundt {{points}} per operatør",
+      "takingPart": "Deltar",
+      "takingPartInfo": "Tjente poeng denne uken",
+      "cleanShifts": "Rene skift",
+      "alertsAnswered": "Varsler besvart",
+      "alertsAnsweredInfo": "Svar på «hva hjalp?»",
+      "whatHelped": "Hva hjalp etter varsler",
+      "fromAnswers": "Fra {{count}} svar denne uken",
+      "exposureFilter": "Filtrer etter eksponering",
+      "all": "Alle",
+      "tip": "Å bytte verktøy hjelper mest etter vibrasjonsvarsler. Sjekk at reserveverktøy med lav vibrasjon er lett å få tak i.",
+      "privacy": "Hver operatørs egne poeng og nivå er private. Du ser bare teamets totaler."
+    },
+    "rewardsSettings": {
+      "title": "Belønninger",
+      "subtitle": "Velg hva operatørene kan bruke SafePoints på.",
+      "table": {
+        "reward": "Belønning",
+        "cost": "Pris",
+        "value": "Verdi",
+        "perPerson": "Per person",
+        "redeemed": "Løst inn",
+        "active": "Aktiv",
+        "perMonth": "{{count}} / måned",
+        "toggleLabel": "{{reward}} aktiv"
+      },
+      "earnHint": "En operatør med bare rene skift tjener rundt {{points}} poeng i uken ({{perShift}} per skift + {{bonus}} i ukebonus).",
+      "budget": {
+        "title": "Månedlig budsjett",
+        "label": "Budsjett per måned (kr)",
+        "used": "Brukt denne måneden",
+        "pauseInfo": "Når budsjettet er brukt opp, pauses belønningene til neste måned."
+      },
+      "form": {
+        "title": "Legg til belønning",
+        "name": "Navn",
+        "namePlaceholder": "f.eks. Kinobillett",
+        "cost": "Pris (poeng)",
+        "value": "Verdi (kr)",
+        "perPerson": "Maks per person per måned",
+        "submit": "Legg til belønning"
+      }
     }
   }
 }

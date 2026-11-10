@@ -1,6 +1,6 @@
 # HealthTech
 
-HealthTech is a Bachelor's thesis project for Aker Solutions. This is the second group of students to work on the project.
+HealthTech is a academic project for Aker Solutions. This is the third group of students to work on the project.
 
 <table>
   <tr>
@@ -68,7 +68,7 @@ Remember to change the default database password (`your_secure_password`) in `PO
 1. Download the CSV-files from [https://drive.google.com/drive/folders/13XkM6DRK6iyz9pC4Akvj1-1KjRx4wFkc?usp=drive_link](https://drive.google.com/drive/folders/13XkM6DRK6iyz9pC4Akvj1-1KjRx4wFkc?usp=drive_link).
 2. Copy them into `./backend/seed/`.
 
-You may also have to download `ef`, which you can do by running: `dotnet tool install --global dotnet-ef`
+The setup script uses `dotnet ef`, which you can install by running: `dotnet tool install --global dotnet-ef`
 
 Then run the following commands in the root directory of the project:
 

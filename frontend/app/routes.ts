@@ -9,6 +9,7 @@ export default [
 			route("/management/map", "routes/management/map.tsx"),
 			route("/management/compare", "routes/management/compare.tsx"),
 			route("/management/groups/:groupId", "routes/management/group.tsx"),
+			route("/management/rewards", "routes/management/rewards.tsx"),
 		]),
 		route("/foreman/", "routes/foreman/overview.tsx"),
 		layout("routes/operator/exposures/exposure-layout.tsx", [
@@ -18,8 +19,9 @@ export default [
 			route("/operator/", "routes/operator/home.tsx"),
 		]),
 		route("/operator/live", "routes/operator/live.tsx"),
-		route("/foreman/team", "routes/foreman/team.tsx"),
 		route("/foreman/map", "routes/foreman/map.tsx"),
+		route("/foreman/team", "routes/foreman/team.tsx"),
+		route("/foreman/journey", "routes/foreman/journey.tsx"),
 	]),
 	route("/register", "routes/register.tsx"),
 ] satisfies RouteConfig;

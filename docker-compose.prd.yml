@@ -95,6 +95,7 @@ services:
       - ~/env/backend.env
     environment:
       <<: *db-connections
+      TZ: UTC
     networks:
       - app-network
     labels:
@@ -121,6 +122,7 @@ services:
       - ~/env/backend.env
     environment:
       <<: *db-connections
+      TZ: UTC
     networks:
       - app-network
     restart: "no"

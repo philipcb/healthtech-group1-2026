@@ -1,10 +1,12 @@
 import { DangerLevelDots } from "@/components/danger-level-dots.tsx";
 import { useDate } from "@/features/date-picker/use-date.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
-import { dangerlevelStyles } from "@/lib/danger-levels.ts";
+import type { TranslateFn } from "@/i18n/config.ts";
+import { DANGER_LEVEL_SEVERITY, type DangerLevel, dangerlevelStyles } from "@/lib/danger-levels.ts";
 import type { TimeBucketStatus } from "@/lib/time-bucket-types.ts";
 import { cn } from "@/lib/utils.ts";
 import { getUnixTime, isToday, startOfHour } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { useView } from "../views/use-view.ts";
 import { useWeekTimeGrid } from "./use-week-time-grid.ts";
 
@@ -23,6 +25,7 @@ interface WeekWidgetProps {
 }
 
 export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDate, className }: WeekWidgetProps) {
+	const { t, i18n } = useTranslation();
 	const formatDate = useFormatDate();
 	const { date: contextDate, setDate } = useDate();
 	const { setView } = useView();
@@ -60,7 +63,13 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 
 					{/* Day columns */}
 					{timeSlotSegments.map((segment) => {
-						const formattedDate = formatDate(segment.date, "yyyy-MM-dd");
+						const timeBuckets = segment.timeSlots.map((timeSlot) =>
+							timeBucketsByHour.get(startOfHour(timeSlot).getTime()),
+						);
+						const longDate = formatDate(
+							segment.date,
+							i18n.language === "en" ? "EEEE MMMM d" : "EEEE d. MMMM",
+						);
 						const today = isToday(segment.date);
 						const weekday = formatDate(segment.date, "EEE");
 						const weekdayLetter = formatDate(segment.date, "EEEEE");
@@ -76,7 +85,10 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 									CELL_GAP,
 								)}
 								onClick={() => handleHourClick(segment.date)}
-								aria-label={`View day details for ${formattedDate}`}
+								aria-label={t(($) => $.exposureStatus.dateAndStatus, {
+									date: longDate,
+									status: describeHourCounts(t, timeBuckets),
+								})}
 							>
 								<DayColumnHeader
 									weekday={weekday}
@@ -89,7 +101,7 @@ export function WeekWidget({ dayStartHour = 8, dayEndHour = 16, data, selectedDa
 								{segment.timeSlots.map((timeSlot, timeSlotIndex) => {
 									const isFirstRow = timeSlotIndex === 0;
 									const isLastRow = timeSlotIndex === segment.timeSlots.length - 1;
-									const timeBucket = timeBucketsByHour.get(startOfHour(timeSlot).getTime());
+									const timeBucket = timeBuckets[timeSlotIndex];
 
 									return (
 										<Cell
@@ -175,4 +187,23 @@ function Cell({ isFirstRow, isLastRow, timeBucket }: CellProps) {
 			{dangerLevel && <DangerLevelDots dangerLevel={dangerLevel} className="absolute right-1 bottom-1" />}
 		</div>
 	);
+}
+
+/** Hours per level for a day column, most severe first, e.g. "Above limit value: 3 h, Within safe limits: 5 h". */
+function describeHourCounts(t: TranslateFn, timeBuckets: Array<TimeBucketStatus | undefined>) {
+	const counts = new Map<DangerLevel, number>();
+	for (const timeBucket of timeBuckets) {
+		if (timeBucket) counts.set(timeBucket.dangerLevel, (counts.get(timeBucket.dangerLevel) ?? 0) + 1);
+	}
+
+	if (counts.size === 0) {
+		return t(($) => $.exposureStatus.noData);
+	}
+
+	return [...counts.entries()]
+		.sort(([a], [b]) => DANGER_LEVEL_SEVERITY[b] - DANGER_LEVEL_SEVERITY[a])
+		.map(([level, count]) =>
+			t(($) => $.exposureStatus.statusDuration, { status: t(($$) => $$.dangerLevelStatus[level]), count }),
+		)
+		.join(", ");
 }

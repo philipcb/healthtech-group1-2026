@@ -8,9 +8,11 @@ import * as zod from 'zod';
 
 export const GetAggregateGroupTrendParams = zod.object({
   "exposure": zod.enum(['noise', 'vibration', 'dust']),
-  "period": zod.enum(['month', 'year']),
+  "period": zod.enum(['day', 'month', 'year']),
   "year": zod.int(),
   "month": zod.int().optional(),
+  "day": zod.int().optional(),
+  "isHourly": zod.boolean().optional(),
   "dustField": zod.string().optional()
 })
 

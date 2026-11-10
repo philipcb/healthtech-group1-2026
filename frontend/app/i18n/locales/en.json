@@ -11,6 +11,7 @@
     "noOptions": "No options available",
     "today": "Today",
     "total": "Total exposure",
+    "points": "Points",
     "notifications": "Notifications",
     "exportAsPdf": "Export as PDF",
     "weekNumber": "Week {{week}}",
@@ -40,6 +41,10 @@
       "mg": "mg/m³",
       "points": "Points",
       "db": "dB"
+    },
+    "filter": {
+      "label": "Show exposure",
+      "all": "All"
     }
   },
   "dangerLevels": {
@@ -77,16 +82,17 @@
   "layout": {
     "live": "Live",
     "overview": "Overview",
-    "home": "Home",
-    "team": "Team",
     "statistics": "Statistics",
     "export": "Export overview as PDF",
-    "exportPdf": "Export PDF",
-    "exportPdfDescription": "Select time period for PDF export",
+    "downloadReport": "Download report",
+    "downloadReportDescription": "Choose the period the report covers. It downloads as a PDF.",
+    "download": "Download",
+    "creatingReport": "Creating report…",
     "theme": "Theme",
     "language": "Language",
     "map": "Map",
-    "compare": "Compare"
+    "compare": "Compare",
+    "teamSettings": "Team settings"
   },
   "live": {
     "timeRange": {
@@ -111,7 +117,7 @@
     "ofTotal": "of {{total}}",
     "title": "Exposure",
     "aggregated": {
-      "safe": "Within safe limits",
+      "safe": "Below action value",
       "warning": "Above action value",
       "danger": "Above limit value"
     }
@@ -136,8 +142,14 @@
     "share": "{{value}}%",
     "shareExplanation": "% = share of measured time above action value",
     "notEnoughData": "Not enough data to show a trend",
-    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)",
-    "private": "Only you can see this"
+    "coverage": "Measured {{hours}} h ({{previous}}: {{normal}} h)"
+  },
+  "exposureStatus": {
+    "noData": "No data",
+    "statusDuration": "{{status}}: {{count}} h",
+    "statusWithExposures": "{{status}} ({{exposures}})",
+    "dateAndStatus": "{{date}}. {{status}}",
+    "showExposure": "Show {{exposure}}"
   },
   "dangerLevelStatus": {
     "danger": "Above limit value",
@@ -215,6 +227,11 @@
       "title": "Your team",
       "failedToLoadMembers": "Failed to load team members",
       "noMembersFound": "No team members found",
+      "empty": "No operators in your team yet. Add them in the team settings to follow their exposure here.",
+      "filteredCount": "Showing {{shown}} of {{total}}",
+      "clearFilter": "Clear filter: {{filter}}",
+      "noFilterMatches": "No operators in your team match this filter.",
+      "retry": "Try again",
       "table": {
         "name": "Name",
         "email": "Email",
@@ -230,6 +247,9 @@
       "membersCount": "{{count}} operator in team",
       "membersCount_one": "{{count}} operator in team",
       "membersCount_other": "{{count}} operators in team",
+      "memberCountShort": "{{count}} operators",
+      "memberCountShort_one": "{{count}} operator",
+      "memberCountShort_other": "{{count}} operators",
       "mapTitle": "Location map"
     },
     "overview": {
@@ -261,11 +281,12 @@
         },
         "noActiveSensors": {
           "label": "No active sensors"
-        }
+        },
+        "showInList": "Show in team list",
+        "clearFilter": "Clear filter"
       },
       "selectUserPlaceholder": "Select team member",
-      "clearUserSelection": "Clear user selection",
-      "clearExposureFilter": "Clear exposure filter"
+      "clearUserSelection": "Clear user selection"
     },
     "actionCard": {
       "safe": "Team status: Within exposure limits",
@@ -321,10 +342,12 @@
       "notOnMap": "Not on the map",
       "error": "Could not load building overview.",
       "noBuildings": "No buildings with occupation groups yet.",
+      "noDayData": "No data for the selected day.",
       "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
     },
     "period": {
       "label": "Time period",
+      "day": "Day",
       "month": "Month",
       "year": "Year",
       "selectYear": "Select year"
@@ -351,7 +374,10 @@
       "title": "Filters",
       "description": "Changes apply right away.",
       "close": "Close",
-      "save": "Save"
+      "reset": "Reset filters",
+      "activeCount": "{{count}} active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
     },
     "occupations": {
       "welder": "Welder",
@@ -373,15 +399,11 @@
       "vibration": "Vibration isn't available yet. The measurements can't be shown as daily exposure."
     },
     "overview": {
-      "exposureFilter": {
-        "label": "Show exposure",
-        "all": "All"
-      },
       "level": {
-        "label": "View"
+        "label": "Group by"
       },
       "belowActionValue": "Below action value",
-      "noValue": "No value",
+      "noGroupData": "No data",
       "groupColumn": "Group",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
@@ -389,6 +411,7 @@
         "description": "Groups with too few people are not shown, to protect privacy."
       },
       "noData": "No data for the selected period.",
+      "noDayData": "No data for the selected day.",
       "error": "Could not load the groups."
     },
     "group": {
@@ -398,31 +421,35 @@
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
+      "dayAverage": "Average for the day",
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
-      "timeOverActionCaption": "Share of the hours where the group's hourly average was at least {{action}}, including above the limit value.",
-      "timeOverLimitCaption": "Share of the hours where the group's hourly average was at least {{limit}}.",
-      "timeOverOnlyForDustField": "Only calculated for {{dustField}}.",
-      "daysOverAction": "Days above action value",
-      "daysOverLimit": "Days above limit value",
-      "daysOverActionCaption": "Share of the days where the group's value in the chart was at least {{action}} points, including above the limit value.",
-      "daysOverLimitCaption": "Share of the days where the group's value in the chart was at least {{limit}} points.",
-      "vibrationPeriodAverage": "The average of the daily points in the chart, which are the workers' total points per day.",
+      "wholeDayShareColumn": "{{share}}, whole day (%)",
+      "registeredWorkers": "Registered workers: {{count}}",
+      "hourBasis": "Average per worker and day · {{hours}} hours measured",
+      "hourBasis_one": "Average per worker and day · {{hours}} hour measured",
+      "hourBasis_other": "Average per worker and day · {{hours}} hours measured",
+      "vibrationDayTotal": "Points for the day",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
+      "hourTooltip": "{{time}}, {{day}}",
       "granularity": {
-        "day": "One point per day with measurements: the average of the day's hourly values"
+        "day": "One point per day: the average of the day's hours",
+        "hour": "One point per hour (Norwegian time)"
       },
       "vibrationGranularity": {
-        "day": "One point per day with measurements: the average of the workers' total points for the day"
+        "day": "One point per day: the average of the workers' daily totals",
+        "hour": "One point per hour (Norwegian time)"
       },
       "suppressed": "No value",
       "unavailable": {
         "noSuchGroup": "The group doesn't exist."
       },
       "noData": "No data for the selected period.",
+      "noDayData": "No data for the selected day.",
       "noDustFieldData": "No {{dustField}} data for the selected period.",
+      "noDustFieldDayData": "No {{dustField}} data for the selected day.",
       "allSuppressed": "No values for the selected period.",
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
@@ -473,20 +500,25 @@
           "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed."
         }
       },
-      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
+      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures are listed with the chart.",
+      "chartLabelDay": "{{metric}} per hour on {{period}}, in {{unit}}, for each compared group. Each group's key figures are listed with the chart.",
       "notInChart": "Not in the chart: {{groups}}.",
       "reasons": {
-        "noData": "no measurements",
+        "noData": "no data",
         "notEnoughData": "not enough data",
         "unavailable": "not available"
       },
       "notEnoughData": "Not enough data",
       "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
-      "noData": "No measurements",
+      "notEnoughDayDataDescription": "Fewer than {{count}} people in the group had data on {{period}}.",
+      "noData": "No data",
       "noDataDescription": "The group has no measurements in {{period}}.",
+      "noDayDataDescription": "The group has no measurements on the selected day.",
       "unavailableDescription": "This exposure can't be calculated for the group yet.",
       "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
+      "noGroupHasEnoughDayData": "None of the groups had enough people with data on {{period}}.",
       "noGroupHasData": "None of the groups have measurements in {{period}}.",
+      "noGroupHasDayData": "None of the groups have measurements on the selected day.",
       "retry": "Try again",
       "tableCaption": "{{exposure}} per group, {{period}}",
       "group": "Group",
@@ -495,39 +527,49 @@
       "hiddenDays_one": "{{count}} day hidden for privacy",
       "hiddenDays_other": "{{count}} days hidden for privacy",
       "hiddenDaysLegend": "Days hidden for privacy",
-      "values": {
-        "week": "Values per week",
-        "month": "Values per month",
-        "weekLabel": "Week {{week}}",
-        "bucketColumn": "Period",
-        "caption": "Average per week or month for each group, {{period}}"
-      }
+      "hiddenHours": "{{count}} hours hidden for privacy",
+      "hiddenHours_one": "{{count}} hour hidden for privacy",
+      "hiddenHours_other": "{{count}} hours hidden for privacy",
+      "hiddenHoursLegend": "Hours hidden for privacy"
     }
   },
   "aboutFigures": {
     "trigger": "Limits and calculation",
-    "title": "About the figures",
-    "description": "Where the figures on this page come from, and how they're calculated.",
+    "title": "Limits and calculation",
+    "description": "The action and limit values the figures are compared with, and how the figures are calculated.",
     "headings": {
-      "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Compared with",
-      "missing": "When figures are missing"
-    },
-    "source": {
-      "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
-      "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
+      "comparedWith": "Action and limit values"
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure on the card is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "The figure shown is the average of the days in the period. Days without measurements aren't counted.",
       "exposure": {
-        "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}. The averages are plain arithmetic averages of the decibel values. Since decibels are a logarithmic scale, such an average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are combined the same way as for noise and dust."
-      }
-    },
-    "missing": {
-      "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."
+        "dust": "{{dustField}} TWA in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours.",
+        "noise": "LAeq in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
+        "vibration": "Vibration points, added up over the day: 40 + 30 + 50 = 120 points. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day."
+      },
+      "exampleWorkers": {
+        "ola": "Ola",
+        "kari": "Kari"
+      },
+      "exposureExample": {
+        "title": "Example: the group's figures",
+        "exposure": "Exposure",
+        "group": "The group",
+        "atEight": "at 08:00",
+        "dayTotal": "daily total"
+      },
+      "timeOver": "Time above = hours above the action value divided by hours measured, for each worker and each day.",
+      "timeOverExample": {
+        "title": "Example: time above the action value on one day",
+        "worker": "Worker",
+        "measured": "Hours measured",
+        "over": "Hours above",
+        "share": "Time above",
+        "day": "The day: the average"
+      },
+      "timeOverNote": "The day is the average of the workers, and each worker counts the same. The period is the average of the days, and each day counts the same, however many workers or hours it had. So the percentage isn't the share of all measured hours. Time above the limit value is calculated the same way.",
+      "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count."
     }
   },
   "managementDashboard": {
@@ -543,12 +585,7 @@
       "yourExposureExposure": "Your {{exposure}} exposure"
     },
     "subtitle": {
-      "allExposureTypes": "All exposure types",
-      "viewDay": "Day",
-      "viewWeek": "Week {{week}}",
-      "viewMonth": "Month",
-      "dateDay": "{{date}}",
-      "dateRange": "{{startDate}} - {{endDate}}"
+      "allExposureTypes": "All exposure types"
     }
   },
   "register": {
@@ -621,6 +658,7 @@
     "trendPeakDescription": "Shows the maximum value per day"
   },
   "limitExplanation": {
+    "title": "Action and limit values",
     "actionValue": {
       "label": "Action value",
       "description": "Level where preventative action should be taken."
@@ -632,7 +670,8 @@
   },
   "datePicker": {
     "openLabel": "Choose date and view",
-    "dialogTitle": "Date and view"
+    "dialogTitle": "Date and view",
+    "selectWeek": "Select week {{week}}"
   },
   "chartDownload": {
     "download": "Download data",
@@ -646,7 +685,243 @@
       "description": "Plain text, separated by commas"
     },
     "columns": {
-      "date": "Date"
+      "date": "Date",
+      "time": "Time"
+    }
+  },
+  "safetyJourney": {
+    "chip": {
+      "operatorLabel": "My Safety Journey: {{points}} points, {{days}} day streak",
+      "foremanLabel": "Team Safety Journey",
+      "managementLabel": "Rewards settings"
+    },
+    "common": {
+      "back": "Back",
+      "pointsDelta": "+{{points}}",
+      "points": "{{points}} points",
+      "pointsShort": "{{points}} pts",
+      "kr": "{{amount}} kr",
+      "fraction": "{{value}} / {{total}}",
+      "ofTotal": "{{value}} of {{total}}",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri"
+      },
+      "today": "Today"
+    },
+    "dialog": {
+      "title": "My Safety Journey",
+      "tabs": {
+        "overview": "Overview",
+        "badges": "Badges",
+        "rewards": "Rewards"
+      },
+      "howToEarn": "How do I earn points?",
+      "onlyYou": "Only you can see this"
+    },
+    "levels": {
+      "level": "Level {{number}}",
+      "levelWithName": "Level {{number}} · {{name}}",
+      "names": {
+        "aware": "Aware",
+        "observer": "Observer",
+        "preventer": "Preventer",
+        "improver": "Improver",
+        "safetyChampion": "Safety Champion"
+      },
+      "lifetimePoints": "{{points}} lifetime points",
+      "pointsToNext": "{{points}} points to {{level}}",
+      "maxLevel": "You have reached the highest level",
+      "streak": "{{days}}-day streak",
+      "streakExplanation": "Working days in a row with the sensor worn and no red zone."
+    },
+    "overview": {
+      "lifetime": "Lifetime · sets your level",
+      "balance": "Balance · spend on rewards",
+      "today": "Today",
+      "todayProgress": "{{points}} / {{max}} points",
+      "nothingToday": "No points yet today",
+      "weeklyChallenge": "Weekly challenge",
+      "weeklyTitle": "{{target}} clean shifts this week",
+      "weeklyBonus": "+{{points}} bonus",
+      "weeklyProgress": "{{done}} of {{target}} done. One missed day doesn't break it.",
+      "weeklyDone": "Done! The bonus is yours.",
+      "dayStatus": {
+        "clean": "Clean shift",
+        "missed": "Red zone",
+        "upcoming": "Not yet"
+      }
+    },
+    "events": {
+      "cleanShift": "Clean shift",
+      "weeklyChallenge": "Weekly challenge bonus",
+      "learningChallenge": "Learning challenge",
+      "recoveryAnswer": "Answered \"what helped?\""
+    },
+    "rules": {
+      "names": {
+        "cleanShift": "Clean shift: no red zone, sensor worn",
+        "weeklyChallenge": "Weekly challenge: {{target}} clean shifts",
+        "learningChallenge": "Learning challenge",
+        "recoveryAnswer": "Answer \"what helped?\" after an alert"
+      },
+      "limit": {
+        "day": "+{{points}} · {{count}} per day",
+        "week": "+{{points}} · {{count}} per week"
+      },
+      "maxPerDay": "Max per day",
+      "maxPerDayValue": "{{points}} points",
+      "bonusOnTop": "The weekly bonus comes on top."
+    },
+    "prompt": {
+      "waiting": "Waiting for your answer",
+      "backInGreen": "{{exposure}} · back in green",
+      "redPeriod": "Red zone {{start}}–{{end}} · What helped?",
+      "since": "Back in green since {{time}}",
+      "oneTap": "What helped? One tap, +{{points}} points",
+      "notNow": "Not now",
+      "answerLater": "Answer later today",
+      "answered": "+{{points}} SafePoints · {{answer}}",
+      "answeredNoPoints": "{{answer}} · daily limit reached",
+      "thanks": "Thanks! This shows your team what works.",
+      "undo": "Undo",
+      "answer": "Answer",
+      "options": {
+        "changedTool": "Changed tool",
+        "changedTask": "Changed task",
+        "tookBreak": "Took a break",
+        "hearingProtection": "Hearing protection",
+        "movedAway": "Moved away",
+        "usedRespirator": "Put on a mask",
+        "somethingElse": "Something else"
+      },
+      "limitReached": "Daily limit reached",
+      "thanksNoPoints": "Your answer still helps your team see what works.",
+      "oneTapNoPoints": "Today's answer points are used, but your answers still help the team."
+    },
+    "learning": {
+      "title": "Learning challenge",
+      "correct": "Correct!",
+      "incorrect": "Not quite.",
+      "earned": "+{{points}} points",
+      "questions": {
+        "vibrationGrip": {
+          "question": "You're grinding and get a vibration alert. What lowers your exposure the most?",
+          "options": {
+            "gripHarder": "Grip the tool harder",
+            "lowVibrationTool": "Switch to a low-vibration tool",
+            "workFaster": "Work faster to finish sooner"
+          },
+          "explanation": "A low-vibration tool lowers the dose right away. Gripping harder sends more vibration into your hands, and rushing doesn't lower the vibration level."
+        }
+      }
+    },
+    "badges": {
+      "closest": "Closest badge",
+      "yours": "Your badges",
+      "earned": "Earned",
+      "progress": "{{progress}} / {{target}}",
+      "names": {
+        "cleanWeek": "Clean Week",
+        "alwaysOn": "Always On",
+        "noiseDetective": "Noise Detective",
+        "steadyStreak": "Steady Streak",
+        "sharpEye": "Sharp Eye",
+        "preventer": "Preventer"
+      },
+      "info": {
+        "cleanWeek": "{{target}} clean shifts in a row",
+        "alwaysOn": "Sensor worn on {{target}} shifts",
+        "noiseDetective": "Told us what helped after a noise alert",
+        "steadyStreak": "A {{target}}-day streak",
+        "sharpEye": "{{target}} learning challenges",
+        "preventer": "{{target}} clean shifts"
+      },
+      "nextStep": {
+        "cleanWeek": "{{count}} more clean shifts in a row",
+        "alwaysOn": "Wear the sensor on {{count}} more shifts",
+        "noiseDetective": "Answer \"what helped?\" after a noise alert",
+        "steadyStreak": "{{count}} more days on your streak",
+        "sharpEye": "{{count}} more learning challenges",
+        "preventer": "{{count}} more clean shifts"
+      },
+      "team": {
+        "label": "Team badge",
+        "name": "Collective Prevention",
+        "fullName": "Collective Prevention Badge",
+        "info": "Earned when the team has {{target}} clean shifts in a week",
+        "progress": "{{progress}} of {{target}} clean shifts this week",
+        "remaining": "{{count}} more clean shifts to earn it",
+        "earned": "Earned this week"
+      }
+    },
+    "rewards": {
+      "balance": "Balance",
+      "neverLowersLevel": "Spending points never lowers your level.",
+      "title": "Rewards",
+      "redeem": "Redeem",
+      "cost": "{{cost}} points",
+      "moreToGo": "{{cost}} points · {{count}} more to go",
+      "chosenByEmployer": "Rewards are chosen by your employer.",
+      "none": "No rewards available right now",
+      "history": "Redeemed earlier",
+      "coupon": "{{reward}} coupon",
+      "couponInfo": "Show this at the canteen. Valid for 30 days.",
+      "names": {
+        "coffee": "Coffee",
+        "lunch": "Lunch voucher",
+        "gym": "Gym day pass"
+      }
+    },
+    "team": {
+      "title": "Team Safety Journey",
+      "subtitle": "{{team}} · {{count}} operators · this week",
+      "teamPoints": "Team points",
+      "perOperator": "About {{points}} per operator",
+      "takingPart": "Taking part",
+      "takingPartInfo": "Earned points this week",
+      "cleanShifts": "Clean shifts",
+      "alertsAnswered": "Alerts answered",
+      "alertsAnsweredInfo": "\"What helped?\" answers",
+      "whatHelped": "What helped after alerts",
+      "fromAnswers": "From {{count}} answers this week",
+      "exposureFilter": "Filter by exposure",
+      "all": "All",
+      "tip": "Changing tools works best after vibration alerts. Worth checking that spare low-vibration tools are easy to reach.",
+      "privacy": "Each operator's own points and level are private. You only see team totals."
+    },
+    "rewardsSettings": {
+      "title": "Rewards",
+      "subtitle": "Choose what operators can spend their SafePoints on.",
+      "table": {
+        "reward": "Reward",
+        "cost": "Cost",
+        "value": "Value",
+        "perPerson": "Per person",
+        "redeemed": "Redeemed",
+        "active": "Active",
+        "perMonth": "{{count}} / month",
+        "toggleLabel": "{{reward}} active"
+      },
+      "earnHint": "An operator with only clean shifts earns about {{points}} points a week ({{perShift}} per shift + {{bonus}} weekly bonus).",
+      "budget": {
+        "title": "Monthly budget",
+        "label": "Budget per month (kr)",
+        "used": "Used this month",
+        "pauseInfo": "When the budget is used up, rewards pause until next month."
+      },
+      "form": {
+        "title": "Add reward",
+        "name": "Name",
+        "namePlaceholder": "e.g. Cinema ticket",
+        "cost": "Cost (points)",
+        "value": "Value (kr)",
+        "perPerson": "Max per person per month",
+        "submit": "Add reward"
+      }
     }
   }
 }

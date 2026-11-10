@@ -55,20 +55,18 @@ export function DangerLevelBadge({ dangerLevel }: { dangerLevel: DangerLevel }) 
 	);
 }
 
+// The same labels and order as the operator's and foreman's threshold legends
+const legendLevels = ["danger", "warning"] as const;
+
 export function DangerLevelBadgeLegend() {
 	const { t } = useTranslation();
-	const labels = {
-		safe: t(($) => $.aggregatedExposure.overview.belowActionValue),
-		warning: t(($) => $.dangerLevelStatus.warning),
-		danger: t(($) => $.dangerLevelStatus.danger),
-	};
 
 	return (
 		<ul className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
-			{(["safe", "warning", "danger"] as const).map((level) => (
+			{legendLevels.map((level) => (
 				<li key={level} className="flex items-center gap-1.5">
 					<DangerLevelBadge dangerLevel={level} />
-					{labels[level]}
+					{t(($) => $.thresholds[level])}
 				</li>
 			))}
 		</ul>
@@ -77,22 +75,17 @@ export function DangerLevelBadgeLegend() {
 
 export function ThresholdBarLegend() {
 	const { t } = useTranslation();
-	const labels = {
-		safe: t(($) => $.aggregatedExposure.overview.belowActionValue),
-		warning: t(($) => $.dangerLevelStatus.warning),
-		danger: t(($) => $.dangerLevelStatus.danger),
-	};
 
 	return (
 		<ul className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
-			{(["safe", "warning", "danger"] as const).map((level) => (
+			{legendLevels.map((level) => (
 				<li key={level} className="flex items-center gap-1.5">
 					<ThresholdLegendLine
-						label={labels[level]}
+						label={t(($) => $.thresholds[level])}
 						color={dangerlevelStyles[level].color}
-						strokeDasharray={level === "safe" ? undefined : getThresholdStrokeDasharray(level)}
+						strokeDasharray={getThresholdStrokeDasharray(level)}
 					/>
-					{labels[level]}
+					{t(($) => $.thresholds[level])}
 				</li>
 			))}
 		</ul>

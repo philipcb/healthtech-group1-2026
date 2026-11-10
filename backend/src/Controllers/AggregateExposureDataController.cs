@@ -29,19 +29,22 @@ public class AggregateExposureDataController(
 		[FromQuery] string period,
 		[FromQuery] int year,
 		[FromQuery] int? month,
+		[FromQuery] int? day,
+		[FromQuery] bool isHourly,
 		[FromQuery] string? dustField = null
 	)
 	{
 		try
 		{
-			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month, day);
 
 			AggregatedTrendResponseDto data = await _aggregateExposureDataService.GetTrendAsync(
 				timeLimits.startTime,
 				timeLimits.endTime,
 				groupId,
 				exposure,
-				dustField
+				dustField,
+				isHourly
 			);
 
 			return Ok(data);
@@ -63,12 +66,13 @@ public class AggregateExposureDataController(
 		[FromQuery] string period,
 		[FromQuery] int year,
 		[FromQuery] int? month,
+		[FromQuery] int? day,
 		[FromQuery] string? dustField = null
 	)
 	{
 		try
 		{
-			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month);
+			var timeLimits = TimeWindowUtils.GetPeriodLimit(period, year, month, day);
 
 			return new AggregatedOverviewResponseDto
 			{
@@ -83,7 +87,8 @@ public class AggregateExposureDataController(
 						await _aggregateExposureDataService.GetOverviewAggregateDataAsync(
 							timeLimits.startTime,
 							timeLimits.endTime,
-							dustField
+							dustField,
+							period == "day"
 						),
 			};
 		}

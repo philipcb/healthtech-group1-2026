@@ -298,15 +298,19 @@ function correctBackendContract(spec: unknown) {
 	}
 
 	// `TimeWindowUtils.GetPeriodLimit` only accepts these periods, and fails without a period or year. `month` is
-	// zero-based and only used for the month period.
-	for (const path of ["/api/medical-team/groups", "/api/medical-team/groups/{groupId}/trend"]) {
+	// zero-based and used for the month and day periods, `day` is the day of the month.
+	const periodsByPath: Record<string, Array<string>> = {
+		"/api/medical-team/groups": ["day", "month", "year"],
+		"/api/medical-team/groups/{groupId}/trend": ["day", "month", "year"],
+	};
+	for (const [path, periods] of Object.entries(periodsByPath)) {
 		const parameters = at(paths, path, "get").parameters;
 		assert.ok(Array.isArray(parameters), `${path} no longer has parameters`);
 		for (const parameter of parameters) {
 			assert.ok(isObject(parameter));
 			if (parameter.name === "period") {
 				assert.deepEqual(parameter.schema, { type: "string" }, `The backend spec changed ${path}'s period`);
-				parameter.schema = { type: "string", enum: ["month", "year"] };
+				parameter.schema = { type: "string", enum: periods };
 			}
 			if (parameter.name === "period" || parameter.name === "year" || parameter.name === "exposure") {
 				parameter.required = true;
@@ -328,21 +332,43 @@ function correctBackendContract(spec: unknown) {
 	// AggregatedTrendResponseDto leaves out its `null` properties (`JsonIgnoreCondition.WhenWritingNull`).
 	// AggregateExposureDataService.GetTrendAsync sends either the trend, whose average is left out when every point is
 	// `null`, `noSuchGroup`, also for a group without measurements in the period, or `exposureUnavailable` for vibration.
+	// The period's rates are left out when the aggregate job hasn't stored the time over the thresholds for the period.
 	assert.deepEqual(
 		Object.keys(at(schemas, "AggregatedTrendResponseDto", "properties")).sort(),
-		["average", "granularity", "group", "points", "reason", "status", "unit"],
+		[
+			"average",
+			"dayCount",
+			"granularity",
+			"group",
+			"hourCount",
+			"points",
+			"rateOfDayAboveAction",
+			"rateOfDayAboveLimit",
+			"rateOfHourAboveAction",
+			"rateOfHourAboveLimit",
+			"reason",
+			"status",
+			"unit",
+		],
 		"The backend spec changed AggregatedTrendResponseDto",
 	);
 	schemas.AggregatedTrendOkDto = {
 		type: "object",
-		required: ["status", "group", "unit", "granularity", "points"],
+		required: ["status", "group", "unit", "granularity", "points", "hourCount", "dayCount"],
 		properties: {
 			status: { type: "string", enum: ["ok"] },
 			group: schemaRef("TrendSampleDto"),
 			unit: AGGREGATE_UNIT,
 			average: { type: "number" },
-			granularity: { type: "string", enum: ["day"] },
+			// `hour` when the trend is asked for with `isHourly`
+			granularity: { type: "string", enum: ["day", "hour"] },
 			points: { type: "array", items: schemaRef("TrendPointDto") },
+			hourCount: { type: "integer" },
+			dayCount: { type: "integer" },
+			rateOfHourAboveAction: { type: "number" },
+			rateOfHourAboveLimit: { type: "number" },
+			rateOfDayAboveAction: { type: "number" },
+			rateOfDayAboveLimit: { type: "number" },
 		},
 	};
 	schemas.AggregatedTrendUnavailableDto = {

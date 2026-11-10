@@ -10,13 +10,12 @@ import {
 	getComparableGroupName,
 } from "@/features/aggregated-exposure/model/compare.ts";
 import {
-	formatAverageShare,
 	formatGroupValue,
+	formatHourBasis,
+	formatShare,
 	getGroupThreshold,
 	getShareLabels,
-	hasTimeOverThresholds,
 	MIN_GROUP_SIZE,
-	NO_VALUE,
 } from "@/features/aggregated-exposure/model/groups.ts";
 import { countHiddenDays } from "@/features/aggregated-exposure/model/trend-chart.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
@@ -34,6 +33,8 @@ type ComparisonFiguresProps = {
 	entries: Array<ComparedEntry>;
 	results: Array<GroupResult>;
 	periodLabel: string;
+	/** The selected day, when the trends are its hours */
+	day?: Date;
 };
 
 export function ComparisonFigures({
@@ -43,12 +44,18 @@ export function ComparisonFigures({
 	entries,
 	results,
 	periodLabel,
+	day,
 }: ComparisonFiguresProps) {
 	const { t } = useTranslation();
-	const shareLabels = getShareLabels(exposure, t);
-	const hasShares = hasTimeOverThresholds(exposure, dustField);
+	const shareLabels = getShareLabels(t);
+	const averageLabel =
+		day === undefined
+			? t(($) => $.aggregatedExposure.group.periodAverage)
+			: exposure === "vibration"
+				? t(($) => $.aggregatedExposure.group.vibrationDayTotal)
+				: t(($) => $.aggregatedExposure.group.dayAverage);
 	const rows = entries.map((entry, index) => ({ entry, result: results[index] ?? { status: "pending" as const } }));
-	const averageProps = { exposure, dustField, unit };
+	const averageProps = { exposure, dustField, unit, day };
 
 	return (
 		<div className="@container flex min-w-0 flex-col gap-2">
@@ -65,7 +72,7 @@ export function ComparisonFigures({
 							{t(($) => $.aggregatedExposure.compare.group)}
 						</th>
 						<th scope="col" className="px-3 pb-2 font-medium">
-							{t(($) => $.aggregatedExposure.group.periodAverage)}
+							{averageLabel}
 						</th>
 						<th scope="col" className="px-3 pb-2 font-medium">
 							{shareLabels.action}
@@ -87,15 +94,19 @@ export function ComparisonFigures({
 										<Average trend={result.trend} {...averageProps} />
 									</td>
 									<td className="px-3 py-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="action" hasShares={hasShares} />
+										<Share trend={result.trend} kind="action" />
 									</td>
 									<td className="py-3 pl-3 align-top tabular-nums">
-										<Share trend={result.trend} kind="limit" hasShares={hasShares} />
+										<Share trend={result.trend} kind="limit" />
 									</td>
 								</>
 							) : (
 								<td colSpan={3} className="py-3 pl-3 align-top text-muted-foreground">
-									<MissingFigures result={result} periodLabel={periodLabel} />
+									<MissingFigures
+										result={result}
+										periodLabel={periodLabel}
+										isDay={day !== undefined}
+									/>
 								</td>
 							)}
 						</tr>
@@ -105,47 +116,18 @@ export function ComparisonFigures({
 
 			<ul className="flex @xl:hidden flex-col">
 				{rows.map(({ entry, result }) => (
-					<li key={entry.group.groupId} className="flex flex-col gap-2 border-t py-3 first:border-t-0">
+					<li key={entry.group.groupId} className="flex flex-col gap-1 border-t pt-4 pb-2 first:border-t-0">
 						<GroupName entry={entry} result={result} exposure={exposure} />
 						{result.status === "ok" ? (
-							<dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-								<div className="col-span-full">
-									<dt className="text-muted-foreground text-xs">
-										{t(($) => $.aggregatedExposure.group.periodAverage)}
-									</dt>
-									<dd>
-										<Average trend={result.trend} {...averageProps} />
-									</dd>
-								</div>
-								<div>
-									<dt className="text-muted-foreground text-xs">{shareLabels.action}</dt>
-									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="action" hasShares={hasShares} />
-									</dd>
-								</div>
-								<div>
-									<dt className="text-muted-foreground text-xs">{shareLabels.limit}</dt>
-									<dd className="tabular-nums">
-										<Share trend={result.trend} kind="limit" hasShares={hasShares} />
-									</dd>
-								</div>
-							</dl>
+							<KeyFigures trend={result.trend} averageLabel={averageLabel} {...averageProps} />
 						) : (
 							<div className="text-muted-foreground text-sm">
-								<MissingFigures result={result} periodLabel={periodLabel} />
+								<MissingFigures result={result} periodLabel={periodLabel} isDay={day !== undefined} />
 							</div>
 						)}
 					</li>
 				))}
 			</ul>
-
-			{!hasShares && (
-				<p className="text-muted-foreground text-xs">
-					{t(($) => $.aggregatedExposure.group.timeOverOnlyForDustField, {
-						dustField: t(($) => $.exposures.dustFields.pm1_twa),
-					})}
-				</p>
-			)}
 		</div>
 	);
 }
@@ -182,73 +164,147 @@ function GroupName({
 	);
 }
 
-function Average({
-	trend,
-	exposure,
-	dustField,
-	unit,
-}: {
-	trend: AggregatedTrendOkDto;
-	exposure: Exposure;
-	dustField: DustField;
-	unit: ExposureUnit;
-}) {
+function Average({ trend, exposure, dustField, unit, day }: AverageProps) {
 	const { t } = useTranslation();
-	const threshold = getGroupThreshold(exposure, dustField);
-	const { average } = trend;
-	const hiddenDays = countHiddenDays(trend.points);
+	const figure = useAverageFigure({ trend, exposure, dustField, day });
 
-	if (average === undefined) {
+	if (figure === null) {
 		return <span>{t(($) => $.aggregatedExposure.group.noPeriodAverage)}</span>;
 	}
-
-	const level = getDangerLevel(average, threshold.warning, threshold.danger);
-	const levelLabel =
-		level === "safe"
-			? t(($) => $.aggregatedExposure.overview.belowActionValue)
-			: t(($) => $.dangerLevelStatus[level]);
 
 	return (
 		<div className="flex max-w-48 flex-col gap-1.5">
 			<span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-				<span className="font-semibold text-base tabular-nums">{formatGroupValue(average, unit, t)}</span>
-				<DangerLevelBadge dangerLevel={level} />
-				<span className="text-muted-foreground text-xs">{levelLabel}</span>
-			</span>
-			<ThresholdBar value={average} threshold={threshold} />
-			{hiddenDays > 0 && (
-				<span className="text-muted-foreground text-xs">
-					{t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })}
+				<span className="font-semibold text-base tabular-nums">
+					{formatGroupValue(figure.average, unit, t)}
 				</span>
-			)}
+				<DangerLevelBadge dangerLevel={figure.level} />
+				<span className="text-muted-foreground text-xs">{figure.levelLabel}</span>
+			</span>
+			<ThresholdBar value={figure.average} threshold={figure.threshold} />
+			{figure.hiddenNote && <span className="text-muted-foreground text-xs">{figure.hiddenNote}</span>}
 		</div>
 	);
 }
 
-function Share({
-	trend,
-	kind,
-	hasShares,
-}: {
+type AverageProps = {
 	trend: AggregatedTrendOkDto;
-	kind: "action" | "limit";
-	hasShares: boolean;
-}) {
-	if (!hasShares) {
-		return NO_VALUE;
+	exposure: Exposure;
+	dustField: DustField;
+	unit: ExposureUnit;
+	day?: Date;
+};
+
+/** The period's average with its status, or null when there is none */
+function useAverageFigure({ trend, exposure, dustField, day }: Omit<AverageProps, "unit">) {
+	const { t } = useTranslation();
+	const threshold = getGroupThreshold(exposure, dustField);
+	// A day's vibration points add up over the day, so its figure is the last hour, the day's total
+	const average =
+		day !== undefined && exposure === "vibration" ? (trend.points.at(-1)?.value ?? undefined) : trend.average;
+	const hiddenDays = countHiddenDays(trend.points);
+
+	if (average === undefined) {
+		return null;
 	}
 
-	return formatAverageShare(
-		trend.points.map((point) => (kind === "action" ? point.averageTimeOverAction : point.averageTimeOverLimit)),
+	const level = getDangerLevel(average, threshold.warning, threshold.danger);
+
+	return {
+		average,
+		threshold,
+		level,
+		levelLabel:
+			level === "safe"
+				? t(($) => $.aggregatedExposure.overview.belowActionValue)
+				: t(($) => $.dangerLevelStatus[level]),
+		hiddenNote:
+			hiddenDays === 0
+				? null
+				: day === undefined
+					? t(($) => $.aggregatedExposure.compare.hiddenDays, { count: hiddenDays })
+					: t(($) => $.aggregatedExposure.compare.hiddenHours, { count: hiddenDays }),
+	};
+}
+
+/**
+ * A group's figures on phones, as a stock app lists key figures: the label and the value on one line, and what explains
+ * the value under them across the whole width
+ */
+function KeyFigures({ trend, averageLabel, ...averageProps }: AverageProps & { averageLabel: string }) {
+	const { t, i18n } = useTranslation();
+	const shareLabels = getShareLabels(t);
+	const figure = useAverageFigure({ trend, ...averageProps });
+	const getShareRow = (label: string, share: number | undefined) => ({
+		label,
+		value: formatShare(share),
+		detail: formatHourBasis(share, trend.hourCount, t, i18n.language),
+	});
+
+	const rows = [
+		{
+			label: averageLabel,
+			value:
+				figure === null ? (
+					t(($) => $.aggregatedExposure.group.noPeriodAverage)
+				) : (
+					<span className="inline-flex items-center gap-2">
+						{formatGroupValue(figure.average, averageProps.unit, t)}
+						<DangerLevelBadge dangerLevel={figure.level} />
+					</span>
+				),
+			detail: figure && (
+				<span className="flex flex-col gap-1.5">
+					{figure.levelLabel}
+					<ThresholdBar value={figure.average} threshold={figure.threshold} />
+					{figure.hiddenNote}
+				</span>
+			),
+		},
+		getShareRow(shareLabels.action, trend.rateOfHourAboveAction),
+		getShareRow(shareLabels.limit, trend.rateOfHourAboveLimit),
+	];
+
+	return (
+		<dl className="flex flex-col text-sm">
+			{rows.map(({ label, value, detail }) => (
+				<div
+					key={label}
+					className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 border-t py-3 first:border-t-0"
+				>
+					<dt className="text-muted-foreground">{label}</dt>
+					<dd className="font-semibold text-base tabular-nums">{value}</dd>
+					{detail && <dd className="col-span-2 text-muted-foreground text-xs">{detail}</dd>}
+				</div>
+			))}
+		</dl>
+	);
+}
+
+// The backend's share for the period, with the measured hours it's taken over below it
+function Share({ trend, kind }: { trend: AggregatedTrendOkDto; kind: "action" | "limit" }) {
+	const { t, i18n } = useTranslation();
+	const share = kind === "action" ? trend.rateOfHourAboveAction : trend.rateOfHourAboveLimit;
+	const hourBasis = formatHourBasis(share, trend.hourCount, t, i18n.language);
+
+	return (
+		<>
+			{formatShare(share)}
+			{hourBasis && (
+				<span className="mt-0.5 block text-pretty font-normal text-muted-foreground text-xs">{hourBasis}</span>
+			)}
+		</>
 	);
 }
 
 function MissingFigures({
 	result,
 	periodLabel,
+	isDay,
 }: {
 	result: Exclude<GroupResult, { status: "ok" }>;
 	periodLabel: string;
+	isDay: boolean;
 }): ReactNode {
 	const { t } = useTranslation();
 
@@ -271,14 +327,21 @@ function MissingFigures({
 	const text: Record<MissingStatus, { title: string; description: string }> = {
 		noData: {
 			title: t(($) => $.aggregatedExposure.compare.noData),
-			description: t(($) => $.aggregatedExposure.compare.noDataDescription, { period: periodLabel }),
+			description: isDay
+				? t(($) => $.aggregatedExposure.compare.noDayDataDescription)
+				: t(($) => $.aggregatedExposure.compare.noDataDescription, { period: periodLabel }),
 		},
 		notEnoughData: {
 			title: t(($) => $.aggregatedExposure.compare.notEnoughData),
-			description: t(($) => $.aggregatedExposure.compare.notEnoughDataDescription, {
-				count: MIN_GROUP_SIZE,
-				period: periodLabel,
-			}),
+			description: isDay
+				? t(($) => $.aggregatedExposure.compare.notEnoughDayDataDescription, {
+						count: MIN_GROUP_SIZE,
+						period: periodLabel,
+					})
+				: t(($) => $.aggregatedExposure.compare.notEnoughDataDescription, {
+						count: MIN_GROUP_SIZE,
+						period: periodLabel,
+					}),
 		},
 		unavailable: {
 			title: t(($) => $.aggregatedExposure.unavailableValue),

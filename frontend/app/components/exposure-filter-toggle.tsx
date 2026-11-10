@@ -1,29 +1,33 @@
 import { ExposureIcon } from "@/components/exposure-icon.tsx";
-import { OptionToggle } from "@/features/aggregated-exposure/components/option-toggle.tsx";
-import type { ExposureFilter } from "@/features/aggregated-exposure/model/groups.ts";
-import { exposures } from "@/lib/exposures.ts";
+import { OptionToggle } from "@/components/option-toggle.tsx";
+import { type ExposureFilter, exposures } from "@/lib/exposures.ts";
 import { useTranslation } from "react-i18next";
 
 export function ExposureFilterToggle({
 	value,
 	onValueChange,
 	labelledBy,
+	hidesLabel = false,
+	compact = false,
 }: {
 	value: ExposureFilter;
 	onValueChange: (filter: ExposureFilter) => void;
 	labelledBy?: string;
+	hidesLabel?: boolean;
+	compact?: boolean;
 }) {
 	const { t } = useTranslation();
 
 	return (
 		<OptionToggle<ExposureFilter>
-			label={t(($) => $.aggregatedExposure.overview.exposureFilter.label)}
+			label={t(($) => $.exposures.filter.label)}
 			labelledBy={labelledBy}
-			fillsWidth={false}
+			hidesLabel={hidesLabel}
+			compact={compact}
 			value={value}
 			onValueChange={onValueChange}
 			options={[
-				{ value: "all", label: t(($) => $.aggregatedExposure.overview.exposureFilter.all) },
+				{ value: "all", label: t(($) => $.exposures.filter.all) },
 				...exposures.map((exposure) => ({
 					value: exposure,
 					label: t(($) => $.exposures[exposure]),

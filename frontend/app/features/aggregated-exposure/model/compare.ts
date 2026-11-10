@@ -31,6 +31,8 @@ export type ComparableGroup = {
 	site: string;
 	hall: string | null;
 	occupation: string | null;
+	/** The workers registered in the group, not the workers with measurements, who can be fewer on a day */
+	workerCount: number;
 	averages: SampleAveragesDto;
 };
 
@@ -42,12 +44,13 @@ export function toComparableGroups({ units, groups }: AggregatedOverviewResponse
 	return {
 		units,
 		groups: groups.map(
-			({ groupId, site, hall, occupation, averages }): ComparableGroup => ({
+			({ groupId, site, hall, occupation, workerCount, averages }): ComparableGroup => ({
 				groupId,
 				level: getCompareLevel(hall === null ? "yard" : "hall", occupation !== null),
 				site,
 				hall,
 				occupation,
+				workerCount,
 				averages: hideUnavailableAverages(averages),
 			}),
 		),

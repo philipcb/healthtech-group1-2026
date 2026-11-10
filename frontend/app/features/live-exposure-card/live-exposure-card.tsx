@@ -2,7 +2,7 @@ import { ThresholdLine } from "@/components/exposure-line-chart/threshold-line.t
 import { ExposureSlider } from "@/components/exposure-slider.tsx";
 import { BaseExposureLineChartCard } from "@/features/exposure-line-chart-card/base-exposure-line-chart-card.tsx";
 import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
-import { getExposureYAxisRange } from "@/lib/exposure-y-axis.ts";
+import { getLiveYAxisRange } from "@/lib/exposure-y-axis.ts";
 import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
 import type { TZDate } from "@date-fns/tz";
@@ -35,15 +35,15 @@ export const LiveExposureCard = ({
 	showLegend = false,
 	lineType,
 }: LiveExposureCardProps) => {
-	const { minY, maxY } = getExposureYAxisRange(exposure, data);
-
 	const threshold = getThreshold(exposure, exposureField);
+	const { minY, maxY, ticks } = getLiveYAxisRange(exposure, data, threshold);
 	const latestData = data.at(-1);
 	const latestValue = latestData?.value;
 	const latestDangerLevel = latestData?.dangerLevel;
 
 	return (
-		<div className="flex w-full gap-4">
+		// Desktop: value beside the chart. Phones: the chart shows the value above itself, and it follows the finger.
+		<div className="flex w-full flex-col lg:flex-row lg:gap-4">
 			<ExposureSlider
 				label={exposureLabel}
 				exposure={exposure}
@@ -51,9 +51,10 @@ export const LiveExposureCard = ({
 				value={latestValue}
 				dangerLevel={latestDangerLevel}
 				unitLabel={exposureUnitLabel}
-				className="w-48"
+				className="max-lg:hidden lg:w-48"
+				withinSection={true}
 			/>
-			<div className="w-128 flex-1 self-stretch">
+			<div className="min-w-0 self-stretch lg:w-128 lg:flex-1">
 				<BaseExposureLineChartCard
 					minTime={minTime}
 					maxTime={maxTime}
@@ -61,6 +62,7 @@ export const LiveExposureCard = ({
 					unit={chartUnit}
 					maxY={maxY}
 					minY={minY}
+					yTicks={ticks}
 					lineType={lineType}
 					exposure={exposure}
 					variant="compact"
@@ -69,7 +71,10 @@ export const LiveExposureCard = ({
 					chartContainerClassName="!aspect-auto"
 					showLegend={showLegend}
 					xAxisMode="windowed"
+					breakoutOnMobile={true}
 					dustField={exposureField}
+					// The section names noise and vibration, but not which of dust's three fractions this is
+					title={exposure === "dust" ? exposureLabel : undefined}
 				>
 					<ThresholdLine y={threshold.danger} dangerLevel="danger" />
 					<ThresholdLine y={threshold.warning} dangerLevel="warning" />

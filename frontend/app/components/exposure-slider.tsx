@@ -13,9 +13,20 @@ interface Props {
 	unitLabel: string;
 	label: string;
 	className?: string;
+	// Inside a section whose header already names the exposure: no icon and a lighter label, so the header leads
+	withinSection?: boolean;
 }
 
-export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel: unit, label, className }: Props) {
+export function ExposureSlider({
+	exposure,
+	field,
+	value,
+	dangerLevel,
+	unitLabel: unit,
+	label,
+	className,
+	withinSection = false,
+}: Props) {
 	const { i18n } = useTranslation();
 	const { danger } = getThreshold(exposure, field);
 	const sliderMax = danger * 1.5;
@@ -26,15 +37,16 @@ export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel:
 		minimumFractionDigits: 1,
 		maximumFractionDigits: 1,
 	});
-	const formattedValue = valueFormatter.format(value ?? 0);
+	// No value is shown as a dash, never as 0
+	const formattedValue = value === undefined ? "–" : valueFormatter.format(value);
 
 	const Emoji = getEmoji(dangerLevel ?? null);
 	const color = dangerLevel === undefined ? undefined : dangerlevelStyles[dangerLevel].color;
 
 	return (
 		<div className={cn("flex w-full flex-col gap-1.5 rounded-xl border border-transparent p-3", className)}>
-			<div className="flex items-center gap-1.5 font-semibold text-sm">
-				<ExposureIcon type={exposure} size="xs" />
+			<div className={cn("flex items-center gap-1.5 text-sm", withinSection ? "font-medium" : "font-semibold")}>
+				{!withinSection && <ExposureIcon type={exposure} size="xs" />}
 				<span className="flex flex-row items-center gap-3">
 					<span>{label}</span>
 					<Emoji style={{ color }} size={20} />
@@ -59,7 +71,7 @@ export function ExposureSlider({ exposure, field, value, dangerLevel, unitLabel:
 				</div>
 			</div>
 
-			<p className="font-semibold text-2xl">
+			<p className="font-semibold text-2xl tabular-nums">
 				{formattedValue}
 				<span className="ml-1 font-medium text-muted-foreground text-sm">{unit}</span>
 			</p>

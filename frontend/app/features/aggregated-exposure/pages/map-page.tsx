@@ -7,17 +7,19 @@ import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/pe
 import { SiteMap } from "@/features/aggregated-exposure/components/site-map.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
+import type { GroupSummary } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { hasSiteMap, toSiteMapSummaries } from "@/features/aggregated-exposure/model/site-maps.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
+import { exposures } from "@/lib/exposures.ts";
 import { MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function MapPage() {
 	const { t } = useTranslation();
 	const { site: scopeSite, YardFilter } = useDashboardScope();
-	const { exposure, setExposure, dustField, setDustField, yard, setYard, resetGroupFilters, periodSelection } =
+	const { exposure, setExposure, dustField, setDustField, yard, setYard, periodSelection } =
 		useAggregatedExposureSearchParams();
 	const { data, isPending, isError } = useGetAggregateGroups(
 		{ ...toPeriodParams(periodSelection), dustField },
@@ -61,9 +63,7 @@ export function MapPage() {
 				</p>
 			</header>
 			<PeriodPickerLayout selection={periodSelection}>
-				<FilterDialog onReset={resetGroupFilters} className="sm:hidden">
-					{exposurePickers}
-				</FilterDialog>
+				<FilterDialog className="sm:hidden">{exposurePickers}</FilterDialog>
 				<div className="hidden flex-col gap-3 sm:flex">{exposurePickers}</div>
 				{YardFilter && mapYard !== undefined && (
 					<YardFilter yards={yards} value={mapYard} onValueChange={setYard} allowsAll={false} />
@@ -74,10 +74,19 @@ export function MapPage() {
 					<EmptyState title={t(($) => $.aggregatedExposure.map.error)} />
 				) : mapYard === undefined ? (
 					<EmptyState title={t(($) => $.aggregatedExposure.map.noBuildings)} />
+				) : periodSelection.period === "day" && !hasMeasurements(data.groups, mapYard) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.map.noDayData)} />
 				) : (
 					<SiteMap key={mapYard} site={mapYard} summaries={data} exposure={exposure} dustField={dustField} />
 				)}
 			</PeriodPickerLayout>
 		</div>
+	);
+}
+
+// A day without any measurements for the yard's groups is said instead of showing a map with no averages
+function hasMeasurements(groups: Array<GroupSummary>, site: string) {
+	return groups.some(
+		(group) => group.site === site && exposures.some((exposure) => group.averages[exposure] !== null),
 	);
 }

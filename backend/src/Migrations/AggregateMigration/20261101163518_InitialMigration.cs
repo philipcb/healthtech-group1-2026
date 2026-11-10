@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace backend.Migrations.AggregateMigration
 {
 	/// <inheritdoc />
-	public partial class InitialCreate : Migration
+	public partial class InitialMigration : Migration
 	{
 		/// <inheritdoc />
 		protected override void Up(MigrationBuilder migrationBuilder)
@@ -47,6 +47,15 @@ namespace backend.Migrations.AggregateMigration
 						nullable: false
 					),
 					ExposureType = table.Column<string>(type: "text", nullable: false),
+					Field = table.Column<string>(type: "text", nullable: false),
+					DailyRateOfWorkerOverAction = table.Column<double>(
+						type: "double precision",
+						nullable: false
+					),
+					DailyRateOfWorkerOverLimit = table.Column<double>(
+						type: "double precision",
+						nullable: false
+					),
 					AverageTimeOverLimit = table.Column<double>(
 						type: "double precision",
 						nullable: false
@@ -68,6 +77,7 @@ namespace backend.Migrations.AggregateMigration
 						{
 							x.SampleId,
 							x.ExposureType,
+							x.Field,
 							x.Time,
 						}
 					);
@@ -205,7 +215,6 @@ namespace backend.Migrations.AggregateMigration
 				table: "VibrationAverage",
 				column: "SampleId"
 			);
-
 			migrationBuilder.Sql(
 				"""
 				SELECT create_hypertable(

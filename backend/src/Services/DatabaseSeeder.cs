@@ -192,6 +192,55 @@ public class DatabaseSeeder
 				PasswordHash = DefaultPasswordHash,
 				CreatedAt = now,
 			},
+			//Other yard
+			new UserInfo
+			{
+				Id = SeedIds.User23Id,
+				Name = "Sara Stensen",
+				Email = "sara.stensen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User24Id,
+				Name = "Rasmus Kjaerfelt",
+				Email = "rasmus.kjaerfelt@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User25Id,
+				Name = "Henrik Laegreid",
+				Email = "henrik.laegried@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User26Id,
+				Name = "Julie langhammer",
+				Email = "julie.langhammer@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User27Id,
+				Name = "Kristian Bakken",
+				Email = "kristian.bakken@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
+			new UserInfo
+			{
+				Id = SeedIds.User28Id,
+				Name = "Martin Guttormsen",
+				Email = "martin.guttormsen@aker.com",
+				PasswordHash = DefaultPasswordHash,
+				CreatedAt = now,
+			},
 		];
 
 		HashSet<Guid> existingUserIds = await dbContext
@@ -269,7 +318,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.KariId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -283,14 +332,14 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.TrondId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
 			new User
 			{
 				Id = SeedIds.GjertrudId,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -332,7 +381,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.User17Id,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -346,7 +395,7 @@ public class DatabaseSeeder
 			new User
 			{
 				Id = SeedIds.User19Id,
-				JobDescription = "Sveiser",
+				JobDescription = "Welder",
 				LocationId = SeedIds.VerdalLocationId,
 				Role = UserRole.Operator,
 			},
@@ -414,6 +463,49 @@ public class DatabaseSeeder
 				LocationId = SeedIds.VerdalLocation2Id,
 				Role = UserRole.Operator,
 			},
+			//Other yard
+			new User
+			{
+				Id = SeedIds.User23Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User24Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User25Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User26Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User27Id,
+				JobDescription = "Technician",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Operator,
+			},
+			new User
+			{
+				Id = SeedIds.User28Id,
+				JobDescription = "Formann",
+				LocationId = SeedIds.SandsliLocationId,
+				Role = UserRole.Foreman,
+			},
 		];
 
 		List<(Guid ManagerId, Guid SubordinateId)> seedUserManagers =
@@ -430,13 +522,17 @@ public class DatabaseSeeder
 			(SeedIds.OlaId, SeedIds.User18Id),
 			(SeedIds.OlaId, SeedIds.User19Id),
 			(SeedIds.OlaId, SeedIds.User20Id),
-			(SeedIds.OlaId, SeedIds.User21Id),
 			(SeedIds.AstridId, SeedIds.ErikId),
 			(SeedIds.AstridId, SeedIds.MagnusId),
 			(SeedIds.AstridId, SeedIds.HakonId),
 			(SeedIds.AstridId, SeedIds.NoraId),
 			(SeedIds.AstridId, SeedIds.EgonId),
 			(SeedIds.AstridId, SeedIds.User22Id),
+			(SeedIds.User28Id, SeedIds.User23Id),
+			(SeedIds.User28Id, SeedIds.User24Id),
+			(SeedIds.User28Id, SeedIds.User25Id),
+			(SeedIds.User28Id, SeedIds.User26Id),
+			(SeedIds.User28Id, SeedIds.User27Id),
 		];
 
 		HashSet<Guid> existingLocationIds = await dbContext

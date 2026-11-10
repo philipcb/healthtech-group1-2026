@@ -168,7 +168,9 @@ export function DayWidget({
 										"group block rounded-lg transition-colors",
 										isLinkable && "hover:bg-card-highlight",
 									)}
-									aria-label={`View ${t(($) => $.exposures[exposure])} data`}
+									aria-label={t(($) => $.exposureStatus.showExposure, {
+										exposure: t(($$) => $$.exposures[exposure]),
+									})}
 								>
 									{rowContent}
 								</Link>

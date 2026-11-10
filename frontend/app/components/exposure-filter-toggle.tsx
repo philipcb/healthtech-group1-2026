@@ -24,7 +24,6 @@ export function ExposureFilterToggle({
 			labelledBy={labelledBy}
 			hidesLabel={hidesLabel}
 			compact={compact}
-			fillsWidth={false}
 			value={value}
 			onValueChange={onValueChange}
 			options={[

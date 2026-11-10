@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations.AggregateMigration
 {
     [DbContext(typeof(AggregateDbContext))]
-    [Migration("20261018122929_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261101163518_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -32,6 +32,9 @@ namespace backend.Migrations.AggregateMigration
                     b.Property<string>("ExposureType")
                         .HasColumnType("text");
 
+                    b.Property<string>("Field")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("Time")
                         .HasColumnType("timestamp with time zone");
 
@@ -44,7 +47,13 @@ namespace backend.Migrations.AggregateMigration
                     b.Property<double>("AverageTimeOverLimit")
                         .HasColumnType("double precision");
 
-                    b.HasKey("SampleId", "ExposureType", "Time");
+                    b.Property<double>("DailyRateOfWorkerOverAction")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("DailyRateOfWorkerOverLimit")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("SampleId", "ExposureType", "Field", "Time");
 
                     b.HasIndex("SampleId");
 

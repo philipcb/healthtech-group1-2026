@@ -28,6 +28,28 @@ public sealed class AggregatedTrendResponseDto
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	public List<TrendPointDto>? Points { get; set; }
 
+	[JsonPropertyName("dayCount")]
+	public int DayCount { get; set; }
+
+	[JsonPropertyName("hourCount")]
+	public int HourCount { get; set; }
+
+	[JsonPropertyName("rateOfHourAboveAction")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public double? RateOfHourAboveAction { get; set; }
+
+	[JsonPropertyName("rateOfHourAboveLimit")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public double? RateOfHourAboveLimit { get; set; }
+
+	[JsonPropertyName("rateOfDayAboveAction")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public double? RateOfDayAboveAction { get; set; }
+
+	[JsonPropertyName("rateOfDayAboveLimit")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public double? RateOfDayAboveLimit { get; set; }
+
 	// Present when status == "unavailable"
 	[JsonPropertyName("reason")]
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -52,14 +74,19 @@ public sealed class TrendPointDto
 	[JsonPropertyName("value")]
 	public double? Value { get; set; }
 
-	// Share (0 to 1) over the action value, including over the limit, always from the group's values in the chart. For
-	// noise and dust the share of the day's hours where the group's hourly average was over it. For vibration 1 when the
-	// group's daily value, the average of the workers' daily totals, was over it, and 0 otherwise, so the period's average
-	// is the share of the days. Null when there is none.
+	// Share (0 to 1) of worker of the group who went over action value for the day (same as number of days above action value for 1 day)
+	[JsonPropertyName("rateOfWorkerOverAction")]
+	public double? RateOfWorkerOverAction { get; set; }
+
+	// Share (0 to 1) of worker of the group who went over limit for the day (same as number of days above limit for 1 day)
+	[JsonPropertyName("rateOfWorkerOverLimit")]
+	public double? RateOfWorkerLimit { get; set; }
+
+	// Share (0 to 1) of hours of the group over the action value, including over the limit, for the day of "Time"
 	[JsonPropertyName("averageTimeOverAction")]
 	public double? AverageTimeOverAction { get; set; }
 
-	// Share (0 to 1) over the limit, measured like `AverageTimeOverAction`. Null when there is none.
+	// Share (0 to 1) of hours over the limit, for the day of "Time"
 	[JsonPropertyName("averageTimeOverLimit")]
 	public double? AverageTimeOverLimit { get; set; }
 }

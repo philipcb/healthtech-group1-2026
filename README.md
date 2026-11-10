@@ -68,17 +68,28 @@ Remember to change the default database password (`your_secure_password`) in `PO
 1. Download the CSV-files from [https://drive.google.com/drive/folders/13XkM6DRK6iyz9pC4Akvj1-1KjRx4wFkc?usp=drive_link](https://drive.google.com/drive/folders/13XkM6DRK6iyz9pC4Akvj1-1KjRx4wFkc?usp=drive_link).
 2. Copy them into `./backend/seed/`.
 
-You may also have to download `ef`, which you can do by running: `dotnet tool install --global dotnet-ef`
+The setup script uses `dotnet ef`, which you can install by running: `dotnet tool install --global dotnet-ef`
 
-Then run the following command in the root directory of the project:
+Then run the following commands in the root directory of the project:
 
 ```sh
 # From project root
 
-./databaseSetUp.sh
-```
+# Start the database
+docker compose --env-file ./backend/.env up -d db
 
-With this, you will reinitialise the previous docker containers you had previously setup, and then create the databases, run the migrations on them, and fill them.
+# Navigate to the backend directory
+cd backend
+
+# Run migrations
+dotnet ef database update --project src
+
+# Navigate back to the root directory
+cd ..
+
+# Seed the database with sample data. This may take a few minutes.
+docker exec -it healthtech-dev-db-1 psql -U postgres -d healthtech -f /seed/seed.sql
+```
 
 ### Start the backend
 

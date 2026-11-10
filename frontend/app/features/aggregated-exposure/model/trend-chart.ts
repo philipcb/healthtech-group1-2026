@@ -1,23 +1,47 @@
 import { formatGroupNumber } from "@/features/aggregated-exposure/model/groups.ts";
-import { TIMEZONE } from "@/i18n/locale.ts";
+import { TIMEZONE, TIMEZONE_NAME } from "@/i18n/locale.ts";
 import type { TrendPointDto } from "@/lib/api/generated/models/index.ts";
 import type { ExposureUnit } from "@/lib/exposures.ts";
 import type { Threshold } from "@/lib/thresholds.ts";
-import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay, startOfISOWeek, startOfMonth } from "date-fns";
+import { TZDate } from "@date-fns/tz";
+import { differenceInCalendarDays, eachMonthOfInterval, max, startOfDay } from "date-fns";
 
 const Y_AXIS_PADDING = 0.1;
 const MAX_DAYS_WITH_DAY_TICKS = 62;
 // The room the comparison chart keeps right of its plot, for the groups' names at the end of their lines
 const END_LABEL_WIDTH = 160;
 
-/** The comparison chart's right margin. Phones have no room for the names, so they're listed under the chart instead. */
+/** The comparison chart's right margin. Phones have no room for the names, so they're listed above the chart, with the values, instead. */
 export function getComparisonChartMarginRight(isMobile: boolean) {
-	return isMobile ? 12 : END_LABEL_WIDTH;
+	return isMobile ? 0 : END_LABEL_WIDTH;
 }
 
-// The backend sends the start of each UTC day, which is the same day in the app's time zone
+// The backend sends each day as its midnight in Oslo, which is the start of the day in the app's time zone
 export function toTrendDay(time: Date) {
 	return startOfDay(time, { in: TIMEZONE });
+}
+
+/** A point's place on a chart's time axis: its hour when the chart shows one day, otherwise its day */
+export function toTrendTime(time: Date, day: Date | undefined) {
+	return day === undefined ? toTrendDay(time) : time;
+}
+
+const HOURS_BETWEEN_TICKS = 3;
+
+/**
+ * Every few hours of one day in Norwegian time, from midnight to the next midnight. Made from the day's local hours, so
+ * the ticks stay on whole local hours on the days daylight saving time starts or ends, which are 23 and 25 hours long.
+ */
+export function getHourTicks(day: Date, hoursBetweenTicks = HOURS_BETWEEN_TICKS) {
+	return Array.from({ length: 24 / hoursBetweenTicks + 1 }, (_, index) =>
+		new TZDate(
+			day.getFullYear(),
+			day.getMonth(),
+			day.getDate(),
+			index * hoursBetweenTicks,
+			TIMEZONE_NAME,
+		).getTime(),
+	);
 }
 
 export function getTrendTicks(timestamps: Array<number>) {
@@ -43,32 +67,8 @@ export function formatTrendTick(value: number, unit: ExposureUnit) {
 	return formatGroupNumber(value, unit, value < 10 ? 1 : 0);
 }
 
-function average(values: Array<number>) {
-	return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
 export function countHiddenDays(points: Array<TrendPointDto>) {
 	return points.filter((point) => point.value === null).length;
-}
-
-export type ValueBucket = "week" | "month";
-
-export function getBucketAverages(points: Array<TrendPointDto>, bucket: ValueBucket) {
-	const valuesByBucket = new Map<number, Array<number | null>>();
-	for (const point of points) {
-		const day = toTrendDay(point.time);
-		const start = (
-			bucket === "week" ? startOfISOWeek(day, { in: TIMEZONE }) : startOfMonth(day, { in: TIMEZONE })
-		).getTime();
-		valuesByBucket.set(start, [...(valuesByBucket.get(start) ?? []), point.value]);
-	}
-
-	return new Map(
-		[...valuesByBucket].map(([start, values]) => {
-			const present = values.filter((value) => value !== null);
-			return [start, present.length === 0 ? null : average(present)];
-		}),
-	);
 }
 
 export function fillTrendGaps(

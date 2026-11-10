@@ -11,6 +11,7 @@
     "noOptions": "No options available",
     "today": "Today",
     "total": "Total exposure",
+    "points": "Points",
     "notifications": "Notifications",
     "exportAsPdf": "Export as PDF",
     "weekNumber": "Week {{week}}",
@@ -341,10 +342,12 @@
       "notOnMap": "Not on the map",
       "error": "Could not load building overview.",
       "noBuildings": "No buildings with occupation groups yet.",
+      "noDayData": "No data for the selected day.",
       "noSiteMap": "This yard doesn't have a site map yet. Select a building in the list to see an anonymous overview."
     },
     "period": {
       "label": "Time period",
+      "day": "Day",
       "month": "Month",
       "year": "Year",
       "selectYear": "Select year"
@@ -400,7 +403,7 @@
         "label": "Group by"
       },
       "belowActionValue": "Below action value",
-      "noValue": "No value",
+      "noGroupData": "No data",
       "groupColumn": "Group",
       "openDetails": "{{exposure}} for {{group}}: {{value}}. Show development over time.",
       "noGroups": {
@@ -408,6 +411,7 @@
         "description": "Groups with too few people are not shown, to protect privacy."
       },
       "noData": "No data for the selected period.",
+      "noDayData": "No data for the selected day.",
       "error": "Could not load the groups."
     },
     "group": {
@@ -417,31 +421,35 @@
       "fallbackTitle": "Group",
       "dustFieldLabel": "Dust fraction",
       "periodAverage": "Average for the period",
+      "dayAverage": "Average for the day",
       "noPeriodAverage": "No value for the period",
       "timeOverAction": "Time above action value",
       "timeOverLimit": "Time above limit value",
-      "timeOverActionCaption": "Share of the hours where the group's hourly average was at least {{action}}, including above the limit value.",
-      "timeOverLimitCaption": "Share of the hours where the group's hourly average was at least {{limit}}.",
-      "timeOverOnlyForDustField": "Only calculated for {{dustField}}.",
-      "daysOverAction": "Days above action value",
-      "daysOverLimit": "Days above limit value",
-      "daysOverActionCaption": "Share of the days where the group's value in the chart was at least {{action}} points, including above the limit value.",
-      "daysOverLimitCaption": "Share of the days where the group's value in the chart was at least {{limit}} points.",
-      "vibrationPeriodAverage": "The average of the daily points in the chart, which are the workers' total points per day.",
+      "wholeDayShareColumn": "{{share}}, whole day (%)",
+      "registeredWorkers": "Registered workers: {{count}}",
+      "hourBasis": "Average per worker and day · {{hours}} hours measured",
+      "hourBasis_one": "Average per worker and day · {{hours}} hour measured",
+      "hourBasis_other": "Average per worker and day · {{hours}} hours measured",
+      "vibrationDayTotal": "Points for the day",
       "trendTitle": "Development in the period",
       "unitAndGranularity": "Unit: {{unit}}. {{granularity}}.",
+      "hourTooltip": "{{time}}, {{day}}",
       "granularity": {
-        "day": "One point per day with measurements: the average of the day's hourly values"
+        "day": "One point per day: the average of the day's hours",
+        "hour": "One point per hour (Norwegian time)"
       },
       "vibrationGranularity": {
-        "day": "One point per day with measurements: the average of the workers' total points for the day"
+        "day": "One point per day: the average of the workers' daily totals",
+        "hour": "One point per hour (Norwegian time)"
       },
       "suppressed": "No value",
       "unavailable": {
         "noSuchGroup": "The group doesn't exist."
       },
       "noData": "No data for the selected period.",
+      "noDayData": "No data for the selected day.",
       "noDustFieldData": "No {{dustField}} data for the selected period.",
+      "noDustFieldDayData": "No {{dustField}} data for the selected day.",
       "allSuppressed": "No values for the selected period.",
       "error": "Could not load the group.",
       "trendError": "Could not load the group's development."
@@ -492,20 +500,25 @@
           "description": "One occupation against another, like welders against electricians. Across a whole yard, or within each building, to see which jobs are most exposed."
         }
       },
-      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures, and its values per week or month, are listed with the chart.",
+      "chartLabel": "{{metric}} per day in {{period}}, in {{unit}}, for each compared group. Each group's key figures are listed with the chart.",
+      "chartLabelDay": "{{metric}} per hour on {{period}}, in {{unit}}, for each compared group. Each group's key figures are listed with the chart.",
       "notInChart": "Not in the chart: {{groups}}.",
       "reasons": {
-        "noData": "no measurements",
+        "noData": "no data",
         "notEnoughData": "not enough data",
         "unavailable": "not available"
       },
       "notEnoughData": "Not enough data",
       "notEnoughDataDescription": "Fewer than {{count}} people in the group had data in {{period}}.",
-      "noData": "No measurements",
+      "notEnoughDayDataDescription": "Fewer than {{count}} people in the group had data on {{period}}.",
+      "noData": "No data",
       "noDataDescription": "The group has no measurements in {{period}}.",
+      "noDayDataDescription": "The group has no measurements on the selected day.",
       "unavailableDescription": "This exposure can't be calculated for the group yet.",
       "noGroupHasEnoughData": "None of the groups had enough people with data in {{period}}.",
+      "noGroupHasEnoughDayData": "None of the groups had enough people with data on {{period}}.",
       "noGroupHasData": "None of the groups have measurements in {{period}}.",
+      "noGroupHasDayData": "None of the groups have measurements on the selected day.",
       "retry": "Try again",
       "tableCaption": "{{exposure}} per group, {{period}}",
       "group": "Group",
@@ -514,39 +527,49 @@
       "hiddenDays_one": "{{count}} day hidden for privacy",
       "hiddenDays_other": "{{count}} days hidden for privacy",
       "hiddenDaysLegend": "Days hidden for privacy",
-      "values": {
-        "week": "Values per week",
-        "month": "Values per month",
-        "weekLabel": "Week {{week}}",
-        "bucketColumn": "Period",
-        "caption": "Average per week or month for each group, {{period}}"
-      }
+      "hiddenHours": "{{count}} hours hidden for privacy",
+      "hiddenHours_one": "{{count}} hour hidden for privacy",
+      "hiddenHours_other": "{{count}} hours hidden for privacy",
+      "hiddenHoursLegend": "Hours hidden for privacy"
     }
   },
   "aboutFigures": {
     "trigger": "Limits and calculation",
     "title": "Limits and calculation",
-    "description": "The action and limit values the figures are compared with, how the figures are calculated, and where they come from.",
+    "description": "The action and limit values the figures are compared with, and how the figures are calculated.",
     "headings": {
-      "source": "Source",
       "calculation": "Calculation",
-      "comparedWith": "Action and limit values",
-      "missing": "When figures are missing"
-    },
-    "source": {
-      "groups": "Each group is everyone measured in one yard or building. With “{{perOccupation}}”, each occupation group there is its own group.",
-      "hourly": "The data only holds one value per hour for each group, not each person's measurements. The figures therefore never show individuals."
+      "comparedWith": "Action and limit values"
     },
     "calculation": {
-      "periodAverage": "For each day, the average of the group's hourly values is calculated. The figure shown is the average of the days with measurements in the selected period. Days without measurements aren't counted.",
+      "periodAverage": "The figure shown is the average of the days in the period. Days without measurements aren't counted.",
       "exposure": {
-        "dust": "{{dustField}} TWA in {{unit}}.",
-        "noise": "LAeq in {{unit}}, as a plain average of the decibel values. Decibels are logarithmic, so this average is never higher than an energy average, and often lower when the sound level varies.",
-        "vibration": "Vibration points. The hourly values are averaged the same way as for noise and dust."
-      }
-    },
-    "missing": {
-      "suppressed": "Groups with fewer than {{count}} registered people aren't in the data, so they aren't shown."
+        "dust": "{{dustField}} TWA in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours.",
+        "noise": "LAeq in {{unit}}. The group's figure for an hour is the average of the workers, and the day's figure is the average of the hours. Note: 80 and 90 give 85 here, even though the sound energy equals about 87. Peak values (LCpk) aren't included in “time above”.",
+        "vibration": "Vibration points, added up over the day: 40 + 30 + 50 = 120 points. The day's figure is the average of the daily totals of everyone with measurements. The total starts at 0 each day."
+      },
+      "exampleWorkers": {
+        "ola": "Ola",
+        "kari": "Kari"
+      },
+      "exposureExample": {
+        "title": "Example: the group's figures",
+        "exposure": "Exposure",
+        "group": "The group",
+        "atEight": "at 08:00",
+        "dayTotal": "daily total"
+      },
+      "timeOver": "Time above = hours above the action value divided by hours measured, for each worker and each day.",
+      "timeOverExample": {
+        "title": "Example: time above the action value on one day",
+        "worker": "Worker",
+        "measured": "Hours measured",
+        "over": "Hours above",
+        "share": "Time above",
+        "day": "The day: the average"
+      },
+      "timeOverNote": "The day is the average of the workers, and each worker counts the same. The period is the average of the days, and each day counts the same, however many workers or hours it had. So the percentage isn't the share of all measured hours. Time above the limit value is calculated the same way.",
+      "timeOverVibration": "Vibration: Ola reaches the action value at 09:00 and has 8 hours of measurements from 07:00. The hours from 09:00 count: 6 / 8 = 75 %. Hours after Ola has stopped don't count."
     }
   },
   "managementDashboard": {
@@ -662,7 +685,8 @@
       "description": "Plain text, separated by commas"
     },
     "columns": {
-      "date": "Date"
+      "date": "Date",
+      "time": "Time"
     }
   },
   "safetyJourney": {

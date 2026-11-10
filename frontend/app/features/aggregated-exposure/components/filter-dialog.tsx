@@ -30,11 +30,13 @@ export function FilterDialog({ onReset, activeCount = 0, children, className }: 
 		<div className={className}>
 			<Dialog>
 				<DialogTrigger asChild={true}>
-					<Button variant="outline" className="bg-background">
+					{/* Only the icon, as it sits beside the exposure toggle. The count sits on its corner. */}
+					<Button variant="outline" size="icon" className="relative bg-background">
 						<SlidersHorizontal aria-hidden="true" />
-						{t(($) => $.aggregatedExposure.filters.title)}
+						{/* In the content rather than aria-label, so the count below is read too */}
+						<span className="sr-only">{t(($) => $.aggregatedExposure.filters.title)}</span>
 						{activeCount > 0 && (
-							<span className="rounded-full bg-primary px-1.5 text-primary-foreground text-xs tabular-nums leading-5">
+							<span className="absolute -top-1.5 -right-1.5 min-w-5 rounded-full bg-primary px-1 text-center text-primary-foreground text-xs tabular-nums leading-5">
 								<span aria-hidden="true">{activeCount}</span>
 								<span className="sr-only">
 									{t(($) => $.aggregatedExposure.filters.activeCount, { count: activeCount })}

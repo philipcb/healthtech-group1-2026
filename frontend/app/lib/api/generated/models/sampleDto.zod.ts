@@ -13,6 +13,7 @@ export const SampleDto = zod.object({
   "site": zod.string(),
   "hall": zod.string().nullable(),
   "occupation": zod.string().nullable(),
+  "workerCount": zod.int(),
   "averages": zod.object({
   "dust": zod.number().nullable(),
   "noise": zod.number().nullable(),

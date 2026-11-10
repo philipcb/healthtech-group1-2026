@@ -27,12 +27,25 @@ export function BaseExposureLineChartCard({
 	breakoutOnMobile?: boolean;
 }) {
 	const { t } = useTranslation();
+
+	// Without data there is nothing to draw, so one line says so instead of an empty chart's worth of space
+	if (props.chartData.length === 0) {
+		return (
+			<p className="flex flex-wrap items-baseline gap-x-2 px-5 py-3 text-sm lg:px-3" id={id}>
+				{/* Phones hide the value beside the chart, which otherwise names the dust fraction */}
+				{props.title && <span className="font-medium lg:hidden">{props.title}</span>}
+				<span className="text-muted-foreground">{t(($) => $.common.noDataLive)}</span>
+			</p>
+		);
+	}
+
 	return (
 		<Card
 			className={cn(
 				"relative w-full",
 				props.variant === "compact" ? "pl-0" : "pr-0",
-				breakoutOnMobile && MOBILE_BREAKOUT_CARD_CLASSNAME,
+				// The chart runs edge to edge on phones, and its figure keeps the page's gutter itself
+				breakoutOnMobile && [MOBILE_BREAKOUT_CARD_CLASSNAME, "max-lg:px-0"],
 				className,
 			)}
 			id={id}
@@ -40,11 +53,6 @@ export function BaseExposureLineChartCard({
 			{headerRight && <div className="absolute top-2 right-2 z-10 flex items-center gap-2">{headerRight}</div>}
 			<CardContent className={cn("flex h-full flex-1", contentClassName)}>
 				<ExposureLineChart {...props} breakoutOnMobile={breakoutOnMobile} />
-				{props.chartData.length === 0 && (
-					<div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-						{t(($) => $.common.noDataLive)}
-					</div>
-				)}
 			</CardContent>
 		</Card>
 	);

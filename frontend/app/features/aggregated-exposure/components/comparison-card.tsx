@@ -8,7 +8,6 @@ import {
 	type ComparisonSeries,
 	ComparisonTrendChart,
 } from "@/features/aggregated-exposure/components/comparison-trend-chart.tsx";
-import { ComparisonValues } from "@/features/aggregated-exposure/components/comparison-values.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
 import { isMissing, useComparisonTrends } from "@/features/aggregated-exposure/hooks/use-comparison-trends.ts";
 import {
@@ -28,8 +27,9 @@ import {
 	getMetricLabel,
 	isExposureUnavailable,
 } from "@/features/aggregated-exposure/model/groups.ts";
-import type { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import type { toTrendPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getComparisonChartMarginRight } from "@/features/aggregated-exposure/model/trend-chart.ts";
+import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import type { TranslateFn } from "@/i18n/config.ts";
 import type { DustField, Exposure, ExposureUnit } from "@/lib/exposures.ts";
@@ -40,7 +40,8 @@ import { Info } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-const CHART_HEIGHT_CLASSNAME = "h-64 lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)]";
+// Phones: about three quarters of the screen's width, like the other charts there
+const CHART_HEIGHT_CLASSNAME = "h-[75vw] max-h-[60dvh] lg:h-[clamp(16rem,calc(100dvh-28rem),36rem)] lg:max-h-none";
 
 type ComparisonCardProps = {
 	exposure: Exposure;
@@ -49,9 +50,11 @@ type ComparisonCardProps = {
 	onDustFieldChange: (dustField: DustField) => void;
 	unit: ExposureUnit;
 	entries: Array<ComparedEntry>;
-	periodParams: ReturnType<typeof toPeriodParams>;
+	periodParams: ReturnType<typeof toTrendPeriodParams>;
 	periodLabel: string;
 	periodFilenamePart: string;
+	/** The selected day, when the trends are its hours */
+	day?: Date;
 };
 
 export function ComparisonCard({
@@ -63,8 +66,10 @@ export function ComparisonCard({
 	periodParams,
 	periodLabel,
 	periodFilenamePart,
+	day,
 }: ComparisonCardProps) {
 	const { t } = useTranslation();
+	const formatDate = useFormatDate();
 	const headingId = useId();
 	const isMobile = useIsMobile();
 	const isUnavailable = isExposureUnavailable(exposure);
@@ -85,6 +90,11 @@ export function ComparisonCard({
 		return result && isMissing(result) ? [{ group, status: result.status }] : [];
 	});
 	const hasHiddenDays = series.some(({ points }) => points.some((point) => point.value === null));
+	// A day's points are its hours
+	const hiddenLegend =
+		day === undefined
+			? t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)
+			: t(($) => $.aggregatedExposure.compare.hiddenHoursLegend);
 	const isPending = results.some((result) => result.status === "pending");
 	const hasErrors = results.some((result) => result.status === "error");
 	const yards = [...new Set(entries.map(({ group }) => group.site))];
@@ -98,6 +108,15 @@ export function ComparisonCard({
 	]);
 	const downloadColumns: Array<ExportColumn<ComparisonDownloadRow>> = [
 		{ header: t(($) => $.chartDownload.columns.date), value: (row) => row.day },
+		// The date column only holds the date, so a day's hours get their time in Norwegian time in a column of their own
+		...(day === undefined
+			? []
+			: [
+					{
+						header: t(($) => $.chartDownload.columns.time),
+						value: (row: ComparisonDownloadRow) => formatDate(row.day, "HH:mm"),
+					},
+				]),
 		...series.map(({ slot, name }) => {
 			const group = groupBySlot.get(slot);
 
@@ -113,12 +132,18 @@ export function ComparisonCard({
 		<Card
 			variant="labeled"
 			aria-labelledby={headingId}
-			className={cn("relative w-full", MOBILE_BREAKOUT_CARD_CLASSNAME)}
+			// Phones: a hairline over the results, as the filters above have no box to end at
+			className={cn("relative w-full", MOBILE_BREAKOUT_CARD_CLASSNAME, "max-lg:border-t")}
 		>
-			<CardLabelHeader className="flex-wrap justify-between gap-x-3 gap-y-1.5 rounded-none">
-				<h2 id={headingId} className="font-medium text-sm">
+			{/* Phones: a plain heading over the chart, like a stock app's name over its price, instead of the grey strip */}
+			<CardLabelHeader className="flex-wrap justify-between gap-x-3 gap-y-1.5 rounded-none max-lg:bg-transparent max-lg:px-5 max-lg:pt-4 max-lg:pb-0">
+				<h2 id={headingId} className="font-medium text-sm max-lg:font-semibold max-lg:text-base">
 					{metricLabel}
-					<span className="font-normal text-muted-foreground">{` · ${unitLabel}`}</span>
+					{/* Phones: the unit on a line of its own, so a long name doesn't leave it hanging after a dot */}
+					<span className="font-normal text-muted-foreground max-lg:block max-lg:text-sm">
+						<span className="max-lg:hidden">{" · "}</span>
+						{unitLabel}
+					</span>
 				</h2>
 				{exposure === "dust" && !isUnavailable && (
 					<DustFieldTabs
@@ -135,30 +160,41 @@ export function ComparisonCard({
 					<EmptyState title={t(($) => $.aggregatedExposure.exposureUnavailable[exposure])} />
 				</div>
 			) : (
-				<div className="grid gap-x-6 gap-y-4 p-4 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] 2xl:items-start">
+				<div className="grid gap-x-6 gap-y-4 p-4 max-lg:px-5 2xl:grid-cols-[minmax(0,1fr)_minmax(18rem,26rem)] 2xl:items-start">
 					<div className="flex min-w-0 flex-col gap-3">
 						{isPending ? (
 							<Skeleton className={cn("w-full", CHART_HEIGHT_CLASSNAME)} />
 						) : series.length > 0 ? (
 							<figure
-								aria-label={t(($) => $.aggregatedExposure.compare.chartLabel, {
-									metric: metricLabel,
-									unit: unitLabel,
-									period: periodLabel,
-								})}
+								aria-label={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.chartLabel, {
+												metric: metricLabel,
+												unit: unitLabel,
+												period: periodLabel,
+											})
+										: t(($) => $.aggregatedExposure.compare.chartLabelDay, {
+												metric: metricLabel,
+												unit: unitLabel,
+												period: periodLabel,
+											})
+								}
 							>
 								<ChartDownload
 									filename={downloadFilename}
 									sheetName={exposureName}
 									columns={downloadColumns}
-									rows={toComparisonDownloadRows(series)}
+									rows={toComparisonDownloadRows(series, day)}
 									plotMarginRight={getComparisonChartMarginRight(isMobile)}
+									// Out to the screen's edges on phones, past the card's padding
+									className="max-lg:-mx-5"
 								>
 									<ComparisonTrendChart
 										series={series}
 										unit={unit}
 										threshold={threshold}
 										className={CHART_HEIGHT_CLASSNAME}
+										day={day}
 									/>
 								</ChartDownload>
 							</figure>
@@ -167,16 +203,24 @@ export function ComparisonCard({
 						) : notInChart.some(({ status }) => status === "notEnoughData") ? (
 							<EmptyState
 								title={t(($) => $.aggregatedExposure.compare.notEnoughData)}
-								description={t(($) => $.aggregatedExposure.compare.noGroupHasEnoughData, {
-									period: periodLabel,
-								})}
+								description={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.noGroupHasEnoughData, {
+												period: periodLabel,
+											})
+										: t(($) => $.aggregatedExposure.compare.noGroupHasEnoughDayData, {
+												period: periodLabel,
+											})
+								}
 							/>
 						) : (
 							<EmptyState
 								title={t(($) => $.aggregatedExposure.compare.noData)}
-								description={t(($) => $.aggregatedExposure.compare.noGroupHasData, {
-									period: periodLabel,
-								})}
+								description={
+									day === undefined
+										? t(($) => $.aggregatedExposure.compare.noGroupHasData, { period: periodLabel })
+										: t(($) => $.aggregatedExposure.compare.noGroupHasDayData)
+								}
 							/>
 						)}
 
@@ -203,21 +247,14 @@ export function ComparisonCard({
 							entries={entries}
 							results={results}
 							periodLabel={periodLabel}
+							day={day}
 						/>
-						{series.length > 0 && (
-							<ComparisonValues
-								series={series}
-								unit={unit}
-								bucket={periodParams.period === "year" ? "month" : "week"}
-								periodLabel={periodLabel}
-							/>
-						)}
 					</div>
 				</div>
 			)}
 
 			{series.length > 0 && (
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-4 py-2 text-muted-foreground text-xs">
+				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-4 py-2 text-muted-foreground text-xs max-lg:px-5">
 					<ThresholdLegend
 						items={[
 							{ dangerLevel: "warning", color: "var(--warning)" },
@@ -228,11 +265,11 @@ export function ComparisonCard({
 					{hasHiddenDays && (
 						<span className="flex items-center gap-2">
 							<ThresholdLegendLine
-								label={t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+								label={hiddenLegend}
 								color="var(--muted-foreground)"
 								strokeDasharray="2 4"
 							/>
-							{t(($) => $.aggregatedExposure.compare.hiddenDaysLegend)}
+							{hiddenLegend}
 						</span>
 					)}
 				</div>

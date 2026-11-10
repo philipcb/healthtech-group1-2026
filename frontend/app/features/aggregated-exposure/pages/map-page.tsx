@@ -1,13 +1,15 @@
 import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { EmptyState } from "@/features/aggregated-exposure/components/empty-state.tsx";
+import { PeriodPickerLayout } from "@/features/aggregated-exposure/components/period-picker.tsx";
 import { SiteMap } from "@/features/aggregated-exposure/components/site-map.tsx";
 import { useAggregatedExposureSearchParams } from "@/features/aggregated-exposure/hooks/use-aggregated-exposure-search-params.ts";
 import { useDashboardScope } from "@/features/aggregated-exposure/hooks/use-dashboard-scope.ts";
-import { toGroupSummaries } from "@/features/aggregated-exposure/model/groups.ts";
+import { type GroupSummary, toGroupSummaries } from "@/features/aggregated-exposure/model/groups.ts";
 import { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getYards } from "@/features/aggregated-exposure/model/scope.ts";
 import { hasSiteMap } from "@/features/aggregated-exposure/model/site-maps.ts";
 import { useGetAggregateGroups } from "@/lib/api/generated/aggregate-exposure-data.ts";
+import { exposures } from "@/lib/exposures.ts";
 import { MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -38,18 +40,29 @@ export function MapPage() {
 					{t(($) => $.aggregatedExposure.map.description)}
 				</p>
 			</header>
-			{YardFilter && mapYard !== undefined && (
-				<YardFilter yards={yards} value={mapYard} onValueChange={setYard} allowsAll={false} />
-			)}
-			{isPending ? (
-				<Skeleton className="w-full rounded-lg" style={{ aspectRatio: "16 / 9" }} />
-			) : isError ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.map.error)} />
-			) : mapYard === undefined ? (
-				<EmptyState title={t(($) => $.aggregatedExposure.map.noBuildings)} />
-			) : (
-				<SiteMap key={mapYard} site={mapYard} groups={data.groups} />
-			)}
+			<PeriodPickerLayout selection={periodSelection}>
+				{YardFilter && mapYard !== undefined && (
+					<YardFilter yards={yards} value={mapYard} onValueChange={setYard} allowsAll={false} />
+				)}
+				{isPending ? (
+					<Skeleton className="w-full rounded-lg" style={{ aspectRatio: "16 / 9" }} />
+				) : isError ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.map.error)} />
+				) : mapYard === undefined ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.map.noBuildings)} />
+				) : periodSelection.period === "day" && !hasMeasurements(data.groups, mapYard) ? (
+					<EmptyState title={t(($) => $.aggregatedExposure.map.noDayData)} />
+				) : (
+					<SiteMap key={mapYard} site={mapYard} groups={data.groups} />
+				)}
+			</PeriodPickerLayout>
 		</div>
+	);
+}
+
+// The map doesn't show the measurements, so a day without any for the yard's groups is said instead of showing the map
+function hasMeasurements(groups: Array<GroupSummary>, site: string) {
+	return groups.some(
+		(group) => group.site === site && exposures.some((exposure) => group.averages[exposure] !== null),
 	);
 }

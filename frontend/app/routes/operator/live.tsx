@@ -134,7 +134,7 @@ export default function OperatorLiveView() {
 						data={dustTwa1Data}
 						minTime={start}
 						maxTime={end}
-						chartClassName="h-42 p-0 border-none"
+						chartClassName="p-0 border-none lg:h-42"
 					/>
 					<Separator />
 					<LiveExposureCard
@@ -146,7 +146,7 @@ export default function OperatorLiveView() {
 						data={dustTwa25Data}
 						minTime={start}
 						maxTime={end}
-						chartClassName="h-42 p-0 border-none"
+						chartClassName="p-0 border-none lg:h-42"
 					/>
 					<Separator />
 					<LiveExposureCard
@@ -158,7 +158,7 @@ export default function OperatorLiveView() {
 						data={dustTwa10Data}
 						minTime={start}
 						maxTime={end}
-						chartClassName="h-42 p-0 border-none"
+						chartClassName="p-0 border-none lg:h-42"
 						showLegend={true}
 					/>
 				</LiveSection>
@@ -172,7 +172,7 @@ export default function OperatorLiveView() {
 						data={noiseData}
 						minTime={start}
 						maxTime={end}
-						chartClassName="h-42 p-0 border-none"
+						chartClassName="p-0 border-none lg:h-42"
 						showLegend={true}
 					/>
 				</LiveSection>
@@ -186,7 +186,7 @@ export default function OperatorLiveView() {
 						data={vibrationData}
 						minTime={start}
 						maxTime={end}
-						chartClassName="h-42 p-0 border-none"
+						chartClassName="p-0 border-none lg:h-42"
 						showLegend={true}
 						lineType="monotone"
 					/>

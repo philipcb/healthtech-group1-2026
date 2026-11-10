@@ -16,8 +16,9 @@ export function BaseTrendLineChartCard({ children, breakoutOnMobile = false }: P
 	const { t } = useTranslation();
 
 	return (
-		<Card className={cn("relative w-full", breakoutOnMobile && MOBILE_BREAKOUT_CARD_CLASSNAME)}>
-			<CardHeader>
+		// The chart runs edge to edge on phones, while the title keeps the page's gutter
+		<Card className={cn("relative w-full", breakoutOnMobile && [MOBILE_BREAKOUT_CARD_CLASSNAME, "max-lg:px-0"])}>
+			<CardHeader className={cn(breakoutOnMobile && "max-lg:px-5")}>
 				<CardTitle>
 					{t(($) => $.exposureTrendLineChartCard.title[view], {
 						view: t(($) => $.views[view]).toLowerCase(),

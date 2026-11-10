@@ -163,6 +163,39 @@ public sealed class UserStatusServiceIntegrationTests(PostgresTestDbFixture fixt
 	}
 
 	[Fact]
+	public async Task GetStatusForUsersInRange_Vibration_UsesWorstDay_NotTheWholeRange()
+	{
+		await using var context = Fixture.CreateDbContext();
+
+		Guid userId = SeedIds.KariId;
+		const double firstDayExposure = 60d;
+		const double worstDayExposure = 80d;
+		DateTime firstDay = new(2026, 1, 5, 10, 0, 0, DateTimeKind.Utc);
+		DateTime worstDay = firstDay.AddDays(2);
+
+		// Each day is under the action value, but the week together is over it
+		AddVibrationSample(context, userId, firstDay, exposure: firstDayExposure);
+		AddVibrationSample(context, userId, worstDay, exposure: worstDayExposure / 2);
+		AddVibrationSample(context, userId, worstDay.AddHours(2), exposure: worstDayExposure / 2);
+
+		await context.SaveChangesAsync();
+		await RefreshMinutelyViewsAsync(context);
+
+		var service = new UserStatusService(context, Fixture.CreateOperatorContext());
+
+		IEnumerable<DTOs.UserStatusDto> result = await service.GetStatusForUsersInRange(
+			[userId],
+			firstDay.Date,
+			firstDay.Date.AddDays(7)
+		);
+
+		DTOs.UserStatusDto status = Assert.Single(result);
+		Assert.NotNull(status.Vibration);
+		Assert.Equal(DangerLevel.Safe, status.Vibration.dangerLevel);
+		Assert.Equal(worstDayExposure, status.Vibration.Value, precision: AssertionPrecision);
+	}
+
+	[Fact]
 	public async Task GetStatusForUsersInRange_UserWithoutMeasurements_ReturnsSafeWithNullExposures()
 	{
 		await using var context = Fixture.CreateDbContext();

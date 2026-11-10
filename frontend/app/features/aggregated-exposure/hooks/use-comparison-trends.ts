@@ -1,6 +1,6 @@
 import type { ComparedEntry } from "@/features/aggregated-exposure/model/compare.ts";
 import { isExposureUnavailable } from "@/features/aggregated-exposure/model/groups.ts";
-import type { toPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
+import type { toTrendPeriodParams } from "@/features/aggregated-exposure/model/period.ts";
 import { getGetAggregateGroupTrendQueryOptions } from "@/lib/api/generated/aggregate-exposure-data.ts";
 import type { AggregatedTrendOkDto } from "@/lib/api/generated/models/index.ts";
 import type { DustField, Exposure } from "@/lib/exposures.ts";
@@ -27,7 +27,7 @@ export function useComparisonTrends({
 	entries: Array<ComparedEntry>;
 	exposure: Exposure;
 	dustField: DustField;
-	periodParams: ReturnType<typeof toPeriodParams>;
+	periodParams: ReturnType<typeof toTrendPeriodParams>;
 }): Array<GroupResult> {
 	const isUnavailable = isExposureUnavailable(exposure);
 

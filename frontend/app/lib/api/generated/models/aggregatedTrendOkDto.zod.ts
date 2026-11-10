@@ -17,13 +17,21 @@ export const AggregatedTrendOkDto = zod.object({
 }),
   "unit": zod.enum(['ug', 'db', 'points']),
   "average": zod.number().optional(),
-  "granularity": zod.enum(['day']),
+  "granularity": zod.enum(['day', 'hour']),
   "points": zod.array(zod.object({
   "time": tzDateSchema,
   "value": zod.number().nullable(),
+  "rateOfWorkerOverAction": zod.number().nullable(),
+  "rateOfWorkerOverLimit": zod.number().nullable(),
   "averageTimeOverAction": zod.number().nullable(),
   "averageTimeOverLimit": zod.number().nullable()
-}))
+})),
+  "hourCount": zod.int(),
+  "dayCount": zod.int(),
+  "rateOfHourAboveAction": zod.number().optional(),
+  "rateOfHourAboveLimit": zod.number().optional(),
+  "rateOfDayAboveAction": zod.number().optional(),
+  "rateOfDayAboveLimit": zod.number().optional()
 })
 
 export type AggregatedTrendOkDto = zod.output<typeof AggregatedTrendOkDto>;

@@ -1,19 +1,26 @@
+import {
+	ChartScrubCursor,
+	ChartScrubDot,
+	ChartScrubHeader,
+	ChartScrubTracker,
+	ChartScrubValue,
+	ScrubXAxisTick,
+} from "@/components/chart-scrub.tsx";
 import { ChartContainer } from "@/components/ui/chart.tsx";
+import { SCRUB_CHART_HEIGHT_CLASSNAME, SCRUB_Y_AXIS_PROPS, useChartScrub } from "@/hooks/use-chart-scrub.ts";
 import { useFormatDate } from "@/hooks/use-format-date.ts";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
 import type { ExposureDataDto } from "@/lib/api/generated/models/index.ts";
-import { DangerLevels } from "@/lib/danger-levels.ts";
+import { DangerLevels, dangerlevelStyles, getDangerLevel } from "@/lib/danger-levels.ts";
 import { buildYAxisTicks, DUST_Y_AXIS_STEP } from "@/lib/exposure-y-axis.ts";
 import type { Exposure, ExposureTypeField, ExposureUnit } from "@/lib/exposures.ts";
 import { getThreshold } from "@/lib/thresholds.ts";
-import { cn, formatExposureValue } from "@/lib/utils.ts";
+import { cn, formatExposureValue, normalizeDangerLevelForPeakForLineChart } from "@/lib/utils.ts";
 import { addDays, addWeeks, endOfMonth, endOfWeek, getISOWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis, type YAxisTickContentProps } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Legend, Line, XAxis, YAxis } from "recharts";
 import type { CurveType } from "recharts/types/shape/Curve";
-import { CollapsedYAxisTick } from "../exposure-line-chart/collapsed-y-axis-tick.tsx";
-import { COLLAPSED_Y_AXIS_TOP_MARGIN, COLLAPSED_Y_AXIS_WIDTH } from "../exposure-line-chart/collapsed-y-axis-width.ts";
 import { ExposureDot } from "../exposure-line-chart/exposure-dot.tsx";
 import { ExposureLegend } from "../exposure-line-chart/exposure-legend.tsx";
 import { ExposureLineChartGradientStops } from "../exposure-line-chart/exposure-line-chart-gradient-stops.tsx";
@@ -26,7 +33,6 @@ type TrendGranularity = "day" | "week";
 const Y_AXIS_WIDTH = 60;
 // Room for dust in mg, which is shown with four decimals
 const MG_Y_AXIS_WIDTH = 76;
-const MOBILE_MAX_X_TICKS = 4;
 
 export type TrendSeries = {
 	exposure: Exposure;
@@ -77,11 +83,8 @@ export function TrendLineChart({
 	const chartData = buildChartData(bucketDates, seriesDefinitions, granularity, formatDate, t);
 
 	const isMobileBreakout = breakoutOnMobile && isMobile;
-	const yAxisWidth = isMobileBreakout ? COLLAPSED_Y_AXIS_WIDTH : unit === "mg" ? MG_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
-	const xAxisInterval = isMobileBreakout
-		? Math.max(0, Math.ceil(chartData.length / MOBILE_MAX_X_TICKS) - 1)
-		: undefined;
-
+	const yAxisWidth = unit === "mg" ? MG_Y_AXIS_WIDTH : Y_AXIS_WIDTH;
+	const scrub = useChartScrub(isMobileBreakout);
 	const [hoveredSeriesKey, setHoveredSeriesKey] = useState<string | null>(null);
 	const isDustChart = series.every((serie) => serie.exposure === "dust");
 	const yTicks = isDustChart ? buildYAxisTicks(minY, maxY, DUST_Y_AXIS_STEP) : undefined;
@@ -122,57 +125,82 @@ export function TrendLineChart({
 
 	const showDot = dataBucketCount === 1;
 
+	// Empty axes would take a chart's worth of space to say nothing
+	if (dataBucketCount === 0) {
+		return <p className="py-6 text-center text-muted-foreground text-sm">{t(($) => $.common.noData)}</p>;
+	}
+
 	// Pre-calculate max value for Area bounding box alignment
 	const maxDataValue = singleSeriesValues.length > 0 ? Math.max(...singleSeriesValues) : maxY;
 
 	const formatYValue = (value: number) =>
 		formatExposureValue(value, unit, defaultFractionDigits, fractionDigitsPerUnit);
+	const unitLabel = t(($) => $.exposures.units[unit]);
 
-	return (
+	// Phones show the picked bucket, or the latest one with data, above the chart instead of in a tooltip
+	const shownIndex =
+		scrub.activeIndex ??
+		chartData.findLastIndex((row) => seriesDefinitions.some((serie) => row[serie.dataKey] != null));
+	const shownRow = chartData[shownIndex];
+	const lastLabel = chartData.at(-1)?.label ?? "";
+	const getShownValue = (serie: SeriesDefinition) => {
+		const value = shownRow?.[serie.dataKey];
+		return typeof value === "number" ? value : null;
+	};
+	const getDotColor = (serie: SeriesDefinition, value: number) =>
+		isSingleSeries && singleSeriesDangerThreshold !== null
+			? dangerlevelStyles[
+					normalizeDangerLevelForPeakForLineChart(
+						getDangerLevel(value, singleSeriesWarningThreshold, singleSeriesDangerThreshold),
+						usePeakDangerThreshold,
+					)
+				].color
+			: getDustFieldColor(serie.exposureField);
+
+	const chart = (
 		<ChartContainer
 			config={{}}
-			className={cn("h-full w-full", chartContainerClassName, isMobileBreakout && "!aspect-auto !h-[50dvh]")}
+			className={cn("h-full w-full", chartContainerClassName, isMobileBreakout && SCRUB_CHART_HEIGHT_CLASSNAME)}
 		>
 			<ComposedChart
 				accessibilityLayer={true}
 				data={chartData}
-				margin={{ left: 12, right: 12, top: isMobileBreakout ? COLLAPSED_Y_AXIS_TOP_MARGIN : undefined }}
+				{...scrub.chartProps}
+				margin={isMobileBreakout ? { left: 0, right: 0, top: 12 } : { left: 12, right: 12 }}
 			>
-				<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
+				{!isMobileBreakout && (
+					<CartesianGrid vertical={true} stroke="var(--color-muted-foreground)" strokeOpacity={0.2} />
+				)}
 
 				<XAxis
 					dataKey="label"
 					tickLine={false}
 					axisLine={false}
 					tickMargin={8}
-					interval={xAxisInterval}
-					padding={{ left: 24, right: 24 }}
-					tick={{
-						className: "text-sm",
-						fill: "var(--color-muted-foreground)",
-					}}
+					// A week's seven days or a month's weeks all fit on a phone, once the first and last are left out
+					interval={isMobileBreakout ? 0 : undefined}
+					// On phones the line runs from edge to edge
+					scale={isMobileBreakout ? "point" : undefined}
+					padding={isMobileBreakout ? undefined : { left: 24, right: 24 }}
+					tick={
+						isMobileBreakout
+							? (props) => <ScrubXAxisTick {...props} />
+							: { className: "text-sm", fill: "var(--color-muted-foreground)" }
+					}
 				/>
 
 				<YAxis
-					width={yAxisWidth}
-					tickLine={false}
-					axisLine={false}
-					tick={
-						isMobileBreakout
-							? (tickProps: YAxisTickContentProps) => (
-									<CollapsedYAxisTick
-										y={tickProps.y}
-										label={formatYValue(Number(tickProps.payload.value))}
-									/>
-								)
-							: {
-									className: "text-base",
-									fill: "var(--color-muted-foreground)",
-								}
-					}
 					domain={[minY, maxY]}
 					ticks={yTicks}
 					tickFormatter={formatYValue}
+					{...(isMobileBreakout
+						? SCRUB_Y_AXIS_PROPS
+						: {
+								width: yAxisWidth,
+								tickLine: false,
+								axisLine: false,
+								tick: { className: "text-base", fill: "var(--color-muted-foreground)" },
+							})}
 					label={
 						isMobileBreakout
 							? undefined
@@ -187,7 +215,11 @@ export function TrendLineChart({
 					}
 				/>
 
-				<ExposureTrendTooltip unit={unit} seriesDefinitions={seriesDefinitions} />
+				{isMobileBreakout ? (
+					<ChartScrubTracker />
+				) : (
+					<ExposureTrendTooltip unit={unit} seriesDefinitions={seriesDefinitions} />
+				)}
 
 				{isSingleSeries && singleSeriesThreshold && singleSeriesDangerThreshold && (
 					<defs>
@@ -253,20 +285,22 @@ export function TrendLineChart({
 						opacity={hoveredSeriesKey !== null && hoveredSeriesKey !== serie.dataKey ? 0.5 : 1}
 						dot={showDot}
 						activeDot={
-							isSingleSeries && singleSeriesDangerThreshold !== null
-								? (props) => (
-										<ExposureDot
-											{...props}
-											warning={singleSeriesWarningThreshold}
-											danger={singleSeriesDangerThreshold}
-											isPeak={usePeakDangerThreshold}
-										/>
-									)
-								: {
-										r: 5,
-										fill: getDustFieldColor(serie.exposureField),
-										stroke: "none",
-									}
+							isMobileBreakout
+								? false
+								: isSingleSeries && singleSeriesDangerThreshold !== null
+									? (props) => (
+											<ExposureDot
+												{...props}
+												warning={singleSeriesWarningThreshold}
+												danger={singleSeriesDangerThreshold}
+												isPeak={usePeakDangerThreshold}
+											/>
+										)
+									: {
+											r: 5,
+											fill: getDustFieldColor(serie.exposureField),
+											stroke: "none",
+										}
 						}
 					/>
 				))}
@@ -275,9 +309,30 @@ export function TrendLineChart({
 					<ThresholdLine key={line.key} y={line.y} dangerLevel={line.dangerLevel} />
 				))}
 
+				{scrub.activeIndex !== null && shownRow && (
+					<>
+						<ChartScrubCursor x={String(shownRow.label)} xEnd={String(lastLabel)} />
+						{seriesDefinitions.map((serie) => {
+							const value = getShownValue(serie);
+
+							return value === null ? null : (
+								<ChartScrubDot
+									key={serie.dataKey}
+									x={String(shownRow.label)}
+									y={value}
+									color={getDotColor(serie, value)}
+								/>
+							);
+						})}
+					</>
+				)}
+
 				<Legend
 					content={() => (
-						<div className="mt-2 flex flex-col gap-3" style={{ marginLeft: yAxisWidth }}>
+						<div
+							className="mt-2 flex flex-col gap-3"
+							style={{ marginLeft: isMobileBreakout ? 20 : yAxisWidth }}
+						>
 							{/* Only show exposure legend if there are multiple exposures or fields */}
 							{!isSingleSeries && (
 								<ExposureLegend
@@ -304,6 +359,64 @@ export function TrendLineChart({
 				/>
 			</ComposedChart>
 		</ChartContainer>
+	);
+
+	if (!(isMobileBreakout && shownRow)) {
+		return chart;
+	}
+
+	const singleValue = singleSeries ? getShownValue(singleSeries) : null;
+
+	return (
+		<div className="flex w-full flex-col">
+			<ChartScrubHeader
+				dangerLevel={
+					singleSeries && singleValue !== null && singleSeriesDangerThreshold !== null
+						? normalizeDangerLevelForPeakForLineChart(
+								getDangerLevel(singleValue, singleSeriesWarningThreshold, singleSeriesDangerThreshold),
+								usePeakDangerThreshold,
+							)
+						: null
+				}
+				caption={
+					granularity === "day"
+						? formatDate(new Date(String(shownRow.bucketKey)), "EEEE d. MMMM")
+						: String(shownRow.label)
+				}
+			>
+				{singleSeries ? (
+					<ChartScrubValue
+						value={
+							singleValue === null ? t(($) => $.common.noData) : formatExposureValue(singleValue, unit)
+						}
+						unit={singleValue === null ? "" : unitLabel}
+					/>
+				) : (
+					<ul className="flex flex-col gap-1 text-sm">
+						{seriesDefinitions.map((serie) => {
+							const value = getShownValue(serie);
+
+							return (
+								<li key={serie.dataKey} className="flex items-center gap-2">
+									<span
+										aria-hidden="true"
+										className="size-2 shrink-0 rounded-full"
+										style={{ backgroundColor: getDustFieldColor(serie.exposureField) }}
+									/>
+									<span className="text-muted-foreground">{serie.label}</span>
+									<span className="ml-auto font-semibold tabular-nums">
+										{value === null
+											? t(($) => $.common.noData)
+											: `${formatExposureValue(value, unit)} ${unitLabel}`}
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				)}
+			</ChartScrubHeader>
+			{chart}
+		</div>
 	);
 }
 

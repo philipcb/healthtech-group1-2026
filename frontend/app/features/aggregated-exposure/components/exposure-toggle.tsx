@@ -22,7 +22,6 @@ export function ExposureToggle({
 			hidesLabel={hidesLabel}
 			value={value}
 			onValueChange={onValueChange}
-			fillsWidth={false}
 			options={exposures.map((exposure) => ({
 				value: exposure,
 				label: t(($) => $.exposures[exposure]),

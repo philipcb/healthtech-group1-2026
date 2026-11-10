@@ -44,6 +44,9 @@ public sealed class SampleDto
 	[JsonPropertyName("occupation")]
 	public String? Occupation { get; set; } = null;
 
+	[JsonPropertyName("workerCount")]
+	public int WorkerCount { get; set; }
+
 	[JsonPropertyName("averages")]
 	public SampleAveragesDto Averages { get; set; } = new();
 }

@@ -42,8 +42,8 @@ export const LiveExposureCard = ({
 	const latestDangerLevel = latestData?.dangerLevel;
 
 	return (
-		// Mobile: value on top, chart full width below. Desktop: value beside the chart.
-		<div className="flex w-full flex-col gap-1 lg:flex-row lg:gap-4">
+		// Desktop: value beside the chart. Phones: the chart shows the value above itself, and it follows the finger.
+		<div className="flex w-full flex-col lg:flex-row lg:gap-4">
 			<ExposureSlider
 				label={exposureLabel}
 				exposure={exposure}
@@ -51,8 +51,7 @@ export const LiveExposureCard = ({
 				value={latestValue}
 				dangerLevel={latestDangerLevel}
 				unitLabel={exposureUnitLabel}
-				className="px-0 lg:w-48 lg:px-3"
-				compactBelowLg={true}
+				className="max-lg:hidden lg:w-48"
 				withinSection={true}
 			/>
 			<div className="min-w-0 self-stretch lg:w-128 lg:flex-1">
@@ -74,6 +73,8 @@ export const LiveExposureCard = ({
 					xAxisMode="windowed"
 					breakoutOnMobile={true}
 					dustField={exposureField}
+					// The section names noise and vibration, but not which of dust's three fractions this is
+					title={exposure === "dust" ? exposureLabel : undefined}
 				>
 					<ThresholdLine y={threshold.danger} dangerLevel="danger" />
 					<ThresholdLine y={threshold.warning} dangerLevel="warning" />

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 export function PeriodNotice({
 	periodSelection,
 }: {
-	periodSelection: Pick<PeriodSelection, "period" | "month" | "year">;
+	periodSelection: Pick<PeriodSelection, "period" | "day" | "month" | "year">;
 }) {
 	const { t } = useTranslation();
 

@@ -51,7 +51,7 @@ export function StatisticCardLayout({ label, value, indicatorColor, caption, col
 						<CollapsibleContent className="flex flex-col gap-3 border-card-border border-t px-3 py-2">
 							<div className="flex items-center gap-2">
 								{indicator("size-4 shrink-0 rounded-md")}
-								<p className="font-semibold text-2xl">{value}</p>
+								<p className="font-semibold text-2xl tabular-nums">{value}</p>
 							</div>
 
 							{collapsible.caption !== undefined && (
@@ -80,7 +80,7 @@ export function StatisticCardLayout({ label, value, indicatorColor, caption, col
 
 				<div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-2">
 					{indicator("size-4 rounded-md")}
-					<p className="font-semibold text-2xl">{value}</p>
+					<p className="font-semibold text-2xl tabular-nums">{value}</p>
 				</div>
 
 				{caption !== undefined && (

@@ -159,20 +159,11 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 	const datePicker =
 		period === "year" ? (
 			<YearPicker selection={selection} />
-		) : period === "day" ? (
-			<DatePicker
-				mode="day"
-				date={new TZDate(year, month, day, TIMEZONE_NAME)}
-				onDateChange={pick}
-				startMonth={firstDay}
-				endMonth={today}
-				disabled={[{ before: firstDay }, { after: today }]}
-			/>
 		) : (
 			<DatePicker
-				mode="month"
+				mode={period}
 				showWeekNumber={true}
-				date={new TZDate(year, month, 1, TIMEZONE_NAME)}
+				date={new TZDate(year, month, period === "day" ? day : 1, TIMEZONE_NAME)}
 				onDateChange={pick}
 				startMonth={firstDay}
 				endMonth={today}

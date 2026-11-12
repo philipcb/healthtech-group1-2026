@@ -358,8 +358,3 @@ body {
 		letter-spacing: var(--tracking-normal);
 	}
 }
-
-/* Keep Leaflet map below overlays*/
-.leaflet-container {
-	z-index: 0;
-}

@@ -12,7 +12,10 @@ import { Link } from "react-router";
 export interface HallOperatorListProps {
 	exposure: Exposure | "all";
 	operators: Array<UserWithStatusDto>;
+	/** Identifies the hall in `selectedHall` and `onOpenChange` */
 	hallName: string;
+	/** Shown instead of `hallName`, for example the building's name on the site map */
+	label?: string;
 	selectedHall: string | null;
 	onOpenChange: (hallName: string | null) => void;
 }
@@ -21,6 +24,7 @@ export const HallOperatorList = ({
 	exposure,
 	operators,
 	hallName,
+	label,
 	selectedHall,
 	onOpenChange,
 }: HallOperatorListProps) => {
@@ -31,7 +35,7 @@ export const HallOperatorList = ({
 		<Collapsible className="rounded-md" open={isOpen} onOpenChange={(open) => onOpenChange(open ? hallName : null)}>
 			<CollapsibleTrigger asChild={true}>
 				<Button variant="ghost" className="group w-full">
-					<p>{hallName}</p>
+					<p className="truncate">{label ?? hallName}</p>
 
 					<p className="text-muted-foreground">{`(${operators.length})`}</p>
 

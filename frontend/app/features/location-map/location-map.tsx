@@ -1,39 +1,35 @@
 import { Card, CardContent } from "@/components/ui/card.tsx";
-import { Skeleton } from "@/components/ui/skeleton.tsx";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group.tsx";
 import type { UserWithStatusDto } from "@/lib/api/generated/models/index.ts";
 import { dangerlevelStyles, getHighestDangerLevel, mapDangerLevelToColor } from "@/lib/danger-levels.ts";
 import { type Exposure, exposures } from "@/lib/exposures.ts";
-import L, { type LatLngBoundsExpression, type PathOptions } from "leaflet";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { renderToString } from "react-dom/server";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ImageOverlay, MapContainer, Marker, Polygon } from "react-leaflet";
 import { HallOperatorList, HallOperatorListSkeleton } from "./hall-operator-list.tsx";
 import { MapUsersBadge } from "./location-map-users-badge.tsx";
-import { getCenterPoint, xyToyx } from "./location-map-utils.ts";
-import { useImageSize } from "./use-image-size.tsx";
-
-type Hall = {
-	name: string;
-	positions: Array<[number, number]>;
-	baseStyle: PathOptions;
-	hoverStyle: PathOptions;
-	selectedStyle: PathOptions;
-	operators: Array<UserWithStatusDto>;
-};
+import { getHalls } from "./location-map-utils.ts";
+import { siteMaps } from "./site-map-config.ts";
+import { YardMap, type YardMapBuilding } from "./yard-map.tsx";
 
 type LocationMapProps = {
+	/** The yard whose map is shown: the foreman's own, so a foreman only sees where they work */
+	site: string;
 	operators: Array<UserWithStatusDto>;
-	imageUrl?: string;
 	isLoading?: boolean;
 };
 
-export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sitemap.jpg" }: LocationMapProps) {
-	const imageSize = useImageSize(imageUrl);
+/** Halls without operators are drawn in a muted grey, so the buildings with people in them stand out */
+const EMPTY_HALL_COLOR = "var(--muted-foreground)";
+
+/**
+ * The foreman's team on their yard's map, with each operator in the building of their location and the operators'
+ * live status. Every building on the site map is shown, also those without operators. A yard without a site map only
+ * gets the list.
+ */
+export function LocationMap({ site, operators, isLoading }: LocationMapProps) {
+	const siteMap = siteMaps[site];
 	const { t } = useTranslation();
-	const mapRef = useRef<L.Map | null>(null);
 
 	const [exposure, setExposure] = useQueryState(
 		"mapExposure",
@@ -47,101 +43,37 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 
 	const markerColor = exposure === "all" ? "bg-teal-700" : dangerlevelStyles[highestDangerLevel].bg;
 
-	const halls = useMemo<Array<Hall>>(
-		() => [
-			{
-				name: "M-hallen",
-				operators,
-				positions: [xyToyx(440, 255), xyToyx(875, 250), xyToyx(875, 125), xyToyx(440, 125)],
-				baseStyle: {
-					color: hallOverlayColor,
-					weight: 2,
-					opacity: 1,
-					fillColor: hallOverlayColor,
-					fillOpacity: 0.2,
-				},
-				hoverStyle: {
-					color: hallOverlayColor,
-					weight: 2,
-					opacity: 1,
-					fillColor: hallOverlayColor,
-					fillOpacity: 0.3,
-				},
-				selectedStyle: {
-					color: hallOverlayColor,
-					weight: 3,
-					opacity: 1,
-					fillColor: hallOverlayColor,
-					fillOpacity: 0.3,
-				},
-			},
-		],
-		[operators, hallOverlayColor],
+	const halls = useMemo(() => getHalls(site, operators), [site, operators]);
+
+	const [selectedHallName, setSelectedHallName] = useState<string | null>(
+		() => halls.find((hall) => hall.operators.length > 0)?.name ?? null,
 	);
 
-	const initialHallName = halls.find((hall) => hall.operators.length > 0)?.name ?? null;
-	const [selectedHallName, setSelectedHallName] = useState<string | null>(initialHallName);
-
-	const bounds: LatLngBoundsExpression | undefined = imageSize
-		? [
-				[0, 0],
-				[imageSize.height, imageSize.width],
-			]
-		: undefined;
-
-	useEffect(() => {
-		if (!(selectedHallName && mapRef.current)) {
-			return;
+	const mapBuildings = halls.flatMap((hall): Array<YardMapBuilding> => {
+		if (!hall.outlines) {
+			return [];
 		}
 
-		const hall = halls.find((item) => item.name === selectedHallName);
+		const hasOperators = hall.operators.length > 0;
 
-		if (!hall) {
-			return;
-		}
-
-		mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
-			padding: [20, 20],
-			maxZoom: 1,
-		});
-	}, [halls, selectedHallName]);
-
-	if (!(imageSize && bounds)) {
-		return <Skeleton className="w-full rounded-xl bg-muted" style={{ aspectRatio: "16 / 9" }} />;
-	}
-
-	const onHallCollapsibleClick = (hallName: string | null) => {
-		setSelectedHallName(hallName);
-
-		const hall = halls.find((h) => h.name === hallName);
-
-		if (!hall) {
-			return;
-		}
-
-		const map = mapRef.current;
-
-		if (!map) {
-			return;
-		}
-
-		const hallBounds = L.latLngBounds(hall.positions);
-
-		map.fitBounds(hallBounds, {
-			padding: [20, 20],
-			maxZoom: 1,
-		});
-	};
-
-	const hallOverlayOnClick = (hallName: string) => {
-		setSelectedHallName(hallName);
-	};
+		return [
+			{
+				id: hall.name,
+				label: hall.label,
+				outlines: hall.outlines,
+				color: hasOperators ? hallOverlayColor : EMPTY_HALL_COLOR,
+				badge: hasOperators ? (
+					<MapUsersBadge count={hall.operators.length} badgeBgClassName={markerColor} isLoading={isLoading} />
+				) : undefined,
+			},
+		];
+	});
 
 	return (
 		<Card className="overflow-hidden">
 			<CardContent>
 				<div className="flex h-full w-full flex-col gap-4 lg:flex-row">
-					<div className="flex w-full min-w-0 flex-col gap-1 border-b-2 border-solid pb-2 lg:w-72 lg:min-w-72 lg:border-r-2 lg:border-b-0 lg:pr-2 lg:pb-0">
+					<div className="flex max-h-[70vh] w-full min-w-0 flex-col gap-1 overflow-y-auto border-b-2 border-solid pb-2 lg:w-72 lg:min-w-72 lg:border-r-2 lg:border-b-0 lg:pr-2 lg:pb-0">
 						{isLoading ? (
 							<>
 								<HallOperatorListSkeleton />
@@ -156,8 +88,9 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 									exposure={exposure}
 									operators={hall.operators}
 									hallName={hall.name}
+									label={hall.label}
 									selectedHall={selectedHallName}
-									onOpenChange={onHallCollapsibleClick}
+									onOpenChange={setSelectedHallName}
 								/>
 							))
 						)}
@@ -184,89 +117,21 @@ export function LocationMap({ operators, isLoading, imageUrl = "/aker_verdal_sit
 							))}
 						</ToggleGroup>
 
-						<div
-							style={{
-								aspectRatio: `${imageSize.width} / ${imageSize.height}`,
-							}}
-						>
-							<MapContainer
-								ref={mapRef}
-								whenReady={() => {
-									if (!selectedHallName) {
-										return;
-									}
-
-									const hall = halls.find((item) => item.name === selectedHallName);
-
-									if (!(hall && mapRef.current)) {
-										return;
-									}
-
-									mapRef.current.fitBounds(L.latLngBounds(hall.positions), {
-										padding: [20, 20],
-										maxZoom: 1,
-									});
-								}}
-								crs={L.CRS.Simple}
-								bounds={bounds}
-								maxBounds={bounds}
-								maxBoundsViscosity={1.0}
-								minZoom={-1}
-								maxZoom={2}
-								zoomSnap={0}
-								style={{
-									height: "100%",
-									width: "100%",
-									background: "var(--card-background)",
-									userSelect: "none",
-								}}
-							>
-								<ImageOverlay url={imageUrl} bounds={bounds} />
-
-								{halls.map((hall) => (
-									<Fragment key={hall.name}>
-										<Polygon
-											pathOptions={
-												selectedHallName === hall.name ? hall.selectedStyle : hall.baseStyle
-											}
-											positions={hall.positions}
-											eventHandlers={{
-												click: () => hallOverlayOnClick(hall.name),
-												mouseover: (e) => {
-													if (selectedHallName !== hall.name) {
-														e.target.setStyle(hall.hoverStyle);
-													}
-												},
-												mouseout: (e) => {
-													if (selectedHallName !== hall.name) {
-														e.target.setStyle(hall.baseStyle);
-													}
-												},
-											}}
-										/>
-
-										<Marker
-											position={getCenterPoint(hall.positions)}
-											icon={createUsersIcon(hall.operators.length, markerColor, isLoading)}
-											eventHandlers={{
-												click: () => hallOverlayOnClick(hall.name),
-											}}
-										/>
-									</Fragment>
-								))}
-							</MapContainer>
-						</div>
+						{siteMap ? (
+							<YardMap
+								site={site}
+								buildings={mapBuildings}
+								selectedBuilding={selectedHallName}
+								onSelect={setSelectedHallName}
+							/>
+						) : (
+							<div className="flex min-h-48 items-center justify-center rounded-md border border-dashed p-6 text-center text-muted-foreground text-sm">
+								{t(($) => $.aggregatedExposure.map.noSiteMap)}
+							</div>
+						)}
 					</div>
 				</div>
 			</CardContent>
 		</Card>
 	);
-}
-
-function createUsersIcon(count: number, badgeBgClassName: string, isLoading?: boolean) {
-	return L.divIcon({
-		className: "",
-		html: renderToString(<MapUsersBadge count={count} badgeBgClassName={badgeBgClassName} isLoading={isLoading} />),
-		iconSize: [60, 32],
-	});
 }

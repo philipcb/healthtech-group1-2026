@@ -605,13 +605,6 @@
     "helmet": "Helmet",
     "protectiveMask": "Protective mask"
   },
-  "share": {
-    "hygienist": {
-      "button": "Share data with hygienist",
-      "confirmation": "Shared data from {{from}} to {{to}}.",
-      "shareData": "Share data"
-    }
-  },
   "viewPicker": {
     "today": "Today",
     "previous": "Previous",

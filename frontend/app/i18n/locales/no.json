@@ -605,13 +605,6 @@
     "helmet": "Hjelm",
     "protectiveMask": "Beskyttelsesmaske"
   },
-  "share": {
-    "hygienist": {
-      "button": "Del data med hygieniker",
-      "confirmation": "Data delt fra {{from}} til {{to}}.",
-      "shareData": "Del data"
-    }
-  },
   "viewPicker": {
     "today": "I dag",
     "previous": "Forrige",

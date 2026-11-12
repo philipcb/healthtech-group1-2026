@@ -24,6 +24,9 @@ public class DataFiller
 		_insertHandler = new DataInsertHandler(_aggregatedContext);
 	}
 
+	/// <summary>
+	/// Method that updates every table of the aggregate database in one transaction
+	/// </summary>
 	public async Task updateAggregatedDB()
 	{
 		// One transaction, so the rows removed to be computed again are kept if the update fails
@@ -54,10 +57,14 @@ public class DataFiller
 		return startTime;
 	}
 
+	/// <summary>
+	/// Method that updates every exposure aggregates in the database
+	/// </summary>
 	public async Task updateAggregatedDataAsync()
 	{
 		DateTime now = DateTime.UtcNow;
 		List<Sample> samples = await _aggregatedContext.Samples.ToListAsync();
+		//For each valid groups
 		foreach (Sample s in samples)
 		{
 			Console.WriteLine(
@@ -70,8 +77,14 @@ public class DataFiller
 		}
 	}
 
-	// Warning and danger are shares of the same data points that never overlap (see `AboveThresholdRate`). Over the
-	// limit means danger only, over the action value means warning or danger, since the limit is above the action value.
+	/// <summary>
+	/// Method that builds an <c> AveragePer8HourShift </c> from differents parameters
+	/// </summary>
+	/// <param name="sampleId">The corresponding sample Id.</param>
+	/// <param name="exposureType"> the exposure type of the <c> AveragePer8HourShift </c> </param>
+	/// <param name="field"> the field of the exposureType (<code>null</code> if not dust) </param>
+	/// <param name="rate"> The averages rates of hours above action value/limit </param>
+	/// <param name="dailyRate"> The averages rates of days above action value/limit </param>
 	public static AveragePer8HourShift ToShiftAverage(
 		Guid sampleId,
 		ExposureType exposureType,
@@ -79,6 +92,8 @@ public class DataFiller
 		AboveThresholdRate rate,
 		DailyWorkerRate dailyRate
 	) =>
+		// Warning and danger are shares of the same data points that never overlap (see `AboveThresholdRate`). Over the
+		// limit means danger only, over the action value means warning or danger, since the limit is above the action value.
 		new()
 		{
 			SampleId = sampleId,
@@ -94,6 +109,9 @@ public class DataFiller
 			Field = field ?? "not specified",
 		};
 
+	/// <summary>
+	/// Method that updates all Vibration Exposure Averages from valid Samples
+	/// </summary>
 	public async Task updateVibrationDataAsync(Guid sampleId, List<User> users, DateTime endTime)
 	{
 		DateTime lowestTime = await _aggregatedContext
@@ -127,6 +145,7 @@ public class DataFiller
 			})
 			.ToList();
 
+		//Create all the AveragePer8HourShift from aboveThresholdDataList and dailyWorkerThresholds
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
 			.Join(
 				dailyWorkerThresholds,
@@ -142,6 +161,9 @@ public class DataFiller
 		Console.WriteLine("Done");
 	}
 
+	/// <summary>
+	/// Method that updates all Noise Exposure Averages from valid Samples
+	/// </summary>
 	public async Task updateNoiseDataAsync(Guid sampleId, List<User> users, DateTime endTime)
 	{
 		DateTime lowestTime = await _aggregatedContext
@@ -170,6 +192,7 @@ public class DataFiller
 			})
 			.ToList();
 
+		//Create all the AveragePer8HourShift from aboveThresholdDataList and dailyWorkerThresholds
 		List<AveragePer8HourShift> finalAggregatedDataRate = aboveThresholdDataList
 			.Join(
 				dailyWorkerThresholds,
@@ -185,6 +208,9 @@ public class DataFiller
 		Console.WriteLine("Done");
 	}
 
+	/// <summary>
+	/// Method that updates all Dust Exposure Averages from valid Samples
+	/// </summary>
 	public async Task updateDustDataAsync(Guid sampleId, List<User> users, DateTime endTime)
 	{
 		DateTime lowestTime = await _aggregatedContext
@@ -199,6 +225,7 @@ public class DataFiller
 		var aboveThresholdDataDico =
 			new Dictionary<Field, Dictionary<DateTime, AveragePer8HourShift>>();
 
+		//It has to be done for each field of dust
 		foreach (Field field in Enum.GetValues<Field>())
 		{
 			var (dataList, thresholds, dailyWorkerThresholds) =
@@ -210,7 +237,7 @@ public class DataFiller
 					field
 				);
 			dustDataDico[field] = dataList.ToDictionary(g => g.Time, g => g.AvgValue);
-
+			//Create all the AveragePer8HourShift from aboveThresholdDataList and dailyWorkerThresholds, for every fields
 			aboveThresholdDataDico[field] = thresholds
 				.Join(
 					dailyWorkerThresholds,
@@ -228,6 +255,7 @@ public class DataFiller
 				.ToDictionary(g => g.Time, g => g);
 		}
 
+		//Get all the hours with data
 		var hourlyDates = new List<DateTime>();
 		foreach (var element in dustDataDico)
 		{
@@ -235,6 +263,7 @@ public class DataFiller
 		}
 		hourlyDates = hourlyDates.Distinct().OrderBy(x => x).ToList();
 
+		//Get all the day with data
 		var dailyDates = new List<DateTime>();
 		foreach (var element in aboveThresholdDataDico)
 		{
@@ -244,6 +273,7 @@ public class DataFiller
 
 		List<DustAverage> finalAggregatedData = new List<DustAverage>();
 		List<AveragePer8HourShift> finalAggregatedDataRate = new List<AveragePer8HourShift>();
+		//Create a DustAverage for every hours
 		foreach (DateTime date in hourlyDates)
 		{
 			finalAggregatedData.Add(
@@ -262,6 +292,7 @@ public class DataFiller
 				}
 			);
 		}
+		//add every AveragePer8HourShift to list
 		foreach (DateTime date in dailyDates)
 		{
 			foreach (Field field in Enum.GetValues<Field>())
@@ -275,6 +306,9 @@ public class DataFiller
 		Console.WriteLine("Done");
 	}
 
+	/// <summary>
+	/// Method that creates a <c> Sample </c> from different parameters. If the sample have less that 5 users, the method returns <code> null </cool>
+	/// </summary>
 	public async Task<Sample?> createSample(
 		String Site,
 		Guid? LocationQualifier,
@@ -283,6 +317,7 @@ public class DataFiller
 		List<string?> allJobs
 	)
 	{
+		//getUserBySiteAndQualifiers returns null if the number of valid user is below 5
 		List<User>? sampleUsers = await _fetchHandler.getUserBySiteAndQualifiers(
 			Site,
 			LocationQualifier,
@@ -311,10 +346,13 @@ public class DataFiller
 	const String notSpecifiedKey = "NotSpecified";
 	Guid notSpecifiedGuid = new Guid("00000000-0000-0000-0000-000000000000");
 
-	//Note : right now, this method doesn't remove sample if users have been deleted, but in a final product, it should probably
-	//or at least make the sample depend on time, so you could keep previous valid value while not having currently a particular sample that is valid
+	/// <summary>
+	/// Method that updates the sample table to add any new valid sample to the table.
+	/// </summary>
 	public async Task updateSamples()
 	{
+		//Note : right now, this method doesn't remove sample if users have been deleted, but in a final product, it should probably
+		//or at least make the sample depend on time, so you could keep previous valid value while not having currently a particular sample that is valid
 		List<Location> allLocations = (await _fetchHandler.getAllLocations()).Distinct().ToList();
 		List<string> allSites = allLocations.Select(l => l.Site).Distinct().ToList();
 		List<string?> allJobs = (await _fetchHandler.getAllJobs()).Distinct().ToList();
@@ -344,7 +382,7 @@ public class DataFiller
 			{
 				Guid locationKey = location.Id;
 				string? JobKey = job ?? notSpecifiedKey;
-				//If this combinaison of location and job isn't already in db
+				//If this combinaison of location and job isn't already in db, we create it
 				if (
 					!existingSamples.ContainsKey(locationKey)
 					|| (
@@ -375,7 +413,7 @@ public class DataFiller
 			{
 				Guid locationKey = notSpecifiedGuid;
 				string? JobKey = job ?? notSpecifiedKey;
-				//If this combinaison of location and job isn't already in db
+				//If this combinaison of location and job isn't already in db, we create it
 				if (
 					!existingSamples.ContainsKey(locationKey)
 					|| (

@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Backend.Data.Configuration;
 
+/// <summary>
+/// Class that define rules for user configurations
+/// </summary>
 public class UserInfoConfiguration : IEntityTypeConfiguration<UserInfo>
 {
 	public void Configure(EntityTypeBuilder<UserInfo> builder)

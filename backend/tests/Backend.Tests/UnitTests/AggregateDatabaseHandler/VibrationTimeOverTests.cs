@@ -145,12 +145,12 @@ public class VibrationTimeOverTests
 			Worker(Day, (7, 5), (8, 5)),
 		];
 
-		var rates = DataFetchHandler.GetDailyWorkerRates(
+		var rates = DataFetchHandler.GetWorkerRatesOfDay(
 			workers.SelectMany(worker => Process(worker).dailyRates)
 		);
-		var ratesFromFilledHours = DataFetchHandler.GetDailyWorkerRates(
+		var ratesFromFilledHours = DataFetchHandler.GetWorkerRatesOfDay(
 			workers.SelectMany(worker =>
-				DataFetchHandler.GetWorkerDailyRates(
+				DataFetchHandler.GetWorkerDailyRatesOfHour(
 					DataFetchHandler.FillVibrationHours(worker, Day, Day.AddDays(1))
 				)
 			)

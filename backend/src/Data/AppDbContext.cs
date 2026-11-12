@@ -2,6 +2,9 @@ using Backend.Models;
 using Backend.Records;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// Class that define the Operational (or main) Database Structure and tables
+/// </summary>
 public class AppDbContext : DbContext
 {
 	public AppDbContext(DbContextOptions<AppDbContext> options)

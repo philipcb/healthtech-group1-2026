@@ -6,6 +6,9 @@ namespace Backend.Utils;
 
 public class ExposureUtils
 {
+	/// <summary>
+	/// Method that returns the name of a materialized view, from granularity and exposureType
+	/// </summary>
 	public static string GetMaterializedViewName(
 		ExposureType exposureType,
 		TimeGranularity granularity
@@ -24,6 +27,9 @@ public class ExposureUtils
 		};
 	}
 
+	/// <summary>
+	/// Method that returns the name of a aggregated materialized view, from an AggregationFunction, and ExposureType and a Field (null if not dust)
+	/// </summary>
 	public static string GetAggregateColumnName(
 		AggregationFunction function,
 		ExposureType exposureType,
@@ -75,6 +81,10 @@ public class ExposureUtils
 		return aggregateColumnName;
 	}
 
+	/// <summary>
+	/// Method that transforms RawExposuresData to their cumulative alternative (value of different hours are summed during the day)
+	/// Only works for Vibration, doesn't change RawExposureData otherwise
+	/// </summary>
 	public static List<RawExposureData> CumulateVibrationSumValues(
 		ExposureType exposure,
 		AggregationFunction function,

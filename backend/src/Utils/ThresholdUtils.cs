@@ -6,6 +6,9 @@ namespace Backend.Utils;
 
 public static class ThresholdUtils
 {
+	/// <summary>
+	/// Method that determines the correct danger level of exposure values from a list, by comparing them to thresholds
+	/// </summary>
 	public static IEnumerable<(
 		RawExposureData data,
 		(DangerLevel dangerLevel, DangerLevel? peakDangerLevel) dangerLevels
@@ -58,6 +61,9 @@ public static class ThresholdUtils
 		return result;
 	}
 
+	/// <summary>
+	/// Method that determines the correct danger level of one exposure value, by comparing it to thresholds
+	/// </summary>
 	public static (DangerLevel dangerLevel, DangerLevel? peakDangerLevel) CalculateDangerLevel(
 		ExposureType exposureType,
 		double value,

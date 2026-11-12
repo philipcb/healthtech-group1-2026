@@ -2,6 +2,9 @@ using Backend.Models;
 using Backend.Records;
 using Microsoft.EntityFrameworkCore;
 
+/// <summary>
+/// Class that define the Login Database Structure and tables
+/// </summary>
 public class LoginDbContext : DbContext
 {
 	public LoginDbContext(DbContextOptions<LoginDbContext> options)

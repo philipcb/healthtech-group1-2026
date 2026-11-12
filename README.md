@@ -47,6 +47,8 @@ HealthTech is a academic project for Aker Solutions. This is the third group of 
 
 See [PRODUCTION.md](./PRODUCTION.md) for instructions about how to deploy to production.
 
+THIS GUIDE IS FOR MAC AND UNIX USERS, if you use windows, the guide is in [README_WINDOWS.md](README_WINDOWS.md)
+
 ---
 
 ## Getting started with local development

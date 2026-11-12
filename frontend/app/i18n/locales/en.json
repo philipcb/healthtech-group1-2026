@@ -608,7 +608,25 @@
   "viewPicker": {
     "today": "Today",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "current": {
+      "day": "Today",
+      "week": "This week",
+      "month": "This month",
+      "year": "This year"
+    },
+    "previousPeriod": {
+      "day": "Previous day",
+      "week": "Previous week",
+      "month": "Previous month",
+      "year": "Previous year"
+    },
+    "nextPeriod": {
+      "day": "Next day",
+      "week": "Next week",
+      "month": "Next month",
+      "year": "Next year"
+    }
   },
   "exposureTrendLineChartCard": {
     "title": {

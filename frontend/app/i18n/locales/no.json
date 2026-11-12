@@ -608,7 +608,25 @@
   "viewPicker": {
     "today": "I dag",
     "previous": "Forrige",
-    "next": "Neste"
+    "next": "Neste",
+    "current": {
+      "day": "I dag",
+      "week": "Denne uken",
+      "month": "Denne måneden",
+      "year": "I år"
+    },
+    "previousPeriod": {
+      "day": "Forrige dag",
+      "week": "Forrige uke",
+      "month": "Forrige måned",
+      "year": "Forrige år"
+    },
+    "nextPeriod": {
+      "day": "Neste dag",
+      "week": "Neste uke",
+      "month": "Neste måned",
+      "year": "Neste år"
+    }
   },
   "exposureTrendLineChartCard": {
     "title": {

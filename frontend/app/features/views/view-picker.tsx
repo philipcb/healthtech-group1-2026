@@ -5,7 +5,7 @@ import { today } from "@/lib/date.ts";
 import { cn } from "@/lib/utils.ts";
 import type { View } from "@/lib/views.ts";
 import type { TZDate } from "@date-fns/tz";
-import { isAfter, isBefore, isEqual, isToday } from "date-fns";
+import { isAfter, isBefore, isEqual, isSameMonth, isSameWeek, isToday } from "date-fns";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDate } from "../date-picker/use-date.ts";
@@ -38,11 +38,16 @@ export function ViewPicker({
 	const canNavigatePrevious = !isEqual(previousTarget, date);
 	const canNavigateNext = !isEqual(nextTarget, date);
 
-	const isTodayDate = isToday(date, { in: TIMEZONE });
+	const isCurrentPeriod =
+		view === "day"
+			? isToday(date, { in: TIMEZONE })
+			: view === "week"
+				? isSameWeek(date, today(), { weekStartsOn: 1, in: TIMEZONE })
+				: isSameMonth(date, today(), { in: TIMEZONE });
 
-	const previousString = t(($) => $.viewPicker.previous);
-	const todayString = t(($) => $.viewPicker.today);
-	const nextString = t(($) => $.viewPicker.next);
+	const previousString = t(($) => $.viewPicker.previousPeriod[view]);
+	const currentString = t(($) => $.viewPicker.current[view]);
+	const nextString = t(($) => $.viewPicker.nextPeriod[view]);
 
 	return (
 		<div className="flex flex-col gap-2">
@@ -90,41 +95,38 @@ export function ViewPicker({
 			</div>
 
 			{withNavigationButtons && (
-				<div className="grid grid-cols-3 items-center gap-2">
+				<div className="flex items-center justify-center gap-1">
 					<Button
 						title={previousString}
-						size="xs"
+						aria-label={previousString}
+						size="icon-sm"
 						variant="ghost"
-						className="px-1!"
 						onClick={() => setDate(previousTarget)}
 						disabled={!canNavigatePrevious}
 					>
-						<ChevronLeftIcon className="size-3.5 shrink-0" />
-						<p className="truncate text-xs">{previousString}</p>
+						<ChevronLeftIcon className="size-4" />
 					</Button>
 
 					<Button
-						title={todayString}
-						size="xs"
+						size="sm"
 						variant="ghost"
-						className="px-1!"
+						className="min-w-0"
 						onClick={() => setDate(today())}
-						disabled={isTodayDate}
+						disabled={isCurrentPeriod}
 					>
 						<CalendarIcon className="size-3.5 shrink-0" />
-						<p className="truncate text-xs">{todayString}</p>
+						<span className="truncate">{currentString}</span>
 					</Button>
 
 					<Button
 						title={nextString}
-						size="xs"
+						aria-label={nextString}
+						size="icon-sm"
 						variant="ghost"
-						className="px-1!"
 						onClick={() => setDate(nextTarget)}
 						disabled={!canNavigateNext}
 					>
-						<p className="truncate text-xs">{nextString}</p>
-						<ChevronRightIcon className="size-3.5 shrink-0" />
+						<ChevronRightIcon className="size-4" />
 					</Button>
 				</div>
 			)}

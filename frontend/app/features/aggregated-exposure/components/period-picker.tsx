@@ -80,9 +80,9 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 			year === today.getFullYear() &&
 			(month > today.getMonth() || (period === "day" && month === today.getMonth() && day > today.getDate())));
 
-	const previousString = t(($) => $.viewPicker.previous);
-	const todayString = t(($) => $.viewPicker.today);
-	const nextString = t(($) => $.viewPicker.next);
+	const previousString = t(($) => $.viewPicker.previousPeriod[period]);
+	const currentString = t(($) => $.viewPicker.current[period]);
+	const nextString = t(($) => $.viewPicker.nextPeriod[period]);
 
 	const viewPicker = (
 		<div className="flex flex-col gap-2">
@@ -116,41 +116,32 @@ export function PeriodPicker({ selection }: { selection: PeriodSelection }) {
 				</ToggleGroup>
 			</div>
 
-			<div className="grid grid-cols-3 items-center gap-2">
+			<div className="flex items-center justify-center gap-1">
 				<Button
 					title={previousString}
-					size="xs"
+					aria-label={previousString}
+					size="icon-sm"
 					variant="ghost"
-					className="px-1!"
 					onClick={() => move(-1)}
 					disabled={isFirst}
 				>
-					<ChevronLeftIcon className="size-3.5 shrink-0" />
-					<p className="truncate text-xs">{previousString}</p>
+					<ChevronLeftIcon className="size-4" />
 				</Button>
 
-				<Button
-					title={todayString}
-					size="xs"
-					variant="ghost"
-					className="px-1!"
-					onClick={() => pick(today)}
-					disabled={isCurrent}
-				>
+				<Button size="sm" variant="ghost" className="min-w-0" onClick={() => pick(today)} disabled={isCurrent}>
 					<CalendarIcon className="size-3.5 shrink-0" />
-					<p className="truncate text-xs">{todayString}</p>
+					<span className="truncate">{currentString}</span>
 				</Button>
 
 				<Button
 					title={nextString}
-					size="xs"
+					aria-label={nextString}
+					size="icon-sm"
 					variant="ghost"
-					className="px-1!"
 					onClick={() => move(1)}
 					disabled={isCurrent || isAfterToday}
 				>
-					<p className="truncate text-xs">{nextString}</p>
-					<ChevronRightIcon className="size-3.5 shrink-0" />
+					<ChevronRightIcon className="size-4" />
 				</Button>
 			</div>
 		</div>

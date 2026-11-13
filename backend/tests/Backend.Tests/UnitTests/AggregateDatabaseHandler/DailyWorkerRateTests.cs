@@ -23,15 +23,15 @@ public class DailyWorkerRateTests
 			.ToList();
 
 	private static List<DailyWorkerRate> DailyRates(params List<ExposureDataDto>[] workers) =>
-		DataFetchHandler.GetDailyWorkerRates(
-			workers.SelectMany(DataFetchHandler.GetWorkerDailyRates)
+		DataFetchHandler.GetWorkerRatesOfDay(
+			workers.SelectMany(DataFetchHandler.GetWorkerDailyRatesOfHour)
 		);
 
 	/// <summary>
 	/// Verifies that a worker with only warning hours is over the action value but not over the limit.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_CountsWarningHours_OverActionOnly()
+	public void GetWorkerRatesOfDay_CountsWarningHours_OverActionOnly()
 	{
 		var rate = Assert.Single(
 			DailyRates(
@@ -52,7 +52,7 @@ public class DailyWorkerRateTests
 	/// is above the action value.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_CountsDangerHours_OverActionAndLimit()
+	public void GetWorkerRatesOfDay_CountsDangerHours_OverActionAndLimit()
 	{
 		var rate = Assert.Single(
 			DailyRates(
@@ -72,7 +72,7 @@ public class DailyWorkerRateTests
 	/// overlap instead of being added up.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_CountsWorkerWithBothOnce()
+	public void GetWorkerRatesOfDay_CountsWorkerWithBothOnce()
 	{
 		var rate = Assert.Single(
 			DailyRates(
@@ -91,7 +91,7 @@ public class DailyWorkerRateTests
 	/// Verifies that both shares are 0 when no worker is over a threshold.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_IsZero_WithoutExceedances()
+	public void GetWorkerRatesOfDay_IsZero_WithoutExceedances()
 	{
 		var rate = Assert.Single(
 			DailyRates(
@@ -108,7 +108,7 @@ public class DailyWorkerRateTests
 	/// Verifies that the worker days of a day are the workers with data that day.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_CountsTheWorkersThatDay()
+	public void GetWorkerRatesOfDay_CountsTheWorkersThatDay()
 	{
 		var rate = Assert.Single(
 			DailyRates(
@@ -134,7 +134,7 @@ public class DailyWorkerRateTests
 					Worker(Day, DangerLevel.Safe),
 					Worker(Day, DangerLevel.Safe, DangerLevel.Safe),
 					Worker(Day, DangerLevel.Danger, DangerLevel.Safe, DangerLevel.Safe),
-				}.SelectMany(DataFetchHandler.GetWorkerDailyRates)
+				}.SelectMany(DataFetchHandler.GetWorkerDailyRatesOfHour)
 			)
 		);
 
@@ -146,7 +146,7 @@ public class DailyWorkerRateTests
 	/// up across days.
 	/// </summary>
 	[Fact]
-	public void GetDailyWorkerRates_CountsEachDaySeparately()
+	public void GetWorkerRatesOfDay_CountsEachDaySeparately()
 	{
 		var nextDay = Day.AddDays(1);
 		var firstWorker = Worker(Day, DangerLevel.Danger, DangerLevel.Safe)
@@ -234,7 +234,7 @@ public class DailyWorkerRateTests
 	/// action value before midnight count on the first day and its safe hours after midnight on the next.
 	/// </summary>
 	[Fact]
-	public void GetWorkerDailyRates_SplitsANightMeasurementAtMidnightInOslo()
+	public void GetWorkerDailyRatesOfHour_SplitsANightMeasurementAtMidnightInOslo()
 	{
 		var nextDay = Day.AddDays(1);
 		List<ExposureDataDto> night =
@@ -245,7 +245,7 @@ public class DailyWorkerRateTests
 			new() { Time = nextDay.AddHours(1), DangerLevel = DangerLevel.Safe },
 		];
 
-		var rates = DataFetchHandler.GetWorkerDailyRates(night).OrderBy(r => r.Time).ToList();
+		var rates = DataFetchHandler.GetWorkerDailyRatesOfHour(night).OrderBy(r => r.Time).ToList();
 
 		Assert.Equal(2, rates.Count);
 		Assert.Equal(Day, rates[0].Time);
@@ -260,7 +260,7 @@ public class DailyWorkerRateTests
 	/// Verifies that measurements at 23:30 and 00:30 in Oslo are on different days, though they're on the same UTC date.
 	/// </summary>
 	[Fact]
-	public void GetWorkerDailyRates_PutsHalfPastElevenAndHalfPastMidnightOnDifferentDays()
+	public void GetWorkerDailyRatesOfHour_PutsHalfPastElevenAndHalfPastMidnightOnDifferentDays()
 	{
 		var nextDay = Day.AddDays(1);
 		List<ExposureDataDto> hours =
@@ -269,7 +269,7 @@ public class DailyWorkerRateTests
 			new() { Time = nextDay.AddMinutes(30), DangerLevel = DangerLevel.Safe },
 		];
 
-		var days = DataFetchHandler.GetWorkerDailyRates(hours).Select(r => r.Time).Order();
+		var days = DataFetchHandler.GetWorkerDailyRatesOfHour(hours).Select(r => r.Time).Order();
 
 		Assert.Equal([Day, nextDay], days);
 	}

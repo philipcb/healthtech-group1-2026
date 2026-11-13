@@ -605,17 +605,28 @@
     "helmet": "Helmet",
     "protectiveMask": "Protective mask"
   },
-  "share": {
-    "hygienist": {
-      "button": "Share data with hygienist",
-      "confirmation": "Shared data from {{from}} to {{to}}.",
-      "shareData": "Share data"
-    }
-  },
   "viewPicker": {
     "today": "Today",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "current": {
+      "day": "Today",
+      "week": "This week",
+      "month": "This month",
+      "year": "This year"
+    },
+    "previousPeriod": {
+      "day": "Previous day",
+      "week": "Previous week",
+      "month": "Previous month",
+      "year": "Previous year"
+    },
+    "nextPeriod": {
+      "day": "Next day",
+      "week": "Next week",
+      "month": "Next month",
+      "year": "Next year"
+    }
   },
   "exposureTrendLineChartCard": {
     "title": {

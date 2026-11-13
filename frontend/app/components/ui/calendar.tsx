@@ -96,7 +96,9 @@ function Calendar({
 						: "rounded-md pl-2 pr-1 flex items-center gap-1 text-base h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
 					defaultClassNames.caption_label,
 				),
-				table: "w-full border-collapse",
+				// Flex instead of table layout: Safari sizes the table without the aspect-square days, so it ends up
+				// shorter than its rows and the footer overlaps the last week.
+				month_grid: cn("flex w-full flex-col", defaultClassNames.month_grid),
 				weekdays: cn("flex", defaultClassNames.weekdays),
 				weekday: cn(
 					"text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem] select-none",

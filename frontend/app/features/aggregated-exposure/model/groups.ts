@@ -88,7 +88,8 @@ export function formatGroupValue(value: number, unit: ExposureUnit, t: Translate
 	return `${formatGroupNumber(value, unit)} ${getGroupUnitLabel(unit, t)}`;
 }
 
-function compareAverages(averageA: number | null, averageB: number | null) {
+/** Highest first, with missing averages last */
+export function compareAverages(averageA: number | null, averageB: number | null) {
 	if (averageA === averageB) {
 		return 0;
 	}

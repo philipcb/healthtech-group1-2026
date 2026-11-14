@@ -30,7 +30,7 @@ export default function MapPage() {
 	return (
 		<div className="flex w-full flex-col gap-4">
 			<h1 className="font-bold text-2xl">{t(($) => $.foremanDashboard.team.mapTitle)}</h1>
-			<LocationMap operators={subordinates ?? []} isLoading={isSubordinatesLoading} />
+			<LocationMap site={user.location.site} operators={subordinates} isLoading={isSubordinatesLoading} />
 		</div>
 	);
 }

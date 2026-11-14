@@ -10,15 +10,17 @@ type DustFieldTabsProps = {
 	ariaLabel?: string;
 	/** A smaller version that fits in a table header */
 	isCompact?: boolean;
+	className?: string;
 };
 
 /** Tabs for choosing which dust fraction to show. The caller owns the selected fraction, for example in the URL. */
-export function DustFieldTabs({ value, onValueChange, ariaLabel, isCompact = false }: DustFieldTabsProps) {
+export function DustFieldTabs({ value, onValueChange, ariaLabel, isCompact = false, className }: DustFieldTabsProps) {
 	const { t } = useTranslation();
 
 	return (
 		<Tabs
 			value={value}
+			className={cn(!isCompact && "w-full sm:w-fit", className)}
 			onValueChange={(selected) => {
 				const selectedField = dustFields.find((field) => field === selected);
 				if (selectedField) onValueChange(selectedField);
@@ -26,7 +28,7 @@ export function DustFieldTabs({ value, onValueChange, ariaLabel, isCompact = fal
 		>
 			<TabsList
 				aria-label={ariaLabel}
-				className={cn(isCompact && "group-data-[orientation=horizontal]/tabs:h-8")}
+				className={cn(isCompact ? "group-data-[orientation=horizontal]/tabs:h-8" : "w-full sm:w-fit")}
 			>
 				{dustFields.map((field) => (
 					<TabsTrigger
@@ -37,7 +39,7 @@ export function DustFieldTabs({ value, onValueChange, ariaLabel, isCompact = fal
 						className={cn(
 							"data-[state=active]:bg-accent data-[state=active]:text-accent-foreground",
 							"dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground",
-							isCompact && "px-2.5 text-xs",
+							isCompact ? "px-2.5 text-xs" : "flex-1 sm:flex-none",
 						)}
 					>
 						{t(($) => $.exposures.dustFields[field])}

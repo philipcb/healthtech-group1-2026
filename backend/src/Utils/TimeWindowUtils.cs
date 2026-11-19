@@ -33,6 +33,10 @@ namespace Backend.Utils
 			DateTime end
 		) => (TimeZoneInfo.ConvertTimeToUtc(start, Oslo), TimeZoneInfo.ConvertTimeToUtc(end, Oslo));
 
+		/// <summary>
+		/// Method that determines the correct time period (startTime and endTime) for different type of periods ("years", "month", "day")
+		/// and the corresponding dates
+		/// </summary>
 		public static (DateTime startTime, DateTime endTime) GetPeriodLimit(
 			string periodType,
 			int year,

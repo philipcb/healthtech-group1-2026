@@ -4,34 +4,39 @@ HealthTech is a academic project for Aker Solutions. This is the third group of 
 
 <table>
   <tr>
-    <td rowspan="2" align="center" width="50%">
-      <img src="./assets/showcase/operator-noise-month.png" alt="Operator monthly view of noise data" width="100%" />
+    <td align="center" width="50%">
+      <img src="./assets/showcase/01_operator_overview_day.jpg" alt="Operator daily overview of data" width="100%" />
       <br />
-      <sub>A month of an operator's noise data</sub>
+      <sub>An operator daily overview of data</sub>
     </td>
     <td align="center" width="50%">
-      <img src="./assets/showcase/foreman-team-noise.png" alt="Foreman noise data for team" width="100%" />
+      <img src="./assets/showcase/10_download_report.jpg" alt="Pdf Report Download Area" width="100%" />
       <br />
-      <sub>A foreman's vibration data for their team</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="./assets/showcase/operator-overview-week.png" alt="Operator overview of a week" width="100%" />
-      <br />
-      <sub>An operator's weekly overview</sub>
+      <sub>An operator Pdf Report Download tool</sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img src="./assets/showcase/foreman-operator-noise-details.png" alt="Foreman viewing noise data for an operator" width="100%" />
+      <img src="./assets/showcase/27_badges.jpg" alt="Operator Badge View" width="100%" />
       <br />
-      <sub>A foreman viewing noise data for an operator</sub>
+      <sub>An Operator's badge view (Gamification)</sub>
     </td>
     <td align="center" width="50%">
-      <img src="./assets/showcase/foreman-overview-map.png" alt="A foreman's overview of the map" width="100%" />
+      <img src="./assets/showcase/12_team_list.jpg" alt="Foreman team list view" width="100%" />
       <br />
-      <sub>A foreman's overview of the map</sub>
+      <sub>A Foreman's team list view</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="./assets/showcase/16_overview_buildings.jpg " alt="Management overview aggregated per building" width="100%" />
+      <br />
+      <sub>A manager viewing data aggregated per building</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="./assets/showcase/21_compare_table.jpg" alt="Management Compare Table" width="100%" />
+      <br />
+      <sub>A manager page to compare data</sub>
     </td>
   </tr>
 </table>
@@ -46,6 +51,8 @@ HealthTech is a academic project for Aker Solutions. This is the third group of 
 ## Documentation
 
 See [PRODUCTION.md](./PRODUCTION.md) for instructions about how to deploy to production.
+
+THIS GUIDE IS FOR MAC AND UNIX USERS, if you use windows, the guide is in [README_WINDOWS.md](README_WINDOWS.md)
 
 ---
 

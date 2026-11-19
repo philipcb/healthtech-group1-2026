@@ -60,6 +60,7 @@ builder
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+//Add all 3 dbContexts for all 3 databases
 builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetValue<string>("DATABASE_URL"))
 );
@@ -74,6 +75,7 @@ builder.Services.AddDbContext<AggregateDbContext>(options =>
 
 Console.WriteLine(builder.Configuration.GetValue<string>("LOGIN_DATABASE_URL"));
 
+//Add all services
 builder.Services.AddScoped<SignedInUserContext>();
 builder.Services.AddScoped<IExposureDataService, ExposureDataService>();
 builder.Services.AddScoped<ValidateFieldForExposureTypeFilter>();

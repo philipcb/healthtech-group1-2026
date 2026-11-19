@@ -22,6 +22,13 @@ public class DataFetchHandler(AppDbContext _context)
 	public static AggregationFunction GetValueFunction(ExposureType exposureType) =>
 		exposureType == ExposureType.Vibration ? AggregationFunction.Sum : AggregationFunction.Avg;
 
+	/// <summary>
+	/// Method that returns a list of <c> User </c> present at a site,
+	/// in a building identified by locationQualifier
+	/// and having an occupation identified by jobQualifier.
+	/// locationQualifier or/and jobQualifier can be null, which means the users are not filter by location or occupation respectively
+	///
+	/// </summary>
 	public async Task<List<User>?> getUserBySiteAndQualifiers(
 		String site,
 		Guid? locationQualifier,
@@ -47,6 +54,7 @@ public class DataFetchHandler(AppDbContext _context)
 		}
 
 		//When location is null, we have to be careful to not include in the selection of users those who come from subset of size < 5
+		//Indeed, private data (from users from sample with less than 5 people) could be infered of less filtered samples.
 		if (locationQualifier == null)
 		{
 			List<string?> allJobs = await getAllJobs();
@@ -116,6 +124,12 @@ public class DataFetchHandler(AppDbContext _context)
 		);
 	}
 
+	/// <summary>
+	/// Method that fetchs data from all users of a list, average it for each user over a time period from startTime to endTime,
+	///  and returns a list of averages over all users of those averages for each time of the time period,
+	/// returns average of rates of hour above action value/limit over every users,
+	/// and average of rates of day above action value/limit over every users
+	/// </summary>
 	public async Task<(
 		List<TimedData> dataList,
 		List<AboveThresholdRate> hoursAboveThresholdDataList,
@@ -131,6 +145,7 @@ public class DataFetchHandler(AppDbContext _context)
 		var rawDataList = new List<TimedData>();
 		var rateList = new List<AboveThresholdRate>();
 
+		//Compute averages for each users
 		foreach (var user in users)
 		{
 			List<ExposureDataDto> userData = (
@@ -156,6 +171,7 @@ public class DataFetchHandler(AppDbContext _context)
 			rateList.AddRange(dailyRates);
 		}
 
+		//Averages over all users
 		var averageDataList = rawDataList
 			.GroupBy(d => d.Time)
 			.Select(g => new TimedData
@@ -168,7 +184,7 @@ public class DataFetchHandler(AppDbContext _context)
 		return (
 			dataList: averageDataList.ToList(),
 			hoursAboveThresholdDataList: GetDailyTimeOverRates(rateList),
-			GetDailyWorkerRates(rateList)
+			GetWorkerRatesOfDay(rateList)
 		);
 	}
 
@@ -188,7 +204,7 @@ public class DataFetchHandler(AppDbContext _context)
 			exposureType == ExposureType.Vibration
 				? FillVibrationHours(userData, startTime, endTime)
 				: userData,
-			GetWorkerDailyRates(userData).ToList()
+			GetWorkerDailyRatesOfHour(userData).ToList()
 		);
 
 	// Per day, the average of the workers' shares of hours at each danger level, so each worker counts the same however
@@ -210,6 +226,11 @@ public class DataFetchHandler(AppDbContext _context)
 	// Vibration points add up over the Norwegian day, so a worker's value holds until their next hour with data. Each day
 	// starts without a value at midnight in Oslo, so a worker without data on a day has no hours that day instead of the
 	// day before's total.
+
+	/// <summary>
+	/// Method that fill timed data for vibration exposure.
+	/// Vibration data is cumulative, so in order to make averages, the method fills missing hour with the previously available value, so the average at each hour make sense
+	/// </summary>
 	public static List<ExposureDataDto> FillVibrationHours(
 		List<ExposureDataDto> userData,
 		DateTime startTime,
@@ -250,7 +271,7 @@ public class DataFetchHandler(AppDbContext _context)
 	}
 
 	// One worker's share of hours at each danger level, per Norwegian day. Each day's `Time` is its midnight in Oslo, as UTC.
-	public static IEnumerable<AboveThresholdRate> GetWorkerDailyRates(
+	public static IEnumerable<AboveThresholdRate> GetWorkerDailyRatesOfHour(
 		IEnumerable<ExposureDataDto> userData
 	) =>
 		userData
@@ -264,7 +285,7 @@ public class DataFetchHandler(AppDbContext _context)
 				UnitCount = g.Count(),
 			});
 
-	public static List<DailyWorkerRate> GetDailyWorkerRates(
+	public static List<DailyWorkerRate> GetWorkerRatesOfDay(
 		IEnumerable<AboveThresholdRate> workerDailyRates
 	) =>
 		workerDailyRates
@@ -303,6 +324,9 @@ public class DataFetchHandler(AppDbContext _context)
 				userId
 			));
 
+	/// <summary>
+	/// Method that fetchs data from one user, average it for a time period from startTime to endTime, returns a list of ExposureDataDto
+	/// </summary>
 	public async Task<IEnumerable<ExposureDataDto>> fetchUserAggregatedDataAsync(
 		Guid userId,
 		DateTime startTime,
@@ -311,6 +335,7 @@ public class DataFetchHandler(AppDbContext _context)
 		Field? field
 	)
 	{
+		//This method looks a lot like a method from the exposureService. So If logic has to change there, it might need to be changed there too
 		string materializedViewName = ExposureUtils.GetMaterializedViewName(
 			exposureType,
 			TimeGranularity.Hour
